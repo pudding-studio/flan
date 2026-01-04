@@ -5,7 +5,7 @@ class AppTheme {
   static const Color seedColor = Color.fromARGB(255, 255, 191, 63);
 
   // Navigation Bar 설정값
-  static const double navBarHeight = 46;
+  static const double navBarHeight = 48;
   static const double navBarIconOffset = 6;
   static const double navBarIndicatorWidth = 54;
   static const double navBarIndicatorHeight = 24;
@@ -14,7 +14,7 @@ class AppTheme {
   static const double navBarIconSizeUnselected = 22;
 
   // AppBar 설정값
-  static const double appBarHeight = 43;
+  static const double appBarHeight = 46;
   static const double appBarTitleSpacing = 20;
   static const double appBarTitleFontSize = 20;
   static const FontWeight appBarTitleFontWeight = FontWeight.w500;
@@ -52,6 +52,13 @@ class AppTheme {
         }
         return const IconThemeData(size: navBarIconSizeUnselected);
       }),
+      labelTextStyle: WidgetStateProperty.resolveWith((states) {
+        if (states.contains(WidgetState.selected)) {
+          return TextStyle(fontSize: 10, fontWeight: FontWeight.bold);
+        }
+        return TextStyle(fontSize: 9);
+      }),
+      
     ),
     cardTheme: CardTheme(
       elevation: 2,

@@ -44,7 +44,7 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       body: _screens[_currentIndex],
       bottomNavigationBar: Container(
-        margin: const EdgeInsets.all(0),
+        margin: const EdgeInsets.only(bottom: 0),
         child: NavigationBar(
           // 필수 파라미터
           selectedIndex: _currentIndex,
