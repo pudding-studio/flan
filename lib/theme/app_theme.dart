@@ -13,6 +13,12 @@ class AppTheme {
   static const double navBarIconSizeSelected = 24;
   static const double navBarIconSizeUnselected = 22;
 
+  // AppBar 설정값
+  static const double appBarHeight = 43;
+  static const double appBarTitleSpacing = 20;
+  static const double appBarTitleFontSize = 20;
+  static const FontWeight appBarTitleFontWeight = FontWeight.w500;
+
   static final ThemeData lightTheme = ThemeData(
     useMaterial3: true,
     colorScheme: ColorScheme.fromSeed(
@@ -20,8 +26,15 @@ class AppTheme {
       brightness: Brightness.light,
     ),
     appBarTheme: const AppBarTheme(
-      centerTitle: true,
+      centerTitle: false,
       elevation: 0,
+      toolbarHeight: appBarHeight,
+      titleSpacing: appBarTitleSpacing,
+      titleTextStyle: TextStyle(
+        fontSize: appBarTitleFontSize,
+        fontWeight: appBarTitleFontWeight,
+        color: Colors.black87,
+      ),
     ),
     navigationBarTheme: NavigationBarThemeData(
       height: navBarHeight,
@@ -94,8 +107,15 @@ class AppTheme {
       brightness: Brightness.dark,
     ),
     appBarTheme: const AppBarTheme(
-      centerTitle: true,
+      centerTitle: false,
       elevation: 0,
+      toolbarHeight: appBarHeight,
+      titleSpacing: appBarTitleSpacing,
+      titleTextStyle: TextStyle(
+        fontSize: appBarTitleFontSize,
+        fontWeight: appBarTitleFontWeight,
+        color: Colors.white,
+      ),
     ),
     navigationBarTheme: NavigationBarThemeData(
       // 높이
