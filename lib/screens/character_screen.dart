@@ -163,8 +163,50 @@ class _CharacterScreenState extends State<CharacterScreen> {
   }
 
   Widget _buildListView() {
-    return const Center(
-      child: Text('리스트뷰 (구현 예정)'),
+    final demoCharacters = [
+      {
+        'title': '홍길동',
+        'description': '조선시대 의적으로 탐관오리를 응징하고 백성들을 도운 전설적인 인물',
+        'tags': ['역사', '의적'],
+        'imageUrl': null,
+      },
+      {
+        'title': '아이언맨',
+        'description': '천재 발명가이자 억만장자로 첨단 슈트를 입고 세계를 지키는 영웅',
+        'tags': ['SF', '히어로'],
+        'imageUrl': null,
+      },
+      {
+        'title': '셜록 홈즈',
+        'description': '뛰어난 추리력과 관찰력으로 어떤 사건이든 해결하는 명탐정',
+        'tags': ['추리', '고전'],
+        'imageUrl': null,
+      },
+      {
+        'title': '해리 포터',
+        'description': '마법 세계에서 어둠의 마법사와 싸우는 용감한 소년 마법사',
+        'tags': ['판타지', '마법'],
+        'imageUrl': null,
+      },
+    ];
+
+    final screenWidth = MediaQuery.of(context).size.width;
+    final horizontalPadding = screenWidth * 0.05;
+
+    return ListView.builder(
+      padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16.0),
+      itemCount: demoCharacters.length,
+      itemBuilder: (context, index) {
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 16.0),
+          child: _CharacterListItem(
+            title: demoCharacters[index]['title'] as String,
+            description: demoCharacters[index]['description'] as String,
+            tags: demoCharacters[index]['tags'] as List<String>,
+            imageUrl: demoCharacters[index]['imageUrl'] as String?,
+          ),
+        );
+      },
     );
   }
 }
@@ -245,6 +287,81 @@ class _CharacterCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _CharacterListItem extends StatelessWidget {
+  final String title;
+  final String description;
+  final List<String> tags;
+  final String? imageUrl;
+
+  const _CharacterListItem({
+    required this.title,
+    required this.description,
+    required this.tags,
+    this.imageUrl,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final imageSize = (screenWidth * 0.45) * 0.6;
+
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(20.0),
+          child: Container(
+            width: imageSize,
+            height: imageSize,
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            child: imageUrl != null
+                ? Image.network(imageUrl!, fit: BoxFit.cover)
+                : Icon(
+                    Icons.person,
+                    size: imageSize * 0.4,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5.0),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  description,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
+                      ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 8),
+                Wrap(
+                  spacing: 4,
+                  runSpacing: 4,
+                  children: tags.map((tag) => _TagChip(label: tag)).toList(),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
