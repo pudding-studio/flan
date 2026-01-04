@@ -137,26 +137,48 @@ class _CharacterScreenState extends State<CharacterScreen> {
 
     final screenWidth = MediaQuery.of(context).size.width;
     final horizontalPadding = screenWidth * 0.05;
-    final spacing = screenWidth * 0.05;
-    final imageSize = screenWidth * 0.45;
-    final cardWidth = imageSize;
-    final cardHeight = imageSize + 120;
+    final spacing = screenWidth * 0.025;
 
-    return GridView.builder(
-      padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16.0),
-      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 2,
-        crossAxisSpacing: spacing,
-        mainAxisSpacing: 16.0,
-        childAspectRatio: cardWidth / cardHeight,
-      ),
-      itemCount: demoCharacters.length,
-      itemBuilder: (context, index) {
-        return _CharacterCard(
-          title: demoCharacters[index]['title'] as String,
-          description: demoCharacters[index]['description'] as String,
-          tags: demoCharacters[index]['tags'] as List<String>,
-          imageUrl: demoCharacters[index]['imageUrl'] as String?,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final availableWidth = constraints.maxWidth - (horizontalPadding * 2) - spacing;
+        final cardWidth = availableWidth / 2;
+
+        return ListView(
+          padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16.0),
+          children: [
+            for (int i = 0; i < demoCharacters.length; i += 2)
+              Padding(
+                padding: EdgeInsets.only(bottom: i < demoCharacters.length - 2 ? 0 : 0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    SizedBox(
+                      width: cardWidth,
+                      child: _CharacterCard(
+                        title: demoCharacters[i]['title'] as String,
+                        description: demoCharacters[i]['description'] as String,
+                        tags: demoCharacters[i]['tags'] as List<String>,
+                        imageUrl: demoCharacters[i]['imageUrl'] as String?,
+                      ),
+                    ),
+                    SizedBox(width: spacing),
+                    if (i + 1 < demoCharacters.length)
+                      SizedBox(
+                        width: cardWidth,
+                        child: _CharacterCard(
+                          title: demoCharacters[i + 1]['title'] as String,
+                          description: demoCharacters[i + 1]['description'] as String,
+                          tags: demoCharacters[i + 1]['tags'] as List<String>,
+                          imageUrl: demoCharacters[i + 1]['imageUrl'] as String?,
+                        ),
+                      )
+                    else
+                      SizedBox(width: cardWidth),
+                  ],
+                ),
+              ),
+          ],
         );
       },
     );
@@ -226,48 +248,45 @@ class _CharacterCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final imageSize = screenWidth * 0.45;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final cardWidth = constraints.maxWidth;
 
-    return SizedBox(
-      width: imageSize,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20.0),
-            child: Container(
-              width: imageSize,
-              height: imageSize,
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: imageUrl != null
-                  ? Image.network(imageUrl!, fit: BoxFit.cover)
-                  : Icon(
-                      Icons.person,
-                      size: imageSize * 0.4,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-            ),
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 5.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(20.0),
+              child: Container(
+                width: cardWidth,
+                height: cardWidth,
+                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                child: imageUrl != null
+                    ? Image.network(imageUrl!, fit: BoxFit.cover)
+                    : Icon(
+                        Icons.person,
+                        size: cardWidth * 0.4,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                SizedBox(
-                  height: 32,
-                  child: Text(
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 7.0, vertical: 7.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
                     description,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
@@ -275,18 +294,18 @@ class _CharacterCard extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                   ),
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 4,
-                  runSpacing: 4,
-                  children: tags.map((tag) => _TagChip(label: tag)).toList(),
-                ),
-              ],
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 4,
+                    runSpacing: 4,
+                    children: tags.map((tag) => _TagChip(label: tag)).toList(),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
+          ],
+        );
+      },
     );
   }
 }
