@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'character_edit_screen.dart';
 
 class CharacterScreen extends StatefulWidget {
   const CharacterScreen({super.key});
@@ -103,6 +104,18 @@ class _CharacterScreenState extends State<CharacterScreen> {
             child: _isGridView ? _buildGridView() : _buildListView(),
           ),
         ],
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const CharacterEditScreen(),
+            ),
+          );
+        },
+        elevation: 0,
+        child: const Icon(Icons.add),
       ),
     );
   }
