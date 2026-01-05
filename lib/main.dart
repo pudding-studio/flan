@@ -44,8 +44,10 @@ class _MainScreenState extends State<MainScreen> {
     return Scaffold(
       body: _screens[_currentIndex],
       bottomNavigationBar: Container(
-        margin: const EdgeInsets.only(bottom: 0),
+        color: Theme.of(context).colorScheme.surfaceContainer,
+        padding: const EdgeInsets.only(bottom: AppTheme.navBarBottomPadding),
         child: NavigationBar(
+          backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
           // 필수 파라미터
           selectedIndex: _currentIndex,
           onDestinationSelected: (int index) {

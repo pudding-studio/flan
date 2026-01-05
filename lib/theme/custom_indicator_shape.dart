@@ -8,7 +8,7 @@ class CustomIndicatorShape extends ShapeBorder {
 
   const CustomIndicatorShape({
     this.width = 64,
-    this.height = 10,
+    this.height = 12,
     this.borderRadius = const BorderRadius.all(Radius.circular(15)),
     this.offsetY = 0,
   });
