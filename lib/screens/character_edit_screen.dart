@@ -101,19 +101,19 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
               Tab(
                 child: SizedBox(
                   width: UIConstants.tabWidth,
-                  child: Center(child: Text('상세설정')),
+                  child: Center(child: Text('캐릭터설정')),
                 ),
               ),
               Tab(
                 child: SizedBox(
                   width: UIConstants.tabWidth,
-                  child: Center(child: Text('부가정보')),
+                  child: Center(child: Text('로어북')),
                 ),
               ),
               Tab(
                 child: SizedBox(
                   width: UIConstants.tabWidth,
-                  child: Center(child: Text('시장상황')),
+                  child: Center(child: Text('시작설정')),
                 ),
               ),
             ],

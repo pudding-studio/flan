@@ -9,7 +9,7 @@ class UIConstants {
   static const double spacing24 = 24.0;
 
   // 탭
-  static const double tabWidth = 55.0;
+  static const double tabWidth = 65.0;
   static const double tabBarHeight = 40.0;
 
   // 아이콘 크기
