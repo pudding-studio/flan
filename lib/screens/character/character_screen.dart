@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'character_edit_screen.dart';
+import 'widgets/character_card.dart';
+import 'widgets/character_list_item.dart';
 
 class CharacterScreen extends StatefulWidget {
   const CharacterScreen({super.key});
@@ -168,7 +170,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
                   children: [
                     SizedBox(
                       width: cardWidth,
-                      child: _CharacterCard(
+                      child: CharacterCard(
                         title: demoCharacters[i]['title'] as String,
                         description: demoCharacters[i]['description'] as String,
                         tags: demoCharacters[i]['tags'] as List<String>,
@@ -179,7 +181,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
                     if (i + 1 < demoCharacters.length)
                       SizedBox(
                         width: cardWidth,
-                        child: _CharacterCard(
+                        child: CharacterCard(
                           title: demoCharacters[i + 1]['title'] as String,
                           description: demoCharacters[i + 1]['description'] as String,
                           tags: demoCharacters[i + 1]['tags'] as List<String>,
@@ -234,7 +236,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
       itemBuilder: (context, index) {
         return Padding(
           padding: const EdgeInsets.only(bottom: 16.0),
-          child: _CharacterListItem(
+          child: CharacterListItem(
             title: demoCharacters[index]['title'] as String,
             description: demoCharacters[index]['description'] as String,
             tags: demoCharacters[index]['tags'] as List<String>,
@@ -242,182 +244,6 @@ class _CharacterScreenState extends State<CharacterScreen> {
           ),
         );
       },
-    );
-  }
-}
-
-class _CharacterCard extends StatelessWidget {
-  final String title;
-  final String description;
-  final List<String> tags;
-  final String? imageUrl;
-
-  const _CharacterCard({
-    required this.title,
-    required this.description,
-    required this.tags,
-    this.imageUrl,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final cardWidth = constraints.maxWidth;
-
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(20.0),
-              child: Container(
-                width: cardWidth,
-                height: cardWidth,
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                child: imageUrl != null
-                    ? Image.network(imageUrl!, fit: BoxFit.cover)
-                    : Icon(
-                        Icons.person,
-                        size: cardWidth * 0.4,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 7.0, vertical: 7.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    title,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    description,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
-                        ),
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  const SizedBox(height: 8),
-                  Wrap(
-                    spacing: 4,
-                    runSpacing: 4,
-                    children: tags.map((tag) => _TagChip(label: tag)).toList(),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _CharacterListItem extends StatelessWidget {
-  final String title;
-  final String description;
-  final List<String> tags;
-  final String? imageUrl;
-
-  const _CharacterListItem({
-    required this.title,
-    required this.description,
-    required this.tags,
-    this.imageUrl,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final imageSize = (screenWidth * 0.45) * 0.6;
-
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(20.0),
-          child: Container(
-            width: imageSize,
-            height: imageSize,
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            child: imageUrl != null
-                ? Image.network(imageUrl!, fit: BoxFit.cover)
-                : Icon(
-                    Icons.person,
-                    size: imageSize * 0.4,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 5.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  description,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
-                      ),
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 4,
-                  runSpacing: 4,
-                  children: tags.map((tag) => _TagChip(label: tag)).toList(),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _TagChip extends StatelessWidget {
-  final String label;
-
-  const _TagChip({required this.label});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.secondaryContainer.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Text(
-        label,
-        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              fontSize: 10,
-              color: Theme.of(context).colorScheme.onSecondaryContainer,
-            ),
-      ),
     );
   }
 }

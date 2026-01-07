@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../widgets/custom_text_field.dart';
-import '../constants/ui_constants.dart';
-import '../models/lorebook_folder.dart';
+import '../../widgets/custom_text_field.dart';
+import '../../constants/ui_constants.dart';
+import '../../models/lorebook_folder.dart';
 
 class CharacterEditScreen extends StatefulWidget {
   final String? characterId;
