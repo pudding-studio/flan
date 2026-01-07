@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import '../../widgets/custom_text_field.dart';
 import '../../constants/ui_constants.dart';
 import '../../models/character/lorebook_folder.dart';
 import '../../models/character/persona.dart';
 import '../../models/character/start_scenario.dart';
+import '../../models/character/cover_image.dart';
 
 class CharacterEditScreen extends StatefulWidget {
   final String? characterId;
@@ -41,11 +44,17 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   // 시작설정 관련 상태
   final List<StartScenario> _startScenarios = [];
 
+  // 표지 관련 상태
+  final List<CoverImage> _coverImages = [];
+  final ImagePicker _imagePicker = ImagePicker();
+  String? _selectedCoverImageId;
+
   // 편집 중인 항목 추적
   String? _editingFolderId;
   String? _editingLorebookId;
   String? _editingPersonaId;
   String? _editingStartScenarioId;
+  String? _editingCoverImageId;
   final Map<String, TextEditingController> _editControllers = {};
 
   bool get _isEditMode => widget.characterId != null;
@@ -53,7 +62,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 5, vsync: this);
+    _tabController = TabController(length: 6, vsync: this);
   }
 
   @override
@@ -152,6 +161,12 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
                   child: Center(child: Text('시작설정')),
                 ),
               ),
+              Tab(
+                child: SizedBox(
+                  width: UIConstants.tabWidth,
+                  child: Center(child: Text('표지')),
+                ),
+              ),
             ],
           ),
         ),
@@ -164,6 +179,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           _buildLorebookTab(),
           _buildPersonaTab(),
           _buildStartScenarioTab(),
+          _buildCoverTab(),
         ],
       ),
     );
@@ -467,6 +483,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         name: '새 로어북',
         order: folder != null ? folder.lorebooks.length : _standaloneLorebooks.length,
+        isExpanded: true,
       );
 
       if (folder != null) {
@@ -1129,6 +1146,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         name: '새 페르소나',
         order: _personas.length,
+        isExpanded: true,
       );
       _personas.add(newPersona);
     });
@@ -1385,6 +1403,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         name: '새 시작설정',
         order: _startScenarios.length,
+        isExpanded: true,
       );
       _startScenarios.add(newScenario);
     });
@@ -1630,6 +1649,266 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           },
         ),
       ],
+    );
+  }
+
+  Widget _buildCoverTab() {
+    return Padding(
+      padding: const EdgeInsets.all(UIConstants.spacing20),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Text(
+                  '표지',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                GestureDetector(
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        content: const Text('캐릭터의 표지 이미지를 추가할 수 있습니다.'),
+                        actions: [
+                          TextButton(
+                            onPressed: () => Navigator.pop(context),
+                            child: const Text('확인'),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                  child: Icon(
+                    Icons.help_outline,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 8),
+          Expanded(
+            child: _coverImages.isEmpty
+                ? const Center(
+                    child: Text('표지 이미지가 없습니다'),
+                  )
+                : ListView.builder(
+                    itemCount: _coverImages.length,
+                    itemBuilder: (context, index) {
+                      return _buildCoverImageItem(_coverImages[index]);
+                    },
+                  ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: _addCoverImage,
+              icon: const Icon(Icons.add),
+              label: const Text('표지 이미지 추가'),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _addCoverImage() async {
+    final XFile? image = await _imagePicker.pickImage(
+      source: ImageSource.gallery,
+    );
+
+    if (image != null) {
+      setState(() {
+        final newCoverImage = CoverImage(
+          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          name: '표지 ${_coverImages.length + 1}',
+          order: _coverImages.length,
+          imagePath: image.path,
+          isExpanded: true,
+        );
+        _coverImages.add(newCoverImage);
+
+        // 첫 번째 표지를 자동으로 선택
+        if (_coverImages.length == 1) {
+          _selectedCoverImageId = newCoverImage.id;
+        }
+      });
+    }
+  }
+
+  void _deleteCoverImage(CoverImage coverImage) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('표지 이미지 삭제'),
+        content: Text('${coverImage.name}을(를) 삭제하시겠습니까?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () {
+              setState(() {
+                _coverImages.remove(coverImage);
+
+                // 선택된 표지를 삭제한 경우
+                if (_selectedCoverImageId == coverImage.id) {
+                  // 첫 번째 표지를 선택하거나, 없으면 null
+                  _selectedCoverImageId = _coverImages.isNotEmpty ? _coverImages.first.id : null;
+                }
+              });
+              Navigator.pop(context);
+            },
+            child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _toggleCoverImageEdit(CoverImage coverImage) {
+    setState(() {
+      if (_editingCoverImageId == coverImage.id) {
+        // 편집 완료
+        final controller = _editControllers[coverImage.id];
+        if (controller != null && controller.text.isNotEmpty) {
+          coverImage.name = controller.text;
+        }
+        _editingCoverImageId = null;
+        _editControllers.remove(coverImage.id)?.dispose();
+      } else {
+        // 편집 시작
+        _editingCoverImageId = coverImage.id;
+        _editControllers[coverImage.id] = TextEditingController(text: coverImage.name);
+      }
+    });
+  }
+
+  void _saveCoverImageName(CoverImage coverImage, String value) {
+    setState(() {
+      if (value.isNotEmpty) {
+        coverImage.name = value;
+      }
+      _editingCoverImageId = null;
+      _editControllers.remove(coverImage.id)?.dispose();
+    });
+  }
+
+  Widget _buildCoverImageItem(CoverImage coverImage) {
+    return Container(
+      key: ValueKey(coverImage.id),
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+        ),
+      ),
+      child: Column(
+        children: [
+          InkWell(
+            onTap: () {
+              setState(() {
+                coverImage.isExpanded = !coverImage.isExpanded;
+              });
+            },
+            overlayColor: WidgetStateProperty.all(Colors.transparent),
+            borderRadius: BorderRadius.circular(10),
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: _lorebookItemHorizontalPadding,
+                vertical: _lorebookItemVerticalPadding,
+              ),
+              child: Row(
+                children: [
+                  Radio<String>(
+                    value: coverImage.id,
+                    groupValue: _selectedCoverImageId,
+                    onChanged: (String? value) {
+                      setState(() {
+                        _selectedCoverImageId = value;
+                      });
+                    },
+                    visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: _editingCoverImageId == coverImage.id
+                        ? TextField(
+                            controller: _editControllers[coverImage.id],
+                            style: Theme.of(context).textTheme.bodyMedium,
+                            decoration: const InputDecoration(
+                              border: InputBorder.none,
+                              isDense: true,
+                              contentPadding: EdgeInsets.zero,
+                            ),
+                            autofocus: true,
+                            onSubmitted: (value) => _saveCoverImageName(coverImage, value),
+                          )
+                        : Text(
+                            coverImage.name,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                  ),
+                  GestureDetector(
+                    onTap: () => _toggleCoverImageEdit(coverImage),
+                    child: Icon(
+                      _editingCoverImageId == coverImage.id ? Icons.check : Icons.edit_outlined,
+                      size: 18,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  GestureDetector(
+                    onTap: () => _deleteCoverImage(coverImage),
+                    child: const Icon(Icons.delete_outline, size: 18),
+                  ),
+                  const SizedBox(width: 12),
+                  Icon(
+                    coverImage.isExpanded ? Icons.expand_less : Icons.expand_more,
+                    size: 20,
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (coverImage.isExpanded && coverImage.imagePath != null) ...[
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: Image.file(
+                  File(coverImage.imagePath!),
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      height: 200,
+                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                      child: const Center(
+                        child: Icon(Icons.error_outline),
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ),
+          ],
+        ],
+      ),
     );
   }
 }
