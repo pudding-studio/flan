@@ -8,9 +8,10 @@ lib/
 ├── constants/          # 상수 정의
 │   └── ui_constants.dart
 ├── models/             # 데이터 모델
-│   ├── lorebook_folder.dart
-│   ├── persona.dart
-│   └── start_scenario.dart
+│   └── character/
+│       ├── lorebook_folder.dart
+│       ├── persona.dart
+│       └── start_scenario.dart
 ├── screens/            # 화면 (Screen)
 │   ├── chat/
 │   │   └── chat_screen.dart
@@ -61,9 +62,12 @@ lib/
   - `lorebook_item.dart` (로어북 아이템 위젯)
 
 ### 2. Model 파일
-- **위치**: `lib/models/`
+- **위치**: `lib/models/{기능명}/`
 - **명명 규칙**: `{모델명}_snake_case.dart`
-- **예시**: `lorebook_folder.dart`, `persona.dart`
+- **예시**:
+  - `lib/models/character/lorebook_folder.dart`
+  - `lib/models/character/persona.dart`
+  - `lib/models/chat/chat_message.dart`
 
 ### 3. Widget 파일 (공통)
 - **위치**: `lib/widgets/`
@@ -112,7 +116,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 // 4. 프로젝트 내부 파일 (상대 경로)
-import '../models/lorebook_folder.dart';
+import '../models/character/lorebook_folder.dart';
 import '../widgets/custom_text_field.dart';
 import '../constants/ui_constants.dart';
 ```

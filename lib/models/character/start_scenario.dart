@@ -3,14 +3,16 @@ class StartScenario {
   String name;
   int order;
   bool isExpanded;
-  String? content;
+  String? startSetting;
+  String? startMessage;
 
   StartScenario({
     required this.id,
     required this.name,
     required this.order,
     this.isExpanded = false,
-    this.content,
+    this.startSetting,
+    this.startMessage,
   });
 
   StartScenario copyWith({
@@ -18,14 +20,16 @@ class StartScenario {
     String? name,
     int? order,
     bool? isExpanded,
-    String? content,
+    String? startSetting,
+    String? startMessage,
   }) {
     return StartScenario(
       id: id ?? this.id,
       name: name ?? this.name,
       order: order ?? this.order,
       isExpanded: isExpanded ?? this.isExpanded,
-      content: content ?? this.content,
+      startSetting: startSetting ?? this.startSetting,
+      startMessage: startMessage ?? this.startMessage,
     );
   }
 
@@ -35,7 +39,8 @@ class StartScenario {
       'name': name,
       'order': order,
       'isExpanded': isExpanded,
-      'content': content,
+      'startSetting': startSetting,
+      'startMessage': startMessage,
     };
   }
 
@@ -45,7 +50,8 @@ class StartScenario {
       name: json['name'] as String,
       order: json['order'] as int,
       isExpanded: json['isExpanded'] as bool? ?? false,
-      content: json['content'] as String?,
+      startSetting: json['startSetting'] as String?,
+      startMessage: json['startMessage'] as String?,
     );
   }
 }
