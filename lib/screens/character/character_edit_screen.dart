@@ -228,32 +228,56 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   }
 
   Future<void> _saveSubData(int characterId) async {
-    // 기존 하위 데이터 삭제 (단순화를 위해 - 실제로는 업데이트 로직 필요)
-    if (_isEditMode) {
-      // TODO: 개별 업데이트/삭제 로직으로 개선 필요
-    }
+    print('=== _saveSubData 시작 ===');
+    print('characterId: $characterId');
+    print('_isEditMode: $_isEditMode');
+    print('_folders.length: ${_folders.length}');
 
     // 로어북 폴더 및 로어북 저장
     for (var folder in _folders) {
+      print('--- 폴더 처리 시작 ---');
+      print('folder.id: ${folder.id}');
+      print('folder.characterId: ${folder.characterId}');
+      print('folder.name: ${folder.name}');
+
       int folderId;
 
       if (folder.id == null || folder.id! < 0) {
+        print('분기: 새 폴더 생성 (id null or < 0)');
         // 새 폴더 생성
         folderId = await _db.createLorebookFolder(folder.copyWith(
           id: null,
           characterId: characterId,
         ));
+        print('생성된 folderId: $folderId');
+      } else if (!_isEditMode || folder.characterId != characterId) {
+        print('분기: 새 캐릭터로 복사 (!_isEditMode || folder.characterId != characterId)');
+        // 새 캐릭터로 복사하는 경우 새로 생성
+        folderId = await _db.createLorebookFolder(folder.copyWith(
+          id: null,
+          characterId: characterId,
+        ));
+        print('생성된 folderId: $folderId');
       } else {
-        // 기존 폴더 업데이트
+        print('분기: 기존 폴더 업데이트');
+        // 기존 폴더 업데이트 (같은 캐릭터, 기존 ID)
         await _db.updateLorebookFolder(folder.copyWith(
           characterId: characterId,
         ));
         folderId = folder.id!;
+        print('업데이트된 folderId: $folderId');
       }
 
       // 폴더 내 로어북 저장
       for (var lorebook in folder.lorebooks) {
         if (lorebook.id == null || lorebook.id! < 0) {
+          await _db.createLorebook(lorebook.copyWith(
+            id: null,
+            characterId: characterId,
+            folderId: folderId,
+          ));
+        } else if (!_isEditMode || lorebook.characterId != characterId) {
+          // 새 캐릭터로 복사하는 경우 새로 생성
           await _db.createLorebook(lorebook.copyWith(
             id: null,
             characterId: characterId,
@@ -276,6 +300,12 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           characterId: characterId,
           folderId: null,
         ));
+      } else if (!_isEditMode || lorebook.characterId != characterId) {
+        await _db.createLorebook(lorebook.copyWith(
+          id: null,
+          characterId: characterId,
+          folderId: null,
+        ));
       } else {
         await _db.updateLorebook(lorebook.copyWith(
           characterId: characterId,
@@ -286,6 +316,11 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     // 페르소나 저장
     for (var persona in _personas) {
       if (persona.id == null || persona.id! < 0) {
+        await _db.createPersona(persona.copyWith(
+          id: null,
+          characterId: characterId,
+        ));
+      } else if (!_isEditMode || persona.characterId != characterId) {
         await _db.createPersona(persona.copyWith(
           id: null,
           characterId: characterId,
@@ -304,6 +339,11 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           id: null,
           characterId: characterId,
         ));
+      } else if (!_isEditMode || scenario.characterId != characterId) {
+        await _db.createStartScenario(scenario.copyWith(
+          id: null,
+          characterId: characterId,
+        ));
       } else {
         await _db.updateStartScenario(scenario.copyWith(
           characterId: characterId,
@@ -314,6 +354,11 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     // 표지 이미지 저장
     for (var coverImage in _coverImages) {
       if (coverImage.id == null || coverImage.id! < 0) {
+        await _db.createCoverImage(coverImage.copyWith(
+          id: null,
+          characterId: characterId,
+        ));
+      } else if (!_isEditMode || coverImage.characterId != characterId) {
         await _db.createCoverImage(coverImage.copyWith(
           id: null,
           characterId: characterId,

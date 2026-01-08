@@ -153,7 +153,9 @@ class DatabaseHelper {
 
   Future<int> createCharacter(Character character) async {
     final db = await database;
-    return await db.insert('characters', character.toMap());
+    final map = character.toMap();
+    map.remove('id'); // id는 자동 생성되므로 제거
+    return await db.insert('characters', map);
   }
 
   Future<Character?> readCharacter(int id) async {
@@ -211,7 +213,9 @@ class DatabaseHelper {
 
   Future<int> createLorebookFolder(LorebookFolder folder) async {
     final db = await database;
-    return await db.insert('lorebook_folders', folder.toMap());
+    final map = folder.toMap();
+    map.remove('id'); // id는 자동 생성되므로 제거
+    return await db.insert('lorebook_folders', map);
   }
 
   Future<List<LorebookFolder>> readLorebookFolders(int characterId) async {
@@ -248,7 +252,9 @@ class DatabaseHelper {
 
   Future<int> createLorebook(Lorebook lorebook) async {
     final db = await database;
-    return await db.insert('lorebooks', lorebook.toMap());
+    final map = lorebook.toMap();
+    map.remove('id'); // id는 자동 생성되므로 제거
+    return await db.insert('lorebooks', map);
   }
 
   Future<List<Lorebook>> readLorebooks(int characterId) async {
@@ -307,7 +313,9 @@ class DatabaseHelper {
 
   Future<int> createPersona(Persona persona) async {
     final db = await database;
-    return await db.insert('personas', persona.toMap());
+    final map = persona.toMap();
+    map.remove('id'); // id는 자동 생성되므로 제거
+    return await db.insert('personas', map);
   }
 
   Future<List<Persona>> readPersonas(int characterId) async {
@@ -344,7 +352,9 @@ class DatabaseHelper {
 
   Future<int> createStartScenario(StartScenario scenario) async {
     final db = await database;
-    return await db.insert('start_scenarios', scenario.toMap());
+    final map = scenario.toMap();
+    map.remove('id'); // id는 자동 생성되므로 제거
+    return await db.insert('start_scenarios', map);
   }
 
   Future<List<StartScenario>> readStartScenarios(int characterId) async {
@@ -381,7 +391,9 @@ class DatabaseHelper {
 
   Future<int> createCoverImage(CoverImage coverImage) async {
     final db = await database;
-    return await db.insert('cover_images', coverImage.toMap());
+    final map = coverImage.toMap();
+    map.remove('id'); // id는 자동 생성되므로 제거
+    return await db.insert('cover_images', map);
   }
 
   Future<List<CoverImage>> readCoverImages(int characterId) async {
