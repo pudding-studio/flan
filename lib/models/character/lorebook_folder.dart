@@ -1,20 +1,45 @@
 class LorebookFolder {
-  final String id;
+  final int? id; // autoincrement primary key
+  final int characterId; // foreign key to character
   String name;
   int order;
   bool isExpanded;
   List<Lorebook> lorebooks;
 
   LorebookFolder({
-    required this.id,
+    this.id,
+    required this.characterId,
     required this.name,
     required this.order,
     this.isExpanded = true,
     List<Lorebook>? lorebooks,
   }) : lorebooks = lorebooks ?? [];
 
+  // DB에서 읽어올 때 사용
+  factory LorebookFolder.fromMap(Map<String, dynamic> map) {
+    return LorebookFolder(
+      id: map['id'] as int?,
+      characterId: map['character_id'] as int,
+      name: map['name'] as String,
+      order: map['order'] as int,
+      isExpanded: (map['is_expanded'] as int?) == 1,
+    );
+  }
+
+  // DB에 저장할 때 사용
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'character_id': characterId,
+      'name': name,
+      'order': order,
+      'is_expanded': isExpanded ? 1 : 0,
+    };
+  }
+
   LorebookFolder copyWith({
-    String? id,
+    int? id,
+    int? characterId,
     String? name,
     int? order,
     bool? isExpanded,
@@ -22,6 +47,7 @@ class LorebookFolder {
   }) {
     return LorebookFolder(
       id: id ?? this.id,
+      characterId: characterId ?? this.characterId,
       name: name ?? this.name,
       order: order ?? this.order,
       isExpanded: isExpanded ?? this.isExpanded,
@@ -32,6 +58,7 @@ class LorebookFolder {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'characterId': characterId,
       'name': name,
       'order': order,
       'isExpanded': isExpanded,
@@ -41,7 +68,8 @@ class LorebookFolder {
 
   factory LorebookFolder.fromJson(Map<String, dynamic> json) {
     return LorebookFolder(
-      id: json['id'] as String,
+      id: json['id'] as int?,
+      characterId: json['characterId'] as int,
       name: json['name'] as String,
       order: json['order'] as int,
       isExpanded: json['isExpanded'] as bool? ?? true,
@@ -85,7 +113,9 @@ enum LorebookKeyCondition {
 }
 
 class Lorebook {
-  final String id;
+  final int? id; // autoincrement primary key
+  final int characterId; // foreign key to character
+  final int? folderId; // foreign key to folder (nullable - standalone lorebooks)
   String name;
   int order;
   bool isExpanded;
@@ -96,7 +126,9 @@ class Lorebook {
   String? content;
 
   Lorebook({
-    required this.id,
+    this.id,
+    required this.characterId,
+    this.folderId,
     required this.name,
     required this.order,
     this.isExpanded = false,
@@ -107,8 +139,50 @@ class Lorebook {
     this.content,
   }) : activationKeys = activationKeys ?? [];
 
+  // DB에서 읽어올 때 사용
+  factory Lorebook.fromMap(Map<String, dynamic> map) {
+    return Lorebook(
+      id: map['id'] as int?,
+      characterId: map['character_id'] as int,
+      folderId: map['folder_id'] as int?,
+      name: map['name'] as String,
+      order: map['order'] as int,
+      isExpanded: (map['is_expanded'] as int?) == 1,
+      activationCondition: LorebookActivationCondition.values.firstWhere(
+        (e) => e.name == (map['activation_condition'] as String),
+        orElse: () => LorebookActivationCondition.disabled,
+      ),
+      activationKeys: (map['activation_keys'] as String?)?.split(',') ?? [],
+      keyCondition: LorebookKeyCondition.values.firstWhere(
+        (e) => e.name == (map['key_condition'] as String),
+        orElse: () => LorebookKeyCondition.and,
+      ),
+      deploymentOrder: map['deployment_order'] as int? ?? 0,
+      content: map['content'] as String?,
+    );
+  }
+
+  // DB에 저장할 때 사용
+  Map<String, dynamic> toMap() {
+    return {
+      'id': id,
+      'character_id': characterId,
+      'folder_id': folderId,
+      'name': name,
+      'order': order,
+      'is_expanded': isExpanded ? 1 : 0,
+      'activation_condition': activationCondition.name,
+      'activation_keys': activationKeys.join(','),
+      'key_condition': keyCondition.name,
+      'deployment_order': deploymentOrder,
+      'content': content,
+    };
+  }
+
   Lorebook copyWith({
-    String? id,
+    int? id,
+    int? characterId,
+    int? folderId,
     String? name,
     int? order,
     bool? isExpanded,
@@ -120,6 +194,8 @@ class Lorebook {
   }) {
     return Lorebook(
       id: id ?? this.id,
+      characterId: characterId ?? this.characterId,
+      folderId: folderId ?? this.folderId,
       name: name ?? this.name,
       order: order ?? this.order,
       isExpanded: isExpanded ?? this.isExpanded,
@@ -134,6 +210,8 @@ class Lorebook {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'characterId': characterId,
+      'folderId': folderId,
       'name': name,
       'order': order,
       'isExpanded': isExpanded,
@@ -147,7 +225,9 @@ class Lorebook {
 
   factory Lorebook.fromJson(Map<String, dynamic> json) {
     return Lorebook(
-      id: json['id'] as String,
+      id: json['id'] as int?,
+      characterId: json['characterId'] as int,
+      folderId: json['folderId'] as int?,
       name: json['name'] as String,
       order: json['order'] as int,
       isExpanded: json['isExpanded'] as bool? ?? false,
