@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/theme_provider.dart';
 import 'character_edit_screen.dart';
 import 'widgets/character_card.dart';
 import 'widgets/character_list_item.dart';
@@ -48,18 +50,44 @@ class _CharacterScreenState extends State<CharacterScreen> {
               constraints: const BoxConstraints(),
             ),
           ),
-          Transform.translate(
-            offset: const Offset(4, 0),
-            child: IconButton(
-              icon: const Icon(Icons.dark_mode_outlined),
-              onPressed: () {
-                // TODO: 다크모드 전환 기능 구현
-              },
-              tooltip: '다크모드 전환',
-              padding: EdgeInsets.zero,
-              visualDensity: VisualDensity.compact,
-              constraints: const BoxConstraints(),
-            ),
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, child) {
+              IconData iconData;
+              String tooltipText;
+              ThemeMode nextMode;
+
+              switch (themeProvider.themeMode) {
+                case ThemeMode.light:
+                  iconData = Icons.light_mode_outlined;
+                  tooltipText = '다크 모드로 전환';
+                  nextMode = ThemeMode.dark;
+                  break;
+                case ThemeMode.dark:
+                  iconData = Icons.dark_mode_outlined;
+                  tooltipText = '시스템 설정으로 전환';
+                  nextMode = ThemeMode.system;
+                  break;
+                case ThemeMode.system:
+                  iconData = Icons.brightness_auto_outlined;
+                  tooltipText = '라이트 모드로 전환';
+                  nextMode = ThemeMode.light;
+                  break;
+              }
+
+              return Transform.translate(
+                offset: const Offset(4, 0),
+                child: IconButton(
+                  icon: Icon(iconData),
+                  onPressed: () {
+                    themeProvider.setThemeMode(nextMode);
+                  },
+                  tooltip: tooltipText,
+                  padding: EdgeInsets.zero,
+                  visualDensity: VisualDensity.compact,
+                  constraints: const BoxConstraints(),
+                ),
+              );
+            },
           ),
           IconButton(
             icon: const CircleAvatar(

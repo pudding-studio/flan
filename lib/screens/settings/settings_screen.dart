@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/theme_provider.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -10,7 +12,6 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _notificationsEnabled = true;
   bool _soundEnabled = true;
-  String _themeMode = 'system';
   String _language = 'ko';
 
   @override
@@ -42,25 +43,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
             ),
           ),
-          _buildListTile(
-            icon: Icons.brightness_6,
-            title: '테마',
-            trailing: DropdownButton<String>(
-              value: _themeMode,
-              underline: const SizedBox(),
-              items: const [
-                DropdownMenuItem(value: 'system', child: Text('시스템 설정')),
-                DropdownMenuItem(value: 'light', child: Text('라이트 모드')),
-                DropdownMenuItem(value: 'dark', child: Text('다크 모드')),
-              ],
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() {
-                    _themeMode = value;
-                  });
-                }
-              },
-            ),
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, child) {
+              String themeModeValue;
+              switch (themeProvider.themeMode) {
+                case ThemeMode.light:
+                  themeModeValue = 'light';
+                  break;
+                case ThemeMode.dark:
+                  themeModeValue = 'dark';
+                  break;
+                case ThemeMode.system:
+                  themeModeValue = 'system';
+                  break;
+              }
+
+              return _buildListTile(
+                icon: Icons.brightness_6,
+                title: '테마',
+                trailing: DropdownButton<String>(
+                  value: themeModeValue,
+                  underline: const SizedBox(),
+                  items: const [
+                    DropdownMenuItem(value: 'system', child: Text('시스템 설정')),
+                    DropdownMenuItem(value: 'light', child: Text('라이트 모드')),
+                    DropdownMenuItem(value: 'dark', child: Text('다크 모드')),
+                  ],
+                  onChanged: (value) {
+                    if (value != null) {
+                      ThemeMode newMode;
+                      switch (value) {
+                        case 'light':
+                          newMode = ThemeMode.light;
+                          break;
+                        case 'dark':
+                          newMode = ThemeMode.dark;
+                          break;
+                        case 'system':
+                        default:
+                          newMode = ThemeMode.system;
+                          break;
+                      }
+                      themeProvider.setThemeMode(newMode);
+                    }
+                  },
+                ),
+              );
+            },
           ),
           const Divider(),
           _buildSectionHeader('알림'),
