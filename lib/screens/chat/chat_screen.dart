@@ -40,12 +40,18 @@ class ChatScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('채팅'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: () {
-              // TODO: 새 채팅 시작
-            },
-            tooltip: '새 채팅',
+          Transform.translate(
+            offset: const Offset(8, 0),
+            child: IconButton(
+              icon: const Icon(Icons.edit_outlined),
+              onPressed: () {
+                // TODO: 새 채팅 시작
+              },
+              tooltip: '새 채팅',
+              padding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints(),
+            ),
           ),
           IconButton(
             icon: const Icon(Icons.more_vert),
@@ -53,7 +59,11 @@ class ChatScreen extends StatelessWidget {
               // TODO: 더보기 메뉴 표시
             },
             tooltip: '더보기',
+            padding: EdgeInsets.zero,
+            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints(),
           ),
+          const SizedBox(width: 16),
         ],
       ),
       body: ListView.separated(

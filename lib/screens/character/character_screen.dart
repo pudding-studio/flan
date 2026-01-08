@@ -33,35 +33,48 @@ class _CharacterScreenState extends State<CharacterScreen> {
       appBar: AppBar(
         title: const Text('캐릭터'),
         actions: [
-          IconButton(
-            icon: Icon(_isGridView ? Icons.grid_view : Icons.view_list),
-            onPressed: () {
-              setState(() {
-                _isGridView = !_isGridView;
-              });
-            },
-            tooltip: _isGridView ? '리스트뷰로 전환' : '격자뷰로 전환',
-          ),
-          IconButton(
-            icon: const Icon(Icons.dark_mode_outlined),
-            onPressed: () {
-              // TODO: 다크모드 전환 기능 구현
-            },
-            tooltip: '다크모드 전환',
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 8.0),
+          Transform.translate(
+            offset: const Offset(14, 0),
             child: IconButton(
-              icon: const CircleAvatar(
-                radius: 16,
-                child: Icon(Icons.person, size: 20),
-              ),
+              icon: Icon(_isGridView ? Icons.grid_view : Icons.view_list),
               onPressed: () {
-                // TODO: 프로필 페이지로 이동
+                setState(() {
+                  _isGridView = !_isGridView;
+                });
               },
-              tooltip: '프로필',
+              tooltip: _isGridView ? '리스트뷰로 전환' : '격자뷰로 전환',
+              padding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints(),
             ),
           ),
+          Transform.translate(
+            offset: const Offset(4, 0),
+            child: IconButton(
+              icon: const Icon(Icons.dark_mode_outlined),
+              onPressed: () {
+                // TODO: 다크모드 전환 기능 구현
+              },
+              tooltip: '다크모드 전환',
+              padding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints(),
+            ),
+          ),
+          IconButton(
+            icon: const CircleAvatar(
+              radius: 16,
+              child: Icon(Icons.person, size: 20),
+            ),
+            onPressed: () {
+              // TODO: 프로필 페이지로 이동
+            },
+            tooltip: '프로필',
+            padding: EdgeInsets.zero,
+            visualDensity: VisualDensity.compact,
+            constraints: const BoxConstraints(),
+          ),
+          const SizedBox(width: 16),
         ],
       ),
       body: Column(
