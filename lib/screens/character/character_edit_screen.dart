@@ -233,6 +233,74 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     print('_isEditMode: $_isEditMode');
     print('_folders.length: ${_folders.length}');
 
+    // Edit 모드일 때: DB에 있지만 메모리에 없는 항목들 삭제
+    if (_isEditMode) {
+      // 로어북 폴더 삭제 처리
+      final existingFolders = await _db.readLorebookFolders(characterId);
+      final currentFolderIds = _folders
+          .where((f) => f.id != null && f.id! > 0)
+          .map((f) => f.id!)
+          .toSet();
+      for (var existingFolder in existingFolders) {
+        if (!currentFolderIds.contains(existingFolder.id)) {
+          await _db.deleteLorebookFolder(existingFolder.id!);
+          print('폴더 삭제: ${existingFolder.id}');
+        }
+      }
+
+      // 독립형 로어북 삭제 처리
+      final existingStandaloneLorebooks = await _db.readStandaloneLorebooks(characterId);
+      final currentStandaloneLbIds = _standaloneLorebooks
+          .where((lb) => lb.id != null && lb.id! > 0)
+          .map((lb) => lb.id!)
+          .toSet();
+      for (var existingLb in existingStandaloneLorebooks) {
+        if (!currentStandaloneLbIds.contains(existingLb.id)) {
+          await _db.deleteLorebook(existingLb.id!);
+          print('독립형 로어북 삭제: ${existingLb.id}');
+        }
+      }
+
+      // 페르소나 삭제 처리
+      final existingPersonas = await _db.readPersonas(characterId);
+      final currentPersonaIds = _personas
+          .where((p) => p.id != null && p.id! > 0)
+          .map((p) => p.id!)
+          .toSet();
+      for (var existingPersona in existingPersonas) {
+        if (!currentPersonaIds.contains(existingPersona.id)) {
+          await _db.deletePersona(existingPersona.id!);
+          print('페르소나 삭제: ${existingPersona.id}');
+        }
+      }
+
+      // 시작설정 삭제 처리
+      final existingScenarios = await _db.readStartScenarios(characterId);
+      final currentScenarioIds = _startScenarios
+          .where((s) => s.id != null && s.id! > 0)
+          .map((s) => s.id!)
+          .toSet();
+      for (var existingScenario in existingScenarios) {
+        if (!currentScenarioIds.contains(existingScenario.id)) {
+          await _db.deleteStartScenario(existingScenario.id!);
+          print('시작설정 삭제: ${existingScenario.id}');
+        }
+      }
+
+      // 표지 이미지 삭제 처리
+      final existingCoverImages = await _db.readCoverImages(characterId);
+      final currentCoverImageIds = _coverImages
+          .where((c) => c.id != null && c.id! > 0)
+          .map((c) => c.id!)
+          .toSet();
+      for (var existingCover in existingCoverImages) {
+        if (!currentCoverImageIds.contains(existingCover.id)) {
+          await _db.deleteCoverImage(existingCover.id!);
+          print('표지 이미지 삭제: ${existingCover.id}');
+        }
+      }
+    }
+
     // 로어북 폴더 및 로어북 저장
     for (var folder in _folders) {
       print('--- 폴더 처리 시작 ---');
@@ -266,6 +334,21 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         ));
         folderId = folder.id!;
         print('업데이트된 folderId: $folderId');
+      }
+
+      // 폴더 내 로어북 삭제 처리 (Edit 모드이고 기존 폴더인 경우)
+      if (_isEditMode && folder.id != null && folder.id! > 0) {
+        final existingLorebooks = await _db.readLorebooksByFolder(folderId);
+        final currentLbIds = folder.lorebooks
+            .where((lb) => lb.id != null && lb.id! > 0)
+            .map((lb) => lb.id!)
+            .toSet();
+        for (var existingLb in existingLorebooks) {
+          if (!currentLbIds.contains(existingLb.id)) {
+            await _db.deleteLorebook(existingLb.id!);
+            print('폴더 내 로어북 삭제: ${existingLb.id}');
+          }
+        }
       }
 
       // 폴더 내 로어북 저장
