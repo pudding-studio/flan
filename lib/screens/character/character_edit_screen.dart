@@ -3,10 +3,12 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import '../../widgets/custom_text_field.dart';
 import '../../constants/ui_constants.dart';
+import '../../models/character/character.dart';
 import '../../models/character/lorebook_folder.dart';
 import '../../models/character/persona.dart';
 import '../../models/character/start_scenario.dart';
 import '../../models/character/cover_image.dart';
+import '../../database/database_helper.dart';
 
 class CharacterEditScreen extends StatefulWidget {
   final int? characterId;
@@ -64,12 +66,73 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   int? _editingCoverImageId;
   final Map<int, TextEditingController> _editControllers = {};
 
+  // 데이터베이스
+  final DatabaseHelper _db = DatabaseHelper.instance;
+  bool _isLoading = false;
+
   bool get _isEditMode => widget.characterId != null;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 6, vsync: this);
+    if (_isEditMode) {
+      _loadCharacterData();
+    }
+  }
+
+  Future<void> _loadCharacterData() async {
+    if (widget.characterId == null) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      // 캐릭터 기본 정보 로드
+      final character = await _db.readCharacter(widget.characterId!);
+      if (character != null) {
+        _nameController.text = character.name;
+        _summaryController.text = character.summary ?? '';
+        _keywordsController.text = character.keywords ?? '';
+        _worldSettingController.text = character.worldSetting ?? '';
+        if (character.selectedCoverImageId != null) {
+          _selectedCoverImageId = int.tryParse(character.selectedCoverImageId!);
+        }
+      }
+
+      // 로어북 폴더 및 로어북 로드
+      final folders = await _db.readLorebookFolders(widget.characterId!);
+      for (var folder in folders) {
+        final lorebooks = await _db.readLorebooksByFolder(folder.id!);
+        folder.lorebooks.addAll(lorebooks);
+      }
+      _folders.addAll(folders);
+
+      // 독립형 로어북 로드
+      final standaloneLorebooks = await _db.readStandaloneLorebooks(widget.characterId!);
+      _standaloneLorebooks.addAll(standaloneLorebooks);
+
+      // 페르소나 로드
+      final personas = await _db.readPersonas(widget.characterId!);
+      _personas.addAll(personas);
+
+      // 시작설정 로드
+      final scenarios = await _db.readStartScenarios(widget.characterId!);
+      _startScenarios.addAll(scenarios);
+
+      // 표지 이미지 로드
+      final coverImages = await _db.readCoverImages(widget.characterId!);
+      _coverImages.addAll(coverImages);
+
+      setState(() {});
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('데이터 로드 실패: $e')),
+        );
+      }
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   @override
@@ -85,27 +148,179 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     super.dispose();
   }
 
-  void _handleSaveDraft() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('임시저장되었습니다')),
-    );
+  Future<void> _handleSaveDraft() async {
+    await _saveCharacter(isDraft: true);
   }
 
-  void _handleComplete() {
+  Future<void> _handleComplete() async {
     if (_formKey.currentState?.validate() ?? false) {
+      await _saveCharacter(isDraft: false);
+    }
+  }
+
+  Future<void> _saveCharacter({required bool isDraft}) async {
+    if (_nameController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(_isEditMode ? '캐릭터가 수정되었습니다' : '캐릭터가 생성되었습니다'),
-        ),
+        const SnackBar(content: Text('캐릭터 이름을 입력해주세요')),
       );
-      Navigator.pop(context);
+      return;
+    }
+
+    setState(() => _isLoading = true);
+
+    try {
+      int characterId;
+
+      if (_isEditMode) {
+        // 기존 캐릭터 수정
+        characterId = widget.characterId!;
+        final character = Character(
+          id: characterId,
+          name: _nameController.text,
+          summary: _summaryController.text.isEmpty ? null : _summaryController.text,
+          keywords: _keywordsController.text.isEmpty ? null : _keywordsController.text,
+          worldSetting: _worldSettingController.text.isEmpty ? null : _worldSettingController.text,
+          selectedCoverImageId: _selectedCoverImageId?.toString(),
+          updatedAt: DateTime.now(),
+          isDraft: isDraft,
+        );
+        await _db.updateCharacter(character);
+      } else {
+        // 새 캐릭터 생성
+        final character = Character(
+          name: _nameController.text,
+          summary: _summaryController.text.isEmpty ? null : _summaryController.text,
+          keywords: _keywordsController.text.isEmpty ? null : _keywordsController.text,
+          worldSetting: _worldSettingController.text.isEmpty ? null : _worldSettingController.text,
+          selectedCoverImageId: _selectedCoverImageId?.toString(),
+          isDraft: isDraft,
+        );
+        characterId = await _db.createCharacter(character);
+      }
+
+      // 하위 데이터 저장
+      await _saveSubData(characterId);
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              isDraft
+                  ? '임시저장되었습니다'
+                  : (_isEditMode ? '캐릭터가 수정되었습니다' : '캐릭터가 생성되었습니다'),
+            ),
+          ),
+        );
+        Navigator.pop(context, true); // true를 반환하여 목록 새로고침 유도
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('저장 실패: $e')),
+        );
+      }
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _saveSubData(int characterId) async {
+    // 기존 하위 데이터 삭제 (단순화를 위해 - 실제로는 업데이트 로직 필요)
+    if (_isEditMode) {
+      // TODO: 개별 업데이트/삭제 로직으로 개선 필요
+    }
+
+    // 로어북 폴더 및 로어북 저장
+    for (var folder in _folders) {
+      final folderId = folder.id != null && folder.id! < 0
+          ? await _db.createLorebookFolder(folder.copyWith(
+              id: null, // null로 설정하면 DB가 새 ID 생성
+              characterId: characterId,
+            ))
+          : folder.id;
+
+      if (folderId != null) {
+        for (var lorebook in folder.lorebooks) {
+          if (lorebook.id == null || lorebook.id! < 0) {
+            await _db.createLorebook(lorebook.copyWith(
+              id: null,
+              characterId: characterId,
+              folderId: folderId,
+            ));
+          } else {
+            await _db.updateLorebook(lorebook.copyWith(
+              characterId: characterId,
+              folderId: folderId,
+            ));
+          }
+        }
+      }
+    }
+
+    // 독립형 로어북 저장
+    for (var lorebook in _standaloneLorebooks) {
+      if (lorebook.id == null || lorebook.id! < 0) {
+        await _db.createLorebook(lorebook.copyWith(
+          id: null,
+          characterId: characterId,
+          folderId: null,
+        ));
+      } else {
+        await _db.updateLorebook(lorebook.copyWith(
+          characterId: characterId,
+        ));
+      }
+    }
+
+    // 페르소나 저장
+    for (var persona in _personas) {
+      if (persona.id == null || persona.id! < 0) {
+        await _db.createPersona(persona.copyWith(
+          id: null,
+          characterId: characterId,
+        ));
+      } else {
+        await _db.updatePersona(persona.copyWith(
+          characterId: characterId,
+        ));
+      }
+    }
+
+    // 시작설정 저장
+    for (var scenario in _startScenarios) {
+      if (scenario.id == null || scenario.id! < 0) {
+        await _db.createStartScenario(scenario.copyWith(
+          id: null,
+          characterId: characterId,
+        ));
+      } else {
+        await _db.updateStartScenario(scenario.copyWith(
+          characterId: characterId,
+        ));
+      }
+    }
+
+    // 표지 이미지 저장
+    for (var coverImage in _coverImages) {
+      if (coverImage.id == null || coverImage.id! < 0) {
+        await _db.createCoverImage(coverImage.copyWith(
+          id: null,
+          characterId: characterId,
+        ));
+      } else {
+        await _db.updateCoverImage(coverImage.copyWith(
+          characterId: characterId,
+        ));
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
+    return Stack(
+      children: [
+        Scaffold(
+          appBar: AppBar(
         automaticallyImplyLeading: false,
         titleSpacing: 0,
         title: Row(
@@ -213,6 +428,16 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           _buildCoverTab(),
         ],
       ),
+        ),
+        // 로딩 인디케이터
+        if (_isLoading)
+          Container(
+            color: Colors.black54,
+            child: const Center(
+              child: CircularProgressIndicator(),
+            ),
+          ),
+      ],
     );
   }
 
