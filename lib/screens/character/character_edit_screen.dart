@@ -151,9 +151,14 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   }
 
   Future<void> _handleComplete() async {
-    if (_formKey.currentState?.validate() ?? false) {
-      await _saveCharacter(isDraft: false);
+    // 이름만 필수로 체크 (Form이 프로필 탭에만 있으므로)
+    if (_nameController.text.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('캐릭터 이름을 입력해주세요')),
+      );
+      return;
     }
+    await _saveCharacter(isDraft: false);
   }
 
   Future<void> _saveCharacter({required bool isDraft}) async {
@@ -230,27 +235,35 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
 
     // 로어북 폴더 및 로어북 저장
     for (var folder in _folders) {
-      final folderId = folder.id != null && folder.id! < 0
-          ? await _db.createLorebookFolder(folder.copyWith(
-              id: null, // null로 설정하면 DB가 새 ID 생성
-              characterId: characterId,
-            ))
-          : folder.id;
+      int folderId;
 
-      if (folderId != null) {
-        for (var lorebook in folder.lorebooks) {
-          if (lorebook.id == null || lorebook.id! < 0) {
-            await _db.createLorebook(lorebook.copyWith(
-              id: null,
-              characterId: characterId,
-              folderId: folderId,
-            ));
-          } else {
-            await _db.updateLorebook(lorebook.copyWith(
-              characterId: characterId,
-              folderId: folderId,
-            ));
-          }
+      if (folder.id == null || folder.id! < 0) {
+        // 새 폴더 생성
+        folderId = await _db.createLorebookFolder(folder.copyWith(
+          id: null,
+          characterId: characterId,
+        ));
+      } else {
+        // 기존 폴더 업데이트
+        await _db.updateLorebookFolder(folder.copyWith(
+          characterId: characterId,
+        ));
+        folderId = folder.id!;
+      }
+
+      // 폴더 내 로어북 저장
+      for (var lorebook in folder.lorebooks) {
+        if (lorebook.id == null || lorebook.id! < 0) {
+          await _db.createLorebook(lorebook.copyWith(
+            id: null,
+            characterId: characterId,
+            folderId: folderId,
+          ));
+        } else {
+          await _db.updateLorebook(lorebook.copyWith(
+            characterId: characterId,
+            folderId: folderId,
+          ));
         }
       }
     }
