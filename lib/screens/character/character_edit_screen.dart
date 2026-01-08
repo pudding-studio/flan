@@ -99,44 +99,53 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-          padding: EdgeInsets.zero,
-          visualDensity: VisualDensity.compact,
-          constraints: const BoxConstraints(),
-        ),
-        title: Text(_isEditMode ? '캐릭터 수정' : '캐릭터 만들기'),
-        actions: [
-          Transform.translate(
-            offset: const Offset(8, 0),
-            child: IconButton(
-              icon: const Icon(Icons.drafts_outlined),
-              onPressed: _handleSaveDraft,
-              tooltip: '임시저장',
-              padding: EdgeInsets.zero,
+        automaticallyImplyLeading: false,
+        titleSpacing: 0,
+        title: Row(
+          children: [
+            IconButton(
+              icon: const Icon(Icons.arrow_back),
+              onPressed: () => Navigator.pop(context),
+              padding: EdgeInsets.only(left: 16),
               visualDensity: VisualDensity.compact,
               constraints: const BoxConstraints(),
             ),
-          ),
-          TextButton(
-            onPressed: _handleComplete,
-            style: TextButton.styleFrom(
-              padding: EdgeInsets.zero,
-              visualDensity: VisualDensity.compact,
-              minimumSize: Size.zero,
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            ),
-            child: const Text(
-              '완료',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
+
+            const SizedBox(width: 4),
+            Expanded(
+              child: Text(
+                _isEditMode ? '캐릭터 수정' : '캐릭터 만들기',
+                overflow: TextOverflow.ellipsis,
               ),
             ),
-          ),
-          const SizedBox(width: 16),
-        ],
+            IconButton(
+              icon: const Icon(Icons.drafts_outlined),
+              onPressed: _handleSaveDraft,
+              tooltip: '임시저장',
+              padding: EdgeInsets.only(left: 0),
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints(),
+            ),
+            const SizedBox(width: 4),
+            TextButton(
+              onPressed: _handleComplete,
+              style: TextButton.styleFrom(
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+                minimumSize: Size.zero,
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+              child: const Text(
+                '완료',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(width: 16),
+          ],
+        ),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(UIConstants.tabBarHeight),
           child: TabBar(
