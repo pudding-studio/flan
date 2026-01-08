@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import 'tag_chip.dart';
 
 class CharacterCard extends StatelessWidget {
@@ -38,8 +39,16 @@ class CharacterCard extends StatelessWidget {
                   width: cardWidth,
                   height: cardWidth,
                   color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                  child: imageUrl != null
-                      ? Image.network(imageUrl!, fit: BoxFit.cover)
+                  child: imageUrl != null && imageUrl!.isNotEmpty
+                      ? Image.file(
+                          File(imageUrl!),
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            Icons.person,
+                            size: cardWidth * 0.4,
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        )
                       : Icon(
                           Icons.person,
                           size: cardWidth * 0.4,

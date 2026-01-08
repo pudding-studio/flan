@@ -4,7 +4,7 @@ class Character {
   final String? summary;
   final String? keywords;
   final String? worldSetting;
-  final String? selectedCoverImageId;
+  final int? selectedCoverImageId;
   final DateTime createdAt;
   final DateTime updatedAt;
   final bool isDraft; // 임시저장 여부
@@ -30,7 +30,9 @@ class Character {
       summary: map['summary'] as String?,
       keywords: map['keywords'] as String?,
       worldSetting: map['world_setting'] as String?,
-      selectedCoverImageId: map['selected_cover_image_id'] as String?,
+      selectedCoverImageId: map['selected_cover_image_id'] != null
+          ? int.tryParse(map['selected_cover_image_id'].toString())
+          : null,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
       isDraft: (map['is_draft'] as int) == 1,
@@ -45,7 +47,7 @@ class Character {
       'summary': summary,
       'keywords': keywords,
       'world_setting': worldSetting,
-      'selected_cover_image_id': selectedCoverImageId,
+      'selected_cover_image_id': selectedCoverImageId?.toString(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'is_draft': isDraft ? 1 : 0,
@@ -59,7 +61,7 @@ class Character {
     String? summary,
     String? keywords,
     String? worldSetting,
-    String? selectedCoverImageId,
+    int? selectedCoverImageId,
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isDraft,

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'dart:io';
 import '../../providers/theme_provider.dart';
 import '../../database/database_helper.dart';
 import '../../models/character/character.dart';
+import '../../models/character/cover_image.dart';
 import 'character_edit_screen.dart';
 import 'widgets/character_card.dart';
 import 'widgets/character_list_item.dart';
@@ -20,6 +22,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
   String _sortMethod = 'date';
   List<Character> _characters = [];
   bool _isLoading = true;
+  Map<int, String?> _characterCoverImages = {}; // characterId -> imagePath
 
   @override
   void initState() {
@@ -31,8 +34,27 @@ class _CharacterScreenState extends State<CharacterScreen> {
     setState(() => _isLoading = true);
     try {
       final characters = await _db.readAllCharacters();
+
+      // 각 캐릭터의 표지 이미지 로드
+      final coverImages = <int, String?>{};
+      for (var character in characters) {
+        if (character.selectedCoverImageId != null) {
+          final images = await _db.readCoverImages(character.id!);
+          final selectedImage = images.firstWhere(
+            (img) => img.id == character.selectedCoverImageId,
+            orElse: () => images.isNotEmpty ? images.first : CoverImage(
+              characterId: character.id!,
+              name: '',
+              order: 0,
+            ),
+          );
+          coverImages[character.id!] = selectedImage.imagePath;
+        }
+      }
+
       setState(() {
         _characters = characters;
+        _characterCoverImages = coverImages;
         _sortCharacters();
       });
     } catch (e) {
@@ -309,7 +331,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
                         title: _characters[i].name,
                         description: _characters[i].summary ?? '',
                         tags: _characters[i].keywords?.split(',').map((e) => e.trim()).toList() ?? [],
-                        imageUrl: null, // TODO: 표지 이미지 처리
+                        imageUrl: _characterCoverImages[_characters[i].id],
                         onTap: () async {
                           final result = await Navigator.push<bool>(
                             context,
@@ -332,7 +354,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
                           title: _characters[i + 1].name,
                           description: _characters[i + 1].summary ?? '',
                           tags: _characters[i + 1].keywords?.split(',').map((e) => e.trim()).toList() ?? [],
-                          imageUrl: null, // TODO: 표지 이미지 처리
+                          imageUrl: _characterCoverImages[_characters[i + 1].id],
                           onTap: () async {
                             final result = await Navigator.push<bool>(
                               context,
@@ -407,7 +429,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
             title: _characters[index].name,
             description: _characters[index].summary ?? '',
             tags: _characters[index].keywords?.split(',').map((e) => e.trim()).toList() ?? [],
-            imageUrl: null, // TODO: 표지 이미지 처리
+            imageUrl: _characterCoverImages[_characters[index].id],
             onTap: () async {
               final result = await Navigator.push<bool>(
                 context,

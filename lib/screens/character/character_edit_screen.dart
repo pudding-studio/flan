@@ -94,9 +94,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         _summaryController.text = character.summary ?? '';
         _keywordsController.text = character.keywords ?? '';
         _worldSettingController.text = character.worldSetting ?? '';
-        if (character.selectedCoverImageId != null) {
-          _selectedCoverImageId = int.tryParse(character.selectedCoverImageId!);
-        }
+        _selectedCoverImageId = character.selectedCoverImageId;
       }
 
       // 로어북 폴더 및 로어북 로드
@@ -180,7 +178,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           summary: _summaryController.text.isEmpty ? null : _summaryController.text,
           keywords: _keywordsController.text.isEmpty ? null : _keywordsController.text,
           worldSetting: _worldSettingController.text.isEmpty ? null : _worldSettingController.text,
-          selectedCoverImageId: _selectedCoverImageId?.toString(),
+          selectedCoverImageId: _selectedCoverImageId,
           updatedAt: DateTime.now(),
           isDraft: isDraft,
         );
@@ -192,7 +190,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           summary: _summaryController.text.isEmpty ? null : _summaryController.text,
           keywords: _keywordsController.text.isEmpty ? null : _keywordsController.text,
           worldSetting: _worldSettingController.text.isEmpty ? null : _worldSettingController.text,
-          selectedCoverImageId: _selectedCoverImageId?.toString(),
+          selectedCoverImageId: _selectedCoverImageId,
           isDraft: isDraft,
         );
         characterId = await _db.createCharacter(character);

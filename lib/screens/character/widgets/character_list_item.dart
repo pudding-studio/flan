@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import 'tag_chip.dart';
 
 class CharacterListItem extends StatelessWidget {
@@ -36,8 +37,16 @@ class CharacterListItem extends StatelessWidget {
               width: imageSize,
               height: imageSize,
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: imageUrl != null
-                  ? Image.network(imageUrl!, fit: BoxFit.cover)
+              child: imageUrl != null && imageUrl!.isNotEmpty
+                  ? Image.file(
+                      File(imageUrl!),
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) => Icon(
+                        Icons.person,
+                        size: imageSize * 0.4,
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    )
                   : Icon(
                       Icons.person,
                       size: imageSize * 0.4,
