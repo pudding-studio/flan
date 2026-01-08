@@ -80,10 +80,15 @@ class CharacterCard extends StatelessWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 8),
-                    Wrap(
-                      spacing: 4,
-                      runSpacing: 4,
-                      children: tags.map((tag) => TagChip(label: tag)).toList(),
+                    SizedBox(
+                      height: 44, // 2줄 높이: (TagChip 높이 ~20px * 2) + (runSpacing 4px)
+                      child: ClipRect(
+                        child: Wrap(
+                          spacing: 4,
+                          runSpacing: 4,
+                          children: tags.map((tag) => TagChip(label: tag)).toList(),
+                        ),
+                      ),
                     ),
                   ],
                 ),
