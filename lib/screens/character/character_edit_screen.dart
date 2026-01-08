@@ -9,7 +9,7 @@ import '../../models/character/start_scenario.dart';
 import '../../models/character/cover_image.dart';
 
 class CharacterEditScreen extends StatefulWidget {
-  final String? characterId;
+  final int? characterId;
 
   const CharacterEditScreen({
     super.key,
@@ -34,6 +34,13 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   final _keywordsController = TextEditingController();
   final _worldSettingController = TextEditingController();
 
+  // 임시 character ID (아직 DB에 저장되지 않은 경우)
+  int _tempCharacterId = -1;
+
+  // 임시 ID 생성기 (음수 사용)
+  int _nextTempId = -1;
+  int _getNextTempId() => _nextTempId--;
+
   // 로어북 관련 상태
   final List<LorebookFolder> _folders = [];
   final List<Lorebook> _standaloneLorebooks = [];
@@ -47,15 +54,15 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   // 표지 관련 상태
   final List<CoverImage> _coverImages = [];
   final ImagePicker _imagePicker = ImagePicker();
-  String? _selectedCoverImageId;
+  int? _selectedCoverImageId;
 
   // 편집 중인 항목 추적
-  String? _editingFolderId;
-  String? _editingLorebookId;
-  String? _editingPersonaId;
-  String? _editingStartScenarioId;
-  String? _editingCoverImageId;
-  final Map<String, TextEditingController> _editControllers = {};
+  int? _editingFolderId;
+  int? _editingLorebookId;
+  int? _editingPersonaId;
+  int? _editingStartScenarioId;
+  int? _editingCoverImageId;
+  final Map<int, TextEditingController> _editControllers = {};
 
   bool get _isEditMode => widget.characterId != null;
 
@@ -493,7 +500,8 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   void _addFolder() {
     setState(() {
       final newFolder = LorebookFolder(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: _getNextTempId(),
+        characterId: widget.characterId ?? _tempCharacterId,
         name: '새 폴더',
         order: _folders.length,
       );
@@ -504,7 +512,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   void _addLorebook(LorebookFolder? folder) {
     setState(() {
       final newLorebook = Lorebook(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: _getNextTempId(),
+        characterId: widget.characterId ?? _tempCharacterId,
+        folderId: folder?.id,
         name: '새 로어북',
         order: folder != null ? folder.lorebooks.length : _standaloneLorebooks.length,
         isExpanded: true,
@@ -624,7 +634,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
                       Expanded(
                         child: _editingFolderId == folder.id
                             ? TextField(
-                                controller: _editControllers[folder.id],
+                                controller: _editControllers[folder.id!],
                                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                       fontWeight: FontWeight.w600,
                                     ),
@@ -699,16 +709,16 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     setState(() {
       if (_editingFolderId == folder.id) {
         // 편집 완료
-        final controller = _editControllers[folder.id];
+        final controller = _editControllers[folder.id!];
         if (controller != null && controller.text.isNotEmpty) {
           folder.name = controller.text;
         }
         _editingFolderId = null;
-        _editControllers.remove(folder.id)?.dispose();
+        _editControllers.remove(folder.id!)?.dispose();
       } else {
         // 편집 시작
         _editingFolderId = folder.id;
-        _editControllers[folder.id] = TextEditingController(text: folder.name);
+        _editControllers[folder.id!] = TextEditingController(text: folder.name);
       }
     });
   }
@@ -719,7 +729,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         folder.name = value;
       }
       _editingFolderId = null;
-      _editControllers.remove(folder.id)?.dispose();
+      _editControllers.remove(folder.id!)?.dispose();
     });
   }
 
@@ -727,16 +737,16 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     setState(() {
       if (_editingLorebookId == lorebook.id) {
         // 편집 완료
-        final controller = _editControllers[lorebook.id];
+        final controller = _editControllers[lorebook.id!];
         if (controller != null && controller.text.isNotEmpty) {
           lorebook.name = controller.text;
         }
         _editingLorebookId = null;
-        _editControllers.remove(lorebook.id)?.dispose();
+        _editControllers.remove(lorebook.id!)?.dispose();
       } else {
         // 편집 시작
         _editingLorebookId = lorebook.id;
-        _editControllers[lorebook.id] = TextEditingController(text: lorebook.name);
+        _editControllers[lorebook.id!] = TextEditingController(text: lorebook.name);
       }
     });
   }
@@ -747,7 +757,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         lorebook.name = value;
       }
       _editingLorebookId = null;
-      _editControllers.remove(lorebook.id)?.dispose();
+      _editControllers.remove(lorebook.id!)?.dispose();
     });
   }
 
@@ -835,7 +845,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
                   Expanded(
                     child: _editingLorebookId == lorebook.id
                         ? TextField(
-                            controller: _editControllers[lorebook.id],
+                            controller: _editControllers[lorebook.id!],
                             style: Theme.of(context).textTheme.bodyMedium,
                             decoration: const InputDecoration(
                               border: InputBorder.none,
@@ -1167,7 +1177,8 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   void _addPersona() {
     setState(() {
       final newPersona = Persona(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: _getNextTempId(),
+        characterId: widget.characterId ?? _tempCharacterId,
         name: '새 페르소나',
         order: _personas.length,
         isExpanded: true,
@@ -1205,16 +1216,16 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     setState(() {
       if (_editingPersonaId == persona.id) {
         // 편집 완료
-        final controller = _editControllers[persona.id];
+        final controller = _editControllers[persona.id!];
         if (controller != null && controller.text.isNotEmpty) {
           persona.name = controller.text;
         }
         _editingPersonaId = null;
-        _editControllers.remove(persona.id)?.dispose();
+        _editControllers.remove(persona.id!)?.dispose();
       } else {
         // 편집 시작
         _editingPersonaId = persona.id;
-        _editControllers[persona.id] = TextEditingController(text: persona.name);
+        _editControllers[persona.id!] = TextEditingController(text: persona.name);
       }
     });
   }
@@ -1225,7 +1236,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         persona.name = value;
       }
       _editingPersonaId = null;
-      _editControllers.remove(persona.id)?.dispose();
+      _editControllers.remove(persona.id!)?.dispose();
     });
   }
 
@@ -1266,7 +1277,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
                   Expanded(
                     child: _editingPersonaId == persona.id
                         ? TextField(
-                            controller: _editControllers[persona.id],
+                            controller: _editControllers[persona.id!],
                             style: Theme.of(context).textTheme.bodyMedium,
                             decoration: const InputDecoration(
                               border: InputBorder.none,
@@ -1424,7 +1435,8 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   void _addStartScenario() {
     setState(() {
       final newScenario = StartScenario(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        id: _getNextTempId(),
+        characterId: widget.characterId ?? _tempCharacterId,
         name: '새 시작설정',
         order: _startScenarios.length,
         isExpanded: true,
@@ -1462,16 +1474,16 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     setState(() {
       if (_editingStartScenarioId == scenario.id) {
         // 편집 완료
-        final controller = _editControllers[scenario.id];
+        final controller = _editControllers[scenario.id!];
         if (controller != null && controller.text.isNotEmpty) {
           scenario.name = controller.text;
         }
         _editingStartScenarioId = null;
-        _editControllers.remove(scenario.id)?.dispose();
+        _editControllers.remove(scenario.id!)?.dispose();
       } else {
         // 편집 시작
         _editingStartScenarioId = scenario.id;
-        _editControllers[scenario.id] = TextEditingController(text: scenario.name);
+        _editControllers[scenario.id!] = TextEditingController(text: scenario.name);
       }
     });
   }
@@ -1482,7 +1494,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         scenario.name = value;
       }
       _editingStartScenarioId = null;
-      _editControllers.remove(scenario.id)?.dispose();
+      _editControllers.remove(scenario.id!)?.dispose();
     });
   }
 
@@ -1523,7 +1535,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
                   Expanded(
                     child: _editingStartScenarioId == scenario.id
                         ? TextField(
-                            controller: _editControllers[scenario.id],
+                            controller: _editControllers[scenario.id!],
                             style: Theme.of(context).textTheme.bodyMedium,
                             decoration: const InputDecoration(
                               border: InputBorder.none,
@@ -1755,7 +1767,8 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     if (image != null) {
       setState(() {
         final newCoverImage = CoverImage(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
+          id: _getNextTempId(),
+          characterId: widget.characterId ?? _tempCharacterId,
           name: '표지 ${_coverImages.length + 1}',
           order: _coverImages.length,
           imagePath: image.path,
@@ -1806,16 +1819,16 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     setState(() {
       if (_editingCoverImageId == coverImage.id) {
         // 편집 완료
-        final controller = _editControllers[coverImage.id];
+        final controller = _editControllers[coverImage.id!];
         if (controller != null && controller.text.isNotEmpty) {
           coverImage.name = controller.text;
         }
         _editingCoverImageId = null;
-        _editControllers.remove(coverImage.id)?.dispose();
+        _editControllers.remove(coverImage.id!)?.dispose();
       } else {
         // 편집 시작
         _editingCoverImageId = coverImage.id;
-        _editControllers[coverImage.id] = TextEditingController(text: coverImage.name);
+        _editControllers[coverImage.id!] = TextEditingController(text: coverImage.name);
       }
     });
   }
@@ -1826,7 +1839,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         coverImage.name = value;
       }
       _editingCoverImageId = null;
-      _editControllers.remove(coverImage.id)?.dispose();
+      _editControllers.remove(coverImage.id!)?.dispose();
     });
   }
 
@@ -1858,10 +1871,10 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
               ),
               child: Row(
                 children: [
-                  Radio<String>(
-                    value: coverImage.id,
+                  Radio<int>(
+                    value: coverImage.id!,
                     groupValue: _selectedCoverImageId,
-                    onChanged: (String? value) {
+                    onChanged: (int? value) {
                       setState(() {
                         _selectedCoverImageId = value;
                       });
@@ -1873,7 +1886,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
                   Expanded(
                     child: _editingCoverImageId == coverImage.id
                         ? TextField(
-                            controller: _editControllers[coverImage.id],
+                            controller: _editControllers[coverImage.id!],
                             style: Theme.of(context).textTheme.bodyMedium,
                             decoration: const InputDecoration(
                               border: InputBorder.none,
