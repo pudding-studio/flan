@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'dart:convert';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../constants/ui_constants.dart';
 import '../../models/character/character.dart';
@@ -69,6 +71,8 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   // 데이터베이스
   final DatabaseHelper _db = DatabaseHelper.instance;
   bool _isLoading = false;
+  bool _isSaving = false; // 저장 중에는 자동 저장 비활성화
+  bool _saveCompleted = false; // 저장 완료 플래그
 
   bool get _isEditMode => widget.characterId != null;
 
@@ -76,9 +80,21 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 6, vsync: this);
+
+    // 자동 저장 데이터 확인 및 복원
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _checkAndRestoreAutoSave();
+    });
+
     if (_isEditMode) {
       _loadCharacterData();
     }
+
+    // 텍스트 컨트롤러에 리스너 추가하여 자동 저장
+    _nameController.addListener(_autoSave);
+    _summaryController.addListener(_autoSave);
+    _keywordsController.addListener(_autoSave);
+    _worldSettingController.addListener(_autoSave);
   }
 
   Future<void> _loadCharacterData() async {
@@ -146,30 +162,190 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     super.dispose();
   }
 
-  Future<void> _handleSaveDraft() async {
-    await _saveCharacter(isDraft: true);
+  @override
+  void setState(VoidCallback fn) {
+    super.setState(fn);
+    // 저장 중이거나 저장 완료되었으면 자동 저장하지 않음
+    if (!_isSaving && !_saveCompleted) {
+      Future.microtask(() => _autoSave());
+    }
   }
 
-  Future<void> _handleComplete() async {
-    // 이름만 필수로 체크 (Form이 프로필 탭에만 있으므로)
+  String _getAutoSaveKey() {
+    // 편집 모드면 characterId 기반, 생성 모드면 'new' 키 사용
+    return _isEditMode ? 'autosave_character_${widget.characterId}' : 'autosave_character_new';
+  }
+
+  Future<void> _autoSave() async {
+    // 저장 중이거나 이름이 비어있으면 자동 저장하지 않음
+    if (_isSaving || _nameController.text.isEmpty) return;
+
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final data = {
+        'name': _nameController.text,
+        'summary': _summaryController.text,
+        'keywords': _keywordsController.text,
+        'worldSetting': _worldSettingController.text,
+        'selectedCoverImageId': _selectedCoverImageId,
+        'folders': _folders.map((f) {
+          final folderMap = f.toMap();
+          folderMap['lorebooks'] = f.lorebooks.map((lb) => lb.toMap()).toList();
+          return folderMap;
+        }).toList(),
+        'standaloneLorebooks': _standaloneLorebooks.map((lb) => lb.toMap()).toList(),
+        'personas': _personas.map((p) => p.toMap()).toList(),
+        'startScenarios': _startScenarios.map((s) => s.toMap()).toList(),
+        'coverImages': _coverImages.map((c) => c.toMap()).toList(),
+        'timestamp': DateTime.now().toIso8601String(),
+      };
+      await prefs.setString(_getAutoSaveKey(), jsonEncode(data));
+    } catch (e) {
+      print('자동 저장 실패: $e');
+    }
+  }
+
+  Future<void> _checkAndRestoreAutoSave() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final autoSaveData = prefs.getString(_getAutoSaveKey());
+
+      if (autoSaveData == null) return;
+
+      final data = jsonDecode(autoSaveData) as Map<String, dynamic>;
+      final timestamp = DateTime.parse(data['timestamp'] as String);
+
+      // 자동 저장된 시간이 너무 오래되었으면 무시 (7일)
+      if (DateTime.now().difference(timestamp).inDays > 7) {
+        await prefs.remove(_getAutoSaveKey());
+        return;
+      }
+
+      // 편집 모드에서는 자동 저장 데이터가 있으면 복원 여부 묻기
+      if (!mounted) return;
+
+      final shouldRestore = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('작성 중인 데이터 발견'),
+          content: Text(
+            '저장되지 않은 작성 중인 데이터가 있습니다.\n'
+            '마지막 작성 시간: ${_formatTimestamp(timestamp)}\n\n'
+            '불러오시겠습니까?',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('취소'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('불러오기'),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldRestore == true && mounted) {
+        setState(() {
+          _nameController.text = data['name'] as String? ?? '';
+          _summaryController.text = data['summary'] as String? ?? '';
+          _keywordsController.text = data['keywords'] as String? ?? '';
+          _worldSettingController.text = data['worldSetting'] as String? ?? '';
+          _selectedCoverImageId = data['selectedCoverImageId'] as int?;
+
+          // 로어북 폴더 복원
+          _folders.clear();
+          if (data['folders'] != null) {
+            for (var folderMap in data['folders'] as List) {
+              final folder = LorebookFolder.fromMap(folderMap as Map<String, dynamic>);
+              if (folderMap['lorebooks'] != null) {
+                for (var lbMap in folderMap['lorebooks'] as List) {
+                  folder.lorebooks.add(Lorebook.fromMap(lbMap as Map<String, dynamic>));
+                }
+              }
+              _folders.add(folder);
+            }
+          }
+
+          // 독립형 로어북 복원
+          _standaloneLorebooks.clear();
+          if (data['standaloneLorebooks'] != null) {
+            for (var lbMap in data['standaloneLorebooks'] as List) {
+              _standaloneLorebooks.add(Lorebook.fromMap(lbMap as Map<String, dynamic>));
+            }
+          }
+
+          // 페르소나 복원
+          _personas.clear();
+          if (data['personas'] != null) {
+            for (var pMap in data['personas'] as List) {
+              _personas.add(Persona.fromMap(pMap as Map<String, dynamic>));
+            }
+          }
+
+          // 시작설정 복원
+          _startScenarios.clear();
+          if (data['startScenarios'] != null) {
+            for (var sMap in data['startScenarios'] as List) {
+              _startScenarios.add(StartScenario.fromMap(sMap as Map<String, dynamic>));
+            }
+          }
+
+          // 표지 이미지 복원
+          _coverImages.clear();
+          if (data['coverImages'] != null) {
+            for (var cMap in data['coverImages'] as List) {
+              _coverImages.add(CoverImage.fromMap(cMap as Map<String, dynamic>));
+            }
+          }
+        });
+      } else if (shouldRestore == false) {
+        // 사용자가 취소를 선택하면 자동 저장 데이터 삭제
+        await prefs.remove(_getAutoSaveKey());
+      }
+    } catch (e) {
+      print('자동 저장 데이터 복원 실패: $e');
+    }
+  }
+
+  String _formatTimestamp(DateTime timestamp) {
+    final now = DateTime.now();
+    final diff = now.difference(timestamp);
+
+    if (diff.inMinutes < 1) {
+      return '방금 전';
+    } else if (diff.inHours < 1) {
+      return '${diff.inMinutes}분 전';
+    } else if (diff.inDays < 1) {
+      return '${diff.inHours}시간 전';
+    } else {
+      return '${diff.inDays}일 전';
+    }
+  }
+
+  Future<void> _clearAutoSave() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_getAutoSaveKey());
+    } catch (e) {
+      print('자동 저장 데이터 삭제 실패: $e');
+    }
+  }
+
+  Future<void> _handleSave() async {
+    // 이름만 필수로 체크
     if (_nameController.text.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('캐릭터 이름을 입력해주세요')),
       );
       return;
     }
-    await _saveCharacter(isDraft: false);
-  }
 
-  Future<void> _saveCharacter({required bool isDraft}) async {
-    if (_nameController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('캐릭터 이름을 입력해주세요')),
-      );
-      return;
-    }
-
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _isSaving = true; // 저장 시작
+    });
 
     try {
       int characterId;
@@ -185,7 +361,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           worldSetting: _worldSettingController.text.isEmpty ? null : _worldSettingController.text,
           selectedCoverImageId: _selectedCoverImageId,
           updatedAt: DateTime.now(),
-          isDraft: isDraft,
+          isDraft: false,
         );
         await _db.updateCharacter(character);
       } else {
@@ -196,7 +372,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           keywords: _keywordsController.text.isEmpty ? null : _keywordsController.text,
           worldSetting: _worldSettingController.text.isEmpty ? null : _worldSettingController.text,
           selectedCoverImageId: _selectedCoverImageId,
-          isDraft: isDraft,
+          isDraft: false,
         );
         characterId = await _db.createCharacter(character);
       }
@@ -204,13 +380,21 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       // 하위 데이터 저장
       await _saveSubData(characterId);
 
+      // 저장 성공 시 자동 저장 데이터 삭제
+      await _clearAutoSave();
+
       if (mounted) {
+        // 저장 완료 플래그 설정하여 이후 자동 저장 방지
+        setState(() {
+          _isLoading = false;
+          _isSaving = false;
+          _saveCompleted = true;
+        });
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              isDraft
-                  ? '임시저장되었습니다'
-                  : (_isEditMode ? '캐릭터가 수정되었습니다' : '캐릭터가 생성되었습니다'),
+              _isEditMode ? '캐릭터가 수정되었습니다' : '캐릭터가 생성되었습니다',
             ),
           ),
         );
@@ -221,9 +405,11 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('저장 실패: $e')),
         );
+        setState(() {
+          _isLoading = false;
+          _isSaving = false;
+        });
       }
-    } finally {
-      setState(() => _isLoading = false);
     }
   }
 
@@ -479,17 +665,8 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
                 overflow: TextOverflow.ellipsis,
               ),
             ),
-            IconButton(
-              icon: const Icon(Icons.drafts_outlined),
-              onPressed: _handleSaveDraft,
-              tooltip: '임시저장',
-              padding: EdgeInsets.only(left: 0),
-              visualDensity: VisualDensity.compact,
-              constraints: const BoxConstraints(),
-            ),
-            const SizedBox(width: 4),
             TextButton(
-              onPressed: _handleComplete,
+              onPressed: _handleSave,
               style: TextButton.styleFrom(
                 padding: EdgeInsets.zero,
                 visualDensity: VisualDensity.compact,
@@ -497,7 +674,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
               child: const Text(
-                '완료',
+                '저장',
                 style: TextStyle(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
