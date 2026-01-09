@@ -47,6 +47,8 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
         _character = character;
         _coverImages = coverImages;
         _startScenarios = startScenarios;
+        // 시작 설정이 있으면 첫 번째를 기본 선택
+        _selectedScenarioIndex = startScenarios.isNotEmpty ? 0 : null;
         _isLoading = false;
       });
     } catch (e) {
@@ -116,7 +118,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
 
   Widget _buildStartScenarioDropdown() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
         border: Border.all(
           color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
@@ -125,14 +127,17 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
       ),
       child: DropdownButton<int>(
         value: _selectedScenarioIndex,
-        hint: const Text('시작 설정을 선택하세요'),
         isExpanded: true,
         underline: const SizedBox(),
+        isDense: true,
         items: List.generate(
           _startScenarios.length,
           (index) => DropdownMenuItem<int>(
             value: index,
-            child: Text(_startScenarios[index].name),
+            child: Text(
+              _startScenarios[index].name,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
           ),
         ),
         onChanged: (int? newValue) {
@@ -258,19 +263,12 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
 
           // 캐릭터 이름
           Text(
-            '이름',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-          const SizedBox(height: 8),
-          Text(
             _character!.name,
-            style: Theme.of(context).textTheme.titleLarge?.copyWith(
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 20),
 
           // 한 줄 소개
           if (_character!.summary != null && _character!.summary!.isNotEmpty) ...[
