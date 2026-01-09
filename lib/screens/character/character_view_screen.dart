@@ -27,7 +27,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
   List<StartScenario> _startScenarios = [];
   bool _isLoading = true;
 
-  int? _expandedScenarioIndex;
+  int? _selectedScenarioIndex;
 
   @override
   void initState() {
@@ -114,103 +114,91 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
     );
   }
 
-  Widget _buildStartScenarioItem(StartScenario scenario, int index) {
-    final isExpanded = _expandedScenarioIndex == index;
-
-    return Card(
-      elevation: 0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-        side: BorderSide(
+  Widget _buildStartScenarioDropdown() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      decoration: BoxDecoration(
+        border: Border.all(
           color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
         ),
-      ),
-      child: InkWell(
-        onTap: () {
-          setState(() {
-            _expandedScenarioIndex = isExpanded ? null : index;
-          });
-        },
         borderRadius: BorderRadius.circular(12),
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      scenario.name,
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
-                  ),
-                  Icon(
-                    isExpanded
-                        ? Icons.keyboard_arrow_up
-                        : Icons.keyboard_arrow_down,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ],
-              ),
-              if (isExpanded) ...[
-                const SizedBox(height: 16),
-                if (scenario.startSetting != null && scenario.startSetting!.isNotEmpty) ...[
-                  Text(
-                    '시작 상황',
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      scenario.startSetting!,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-                if (scenario.startMessage != null && scenario.startMessage!.isNotEmpty) ...[
-                  Text(
-                    '시작 메시지',
-                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.primary,
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context)
-                          .colorScheme
-                          .surfaceContainerHighest,
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      scenario.startMessage!,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
-                ],
-              ],
-            ],
+      ),
+      child: DropdownButton<int>(
+        value: _selectedScenarioIndex,
+        hint: const Text('시작 설정을 선택하세요'),
+        isExpanded: true,
+        underline: const SizedBox(),
+        items: List.generate(
+          _startScenarios.length,
+          (index) => DropdownMenuItem<int>(
+            value: index,
+            child: Text(_startScenarios[index].name),
           ),
         ),
+        onChanged: (int? newValue) {
+          setState(() {
+            _selectedScenarioIndex = newValue;
+          });
+        },
       ),
+    );
+  }
+
+  Widget _buildSelectedScenarioContent() {
+    if (_selectedScenarioIndex == null) {
+      return const SizedBox();
+    }
+
+    final scenario = _startScenarios[_selectedScenarioIndex!];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 16),
+        if (scenario.startSetting != null && scenario.startSetting!.isNotEmpty) ...[
+          Text(
+            '시작 상황',
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              scenario.startSetting!,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+        if (scenario.startMessage != null && scenario.startMessage!.isNotEmpty) ...[
+          Text(
+            '시작 메시지',
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Text(
+              scenario.startMessage!,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ),
+        ],
+      ],
     );
   }
 
@@ -270,26 +258,47 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
 
           // 캐릭터 이름
           Text(
+            '이름',
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 8),
+          Text(
             _character!.name,
-            style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+            style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 24),
 
           // 한 줄 소개
           if (_character!.summary != null && _character!.summary!.isNotEmpty) ...[
+            Text(
+              '한 줄 소개',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+            const SizedBox(height: 8),
             Text(
               _character!.summary!,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
           ],
 
           // 키워드
           if (keywords.isNotEmpty) ...[
+            Text(
+              '키워드',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+            const SizedBox(height: 8),
             Wrap(
               spacing: 8,
               runSpacing: 8,
@@ -298,25 +307,17 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
             const SizedBox(height: 24),
           ],
 
-          // 시작 메시지 섹션
+          // 시작 설정 섹션
           if (_startScenarios.isNotEmpty) ...[
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              child: Text(
-                '시작 메시지',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
+            Text(
+              '시작 설정',
+              style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
-            const SizedBox(height: 12),
-            ...List.generate(
-              _startScenarios.length,
-              (index) => Padding(
-                padding: const EdgeInsets.only(bottom: 12),
-                child: _buildStartScenarioItem(_startScenarios[index], index),
-              ),
-            ),
+            const SizedBox(height: 8),
+            _buildStartScenarioDropdown(),
+            _buildSelectedScenarioContent(),
           ],
         ],
       ),
