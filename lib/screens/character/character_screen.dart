@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'dart:io';
 import '../../providers/theme_provider.dart';
 import '../../database/database_helper.dart';
 import '../../models/character/character.dart';
@@ -241,7 +240,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
                     _getSortMethodLabel(),
                     style: TextStyle(
                       fontSize: 12,
-                      color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.6),
+                      color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
                     ),
                   ),
                 ),
@@ -284,14 +283,14 @@ class _CharacterScreenState extends State<CharacterScreen> {
             Icon(
               Icons.person_add_outlined,
               size: 80,
-              color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.3),
+              color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 16),
             Text(
               '캐릭터가 없습니다',
               style: TextStyle(
                 fontSize: 16,
-                color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.5),
+                color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.5),
               ),
             ),
             const SizedBox(height: 8),
@@ -299,7 +298,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
               '+ 버튼을 눌러 새 캐릭터를 추가해보세요',
               style: TextStyle(
                 fontSize: 14,
-                color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.4),
+                color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.4),
               ),
             ),
           ],
@@ -393,14 +392,14 @@ class _CharacterScreenState extends State<CharacterScreen> {
             Icon(
               Icons.person_add_outlined,
               size: 80,
-              color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.3),
+              color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.3),
             ),
             const SizedBox(height: 16),
             Text(
               '캐릭터가 없습니다',
               style: TextStyle(
                 fontSize: 16,
-                color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.5),
+                color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.5),
               ),
             ),
             const SizedBox(height: 8),
@@ -408,7 +407,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
               '+ 버튼을 눌러 새 캐릭터를 추가해보세요',
               style: TextStyle(
                 fontSize: 14,
-                color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.4),
+                color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.4),
               ),
             ),
           ],

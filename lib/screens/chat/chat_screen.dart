@@ -6,7 +6,7 @@ class ChatScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final demoChatRooms = [
+    final List<Map<String, String?>> demoChatRooms = [
       {
         'title': '홍길동',
         'lastMessage': '안녕하세요! 오늘 날씨가 정말 좋네요.',
@@ -72,10 +72,10 @@ class ChatScreen extends StatelessWidget {
         separatorBuilder: (context, index) => const SizedBox(height: 20.0),
         itemBuilder: (context, index) {
           return ChatRoomCard(
-            title: demoChatRooms[index]['title'] as String,
-            lastMessage: demoChatRooms[index]['lastMessage'] as String,
-            date: demoChatRooms[index]['date'] as String,
-            imageUrl: demoChatRooms[index]['imageUrl'] as String?,
+            title: demoChatRooms[index]['title']!,
+            lastMessage: demoChatRooms[index]['lastMessage']!,
+            date: demoChatRooms[index]['date']!,
+            imageUrl: demoChatRooms[index]['imageUrl'],
           );
         },
       ),

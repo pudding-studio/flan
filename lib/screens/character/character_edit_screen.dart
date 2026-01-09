@@ -39,7 +39,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   final _worldSettingController = TextEditingController();
 
   // 임시 character ID (아직 DB에 저장되지 않은 경우)
-  int _tempCharacterId = -1;
+  final int _tempCharacterId = -1;
 
   // 임시 ID 생성기 (음수 사용)
   int _nextTempId = -1;
@@ -201,7 +201,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       };
       await prefs.setString(_getAutoSaveKey(), jsonEncode(data));
     } catch (e) {
-      print('자동 저장 실패: $e');
+      debugPrint('자동 저장 실패: $e');
     }
   }
 
@@ -305,7 +305,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         await prefs.remove(_getAutoSaveKey());
       }
     } catch (e) {
-      print('자동 저장 데이터 복원 실패: $e');
+      debugPrint('자동 저장 데이터 복원 실패: $e');
     }
   }
 
@@ -329,7 +329,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       final prefs = await SharedPreferences.getInstance();
       await prefs.remove(_getAutoSaveKey());
     } catch (e) {
-      print('자동 저장 데이터 삭제 실패: $e');
+      debugPrint('자동 저장 데이터 삭제 실패: $e');
     }
   }
 
@@ -414,10 +414,10 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   }
 
   Future<void> _saveSubData(int characterId) async {
-    print('=== _saveSubData 시작 ===');
-    print('characterId: $characterId');
-    print('_isEditMode: $_isEditMode');
-    print('_folders.length: ${_folders.length}');
+    debugPrint('=== _saveSubData 시작 ===');
+    debugPrint('characterId: $characterId');
+    debugPrint('_isEditMode: $_isEditMode');
+    debugPrint('_folders.length: ${_folders.length}');
 
     // Edit 모드일 때: DB에 있지만 메모리에 없는 항목들 삭제
     if (_isEditMode) {
@@ -430,7 +430,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       for (var existingFolder in existingFolders) {
         if (!currentFolderIds.contains(existingFolder.id)) {
           await _db.deleteLorebookFolder(existingFolder.id!);
-          print('폴더 삭제: ${existingFolder.id}');
+          debugPrint('폴더 삭제: ${existingFolder.id}');
         }
       }
 
@@ -443,7 +443,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       for (var existingLb in existingStandaloneLorebooks) {
         if (!currentStandaloneLbIds.contains(existingLb.id)) {
           await _db.deleteLorebook(existingLb.id!);
-          print('독립형 로어북 삭제: ${existingLb.id}');
+          debugPrint('독립형 로어북 삭제: ${existingLb.id}');
         }
       }
 
@@ -456,7 +456,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       for (var existingPersona in existingPersonas) {
         if (!currentPersonaIds.contains(existingPersona.id)) {
           await _db.deletePersona(existingPersona.id!);
-          print('페르소나 삭제: ${existingPersona.id}');
+          debugPrint('페르소나 삭제: ${existingPersona.id}');
         }
       }
 
@@ -469,7 +469,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       for (var existingScenario in existingScenarios) {
         if (!currentScenarioIds.contains(existingScenario.id)) {
           await _db.deleteStartScenario(existingScenario.id!);
-          print('시작설정 삭제: ${existingScenario.id}');
+          debugPrint('시작설정 삭제: ${existingScenario.id}');
         }
       }
 
@@ -482,44 +482,44 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       for (var existingCover in existingCoverImages) {
         if (!currentCoverImageIds.contains(existingCover.id)) {
           await _db.deleteCoverImage(existingCover.id!);
-          print('표지 이미지 삭제: ${existingCover.id}');
+          debugPrint('표지 이미지 삭제: ${existingCover.id}');
         }
       }
     }
 
     // 로어북 폴더 및 로어북 저장
     for (var folder in _folders) {
-      print('--- 폴더 처리 시작 ---');
-      print('folder.id: ${folder.id}');
-      print('folder.characterId: ${folder.characterId}');
-      print('folder.name: ${folder.name}');
+      debugPrint('--- 폴더 처리 시작 ---');
+      debugPrint('folder.id: ${folder.id}');
+      debugPrint('folder.characterId: ${folder.characterId}');
+      debugPrint('folder.name: ${folder.name}');
 
       int folderId;
 
       if (folder.id == null || folder.id! < 0) {
-        print('분기: 새 폴더 생성 (id null or < 0)');
+        debugPrint('분기: 새 폴더 생성 (id null or < 0)');
         // 새 폴더 생성
         folderId = await _db.createLorebookFolder(folder.copyWith(
           id: null,
           characterId: characterId,
         ));
-        print('생성된 folderId: $folderId');
+        debugPrint('생성된 folderId: $folderId');
       } else if (!_isEditMode || folder.characterId != characterId) {
-        print('분기: 새 캐릭터로 복사 (!_isEditMode || folder.characterId != characterId)');
+        debugPrint('분기: 새 캐릭터로 복사 (!_isEditMode || folder.characterId != characterId)');
         // 새 캐릭터로 복사하는 경우 새로 생성
         folderId = await _db.createLorebookFolder(folder.copyWith(
           id: null,
           characterId: characterId,
         ));
-        print('생성된 folderId: $folderId');
+        debugPrint('생성된 folderId: $folderId');
       } else {
-        print('분기: 기존 폴더 업데이트');
+        debugPrint('분기: 기존 폴더 업데이트');
         // 기존 폴더 업데이트 (같은 캐릭터, 기존 ID)
         await _db.updateLorebookFolder(folder.copyWith(
           characterId: characterId,
         ));
         folderId = folder.id!;
-        print('업데이트된 folderId: $folderId');
+        debugPrint('업데이트된 folderId: $folderId');
       }
 
       // 폴더 내 로어북 삭제 처리 (Edit 모드이고 기존 폴더인 경우)
@@ -532,7 +532,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         for (var existingLb in existingLorebooks) {
           if (!currentLbIds.contains(existingLb.id)) {
             await _db.deleteLorebook(existingLb.id!);
-            print('폴더 내 로어북 삭제: ${existingLb.id}');
+            debugPrint('폴더 내 로어북 삭제: ${existingLb.id}');
           }
         }
       }

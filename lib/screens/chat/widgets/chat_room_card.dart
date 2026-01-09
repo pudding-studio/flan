@@ -65,7 +65,7 @@ class ChatRoomCard extends StatelessWidget {
                         date,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               fontSize: 11,
-                              color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.6),
+                              color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
                             ),
                       ),
                     ],
@@ -74,7 +74,7 @@ class ChatRoomCard extends StatelessWidget {
                   Text(
                     lastMessage,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).textTheme.bodySmall?.color?.withOpacity(0.7),
+                          color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.7),
                         ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
