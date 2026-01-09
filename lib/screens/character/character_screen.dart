@@ -5,6 +5,7 @@ import '../../database/database_helper.dart';
 import '../../models/character/character.dart';
 import '../../models/character/cover_image.dart';
 import 'character_edit_screen.dart';
+import 'character_view_screen.dart';
 import 'widgets/character_card.dart';
 import 'widgets/character_list_item.dart';
 
@@ -335,7 +336,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
                           final result = await Navigator.push<bool>(
                             context,
                             MaterialPageRoute(
-                              builder: (context) => CharacterEditScreen(characterId: _characters[i].id),
+                              builder: (context) => CharacterViewScreen(characterId: _characters[i].id!),
                             ),
                           );
                           if (result == true) {
@@ -358,7 +359,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
                             final result = await Navigator.push<bool>(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => CharacterEditScreen(characterId: _characters[i + 1].id),
+                                builder: (context) => CharacterViewScreen(characterId: _characters[i + 1].id!),
                               ),
                             );
                             if (result == true) {
@@ -433,7 +434,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
               final result = await Navigator.push<bool>(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => CharacterEditScreen(characterId: _characters[index].id),
+                  builder: (context) => CharacterViewScreen(characterId: _characters[index].id!),
                 ),
               );
               if (result == true) {
