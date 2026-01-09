@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/theme_provider.dart';
+import 'api_key_screen.dart';
+import 'chat_prompt_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -116,26 +118,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           const Divider(),
-          _buildSectionHeader('계정'),
+          _buildSectionHeader('모델'),
           _buildListTile(
-            icon: Icons.person,
-            title: '프로필 관리',
+            icon: Icons.key,
+            title: 'API 키 등록',
             onTap: () {
-              // TODO: 프로필 관리 페이지로 이동
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ApiKeyScreen()),
+              );
             },
           ),
           _buildListTile(
-            icon: Icons.lock,
-            title: '개인정보 설정',
+            icon: Icons.chat_bubble_outline,
+            title: '채팅 프롬프트',
             onTap: () {
-              // TODO: 개인정보 설정 페이지로 이동
-            },
-          ),
-          _buildListTile(
-            icon: Icons.security,
-            title: '보안',
-            onTap: () {
-              // TODO: 보안 설정 페이지로 이동
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ChatPromptScreen()),
+              );
             },
           ),
           const Divider(),
