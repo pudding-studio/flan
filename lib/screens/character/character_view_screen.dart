@@ -319,6 +319,20 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
           ],
         ],
       ),
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: () {
+          // TODO: 새 채팅 시작 기능 구현
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('새 채팅 기능은 곧 추가될 예정입니다'),
+              duration: Duration(seconds: 2),
+            ),
+          );
+        },
+        elevation: 0,
+        icon: const Icon(Icons.chat_bubble_outline),
+        label: const Text('새 채팅'),
+      ),
     );
   }
 }
