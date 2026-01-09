@@ -254,84 +254,98 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
           const SizedBox(width: 8),
         ],
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: Column(
         children: [
-          // 표지 이미지
-          _buildCoverImage(),
-          const SizedBox(height: 24),
+          Expanded(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                // 표지 이미지
+                _buildCoverImage(),
+                const SizedBox(height: 24),
 
-          // 캐릭터 이름
-          Text(
-            _character!.name,
-            style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
+                // 캐릭터 이름
+                Text(
+                  _character!.name,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
+                const SizedBox(height: 20),
+
+                // 한 줄 소개
+                if (_character!.summary != null && _character!.summary!.isNotEmpty) ...[
+                  Text(
+                    '한 줄 소개',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    _character!.summary!,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+
+                // 키워드
+                if (keywords.isNotEmpty) ...[
+                  Text(
+                    '키워드',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: keywords.map((keyword) => TagChip(label: keyword)).toList(),
+                  ),
+                  const SizedBox(height: 24),
+                ],
+
+                // 시작 설정 섹션
+                if (_startScenarios.isNotEmpty) ...[
+                  Text(
+                    '시작 설정',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildStartScenarioDropdown(),
+                  _buildSelectedScenarioContent(),
+                ],
+              ],
+            ),
           ),
-          const SizedBox(height: 20),
-
-          // 한 줄 소개
-          if (_character!.summary != null && _character!.summary!.isNotEmpty) ...[
-            Text(
-              '한 줄 소개',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: SizedBox(
+              width: double.infinity,
+              child: FilledButton.icon(
+                onPressed: () {
+                  // TODO: 새 채팅 시작 기능 구현
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('새 채팅 기능은 곧 추가될 예정입니다'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
+                icon: const Icon(Icons.chat_bubble_outline),
+                label: const Text('새 채팅'),
+                style: FilledButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                ),
+              ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              _character!.summary!,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-            ),
-            const SizedBox(height: 24),
-          ],
-
-          // 키워드
-          if (keywords.isNotEmpty) ...[
-            Text(
-              '키워드',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: keywords.map((keyword) => TagChip(label: keyword)).toList(),
-            ),
-            const SizedBox(height: 24),
-          ],
-
-          // 시작 설정 섹션
-          if (_startScenarios.isNotEmpty) ...[
-            Text(
-              '시작 설정',
-              style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-            const SizedBox(height: 8),
-            _buildStartScenarioDropdown(),
-            _buildSelectedScenarioContent(),
-          ],
+          ),
         ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          // TODO: 새 채팅 시작 기능 구현
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('새 채팅 기능은 곧 추가될 예정입니다'),
-              duration: Duration(seconds: 2),
-            ),
-          );
-        },
-        elevation: 0,
-        icon: const Icon(Icons.chat_bubble_outline),
-        label: const Text('새 채팅'),
       ),
     );
   }
