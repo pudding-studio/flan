@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import '../../database/database_helper.dart';
+import '../../models/prompt/chat_prompt.dart';
+import 'widgets/prompt_list_item.dart';
+import 'prompt_edit_screen.dart';
 
 class ChatPromptScreen extends StatefulWidget {
   const ChatPromptScreen({super.key});
@@ -9,161 +12,170 @@ class ChatPromptScreen extends StatefulWidget {
 }
 
 class _ChatPromptScreenState extends State<ChatPromptScreen> {
-  final _formKey = GlobalKey<FormState>();
-  final _promptController = TextEditingController();
-  bool _isLoading = false;
-
-  static const String _defaultPrompt =
-      'You are a helpful AI assistant. '
-      'Respond in a friendly and informative manner.';
+  final DatabaseHelper _db = DatabaseHelper.instance;
+  List<ChatPrompt> _prompts = [];
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
-    _loadPrompt();
+    _loadPrompts();
   }
 
-  @override
-  void dispose() {
-    _promptController.dispose();
-    super.dispose();
-  }
-
-  Future<void> _loadPrompt() async {
+  Future<void> _loadPrompts() async {
     setState(() => _isLoading = true);
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final prompt = prefs.getString('chat_prompt') ?? _defaultPrompt;
-      _promptController.text = prompt;
+      final prompts = await _db.readAllChatPrompts();
+      setState(() => _prompts = prompts);
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('프롬프트 불러오기 실패: $e')),
+          SnackBar(content: Text('프롬프트 목록을 불러오는데 실패했습니다: $e')),
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      setState(() => _isLoading = false);
     }
   }
 
-  Future<void> _savePrompt() async {
-    if (!_formKey.currentState!.validate()) return;
+  Future<void> _deletePrompt(int id, String name) async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('프롬프트 삭제'),
+        content: Text('\'$name\'을(를) 삭제하시겠습니까?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('삭제', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
 
-    setState(() => _isLoading = true);
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('chat_prompt', _promptController.text.trim());
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('프롬프트가 저장되었습니다')),
-        );
-        Navigator.pop(context);
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('프롬프트 저장 실패: $e')),
-        );
-      }
-    } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
+    if (confirm == true) {
+      try {
+        await _db.deleteChatPrompt(id);
+        await _loadPrompts();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('프롬프트가 삭제되었습니다')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('프롬프트 삭제에 실패했습니다: $e')),
+          );
+        }
       }
     }
-  }
-
-  void _resetToDefault() {
-    setState(() {
-      _promptController.text = _defaultPrompt;
-    });
   }
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final horizontalPadding = screenWidth * 0.05;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('채팅 프롬프트'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: _isLoading ? null : _resetToDefault,
-            tooltip: '기본값으로 초기화',
-          ),
-        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : SingleChildScrollView(
-              padding: const EdgeInsets.all(16),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.info_outline,
-                                  size: 20,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                                const SizedBox(width: 8),
-                                Text(
-                                  '프롬프트 정보',
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              '시스템 프롬프트는 AI의 응답 스타일과 행동을 정의합니다.\n'
-                              '캐릭터와의 대화에 전역적으로 적용됩니다.',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                            ),
-                          ],
+          : _prompts.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.chat_bubble_outline,
+                        size: 80,
+                        color: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.color
+                            ?.withValues(alpha: 0.3),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        '프롬프트가 없습니다',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.color
+                              ?.withValues(alpha: 0.5),
                         ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
-                    TextFormField(
-                      controller: _promptController,
-                      decoration: const InputDecoration(
-                        labelText: '시스템 프롬프트',
-                        hintText: 'AI의 역할과 응답 방식을 정의하세요',
-                        border: OutlineInputBorder(),
-                        alignLabelWithHint: true,
+                      const SizedBox(height: 8),
+                      Text(
+                        '+ 버튼을 눌러 새 프롬프트를 추가해보세요',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.color
+                              ?.withValues(alpha: 0.4),
+                        ),
                       ),
-                      maxLines: 10,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return '프롬프트를 입력해주세요';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 24),
-                    FilledButton.icon(
-                      onPressed: _isLoading ? null : _savePrompt,
-                      icon: const Icon(Icons.save),
-                      label: const Text('저장'),
-                    ),
-                  ],
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: horizontalPadding,
+                    vertical: 16.0,
+                  ),
+                  itemCount: _prompts.length,
+                  itemBuilder: (context, index) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: PromptListItem(
+                        title: _prompts[index].name,
+                        description: _prompts[index].content,
+                        onTap: () async {
+                          final result = await Navigator.push<bool>(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => PromptEditScreen(
+                                prompt: _prompts[index],
+                              ),
+                            ),
+                          );
+                          if (result == true) {
+                            _loadPrompts();
+                          }
+                        },
+                        onDelete: () => _deletePrompt(
+                          _prompts[index].id!,
+                          _prompts[index].name,
+                        ),
+                      ),
+                    );
+                  },
                 ),
-              ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final result = await Navigator.push<bool>(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const PromptEditScreen(),
             ),
+          );
+          if (result == true) {
+            _loadPrompts();
+          }
+        },
+        elevation: 0,
+        child: const Icon(Icons.add),
+      ),
     );
   }
 }

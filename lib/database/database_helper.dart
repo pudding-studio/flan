@@ -5,6 +5,7 @@ import '../models/character/lorebook_folder.dart';
 import '../models/character/persona.dart';
 import '../models/character/start_scenario.dart';
 import '../models/character/cover_image.dart';
+import '../models/prompt/chat_prompt.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -24,8 +25,9 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _createDB,
+      onUpgrade: _upgradeDB,
     );
   }
 
@@ -147,6 +149,34 @@ class DatabaseHelper {
       CREATE INDEX idx_character_id_cover_images
       ON cover_images (character_id)
     ''');
+
+    // 채팅 프롬프트 테이블
+    await db.execute('''
+      CREATE TABLE chat_prompts (
+        id $idType,
+        name $textType,
+        content $textType,
+        created_at $textType,
+        updated_at $textType
+      )
+    ''');
+  }
+
+  Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
+    if (oldVersion < 2) {
+      const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
+      const textType = 'TEXT NOT NULL';
+
+      await db.execute('''
+        CREATE TABLE chat_prompts (
+          id $idType,
+          name $textType,
+          content $textType,
+          created_at $textType,
+          updated_at $textType
+        )
+      ''');
+    }
   }
 
   // ==================== 캐릭터 CRUD ====================
@@ -421,6 +451,55 @@ class DatabaseHelper {
     final db = await database;
     return await db.delete(
       'cover_images',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  // ==================== 채팅 프롬프트 CRUD ====================
+
+  Future<int> createChatPrompt(ChatPrompt prompt) async {
+    final db = await database;
+    final map = prompt.toMap();
+    map.remove('id');
+    return await db.insert('chat_prompts', map);
+  }
+
+  Future<ChatPrompt?> readChatPrompt(int id) async {
+    final db = await database;
+    final maps = await db.query(
+      'chat_prompts',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    if (maps.isNotEmpty) {
+      return ChatPrompt.fromMap(maps.first);
+    }
+    return null;
+  }
+
+  Future<List<ChatPrompt>> readAllChatPrompts() async {
+    final db = await database;
+    const orderBy = 'created_at DESC';
+    final result = await db.query('chat_prompts', orderBy: orderBy);
+    return result.map((map) => ChatPrompt.fromMap(map)).toList();
+  }
+
+  Future<int> updateChatPrompt(ChatPrompt prompt) async {
+    final db = await database;
+    return await db.update(
+      'chat_prompts',
+      prompt.toMap(),
+      where: 'id = ?',
+      whereArgs: [prompt.id],
+    );
+  }
+
+  Future<int> deleteChatPrompt(int id) async {
+    final db = await database;
+    return await db.delete(
+      'chat_prompts',
       where: 'id = ?',
       whereArgs: [id],
     );
