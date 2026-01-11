@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:io';
 import '../../models/character/character.dart';
 import '../../models/character/cover_image.dart';
+import '../../models/character/persona.dart';
 import '../../models/character/start_scenario.dart';
 import '../../database/database_helper.dart';
 import '../../models/chat/chat_room.dart';
@@ -26,9 +27,11 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
 
   Character? _character;
   List<CoverImage> _coverImages = [];
+  List<Persona> _personas = [];
   List<StartScenario> _startScenarios = [];
   bool _isLoading = true;
 
+  int? _selectedPersonaIndex;
   int? _selectedScenarioIndex;
 
   @override
@@ -43,12 +46,16 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
     try {
       final character = await _db.readCharacter(widget.characterId);
       final coverImages = await _db.readCoverImages(widget.characterId);
+      final personas = await _db.readPersonas(widget.characterId);
       final startScenarios = await _db.readStartScenarios(widget.characterId);
 
       setState(() {
         _character = character;
         _coverImages = coverImages;
+        _personas = personas;
         _startScenarios = startScenarios;
+        // 페르소나가 있으면 첫 번째를 기본 선택
+        _selectedPersonaIndex = personas.isNotEmpty ? 0 : null;
         // 시작 설정이 있으면 첫 번째를 기본 선택
         _selectedScenarioIndex = startScenarios.isNotEmpty ? 0 : null;
         _isLoading = false;
@@ -84,6 +91,9 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
         characterId: widget.characterId,
         name: _character!.name,
         selectedChatPromptId: selectedPrompt?.id,
+        selectedPersonaId: _selectedPersonaIndex != null
+            ? _personas[_selectedPersonaIndex!].id
+            : null,
         selectedStartScenarioId: _selectedScenarioIndex != null
             ? _startScenarios[_selectedScenarioIndex!].id
             : null,
@@ -154,6 +164,70 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
           },
         ),
       ),
+    );
+  }
+
+  Widget _buildPersonaDropdown() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+        ),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: DropdownButton<int>(
+        value: _selectedPersonaIndex,
+        isExpanded: true,
+        underline: const SizedBox(),
+        isDense: true,
+        items: List.generate(
+          _personas.length,
+          (index) => DropdownMenuItem<int>(
+            value: index,
+            child: Text(
+              _personas[index].name,
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+          ),
+        ),
+        onChanged: (int? newValue) {
+          setState(() {
+            _selectedPersonaIndex = newValue;
+          });
+        },
+      ),
+    );
+  }
+
+  Widget _buildSelectedPersonaContent() {
+    if (_selectedPersonaIndex == null) {
+      return const SizedBox();
+    }
+
+    final persona = _personas[_selectedPersonaIndex!];
+
+    if (persona.content == null || persona.content!.isEmpty) {
+      return const SizedBox();
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(
+            persona.content!,
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ),
+      ],
     );
   }
 
@@ -346,6 +420,20 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
                     runSpacing: 8,
                     children: keywords.map((keyword) => TagChip(label: keyword)).toList(),
                   ),
+                  const SizedBox(height: 24),
+                ],
+
+                // 페르소나 섹션
+                if (_personas.isNotEmpty) ...[
+                  Text(
+                    '페르소나',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  _buildPersonaDropdown(),
+                  _buildSelectedPersonaContent(),
                   const SizedBox(height: 24),
                 ],
 
