@@ -19,6 +19,8 @@ class CustomTextField extends StatefulWidget {
   final String? label;
   final String? helpText;
   final bool showCounter;
+  final bool obscureText;
+  final bool enableObscureToggle;
 
   const CustomTextField({
     super.key,
@@ -30,6 +32,8 @@ class CustomTextField extends StatefulWidget {
     this.label,
     this.helpText,
     this.showCounter = false,
+    this.obscureText = false,
+    this.enableObscureToggle = false,
   });
 
   @override
@@ -38,10 +42,12 @@ class CustomTextField extends StatefulWidget {
 
 class _CustomTextFieldState extends State<CustomTextField> {
   int _currentLength = 0;
+  late bool _isObscured;
 
   @override
   void initState() {
     super.initState();
+    _isObscured = widget.obscureText;
     widget.controller?.addListener(_updateLength);
   }
 
@@ -117,6 +123,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
         TextFormField(
           controller: widget.controller,
           style: textTheme.bodyMedium,
+          obscureText: _isObscured,
           decoration: InputDecoration(
             hintText: widget.hintText,
             hintStyle: textTheme.bodyMedium?.copyWith(
@@ -144,6 +151,12 @@ class _CustomTextFieldState extends State<CustomTextField> {
               horizontal: CustomTextField.horizontalPadding,
               vertical: CustomTextField.verticalPadding,
             ),
+            suffixIcon: widget.enableObscureToggle
+                ? IconButton(
+                    icon: Icon(_isObscured ? Icons.visibility : Icons.visibility_off),
+                    onPressed: () => setState(() => _isObscured = !_isObscured),
+                  )
+                : null,
             counterText: '',
             isDense: true,
           ),

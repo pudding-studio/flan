@@ -1,5 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../widgets/custom_text_field.dart';
+
+enum ApiKeyType {
+  googleAiStudio('Google AI Studio');
+
+  final String displayName;
+  const ApiKeyType(this.displayName);
+}
 
 class ApiKeyScreen extends StatefulWidget {
   const ApiKeyScreen({super.key});
@@ -12,7 +20,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
   final _formKey = GlobalKey<FormState>();
   final _apiKeyController = TextEditingController();
   bool _isLoading = false;
-  bool _isObscured = true;
+  ApiKeyType _selectedApiKeyType = ApiKeyType.googleAiStudio;
 
   @override
   void initState() {
@@ -117,6 +125,37 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
     }
   }
 
+  Widget _buildApiKeyTypeSelector(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
+    return Wrap(
+      spacing: 8,
+      runSpacing: 8,
+      children: ApiKeyType.values.map((type) {
+        final isSelected = _selectedApiKeyType == type;
+        return FilterChip(
+          selected: isSelected,
+          label: Text(type.displayName),
+          labelStyle: textTheme.bodyMedium?.copyWith(
+            color: isSelected ? colorScheme.onSecondaryContainer : colorScheme.onSurface,
+          ),
+          backgroundColor: colorScheme.surface,
+          selectedColor: colorScheme.secondaryContainer,
+          checkmarkColor: colorScheme.onSecondaryContainer,
+          side: BorderSide(
+            color: isSelected ? colorScheme.secondary : colorScheme.outline.withValues(alpha: 0.3),
+          ),
+          onSelected: (selected) {
+            if (selected) {
+              setState(() => _selectedApiKeyType = type);
+            }
+          },
+        );
+      }).toList(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -174,19 +213,16 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
                       ),
                     ),
                     const SizedBox(height: 24),
-                    TextFormField(
+                    _buildApiKeyTypeSelector(context),
+                    const SizedBox(height: 24),
+                    CustomTextField(
                       controller: _apiKeyController,
-                      decoration: InputDecoration(
-                        labelText: 'API 키',
-                        hintText: 'sk-...',
-                        border: const OutlineInputBorder(),
-                        suffixIcon: IconButton(
-                          icon: Icon(_isObscured ? Icons.visibility : Icons.visibility_off),
-                          onPressed: () => setState(() => _isObscured = !_isObscured),
-                        ),
-                      ),
-                      obscureText: _isObscured,
+                      label: 'API 키',
+                      helpText: '${_selectedApiKeyType.displayName}에서 발급받은 API 키를 입력해주세요.',
+                      hintText: 'API 키를 입력해주세요',
                       maxLines: 1,
+                      obscureText: true,
+                      enableObscureToggle: true,
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
                           return 'API 키를 입력해주세요';
