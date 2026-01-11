@@ -23,6 +23,7 @@ class _PersonaTabState extends State<PersonaTab> {
 
   int? _editingPersonaId;
   final Map<int, TextEditingController> _editControllers = {};
+  final Map<String, TextEditingController> _fieldControllers = {};
 
   int _nextTempId = -1;
   int _getNextTempId() => _nextTempId--;
@@ -32,7 +33,17 @@ class _PersonaTabState extends State<PersonaTab> {
     for (var controller in _editControllers.values) {
       controller.dispose();
     }
+    for (var controller in _fieldControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
+  }
+
+  TextEditingController _getFieldController(String key, String initialValue) {
+    if (!_fieldControllers.containsKey(key)) {
+      _fieldControllers[key] = TextEditingController(text: initialValue);
+    }
+    return _fieldControllers[key]!;
   }
 
   void _notifyUpdate() {
@@ -266,7 +277,9 @@ class _PersonaTabState extends State<PersonaTab> {
   }
 
   Widget _buildPersonaContentField(Persona persona) {
-    final controller = TextEditingController(text: persona.content);
+    final key = 'persona_${persona.id}_content';
+    final controller = _getFieldController(key, persona.content ?? '');
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

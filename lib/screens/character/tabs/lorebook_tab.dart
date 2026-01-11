@@ -27,6 +27,7 @@ class _LorebookTabState extends State<LorebookTab> {
   int? _editingFolderId;
   int? _editingLorebookId;
   final Map<int, TextEditingController> _editControllers = {};
+  final Map<String, TextEditingController> _fieldControllers = {};
 
   int _nextTempId = -1;
   int _getNextTempId() => _nextTempId--;
@@ -36,7 +37,17 @@ class _LorebookTabState extends State<LorebookTab> {
     for (var controller in _editControllers.values) {
       controller.dispose();
     }
+    for (var controller in _fieldControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
+  }
+
+  TextEditingController _getFieldController(String key, String initialValue) {
+    if (!_fieldControllers.containsKey(key)) {
+      _fieldControllers[key] = TextEditingController(text: initialValue);
+    }
+    return _fieldControllers[key]!;
   }
 
   void _notifyUpdate() {
@@ -643,7 +654,9 @@ class _LorebookTabState extends State<LorebookTab> {
   }
 
   Widget _buildActivationKeysField(Lorebook lorebook) {
-    final controller = TextEditingController(text: lorebook.activationKeys.join(', '));
+    final key = 'lorebook_${lorebook.id}_activation_keys';
+    final controller = _getFieldController(key, lorebook.activationKeys.join(', '));
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -728,7 +741,9 @@ class _LorebookTabState extends State<LorebookTab> {
   }
 
   Widget _buildDeploymentOrderField(Lorebook lorebook) {
-    final controller = TextEditingController(text: lorebook.deploymentOrder.toString());
+    final key = 'lorebook_${lorebook.id}_deployment_order';
+    final controller = _getFieldController(key, lorebook.deploymentOrder.toString());
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -765,7 +780,9 @@ class _LorebookTabState extends State<LorebookTab> {
   }
 
   Widget _buildContentField(Lorebook lorebook) {
-    final controller = TextEditingController(text: lorebook.content);
+    final key = 'lorebook_${lorebook.id}_content';
+    final controller = _getFieldController(key, lorebook.content ?? '');
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

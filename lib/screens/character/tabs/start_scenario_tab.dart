@@ -23,6 +23,7 @@ class _StartScenarioTabState extends State<StartScenarioTab> {
 
   int? _editingStartScenarioId;
   final Map<int, TextEditingController> _editControllers = {};
+  final Map<String, TextEditingController> _fieldControllers = {};
 
   int _nextTempId = -1;
   int _getNextTempId() => _nextTempId--;
@@ -32,7 +33,17 @@ class _StartScenarioTabState extends State<StartScenarioTab> {
     for (var controller in _editControllers.values) {
       controller.dispose();
     }
+    for (var controller in _fieldControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
+  }
+
+  TextEditingController _getFieldController(String key, String initialValue) {
+    if (!_fieldControllers.containsKey(key)) {
+      _fieldControllers[key] = TextEditingController(text: initialValue);
+    }
+    return _fieldControllers[key]!;
   }
 
   void _notifyUpdate() {
@@ -272,7 +283,9 @@ class _StartScenarioTabState extends State<StartScenarioTab> {
   }
 
   Widget _buildStartSettingField(StartScenario scenario) {
-    final controller = TextEditingController(text: scenario.startSetting);
+    final key = 'scenario_${scenario.id}_start_setting';
+    final controller = _getFieldController(key, scenario.startSetting ?? '');
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -336,7 +349,9 @@ class _StartScenarioTabState extends State<StartScenarioTab> {
   }
 
   Widget _buildStartMessageField(StartScenario scenario) {
-    final controller = TextEditingController(text: scenario.startMessage);
+    final key = 'scenario_${scenario.id}_start_message';
+    final controller = _getFieldController(key, scenario.startMessage ?? '');
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
