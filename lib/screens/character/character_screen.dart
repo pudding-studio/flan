@@ -38,16 +38,17 @@ class _CharacterScreenState extends State<CharacterScreen> {
       // 각 캐릭터의 표지 이미지 로드
       final coverImages = <int, String?>{};
       for (var character in characters) {
-        if (character.selectedCoverImageId != null) {
-          final images = await _db.readCoverImages(character.id!);
-          final selectedImage = images.firstWhere(
-            (img) => img.id == character.selectedCoverImageId,
-            orElse: () => images.isNotEmpty ? images.first : CoverImage(
-              characterId: character.id!,
-              name: '',
-              order: 0,
-            ),
-          );
+        final images = await _db.readCoverImages(character.id!);
+        if (images.isNotEmpty) {
+          CoverImage selectedImage;
+          if (character.selectedCoverImageId != null) {
+            selectedImage = images.firstWhere(
+              (img) => img.id == character.selectedCoverImageId,
+              orElse: () => images.first,
+            );
+          } else {
+            selectedImage = images.first;
+          }
           coverImages[character.id!] = selectedImage.imagePath;
         }
       }

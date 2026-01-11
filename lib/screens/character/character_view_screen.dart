@@ -126,9 +126,16 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
   }
 
   Widget _buildCoverImage() {
-    final selectedCover = _coverImages.isNotEmpty
-        ? _coverImages.first
-        : null;
+    CoverImage? selectedCover;
+
+    if (_character?.selectedCoverImageId != null && _coverImages.isNotEmpty) {
+      selectedCover = _coverImages.firstWhere(
+        (img) => img.id == _character!.selectedCoverImageId,
+        orElse: () => _coverImages.first,
+      );
+    } else if (_coverImages.isNotEmpty) {
+      selectedCover = _coverImages.first;
+    }
 
     if (selectedCover == null || selectedCover.imagePath == null || selectedCover.imagePath!.isEmpty) {
       return AspectRatio(
