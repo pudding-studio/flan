@@ -6,6 +6,8 @@ import '../models/character/persona.dart';
 import '../models/character/start_scenario.dart';
 import '../models/character/cover_image.dart';
 import '../models/prompt/chat_prompt.dart';
+import '../models/chat/chat_room.dart';
+import '../models/chat/chat_message.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -25,7 +27,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 2,
+      version: 3,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -160,13 +162,56 @@ class DatabaseHelper {
         updated_at $textType
       )
     ''');
+
+    // 채팅방 테이블
+    await db.execute('''
+      CREATE TABLE chat_rooms (
+        id $idType,
+        character_id $intType,
+        name $textType,
+        selected_chat_prompt_id INTEGER,
+        selected_persona_id INTEGER,
+        selected_start_scenario_id INTEGER,
+        created_at $textType,
+        updated_at $textType,
+        FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE,
+        FOREIGN KEY (selected_chat_prompt_id) REFERENCES chat_prompts (id) ON DELETE SET NULL,
+        FOREIGN KEY (selected_persona_id) REFERENCES personas (id) ON DELETE SET NULL,
+        FOREIGN KEY (selected_start_scenario_id) REFERENCES start_scenarios (id) ON DELETE SET NULL
+      )
+    ''');
+
+    // 채팅 메시지 테이블
+    await db.execute('''
+      CREATE TABLE chat_messages (
+        id $idType,
+        chat_room_id $intType,
+        role $textType,
+        content $textType,
+        created_at $textType,
+        edited_at $textTypeNullable,
+        FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE
+      )
+    ''');
+
+    // 인덱스 생성
+    await db.execute('''
+      CREATE INDEX idx_character_id_chat_rooms
+      ON chat_rooms (character_id)
+    ''');
+    await db.execute('''
+      CREATE INDEX idx_chat_room_id_messages
+      ON chat_messages (chat_room_id)
+    ''');
   }
 
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
-    if (oldVersion < 2) {
-      const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
-      const textType = 'TEXT NOT NULL';
+    const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
+    const intType = 'INTEGER NOT NULL';
+    const textType = 'TEXT NOT NULL';
+    const textTypeNullable = 'TEXT';
 
+    if (oldVersion < 2) {
       await db.execute('''
         CREATE TABLE chat_prompts (
           id $idType,
@@ -175,6 +220,47 @@ class DatabaseHelper {
           created_at $textType,
           updated_at $textType
         )
+      ''');
+    }
+
+    if (oldVersion < 3) {
+      await db.execute('''
+        CREATE TABLE chat_rooms (
+          id $idType,
+          character_id $intType,
+          name $textType,
+          selected_chat_prompt_id INTEGER,
+          selected_persona_id INTEGER,
+          selected_start_scenario_id INTEGER,
+          created_at $textType,
+          updated_at $textType,
+          FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE,
+          FOREIGN KEY (selected_chat_prompt_id) REFERENCES chat_prompts (id) ON DELETE SET NULL,
+          FOREIGN KEY (selected_persona_id) REFERENCES personas (id) ON DELETE SET NULL,
+          FOREIGN KEY (selected_start_scenario_id) REFERENCES start_scenarios (id) ON DELETE SET NULL
+        )
+      ''');
+
+      await db.execute('''
+        CREATE TABLE chat_messages (
+          id $idType,
+          chat_room_id $intType,
+          role $textType,
+          content $textType,
+          created_at $textType,
+          edited_at $textTypeNullable,
+          FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE
+        )
+      ''');
+
+      await db.execute('''
+        CREATE INDEX idx_character_id_chat_rooms
+        ON chat_rooms (character_id)
+      ''');
+
+      await db.execute('''
+        CREATE INDEX idx_chat_room_id_messages
+        ON chat_messages (chat_room_id)
       ''');
     }
   }
@@ -348,6 +434,20 @@ class DatabaseHelper {
     return await db.insert('personas', map);
   }
 
+  Future<Persona?> readPersona(int id) async {
+    final db = await database;
+    final maps = await db.query(
+      'personas',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    if (maps.isNotEmpty) {
+      return Persona.fromMap(maps.first);
+    }
+    return null;
+  }
+
   Future<List<Persona>> readPersonas(int characterId) async {
     final db = await database;
     final result = await db.query(
@@ -500,6 +600,112 @@ class DatabaseHelper {
     final db = await database;
     return await db.delete(
       'chat_prompts',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  // ==================== 채팅방 CRUD ====================
+
+  Future<int> createChatRoom(ChatRoom chatRoom) async {
+    final db = await database;
+    final map = chatRoom.toMap();
+    map.remove('id');
+    return await db.insert('chat_rooms', map);
+  }
+
+  Future<ChatRoom?> readChatRoom(int id) async {
+    final db = await database;
+    final maps = await db.query(
+      'chat_rooms',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    if (maps.isNotEmpty) {
+      return ChatRoom.fromMap(maps.first);
+    }
+    return null;
+  }
+
+  Future<List<ChatRoom>> readChatRoomsByCharacter(int characterId) async {
+    final db = await database;
+    final result = await db.query(
+      'chat_rooms',
+      where: 'character_id = ?',
+      whereArgs: [characterId],
+      orderBy: 'updated_at DESC',
+    );
+    return result.map((map) => ChatRoom.fromMap(map)).toList();
+  }
+
+  Future<int> updateChatRoom(ChatRoom chatRoom) async {
+    final db = await database;
+    return await db.update(
+      'chat_rooms',
+      chatRoom.toMap(),
+      where: 'id = ?',
+      whereArgs: [chatRoom.id],
+    );
+  }
+
+  Future<int> deleteChatRoom(int id) async {
+    final db = await database;
+    return await db.delete(
+      'chat_rooms',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  // ==================== 채팅 메시지 CRUD ====================
+
+  Future<int> createChatMessage(ChatMessage message) async {
+    final db = await database;
+    final map = message.toMap();
+    map.remove('id');
+    return await db.insert('chat_messages', map);
+  }
+
+  Future<ChatMessage?> readChatMessage(int id) async {
+    final db = await database;
+    final maps = await db.query(
+      'chat_messages',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    if (maps.isNotEmpty) {
+      return ChatMessage.fromMap(maps.first);
+    }
+    return null;
+  }
+
+  Future<List<ChatMessage>> readChatMessagesByChatRoom(int chatRoomId) async {
+    final db = await database;
+    final result = await db.query(
+      'chat_messages',
+      where: 'chat_room_id = ?',
+      whereArgs: [chatRoomId],
+      orderBy: 'created_at ASC',
+    );
+    return result.map((map) => ChatMessage.fromMap(map)).toList();
+  }
+
+  Future<int> updateChatMessage(ChatMessage message) async {
+    final db = await database;
+    return await db.update(
+      'chat_messages',
+      message.toMap(),
+      where: 'id = ?',
+      whereArgs: [message.id],
+    );
+  }
+
+  Future<int> deleteChatMessage(int id) async {
+    final db = await database;
+    return await db.delete(
+      'chat_messages',
       where: 'id = ?',
       whereArgs: [id],
     );

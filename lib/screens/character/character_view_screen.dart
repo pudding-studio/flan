@@ -4,6 +4,8 @@ import '../../models/character/character.dart';
 import '../../models/character/cover_image.dart';
 import '../../models/character/start_scenario.dart';
 import '../../database/database_helper.dart';
+import '../../models/chat/chat_room.dart';
+import '../chat/chat_room_screen.dart';
 import 'character_edit_screen.dart';
 import 'widgets/tag_chip.dart';
 
@@ -69,6 +71,42 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
 
     if (result == true) {
       _loadCharacterData();
+    }
+  }
+
+  Future<void> _createNewChat() async {
+    if (_character == null) return;
+
+    try {
+      final chatRoom = ChatRoom(
+        characterId: widget.characterId,
+        name: _character!.name,
+        selectedStartScenarioId: _selectedScenarioIndex != null
+            ? _startScenarios[_selectedScenarioIndex!].id
+            : null,
+      );
+
+      final chatRoomId = await _db.createChatRoom(chatRoom);
+
+      if (!mounted) return;
+
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ChatRoomScreen(
+            chatRoomId: chatRoomId,
+          ),
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error creating chat room: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('채팅방 생성 중 오류가 발생했습니다'),
+          duration: Duration(seconds: 2),
+        ),
+      );
     }
   }
 
@@ -328,15 +366,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
             child: SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                onPressed: () {
-                  // TODO: 새 채팅 시작 기능 구현
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                      content: Text('새 채팅 기능은 곧 추가될 예정입니다'),
-                      duration: Duration(seconds: 2),
-                    ),
-                  );
-                },
+                onPressed: _createNewChat,
                 icon: const Icon(Icons.chat_bubble_outline),
                 label: const Text('새 채팅'),
                 style: FilledButton.styleFrom(
