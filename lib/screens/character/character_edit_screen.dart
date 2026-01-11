@@ -55,7 +55,18 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   final DatabaseHelper _db = DatabaseHelper.instance;
   bool _isLoading = false;
   bool _isSaving = false; // 저장 중에는 자동 저장 비활성화
-  bool _saveCompleted = false; // 저장 완료 플래그
+
+  // 원본 데이터 저장 (변경 감지용)
+  String _originalName = '';
+  String _originalSummary = '';
+  String _originalKeywords = '';
+  String _originalWorldSetting = '';
+  int? _originalSelectedCoverImageId;
+  List<LorebookFolder> _originalFolders = [];
+  List<Lorebook> _originalStandaloneLorebooks = [];
+  List<Persona> _originalPersonas = [];
+  List<StartScenario> _originalStartScenarios = [];
+  List<CoverImage> _originalCoverImages = [];
 
   bool get _isEditMode => widget.characterId != null;
 
@@ -94,6 +105,13 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         _keywordsController.text = character.keywords ?? '';
         _worldSettingController.text = character.worldSetting ?? '';
         _selectedCoverImageId = character.selectedCoverImageId;
+
+        // 원본 데이터 저장
+        _originalName = character.name;
+        _originalSummary = character.summary ?? '';
+        _originalKeywords = character.keywords ?? '';
+        _originalWorldSetting = character.worldSetting ?? '';
+        _originalSelectedCoverImageId = character.selectedCoverImageId;
       }
 
       // 로어북 폴더 및 로어북 로드
@@ -103,22 +121,27 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         folder.lorebooks.addAll(lorebooks);
       }
       _folders.addAll(folders);
+      _originalFolders = _folders.map((f) => _copyFolder(f)).toList();
 
       // 독립형 로어북 로드
       final standaloneLorebooks = await _db.readStandaloneLorebooks(widget.characterId!);
       _standaloneLorebooks.addAll(standaloneLorebooks);
+      _originalStandaloneLorebooks = standaloneLorebooks.map((lb) => _copyLorebook(lb)).toList();
 
       // 페르소나 로드
       final personas = await _db.readPersonas(widget.characterId!);
       _personas.addAll(personas);
+      _originalPersonas = personas.map((p) => _copyPersona(p)).toList();
 
       // 시작설정 로드
       final scenarios = await _db.readStartScenarios(widget.characterId!);
       _startScenarios.addAll(scenarios);
+      _originalStartScenarios = scenarios.map((s) => _copyStartScenario(s)).toList();
 
       // 표지 이미지 로드
       final coverImages = await _db.readCoverImages(widget.characterId!);
       _coverImages.addAll(coverImages);
+      _originalCoverImages = coverImages.map((c) => _copyCoverImage(c)).toList();
 
       setState(() {});
     } catch (e) {
@@ -132,8 +155,179 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     }
   }
 
+  // 데이터 복사 헬퍼 메서드들
+  LorebookFolder _copyFolder(LorebookFolder folder) {
+    final copied = LorebookFolder(
+      id: folder.id,
+      characterId: folder.characterId,
+      name: folder.name,
+      order: folder.order,
+      isExpanded: folder.isExpanded,
+    );
+    copied.lorebooks.addAll(folder.lorebooks.map((lb) => _copyLorebook(lb)));
+    return copied;
+  }
+
+  Lorebook _copyLorebook(Lorebook lorebook) {
+    return Lorebook(
+      id: lorebook.id,
+      characterId: lorebook.characterId,
+      folderId: lorebook.folderId,
+      name: lorebook.name,
+      order: lorebook.order,
+      isExpanded: lorebook.isExpanded,
+      activationCondition: lorebook.activationCondition,
+      activationKeys: List<String>.from(lorebook.activationKeys),
+      keyCondition: lorebook.keyCondition,
+      deploymentOrder: lorebook.deploymentOrder,
+      content: lorebook.content,
+    );
+  }
+
+  Persona _copyPersona(Persona persona) {
+    return Persona(
+      id: persona.id,
+      characterId: persona.characterId,
+      name: persona.name,
+      order: persona.order,
+      isExpanded: persona.isExpanded,
+      content: persona.content,
+    );
+  }
+
+  StartScenario _copyStartScenario(StartScenario scenario) {
+    return StartScenario(
+      id: scenario.id,
+      characterId: scenario.characterId,
+      name: scenario.name,
+      order: scenario.order,
+      isExpanded: scenario.isExpanded,
+      startSetting: scenario.startSetting,
+      startMessage: scenario.startMessage,
+    );
+  }
+
+  CoverImage _copyCoverImage(CoverImage image) {
+    return CoverImage(
+      id: image.id,
+      characterId: image.characterId,
+      name: image.name,
+      order: image.order,
+      isExpanded: image.isExpanded,
+      imagePath: image.imagePath,
+    );
+  }
+
+  // 데이터 변경 감지
+  bool _hasChanges() {
+    // 기본 정보 변경 확인
+    if (_nameController.text != _originalName ||
+        _summaryController.text != _originalSummary ||
+        _keywordsController.text != _originalKeywords ||
+        _worldSettingController.text != _originalWorldSetting ||
+        _selectedCoverImageId != _originalSelectedCoverImageId) {
+      return true;
+    }
+
+    // 로어북 폴더 변경 확인
+    if (_folders.length != _originalFolders.length) return true;
+    for (int i = 0; i < _folders.length; i++) {
+      if (_folders[i].name != _originalFolders[i].name ||
+          _folders[i].isExpanded != _originalFolders[i].isExpanded ||
+          _folders[i].lorebooks.length != _originalFolders[i].lorebooks.length) {
+        return true;
+      }
+      for (int j = 0; j < _folders[i].lorebooks.length; j++) {
+        final current = _folders[i].lorebooks[j];
+        final original = _originalFolders[i].lorebooks[j];
+        if (current.name != original.name ||
+            current.content != original.content ||
+            current.activationCondition != original.activationCondition ||
+            current.activationKeys.join(',') != original.activationKeys.join(',')) {
+          return true;
+        }
+      }
+    }
+
+    // 독립형 로어북 변경 확인
+    if (_standaloneLorebooks.length != _originalStandaloneLorebooks.length) return true;
+    for (int i = 0; i < _standaloneLorebooks.length; i++) {
+      final current = _standaloneLorebooks[i];
+      final original = _originalStandaloneLorebooks[i];
+      if (current.name != original.name ||
+          current.content != original.content ||
+          current.activationCondition != original.activationCondition ||
+          current.activationKeys.join(',') != original.activationKeys.join(',')) {
+        return true;
+      }
+    }
+
+    // 페르소나 변경 확인
+    if (_personas.length != _originalPersonas.length) return true;
+    for (int i = 0; i < _personas.length; i++) {
+      if (_personas[i].name != _originalPersonas[i].name ||
+          _personas[i].content != _originalPersonas[i].content) {
+        return true;
+      }
+    }
+
+    // 시작설정 변경 확인
+    if (_startScenarios.length != _originalStartScenarios.length) return true;
+    for (int i = 0; i < _startScenarios.length; i++) {
+      if (_startScenarios[i].name != _originalStartScenarios[i].name ||
+          _startScenarios[i].startSetting != _originalStartScenarios[i].startSetting ||
+          _startScenarios[i].startMessage != _originalStartScenarios[i].startMessage) {
+        return true;
+      }
+    }
+
+    // 표지 이미지 변경 확인 (name과 imagePath 비교)
+    if (_coverImages.length != _originalCoverImages.length) return true;
+    for (int i = 0; i < _coverImages.length; i++) {
+      if (_coverImages[i].name != _originalCoverImages[i].name ||
+          _coverImages[i].imagePath != _originalCoverImages[i].imagePath) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  // 입력된 데이터가 있는지 확인 (새 캐릭터 추가 모드용)
+  bool _hasInputData() {
+    // 이름이 비어있으면 데이터가 없는 것으로 간주
+    if (_nameController.text.isEmpty) return false;
+
+    // 기본 정보 확인
+    if (_summaryController.text.isNotEmpty ||
+        _keywordsController.text.isNotEmpty ||
+        _worldSettingController.text.isNotEmpty ||
+        _selectedCoverImageId != null) {
+      return true;
+    }
+
+    // 하위 데이터 확인
+    if (_folders.isNotEmpty ||
+        _standaloneLorebooks.isNotEmpty ||
+        _personas.isNotEmpty ||
+        _startScenarios.isNotEmpty ||
+        _coverImages.isNotEmpty) {
+      return true;
+    }
+
+    // 이름만 입력되어 있는 경우도 데이터가 있는 것으로 간주
+    return _nameController.text.isNotEmpty;
+  }
+
   @override
   void dispose() {
+    // 뒤로가기 시 변경사항 없으면 임시저장 데이터 삭제 (동기적으로)
+    if (_isEditMode && !_hasChanges()) {
+      _clearAutoSaveSync();
+    } else if (!_isEditMode && !_hasInputData()) {
+      _clearAutoSaveSync();
+    }
+
     _tabController.dispose();
     _nameController.dispose();
     _summaryController.dispose();
@@ -142,13 +336,12 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     super.dispose();
   }
 
-  @override
-  void setState(VoidCallback fn) {
-    super.setState(fn);
-    // 저장 중이거나 저장 완료되었으면 자동 저장하지 않음
-    if (!_isSaving && !_saveCompleted) {
-      Future.microtask(() => _autoSave());
-    }
+  void _clearAutoSaveSync() {
+    SharedPreferences.getInstance().then((prefs) {
+      prefs.remove(_getAutoSaveKey());
+    }).catchError((e) {
+      debugPrint('자동 저장 데이터 삭제 실패: $e');
+    });
   }
 
   String _getAutoSaveKey() {
@@ -157,8 +350,14 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   }
 
   Future<void> _autoSave() async {
-    // 저장 중이거나 이름이 비어있으면 자동 저장하지 않음
-    if (_isSaving || _nameController.text.isEmpty) return;
+    // 저장 중이면 자동 저장하지 않음
+    if (_isSaving) return;
+
+    // 편집 모드: 변경된 데이터가 없으면 자동 저장하지 않음
+    if (_isEditMode && !_hasChanges()) return;
+
+    // 추가 모드: 입력된 데이터가 없으면 자동 저장하지 않음
+    if (!_isEditMode && !_hasInputData()) return;
 
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -280,6 +479,20 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
             }
           }
         });
+
+        // 복원한 데이터를 원본으로 설정 (편집 모드인 경우)
+        if (_isEditMode) {
+          _originalName = _nameController.text;
+          _originalSummary = _summaryController.text;
+          _originalKeywords = _keywordsController.text;
+          _originalWorldSetting = _worldSettingController.text;
+          _originalSelectedCoverImageId = _selectedCoverImageId;
+          _originalFolders = _folders.map((f) => _copyFolder(f)).toList();
+          _originalStandaloneLorebooks = _standaloneLorebooks.map((lb) => _copyLorebook(lb)).toList();
+          _originalPersonas = _personas.map((p) => _copyPersona(p)).toList();
+          _originalStartScenarios = _startScenarios.map((s) => _copyStartScenario(s)).toList();
+          _originalCoverImages = _coverImages.map((c) => _copyCoverImage(c)).toList();
+        }
       } else if (shouldRestore == false) {
         // 사용자가 취소를 선택하면 자동 저장 데이터 삭제
         await prefs.remove(_getAutoSaveKey());
@@ -364,11 +577,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       await _clearAutoSave();
 
       if (mounted) {
-        // 저장 완료 플래그 설정하여 이후 자동 저장 방지
         setState(() {
           _isLoading = false;
           _isSaving = false;
-          _saveCompleted = true;
         });
 
         ScaffoldMessenger.of(context).showSnackBar(
@@ -721,21 +932,36 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           LorebookTab(
             folders: _folders,
             standaloneLorebooks: _standaloneLorebooks,
-            onUpdate: () => setState(() {}),
+            onUpdate: () {
+              setState(() {});
+              _autoSave();
+            },
           ),
           PersonaTab(
             personas: _personas,
-            onUpdate: () => setState(() {}),
+            onUpdate: () {
+              setState(() {});
+              _autoSave();
+            },
           ),
           StartScenarioTab(
             startScenarios: _startScenarios,
-            onUpdate: () => setState(() {}),
+            onUpdate: () {
+              setState(() {});
+              _autoSave();
+            },
           ),
           CoverImageTab(
             coverImages: _coverImages,
             selectedCoverImageId: _selectedCoverImageId,
-            onSelectedCoverImageChanged: (id) => setState(() => _selectedCoverImageId = id),
-            onUpdate: () => setState(() {}),
+            onSelectedCoverImageChanged: (id) {
+              setState(() => _selectedCoverImageId = id);
+              _autoSave();
+            },
+            onUpdate: () {
+              setState(() {});
+              _autoSave();
+            },
           ),
         ],
       ),
