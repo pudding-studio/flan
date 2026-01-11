@@ -27,7 +27,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 3,
+      version: 4,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -158,6 +158,7 @@ class DatabaseHelper {
         id $idType,
         name $textType,
         content $textType,
+        is_selected $boolType,
         created_at $textType,
         updated_at $textType
       )
@@ -211,12 +212,15 @@ class DatabaseHelper {
     const textType = 'TEXT NOT NULL';
     const textTypeNullable = 'TEXT';
 
+    const boolType = 'INTEGER NOT NULL DEFAULT 0';
+
     if (oldVersion < 2) {
       await db.execute('''
         CREATE TABLE chat_prompts (
           id $idType,
           name $textType,
           content $textType,
+          is_selected $boolType,
           created_at $textType,
           updated_at $textType
         )
@@ -261,6 +265,12 @@ class DatabaseHelper {
       await db.execute('''
         CREATE INDEX idx_chat_room_id_messages
         ON chat_messages (chat_room_id)
+      ''');
+    }
+
+    if (oldVersion < 4) {
+      await db.execute('''
+        ALTER TABLE chat_prompts ADD COLUMN is_selected INTEGER NOT NULL DEFAULT 0
       ''');
     }
   }
@@ -603,6 +613,37 @@ class DatabaseHelper {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  Future<void> setSelectedChatPrompt(int id) async {
+    final db = await database;
+    await db.transaction((txn) async {
+      await txn.update(
+        'chat_prompts',
+        {'is_selected': 0},
+      );
+      await txn.update(
+        'chat_prompts',
+        {'is_selected': 1},
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    });
+  }
+
+  Future<ChatPrompt?> readSelectedChatPrompt() async {
+    final db = await database;
+    final maps = await db.query(
+      'chat_prompts',
+      where: 'is_selected = ?',
+      whereArgs: [1],
+      limit: 1,
+    );
+
+    if (maps.isNotEmpty) {
+      return ChatPrompt.fromMap(maps.first);
+    }
+    return null;
   }
 
   // ==================== 채팅방 CRUD ====================

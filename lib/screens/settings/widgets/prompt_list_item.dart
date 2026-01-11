@@ -3,15 +3,19 @@ import 'package:flutter/material.dart';
 class PromptListItem extends StatelessWidget {
   final String title;
   final String description;
+  final bool isSelected;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
+  final VoidCallback? onRadioTap;
 
   const PromptListItem({
     super.key,
     required this.title,
     required this.description,
+    this.isSelected = false,
     this.onTap,
     this.onDelete,
+    this.onRadioTap,
   });
 
   @override
@@ -21,29 +25,49 @@ class PromptListItem extends StatelessWidget {
       onLongPress: onDelete,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 5.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        child: Row(
           children: [
-            Text(
-              title,
-              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+            GestureDetector(
+              onTap: onRadioTap,
+              child: Container(
+                padding: const EdgeInsets.all(8.0),
+                child: Icon(
+                  isSelected ? Icons.radio_button_checked : Icons.radio_button_unchecked,
+                  color: isSelected
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.5),
+                  size: 24,
+                ),
+              ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              description,
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context)
-                        .textTheme
-                        .bodySmall
-                        ?.color
-                        ?.withValues(alpha: 0.7),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
+                  const SizedBox(height: 4),
+                  Text(
+                    description,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.color
+                              ?.withValues(alpha: 0.7),
+                        ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
             ),
           ],
         ),

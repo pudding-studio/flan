@@ -78,9 +78,12 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
     if (_character == null) return;
 
     try {
+      final selectedPrompt = await _db.readSelectedChatPrompt();
+
       final chatRoom = ChatRoom(
         characterId: widget.characterId,
         name: _character!.name,
+        selectedChatPromptId: selectedPrompt?.id,
         selectedStartScenarioId: _selectedScenarioIndex != null
             ? _startScenarios[_selectedScenarioIndex!].id
             : null,

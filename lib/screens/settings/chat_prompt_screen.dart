@@ -38,6 +38,19 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
     }
   }
 
+  Future<void> _selectPrompt(int id) async {
+    try {
+      await _db.setSelectedChatPrompt(id);
+      await _loadPrompts();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('프롬프트 선택에 실패했습니다: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _deletePrompt(int id, String name) async {
     final confirm = await showDialog<bool>(
       context: context,
@@ -140,6 +153,8 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
                       child: PromptListItem(
                         title: _prompts[index].name,
                         description: _prompts[index].content,
+                        isSelected: _prompts[index].isSelected,
+                        onRadioTap: () => _selectPrompt(_prompts[index].id!),
                         onTap: () async {
                           final result = await Navigator.push<bool>(
                             context,
