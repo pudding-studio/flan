@@ -30,6 +30,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
   List<Persona> _personas = [];
   List<StartScenario> _startScenarios = [];
   bool _isLoading = true;
+  bool _hasChanges = false;
 
   int? _selectedPersonaIndex;
   int? _selectedScenarioIndex;
@@ -77,6 +78,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
     );
 
     if (result == true) {
+      _hasChanges = true;
       _loadCharacterData();
     }
   }
@@ -354,11 +356,18 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
 
     final keywords = _character!.keywords?.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList() ?? [];
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          Navigator.of(context).pop(_hasChanges);
+        }
+      },
+      child: Scaffold(
       appBar: AppBar(
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => Navigator.pop(context, _hasChanges),
         ),
         actions: [
           IconButton(
@@ -467,6 +476,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

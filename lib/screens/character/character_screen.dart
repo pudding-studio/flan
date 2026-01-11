@@ -139,74 +139,221 @@ class _CharacterScreenState extends State<CharacterScreen> {
       appBar: AppBar(
         title: const Text('캐릭터'),
         actions: [
-          Transform.translate(
-            offset: const Offset(14, 0),
-            child: IconButton(
-              icon: Icon(_isGridView ? Icons.grid_view : Icons.view_list),
-              onPressed: () {
-                setState(() {
-                  _isGridView = !_isGridView;
-                });
-              },
-              tooltip: _isGridView ? '리스트뷰로 전환' : '격자뷰로 전환',
-              padding: EdgeInsets.zero,
-              visualDensity: VisualDensity.compact,
-              constraints: const BoxConstraints(),
-            ),
-          ),
-          Consumer<ThemeProvider>(
-            builder: (context, themeProvider, child) {
-              IconData iconData;
-              String tooltipText;
-              ThemeMode nextMode;
-
-              switch (themeProvider.themeMode) {
-                case ThemeMode.light:
-                  iconData = Icons.light_mode_outlined;
-                  tooltipText = '다크 모드로 전환';
-                  nextMode = ThemeMode.dark;
-                  break;
-                case ThemeMode.dark:
-                  iconData = Icons.dark_mode_outlined;
-                  tooltipText = '시스템 설정으로 전환';
-                  nextMode = ThemeMode.system;
-                  break;
-                case ThemeMode.system:
-                  iconData = Icons.brightness_auto_outlined;
-                  tooltipText = '라이트 모드로 전환';
-                  nextMode = ThemeMode.light;
-                  break;
-              }
-
-              return Transform.translate(
-                offset: const Offset(4, 0),
-                child: IconButton(
-                  icon: Icon(iconData),
-                  onPressed: () {
-                    themeProvider.setThemeMode(nextMode);
-                  },
-                  tooltip: tooltipText,
-                  padding: EdgeInsets.zero,
-                  visualDensity: VisualDensity.compact,
-                  constraints: const BoxConstraints(),
-                ),
-              );
-            },
-          ),
           IconButton(
-            icon: const CircleAvatar(
-              radius: 16,
-              child: Icon(Icons.person, size: 20),
-            ),
+            icon: const Icon(Icons.edit_outlined),
             onPressed: () {
-              // TODO: 프로필 페이지로 이동
+              // TODO: 편집 모드로 전환
             },
-            tooltip: '프로필',
-            padding: EdgeInsets.zero,
-            visualDensity: VisualDensity.compact,
-            constraints: const BoxConstraints(),
+            tooltip: '편집',
           ),
-          const SizedBox(width: 16),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            tooltip: '더보기',
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            onSelected: (String value) {
+              if (value == 'date' || value == 'name' || value == 'custom') {
+                setState(() {
+                  _sortMethod = value;
+                  _sortCharacters();
+                });
+              }
+            },
+            itemBuilder: (BuildContext context) {
+              return [
+                PopupMenuItem<String>(
+                  enabled: false,
+                  child: Text(
+                    '보기 방식',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                PopupMenuItem<String>(
+                  value: 'view_grid',
+                  onTap: () {
+                    setState(() {
+                      _isGridView = true;
+                    });
+                  },
+                  child: Row(
+                    children: [
+                      if (_isGridView)
+                        const Icon(Icons.check, size: 20)
+                      else
+                        const SizedBox(width: 20),
+                      const SizedBox(width: 12),
+                      const Text('격자뷰'),
+                    ],
+                  ),
+                ),
+                PopupMenuItem<String>(
+                  value: 'view_list',
+                  onTap: () {
+                    setState(() {
+                      _isGridView = false;
+                    });
+                  },
+                  child: Row(
+                    children: [
+                      if (!_isGridView)
+                        const Icon(Icons.check, size: 20)
+                      else
+                        const SizedBox(width: 20),
+                      const SizedBox(width: 12),
+                      const Text('리스트뷰'),
+                    ],
+                  ),
+                ),
+                const PopupMenuDivider(),
+                PopupMenuItem<String>(
+                  enabled: false,
+                  child: Text(
+                    '정렬방식',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                PopupMenuItem<String>(
+                  value: 'date',
+                  child: Row(
+                    children: [
+                      if (_sortMethod == 'date')
+                        const Icon(Icons.check, size: 20)
+                      else
+                        const SizedBox(width: 20),
+                      const SizedBox(width: 12),
+                      const Text('날짜순'),
+                    ],
+                  ),
+                ),
+                PopupMenuItem<String>(
+                  value: 'name',
+                  child: Row(
+                    children: [
+                      if (_sortMethod == 'name')
+                        const Icon(Icons.check, size: 20)
+                      else
+                        const SizedBox(width: 20),
+                      const SizedBox(width: 12),
+                      const Text('이름(오름차순)'),
+                    ],
+                  ),
+                ),
+                PopupMenuItem<String>(
+                  value: 'custom',
+                  child: Row(
+                    children: [
+                      if (_sortMethod == 'custom')
+                        const Icon(Icons.check, size: 20)
+                      else
+                        const SizedBox(width: 20),
+                      const SizedBox(width: 12),
+                      const Text('사용자 지정'),
+                    ],
+                  ),
+                ),
+                const PopupMenuDivider(),
+                PopupMenuItem<String>(
+                  enabled: false,
+                  child: Text(
+                    '테마 선택',
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                PopupMenuItem<String>(
+                  value: 'theme_light',
+                  child: Consumer<ThemeProvider>(
+                    builder: (context, themeProvider, child) {
+                      return InkWell(
+                        onTap: () {
+                          themeProvider.setThemeMode(ThemeMode.light);
+                          Navigator.pop(context);
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12.0),
+                          child: Row(
+                            children: [
+                              if (themeProvider.themeMode == ThemeMode.light)
+                                const Icon(Icons.check, size: 20)
+                              else
+                                const SizedBox(width: 20),
+                              const SizedBox(width: 12),
+                              const Text('라이트 모드'),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                PopupMenuItem<String>(
+                  value: 'theme_dark',
+                  child: Consumer<ThemeProvider>(
+                    builder: (context, themeProvider, child) {
+                      return InkWell(
+                        onTap: () {
+                          themeProvider.setThemeMode(ThemeMode.dark);
+                          Navigator.pop(context);
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12.0),
+                          child: Row(
+                            children: [
+                              if (themeProvider.themeMode == ThemeMode.dark)
+                                const Icon(Icons.check, size: 20)
+                              else
+                                const SizedBox(width: 20),
+                              const SizedBox(width: 12),
+                              const Text('다크 모드'),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+                PopupMenuItem<String>(
+                  value: 'theme_system',
+                  child: Consumer<ThemeProvider>(
+                    builder: (context, themeProvider, child) {
+                      return InkWell(
+                        onTap: () {
+                          themeProvider.setThemeMode(ThemeMode.system);
+                          Navigator.pop(context);
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 12.0),
+                          child: Row(
+                            children: [
+                              if (themeProvider.themeMode == ThemeMode.system)
+                                const Icon(Icons.check, size: 20)
+                              else
+                                const SizedBox(width: 20),
+                              const SizedBox(width: 12),
+                              const Text('시스템 설정'),
+                            ],
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ];
+            },
+          ),
+          const SizedBox(width: 8),
         ],
       ),
       body: Column(
@@ -216,33 +363,11 @@ class _CharacterScreenState extends State<CharacterScreen> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                PopupMenuButton<String>(
-                  onSelected: (String value) {
-                    setState(() {
-                      _sortMethod = value;
-                      _sortCharacters();
-                    });
-                  },
-                  itemBuilder: (BuildContext context) => [
-                    const PopupMenuItem(
-                      value: 'date',
-                      child: Text('날짜순'),
-                    ),
-                    const PopupMenuItem(
-                      value: 'name',
-                      child: Text('이름(오름차순)'),
-                    ),
-                    const PopupMenuItem(
-                      value: 'custom',
-                      child: Text('사용자 지정'),
-                    ),
-                  ],
-                  child: Text(
-                    _getSortMethodLabel(),
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
-                    ),
+                Text(
+                  _getSortMethodLabel(),
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
                   ),
                 ),
               ],
@@ -265,7 +390,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
             _loadCharacters();
           }
         },
-        elevation: 0,
+        elevation: 4,
         child: const Icon(Icons.add),
       ),
     );
