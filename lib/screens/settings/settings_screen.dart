@@ -31,6 +31,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             trailing: DropdownButton<String>(
               value: _language,
               underline: const SizedBox(),
+              borderRadius: BorderRadius.circular(16),
               items: const [
                 DropdownMenuItem(value: 'ko', child: Text('한국어')),
                 DropdownMenuItem(value: 'en', child: Text('English')),
@@ -66,6 +67,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 trailing: DropdownButton<String>(
                   value: themeModeValue,
                   underline: const SizedBox(),
+                  borderRadius: BorderRadius.circular(16),
                   items: const [
                     DropdownMenuItem(value: 'system', child: Text('시스템 설정')),
                     DropdownMenuItem(value: 'light', child: Text('라이트 모드')),

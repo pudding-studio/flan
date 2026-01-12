@@ -19,6 +19,9 @@ class _ChatScreenState extends State<ChatScreen> {
   final DatabaseHelper _db = DatabaseHelper.instance;
   List<_ChatRoomData> _chatRooms = [];
   bool _isLoading = true;
+  bool _isEditMode = false;
+  final Set<int> _selectedChatRoomIds = {};
+  String _sortMethod = 'date';
 
   @override
   void initState() {
@@ -71,11 +74,93 @@ class _ChatScreenState extends State<ChatScreen> {
 
       setState(() {
         _chatRooms = chatRoomDataList;
+        _sortChatRooms();
         _isLoading = false;
       });
     } catch (e) {
       debugPrint('Error loading chat rooms: $e');
       setState(() => _isLoading = false);
+    }
+  }
+
+  void _sortChatRooms() {
+    switch (_sortMethod) {
+      case 'date':
+        _chatRooms.sort((a, b) => b.chatRoom.updatedAt.compareTo(a.chatRoom.updatedAt));
+        break;
+      case 'name':
+        _chatRooms.sort((a, b) => a.chatRoom.name.compareTo(b.chatRoom.name));
+        break;
+      case 'message_count':
+        _chatRooms.sort((a, b) => b.messageCount.compareTo(a.messageCount));
+        break;
+    }
+  }
+
+  void _toggleEditMode() {
+    setState(() {
+      _isEditMode = !_isEditMode;
+      if (!_isEditMode) {
+        _selectedChatRoomIds.clear();
+      }
+    });
+  }
+
+  void _toggleChatRoomSelection(int id) {
+    setState(() {
+      if (_selectedChatRoomIds.contains(id)) {
+        _selectedChatRoomIds.remove(id);
+      } else {
+        _selectedChatRoomIds.add(id);
+      }
+    });
+  }
+
+  Future<void> _deleteSelectedChatRooms() async {
+    if (_selectedChatRoomIds.isEmpty) return;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('채팅방 삭제'),
+        content: Text('선택한 ${_selectedChatRoomIds.length}개의 채팅방을 삭제하시겠습니까?\n모든 메시지가 삭제됩니다.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        for (final id in _selectedChatRoomIds) {
+          await _db.deleteChatRoom(id);
+        }
+        setState(() {
+          _selectedChatRoomIds.clear();
+          _isEditMode = false;
+        });
+        _loadChatRooms();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('선택한 채팅방이 삭제되었습니다')),
+        );
+      } catch (e) {
+        debugPrint('Error deleting chat rooms: $e');
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('채팅방 삭제 중 오류가 발생했습니다')),
+        );
+      }
     }
   }
 
@@ -195,31 +280,112 @@ class _ChatScreenState extends State<ChatScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('채팅'),
+        title: _isEditMode
+          ? Text('${_selectedChatRoomIds.length}개 선택됨')
+          : const Text('채팅'),
+        leading: _isEditMode
+          ? IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: _toggleEditMode,
+            )
+          : null,
         actions: [
-          Transform.translate(
-            offset: const Offset(8, 0),
-            child: IconButton(
-              icon: const Icon(Icons.edit_outlined),
-              onPressed: () {
-                // TODO: 새 채팅 시작
-              },
-              tooltip: '새 채팅',
-              padding: EdgeInsets.zero,
-              visualDensity: VisualDensity.compact,
-              constraints: const BoxConstraints(),
+          if (!_isEditMode)
+            Transform.translate(
+              offset: const Offset(8, 0),
+              child: IconButton(
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: _toggleEditMode,
+                tooltip: '편집',
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+                constraints: const BoxConstraints(),
+              ),
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.more_vert),
-            onPressed: () {
-              // TODO: 더보기 메뉴 표시
-            },
-            tooltip: '더보기',
-            padding: EdgeInsets.zero,
-            visualDensity: VisualDensity.compact,
-            constraints: const BoxConstraints(),
-          ),
+          if (_isEditMode)
+            Transform.translate(
+              offset: const Offset(8, 0),
+              child: IconButton(
+                icon: const Icon(Icons.delete_outline),
+                onPressed: _selectedChatRoomIds.isEmpty ? null : _deleteSelectedChatRooms,
+                tooltip: '삭제',
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+                constraints: const BoxConstraints(),
+              ),
+            ),
+          if (!_isEditMode)
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              tooltip: '더보기',
+              padding: EdgeInsets.zero,
+              constraints: const BoxConstraints(),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              onSelected: (String value) {
+                if (value == 'date' || value == 'name' || value == 'message_count') {
+                  setState(() {
+                    _sortMethod = value;
+                    _sortChatRooms();
+                  });
+                }
+              },
+              itemBuilder: (BuildContext context) {
+                return [
+                  PopupMenuItem<String>(
+                    enabled: false,
+                    child: Text(
+                      '정렬방식',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'date',
+                    child: Row(
+                      children: [
+                        if (_sortMethod == 'date')
+                          const Icon(Icons.check, size: 20)
+                        else
+                          const SizedBox(width: 20),
+                        const SizedBox(width: 12),
+                        const Text('최근 업데이트순'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'name',
+                    child: Row(
+                      children: [
+                        if (_sortMethod == 'name')
+                          const Icon(Icons.check, size: 20)
+                        else
+                          const SizedBox(width: 20),
+                        const SizedBox(width: 12),
+                        const Text('이름순'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'message_count',
+                    child: Row(
+                      children: [
+                        if (_sortMethod == 'message_count')
+                          const Icon(Icons.check, size: 20)
+                        else
+                          const SizedBox(width: 20),
+                        const SizedBox(width: 12),
+                        const Text('메시지 수'),
+                      ],
+                    ),
+                  ),
+                ];
+              },
+            ),
           const SizedBox(width: 16),
         ],
       ),
@@ -235,17 +401,21 @@ class _ChatScreenState extends State<ChatScreen> {
                     final data = _chatRooms[index];
                     return GestureDetector(
                       onTap: () async {
-                        await Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => ChatRoomScreen(
-                              chatRoomId: data.chatRoom.id!,
+                        if (_isEditMode) {
+                          _toggleChatRoomSelection(data.chatRoom.id!);
+                        } else {
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => ChatRoomScreen(
+                                chatRoomId: data.chatRoom.id!,
+                              ),
                             ),
-                          ),
-                        );
-                        _loadChatRooms();
+                          );
+                          _loadChatRooms();
+                        }
                       },
-                      onLongPress: () {
+                      onLongPress: _isEditMode ? null : () {
                         showDialog(
                           context: context,
                           builder: (context) => Dialog(
@@ -305,6 +475,8 @@ class _ChatScreenState extends State<ChatScreen> {
                         imagePath: data.coverImage?.imagePath,
                         messageCount: data.messageCount,
                         tokenCount: data.tokenCount,
+                        isEditMode: _isEditMode,
+                        isSelected: _selectedChatRoomIds.contains(data.chatRoom.id),
                       ),
                     );
                   },

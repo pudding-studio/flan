@@ -22,7 +22,9 @@ class _CharacterScreenState extends State<CharacterScreen> {
   String _sortMethod = 'date';
   List<Character> _characters = [];
   bool _isLoading = true;
-  Map<int, String?> _characterCoverImages = {}; // characterId -> imagePath
+  Map<int, String?> _characterCoverImages = {};
+  bool _isEditMode = false;
+  final Set<int> _selectedCharacterIds = {};
 
   @override
   void initState() {
@@ -78,8 +80,104 @@ class _CharacterScreenState extends State<CharacterScreen> {
         _characters.sort((a, b) => a.name.compareTo(b.name));
         break;
       case 'custom':
-        // TODO: 사용자 지정 정렬 구현
+        _characters.sort((a, b) {
+          if (a.sortOrder == null && b.sortOrder == null) return 0;
+          if (a.sortOrder == null) return 1;
+          if (b.sortOrder == null) return -1;
+          return a.sortOrder!.compareTo(b.sortOrder!);
+        });
         break;
+    }
+  }
+
+  void _toggleEditMode() {
+    setState(() {
+      _isEditMode = !_isEditMode;
+      if (!_isEditMode) {
+        _selectedCharacterIds.clear();
+      }
+    });
+  }
+
+  void _toggleCharacterSelection(int id) {
+    setState(() {
+      if (_selectedCharacterIds.contains(id)) {
+        _selectedCharacterIds.remove(id);
+      } else {
+        _selectedCharacterIds.add(id);
+      }
+    });
+  }
+
+  Future<void> _reorderCharacters(int oldIndex, int newIndex) async {
+    if (oldIndex < newIndex) {
+      newIndex -= 1;
+    }
+
+    setState(() {
+      final character = _characters.removeAt(oldIndex);
+      _characters.insert(newIndex, character);
+    });
+
+    try {
+      for (int i = 0; i < _characters.length; i++) {
+        final updatedCharacter = _characters[i].copyWith(sortOrder: i);
+        await _db.updateCharacter(updatedCharacter);
+        _characters[i] = updatedCharacter;
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('순서 변경에 실패했습니다: $e')),
+        );
+      }
+      await _loadCharacters();
+    }
+  }
+
+  Future<void> _deleteSelectedCharacters() async {
+    if (_selectedCharacterIds.isEmpty) return;
+
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('캐릭터 삭제'),
+        content: Text('선택한 ${_selectedCharacterIds.length}개의 캐릭터를 삭제하시겠습니까? 관련된 모든 데이터가 삭제됩니다.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('삭제', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+
+    if (confirm == true) {
+      try {
+        for (final id in _selectedCharacterIds) {
+          await _db.deleteCharacter(id);
+        }
+        setState(() {
+          _selectedCharacterIds.clear();
+          _isEditMode = false;
+        });
+        await _loadCharacters();
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('선택한 캐릭터가 삭제되었습니다')),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('캐릭터 삭제에 실패했습니다: $e')),
+          );
+        }
+      }
     }
   }
 
@@ -138,18 +236,46 @@ class _CharacterScreenState extends State<CharacterScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('캐릭터'),
+        title: _isEditMode
+          ? Text('${_selectedCharacterIds.length}개 선택됨')
+          : const Text('캐릭터'),
+        leading: _isEditMode
+          ? IconButton(
+              icon: const Icon(Icons.close),
+              onPressed: _toggleEditMode,
+            )
+          : null,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: () {
-              // TODO: 편집 모드로 전환
-            },
-            tooltip: '편집',
-          ),
+          if (!_isEditMode)
+            Transform.translate(
+              offset: const Offset(8, 0),
+              child: IconButton(
+                icon: const Icon(Icons.edit_outlined),
+                onPressed: _toggleEditMode,
+                tooltip: '편집',
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+                constraints: const BoxConstraints(),
+              ),
+            ),
+          if (_isEditMode)
+            Transform.translate(
+              offset: const Offset(8, 0),
+              child: IconButton(
+                icon: const Icon(Icons.delete_outline),
+                onPressed: _selectedCharacterIds.isEmpty ? null : _deleteSelectedCharacters,
+                tooltip: '삭제',
+                padding: EdgeInsets.zero,
+                visualDensity: VisualDensity.compact,
+                constraints: const BoxConstraints(),
+              ),
+            ),
+          if (!_isEditMode)
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
             tooltip: '더보기',
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
@@ -354,7 +480,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
               ];
             },
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 16),
         ],
       ),
       body: Column(
@@ -375,11 +501,11 @@ class _CharacterScreenState extends State<CharacterScreen> {
             ),
           ),
           Expanded(
-            child: _isGridView ? _buildGridView() : _buildListView(),
+            child: (_isGridView && _sortMethod != 'custom') ? _buildGridView() : _buildListView(),
           ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: _isEditMode ? null : FloatingActionButton(
         onPressed: () async {
           final result = await Navigator.push<bool>(
             context,
@@ -458,15 +584,21 @@ class _CharacterScreenState extends State<CharacterScreen> {
                         description: _characters[i].summary ?? '',
                         tags: _characters[i].keywords?.split(',').map((e) => e.trim()).toList() ?? [],
                         imageUrl: _characterCoverImages[_characters[i].id],
+                        isEditMode: _isEditMode,
+                        isSelected: _selectedCharacterIds.contains(_characters[i].id),
                         onTap: () async {
-                          final result = await Navigator.push<bool>(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => CharacterViewScreen(characterId: _characters[i].id!),
-                            ),
-                          );
-                          if (result == true) {
-                            _loadCharacters();
+                          if (_isEditMode) {
+                            _toggleCharacterSelection(_characters[i].id!);
+                          } else {
+                            final result = await Navigator.push<bool>(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => CharacterViewScreen(characterId: _characters[i].id!),
+                              ),
+                            );
+                            if (result == true) {
+                              _loadCharacters();
+                            }
                           }
                         },
                         onDelete: () => _deleteCharacter(_characters[i].id!),
@@ -481,15 +613,21 @@ class _CharacterScreenState extends State<CharacterScreen> {
                           description: _characters[i + 1].summary ?? '',
                           tags: _characters[i + 1].keywords?.split(',').map((e) => e.trim()).toList() ?? [],
                           imageUrl: _characterCoverImages[_characters[i + 1].id],
+                          isEditMode: _isEditMode,
+                          isSelected: _selectedCharacterIds.contains(_characters[i + 1].id),
                           onTap: () async {
-                            final result = await Navigator.push<bool>(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => CharacterViewScreen(characterId: _characters[i + 1].id!),
-                              ),
-                            );
-                            if (result == true) {
-                              _loadCharacters();
+                            if (_isEditMode) {
+                              _toggleCharacterSelection(_characters[i + 1].id!);
+                            } else {
+                              final result = await Navigator.push<bool>(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (context) => CharacterViewScreen(characterId: _characters[i + 1].id!),
+                                ),
+                              );
+                              if (result == true) {
+                                _loadCharacters();
+                              }
                             }
                           },
                           onDelete: () => _deleteCharacter(_characters[i + 1].id!),
@@ -545,6 +683,44 @@ class _CharacterScreenState extends State<CharacterScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
     final horizontalPadding = screenWidth * 0.05;
 
+    if (_sortMethod == 'custom') {
+      return ReorderableListView.builder(
+        padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16.0),
+        itemCount: _characters.length,
+        onReorder: _reorderCharacters,
+        itemBuilder: (context, index) {
+          return Padding(
+            key: ValueKey(_characters[index].id),
+            padding: const EdgeInsets.only(bottom: 16.0),
+            child: CharacterListItem(
+              title: _characters[index].name,
+              description: _characters[index].summary ?? '',
+              tags: _characters[index].keywords?.split(',').map((e) => e.trim()).toList() ?? [],
+              imageUrl: _characterCoverImages[_characters[index].id],
+              isEditMode: _isEditMode,
+              isSelected: _selectedCharacterIds.contains(_characters[index].id),
+              onTap: () async {
+                if (_isEditMode) {
+                  _toggleCharacterSelection(_characters[index].id!);
+                } else {
+                  final result = await Navigator.push<bool>(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CharacterViewScreen(characterId: _characters[index].id!),
+                    ),
+                  );
+                  if (result == true) {
+                    _loadCharacters();
+                  }
+                }
+              },
+              onDelete: () => _deleteCharacter(_characters[index].id!),
+            ),
+          );
+        },
+      );
+    }
+
     return ListView.builder(
       padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16.0),
       itemCount: _characters.length,
@@ -556,15 +732,21 @@ class _CharacterScreenState extends State<CharacterScreen> {
             description: _characters[index].summary ?? '',
             tags: _characters[index].keywords?.split(',').map((e) => e.trim()).toList() ?? [],
             imageUrl: _characterCoverImages[_characters[index].id],
+            isEditMode: _isEditMode,
+            isSelected: _selectedCharacterIds.contains(_characters[index].id),
             onTap: () async {
-              final result = await Navigator.push<bool>(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => CharacterViewScreen(characterId: _characters[index].id!),
-                ),
-              );
-              if (result == true) {
-                _loadCharacters();
+              if (_isEditMode) {
+                _toggleCharacterSelection(_characters[index].id!);
+              } else {
+                final result = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CharacterViewScreen(characterId: _characters[index].id!),
+                  ),
+                );
+                if (result == true) {
+                  _loadCharacters();
+                }
               }
             },
             onDelete: () => _deleteCharacter(_characters[index].id!),

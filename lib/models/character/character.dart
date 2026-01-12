@@ -1,5 +1,5 @@
 class Character {
-  final int? id; // autoincrement primary key
+  final int? id;
   final String name;
   final String? summary;
   final String? keywords;
@@ -7,7 +7,8 @@ class Character {
   final int? selectedCoverImageId;
   final DateTime createdAt;
   final DateTime updatedAt;
-  final bool isDraft; // 임시저장 여부
+  final bool isDraft;
+  final int? sortOrder;
 
   Character({
     this.id,
@@ -19,10 +20,10 @@ class Character {
     DateTime? createdAt,
     DateTime? updatedAt,
     this.isDraft = false,
+    this.sortOrder,
   })  : createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now();
 
-  // DB에서 읽어올 때 사용
   factory Character.fromMap(Map<String, dynamic> map) {
     return Character(
       id: map['id'] as int?,
@@ -36,10 +37,10 @@ class Character {
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
       isDraft: (map['is_draft'] as int) == 1,
+      sortOrder: map['sort_order'] as int?,
     );
   }
 
-  // DB에 저장할 때 사용
   Map<String, dynamic> toMap() {
     return {
       'id': id,
@@ -51,10 +52,10 @@ class Character {
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
       'is_draft': isDraft ? 1 : 0,
+      'sort_order': sortOrder,
     };
   }
 
-  // 업데이트용 copyWith
   Character copyWith({
     int? id,
     String? name,
@@ -65,6 +66,7 @@ class Character {
     DateTime? createdAt,
     DateTime? updatedAt,
     bool? isDraft,
+    int? sortOrder,
   }) {
     return Character(
       id: id ?? this.id,
@@ -76,6 +78,7 @@ class Character {
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
       isDraft: isDraft ?? this.isDraft,
+      sortOrder: sortOrder ?? this.sortOrder,
     );
   }
 }

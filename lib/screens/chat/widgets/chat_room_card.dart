@@ -9,6 +9,8 @@ class ChatRoomCard extends StatelessWidget {
   final String? imagePath;
   final int messageCount;
   final int tokenCount;
+  final bool isEditMode;
+  final bool isSelected;
 
   const ChatRoomCard({
     super.key,
@@ -19,6 +21,8 @@ class ChatRoomCard extends StatelessWidget {
     this.imagePath,
     required this.messageCount,
     required this.tokenCount,
+    this.isEditMode = false,
+    this.isSelected = false,
   });
 
   String _formatTokenCount(int count) {
@@ -59,14 +63,51 @@ class ChatRoomCard extends StatelessWidget {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(20.0),
-            child: Container(
-              width: imageSize,
-              height: imageSize,
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: imageWidget,
-            ),
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(20.0),
+                child: Container(
+                  width: imageSize,
+                  height: imageSize,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                    border: isEditMode && isSelected
+                      ? Border.all(
+                          color: Theme.of(context).colorScheme.primary,
+                          width: 3,
+                        )
+                      : null,
+                    borderRadius: BorderRadius.circular(20.0),
+                  ),
+                  child: imageWidget,
+                ),
+              ),
+              if (isEditMode)
+                Positioned(
+                  top: -2,
+                  right: -2,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: isSelected
+                        ? Theme.of(context).colorScheme.primary
+                        : Colors.white,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: isSelected
+                          ? Theme.of(context).colorScheme.primary
+                          : Colors.grey,
+                        width: 2,
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.check,
+                      size: 16,
+                      color: isSelected ? Colors.white : Colors.transparent,
+                    ),
+                  ),
+                ),
+            ],
           ),
           const SizedBox(width: 12),
           Expanded(

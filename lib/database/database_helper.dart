@@ -27,7 +27,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 4,
+      version: 5,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -40,7 +40,6 @@ class DatabaseHelper {
     const textTypeNullable = 'TEXT';
     const boolType = 'INTEGER NOT NULL DEFAULT 0';
 
-    // 캐릭터 테이블
     await db.execute('''
       CREATE TABLE characters (
         id $idType,
@@ -51,7 +50,8 @@ class DatabaseHelper {
         selected_cover_image_id $textTypeNullable,
         created_at $textType,
         updated_at $textType,
-        is_draft $boolType
+        is_draft $boolType,
+        sort_order INTEGER
       )
     ''');
 
@@ -271,6 +271,12 @@ class DatabaseHelper {
     if (oldVersion < 4) {
       await db.execute('''
         ALTER TABLE chat_prompts ADD COLUMN is_selected INTEGER NOT NULL DEFAULT 0
+      ''');
+    }
+
+    if (oldVersion < 5) {
+      await db.execute('''
+        ALTER TABLE characters ADD COLUMN sort_order INTEGER
       ''');
     }
   }
