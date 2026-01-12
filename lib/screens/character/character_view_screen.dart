@@ -89,9 +89,24 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
     try {
       final selectedPrompt = await _db.readSelectedChatPrompt();
 
+      final existingRooms = await _db.database.then((db) async {
+        final List<Map<String, dynamic>> maps = await db.query(
+          'chat_rooms',
+          where: 'character_id = ?',
+          whereArgs: [widget.characterId],
+        );
+        return maps.map((map) => ChatRoom.fromMap(map)).toList();
+      });
+
+      int roomNumber = 1;
+      final baseName = _character!.name;
+      while (existingRooms.any((room) => room.name == '${baseName}_$roomNumber')) {
+        roomNumber++;
+      }
+
       final chatRoom = ChatRoom(
         characterId: widget.characterId,
-        name: _character!.name,
+        name: '${baseName}_$roomNumber',
         selectedChatPromptId: selectedPrompt?.id,
         selectedPersonaId: _selectedPersonaIndex != null
             ? _personas[_selectedPersonaIndex!].id
@@ -113,8 +128,13 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
           ),
         ),
       );
+
+      final messages = await _db.readChatMessagesByChatRoom(chatRoomId);
+      if (messages.isEmpty) {
+        await _db.deleteChatRoom(chatRoomId);
+      }
     } catch (e) {
-      debugPrint('Error creating chat room: $e');
+      debugPrint('Error creating chat: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(

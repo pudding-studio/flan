@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 
 class ChatRoomCard extends StatelessWidget {
   final String title;
   final String lastMessage;
   final String date;
   final String? imageUrl;
+  final String? imagePath;
+  final int messageCount;
+  final int tokenCount;
 
   const ChatRoomCard({
     super.key,
@@ -12,12 +16,44 @@ class ChatRoomCard extends StatelessWidget {
     required this.lastMessage,
     required this.date,
     this.imageUrl,
+    this.imagePath,
+    required this.messageCount,
+    required this.tokenCount,
   });
+
+  String _formatTokenCount(int count) {
+    return count.toString().replaceAllMapped(
+      RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'),
+      (Match m) => '${m[1]},',
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final imageSize = (screenWidth * 0.17);
+    const double imageSize = 60.0;
+
+    Widget imageWidget;
+    if (imagePath != null && imagePath!.isNotEmpty) {
+      imageWidget = Image.file(
+        File(imagePath!),
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Icon(
+            Icons.person,
+            size: imageSize * 0.4,
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
+          );
+        },
+      );
+    } else if (imageUrl != null) {
+      imageWidget = Image.network(imageUrl!, fit: BoxFit.cover);
+    } else {
+      imageWidget = Icon(
+        Icons.person,
+        size: imageSize * 0.4,
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
+      );
+    }
 
     return IntrinsicHeight(
       child: Row(
@@ -29,13 +65,7 @@ class ChatRoomCard extends StatelessWidget {
               width: imageSize,
               height: imageSize,
               color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: imageUrl != null
-                  ? Image.network(imageUrl!, fit: BoxFit.cover)
-                  : Icon(
-                      Icons.person,
-                      size: imageSize * 0.4,
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
+              child: imageWidget,
             ),
           ),
           const SizedBox(width: 12),
@@ -78,6 +108,26 @@ class ChatRoomCard extends StatelessWidget {
                         ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        '$messageCount msg',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              fontSize: 11,
+                              color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.5),
+                            ),
+                      ),
+                      Text(
+                        '${_formatTokenCount(tokenCount)} token',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              fontSize: 11,
+                              color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.5),
+                            ),
+                      ),
+                    ],
                   ),
                 ],
               ),

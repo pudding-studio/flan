@@ -1,38 +1,195 @@
 import 'package:flutter/material.dart';
 import 'widgets/chat_room_card.dart';
+import '../../models/chat/chat_room.dart';
+import '../../models/chat/chat_message.dart';
+import '../../models/character/character.dart';
+import '../../models/character/cover_image.dart';
+import '../../database/database_helper.dart';
+import '../../utils/token_counter.dart';
+import 'chat_room_screen.dart';
 
-class ChatScreen extends StatelessWidget {
+class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final List<Map<String, String?>> demoChatRooms = [
-      {
-        'title': '홍길동',
-        'lastMessage': '안녕하세요! 오늘 날씨가 정말 좋네요.',
-        'date': '오늘',
-        'imageUrl': null,
-      },
-      {
-        'title': '아이언맨',
-        'lastMessage': '새로운 슈트 디자인을 완성했어요.',
-        'date': '어제',
-        'imageUrl': null,
-      },
-      {
-        'title': '셜록 홈즈',
-        'lastMessage': '이 사건에는 흥미로운 단서가 있습니다. 정말이지 흥미로운 일이아닐수가 없군요',
-        'date': '2일 전',
-        'imageUrl': null,
-      },
-      {
-        'title': '해리 포터',
-        'lastMessage': '호그와트에서 재미있는 일이 있었어요.',
-        'date': '3일 전',
-        'imageUrl': null,
-      },
-    ];
+  State<ChatScreen> createState() => _ChatScreenState();
+}
 
+class _ChatScreenState extends State<ChatScreen> {
+  final DatabaseHelper _db = DatabaseHelper.instance;
+  List<_ChatRoomData> _chatRooms = [];
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadChatRooms();
+  }
+
+  Future<void> _loadChatRooms() async {
+    setState(() => _isLoading = true);
+
+    try {
+      final allChatRooms = await _db.database.then((db) async {
+        final List<Map<String, dynamic>> maps = await db.query(
+          'chat_rooms',
+          orderBy: 'updated_at DESC',
+        );
+        return maps.map((map) => ChatRoom.fromMap(map)).toList();
+      });
+
+      final List<_ChatRoomData> chatRoomDataList = [];
+
+      for (final chatRoom in allChatRooms) {
+        final character = await _db.readCharacter(chatRoom.characterId);
+        if (character == null) continue;
+
+        final coverImages = await _db.readCoverImages(chatRoom.characterId);
+        final selectedCover = coverImages.isNotEmpty ? coverImages.first : null;
+
+        final messages = await _db.readChatMessagesByChatRoom(chatRoom.id!);
+        final lastMessage = messages.isNotEmpty ? messages.last : null;
+
+        int assistantMessageCount = 0;
+        int totalTokens = 0;
+        for (final message in messages) {
+          if (message.role == MessageRole.assistant) {
+            assistantMessageCount++;
+          }
+          totalTokens += TokenCounter.estimateTokenCount(message.content);
+        }
+
+        chatRoomDataList.add(_ChatRoomData(
+          chatRoom: chatRoom,
+          character: character,
+          coverImage: selectedCover,
+          lastMessage: lastMessage,
+          messageCount: assistantMessageCount,
+          tokenCount: totalTokens,
+        ));
+      }
+
+      setState(() {
+        _chatRooms = chatRoomDataList;
+        _isLoading = false;
+      });
+    } catch (e) {
+      debugPrint('Error loading chat rooms: $e');
+      setState(() => _isLoading = false);
+    }
+  }
+
+  String _formatDate(DateTime dateTime) {
+    final now = DateTime.now();
+    final difference = now.difference(dateTime);
+
+    if (difference.inDays == 0) {
+      return '오늘';
+    } else if (difference.inDays == 1) {
+      return '어제';
+    } else if (difference.inDays < 7) {
+      return '${difference.inDays}일 전';
+    } else if (difference.inDays < 30) {
+      final weeks = (difference.inDays / 7).floor();
+      return '$weeks주 전';
+    } else if (difference.inDays < 365) {
+      final months = (difference.inDays / 30).floor();
+      return '$months개월 전';
+    } else {
+      final years = (difference.inDays / 365).floor();
+      return '$years년 전';
+    }
+  }
+
+  Future<void> _showRenameChatRoomDialog(ChatRoom chatRoom) async {
+    final controller = TextEditingController(text: chatRoom.name);
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('채팅방 이름 수정'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            labelText: '채팅방 이름',
+            border: OutlineInputBorder(),
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, controller.text.trim()),
+            child: const Text('확인'),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result.isNotEmpty && result != chatRoom.name) {
+      try {
+        final updatedChatRoom = chatRoom.copyWith(
+          name: result,
+        );
+        await _db.updateChatRoom(updatedChatRoom);
+        _loadChatRooms();
+      } catch (e) {
+        debugPrint('Error renaming chat room: $e');
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('채팅방 이름 수정 중 오류가 발생했습니다')),
+        );
+      }
+    }
+
+    controller.dispose();
+  }
+
+  Future<void> _showDeleteChatRoomDialog(ChatRoom chatRoom) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('채팅방 삭제'),
+        content: Text('\'${chatRoom.name}\' 채팅방을 삭제하시겠습니까?\n모든 메시지가 삭제됩니다.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('취소'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: TextButton.styleFrom(
+              foregroundColor: Theme.of(context).colorScheme.error,
+            ),
+            child: const Text('삭제'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await _db.deleteChatRoom(chatRoom.id!);
+        _loadChatRooms();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('채팅방이 삭제되었습니다')),
+        );
+      } catch (e) {
+        debugPrint('Error deleting chat room: $e');
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('채팅방 삭제 중 오류가 발생했습니다')),
+        );
+      }
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final horizontalPadding = screenWidth * 0.05;
 
@@ -66,19 +223,110 @@ class ChatScreen extends StatelessWidget {
           const SizedBox(width: 16),
         ],
       ),
-      body: ListView.separated(
-        padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16.0),
-        itemCount: demoChatRooms.length,
-        separatorBuilder: (context, index) => const SizedBox(height: 20.0),
-        itemBuilder: (context, index) {
-          return ChatRoomCard(
-            title: demoChatRooms[index]['title']!,
-            lastMessage: demoChatRooms[index]['lastMessage']!,
-            date: demoChatRooms[index]['date']!,
-            imageUrl: demoChatRooms[index]['imageUrl'],
-          );
-        },
-      ),
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : _chatRooms.isEmpty
+              ? const Center(child: Text('채팅방이 없습니다'))
+              : ListView.separated(
+                  padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16.0),
+                  itemCount: _chatRooms.length,
+                  separatorBuilder: (context, index) => const SizedBox(height: 20.0),
+                  itemBuilder: (context, index) {
+                    final data = _chatRooms[index];
+                    return GestureDetector(
+                      onTap: () async {
+                        await Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => ChatRoomScreen(
+                              chatRoomId: data.chatRoom.id!,
+                            ),
+                          ),
+                        );
+                        _loadChatRooms();
+                      },
+                      onLongPress: () {
+                        showDialog(
+                          context: context,
+                          builder: (context) => Dialog(
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16.0),
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    data.chatRoom.name,
+                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  const Divider(),
+                                  ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    leading: const Icon(Icons.edit_outlined),
+                                    title: const Text('채팅방 이름 수정'),
+                                    onTap: () {
+                                      Navigator.pop(context);
+                                      _showRenameChatRoomDialog(data.chatRoom);
+                                    },
+                                  ),
+                                  ListTile(
+                                    contentPadding: EdgeInsets.zero,
+                                    leading: Icon(
+                                      Icons.delete_outline,
+                                      color: Theme.of(context).colorScheme.error,
+                                    ),
+                                    title: Text(
+                                      '삭제',
+                                      style: TextStyle(
+                                        color: Theme.of(context).colorScheme.error,
+                                      ),
+                                    ),
+                                    onTap: () {
+                                      Navigator.pop(context);
+                                      _showDeleteChatRoomDialog(data.chatRoom);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                      child: ChatRoomCard(
+                        title: data.chatRoom.name,
+                        lastMessage: data.lastMessage?.content ?? '메시지가 없습니다',
+                        date: _formatDate(data.chatRoom.updatedAt),
+                        imagePath: data.coverImage?.imagePath,
+                        messageCount: data.messageCount,
+                        tokenCount: data.tokenCount,
+                      ),
+                    );
+                  },
+                ),
     );
   }
+}
+
+class _ChatRoomData {
+  final ChatRoom chatRoom;
+  final Character character;
+  final CoverImage? coverImage;
+  final ChatMessage? lastMessage;
+  final int messageCount;
+  final int tokenCount;
+
+  _ChatRoomData({
+    required this.chatRoom,
+    required this.character,
+    this.coverImage,
+    this.lastMessage,
+    required this.messageCount,
+    required this.tokenCount,
+  });
 }

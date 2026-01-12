@@ -138,6 +138,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       await _db.createChatMessage(assistantMessage);
 
+      final updatedChatRoom = _chatRoom!.copyWith(
+        updatedAt: DateTime.now(),
+      );
+      await _db.updateChatRoom(updatedChatRoom);
+
       await _loadChatData();
     } catch (e) {
       debugPrint('Error sending message: $e');
@@ -190,13 +195,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     if (selectedCover == null ||
         selectedCover.imagePath == null ||
         selectedCover.imagePath!.isEmpty) {
-      return CircleAvatar(
+      return const CircleAvatar(
         radius: 16,
-        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+        backgroundColor: Color(0xFFE0E0E0),
         child: Icon(
           Icons.person_outline,
           size: 16,
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
+          color: Color(0xFF757575),
         ),
       );
     }
