@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import '../../providers/theme_provider.dart';
 import '../../database/database_helper.dart';
 import '../../models/character/character.dart';
@@ -501,7 +502,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
             ),
           ),
           Expanded(
-            child: (_isGridView && _sortMethod != 'custom') ? _buildGridView() : _buildListView(),
+            child: _isGridView ? _buildGridView() : _buildListView(),
           ),
         ],
       ),
@@ -563,84 +564,58 @@ class _CharacterScreenState extends State<CharacterScreen> {
     final horizontalPadding = screenWidth * 0.05;
     final spacing = screenWidth * 0.025;
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final availableWidth = constraints.maxWidth - (horizontalPadding * 2) - spacing;
-        final cardWidth = availableWidth / 2;
+    final gridDelegate = SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: 2,
+      childAspectRatio: 0.55,
+      crossAxisSpacing: spacing,
+      mainAxisSpacing: 0,
+    );
 
-        return ListView(
-          padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16.0),
-          children: [
-            for (int i = 0; i < _characters.length; i += 2)
-              Padding(
-                padding: EdgeInsets.only(bottom: i < _characters.length - 2 ? 0 : 0),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    SizedBox(
-                      width: cardWidth,
-                      child: CharacterCard(
-                        title: _characters[i].name,
-                        description: _characters[i].summary ?? '',
-                        tags: _characters[i].keywords?.split(',').map((e) => e.trim()).toList() ?? [],
-                        imageUrl: _characterCoverImages[_characters[i].id],
-                        isEditMode: _isEditMode,
-                        isSelected: _selectedCharacterIds.contains(_characters[i].id),
-                        onTap: () async {
-                          if (_isEditMode) {
-                            _toggleCharacterSelection(_characters[i].id!);
-                          } else {
-                            final result = await Navigator.push<bool>(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => CharacterViewScreen(characterId: _characters[i].id!),
-                              ),
-                            );
-                            if (result == true) {
-                              _loadCharacters();
-                            }
-                          }
-                        },
-                        onDelete: () => _deleteCharacter(_characters[i].id!),
-                      ),
-                    ),
-                    SizedBox(width: spacing),
-                    if (i + 1 < _characters.length)
-                      SizedBox(
-                        width: cardWidth,
-                        child: CharacterCard(
-                          title: _characters[i + 1].name,
-                          description: _characters[i + 1].summary ?? '',
-                          tags: _characters[i + 1].keywords?.split(',').map((e) => e.trim()).toList() ?? [],
-                          imageUrl: _characterCoverImages[_characters[i + 1].id],
-                          isEditMode: _isEditMode,
-                          isSelected: _selectedCharacterIds.contains(_characters[i + 1].id),
-                          onTap: () async {
-                            if (_isEditMode) {
-                              _toggleCharacterSelection(_characters[i + 1].id!);
-                            } else {
-                              final result = await Navigator.push<bool>(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (context) => CharacterViewScreen(characterId: _characters[i + 1].id!),
-                                ),
-                              );
-                              if (result == true) {
-                                _loadCharacters();
-                              }
-                            }
-                          },
-                          onDelete: () => _deleteCharacter(_characters[i + 1].id!),
-                        ),
-                      )
-                    else
-                      SizedBox(width: cardWidth),
-                  ],
-                ),
+    final padding = EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16.0);
+
+    Widget buildCharacterCard(int index) {
+      return CharacterCard(
+        key: ValueKey(_characters[index].id),
+        title: _characters[index].name,
+        description: _characters[index].summary ?? '',
+        tags: _characters[index].keywords?.split(',').map((e) => e.trim()).toList() ?? [],
+        imageUrl: _characterCoverImages[_characters[index].id],
+        isEditMode: _isEditMode,
+        isSelected: _selectedCharacterIds.contains(_characters[index].id),
+        onTap: () async {
+          if (_isEditMode) {
+            _toggleCharacterSelection(_characters[index].id!);
+          } else {
+            final result = await Navigator.push<bool>(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CharacterViewScreen(characterId: _characters[index].id!),
               ),
-          ],
-        );
-      },
+            );
+            if (result == true) {
+              _loadCharacters();
+            }
+          }
+        },
+        onDelete: () => _deleteCharacter(_characters[index].id!),
+      );
+    }
+
+    if (_sortMethod == 'custom') {
+      return ReorderableGridView.builder(
+        padding: padding,
+        itemCount: _characters.length,
+        onReorder: _reorderCharacters,
+        gridDelegate: gridDelegate,
+        itemBuilder: (context, index) => buildCharacterCard(index),
+      );
+    }
+
+    return GridView.builder(
+      padding: padding,
+      itemCount: _characters.length,
+      gridDelegate: gridDelegate,
+      itemBuilder: (context, index) => buildCharacterCard(index),
     );
   }
 
