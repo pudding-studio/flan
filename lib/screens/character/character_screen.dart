@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:reorderable_grid_view/reorderable_grid_view.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../providers/theme_provider.dart';
 import '../../database/database_helper.dart';
 import '../../models/character/character.dart';
@@ -30,7 +31,26 @@ class _CharacterScreenState extends State<CharacterScreen> {
   @override
   void initState() {
     super.initState();
+    _loadPreferences();
     _loadCharacters();
+  }
+
+  Future<void> _loadPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _isGridView = prefs.getBool('character_is_grid_view') ?? true;
+      _sortMethod = prefs.getString('character_sort_method') ?? 'date';
+    });
+  }
+
+  Future<void> _saveViewPreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool('character_is_grid_view', _isGridView);
+  }
+
+  Future<void> _saveSortPreference() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('character_sort_method', _sortMethod);
   }
 
   Future<void> _loadCharacters() async {
@@ -286,6 +306,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
                   _sortMethod = value;
                   _sortCharacters();
                 });
+                _saveSortPreference();
               }
             },
             itemBuilder: (BuildContext context) {
@@ -307,6 +328,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
                     setState(() {
                       _isGridView = true;
                     });
+                    _saveViewPreference();
                   },
                   child: Row(
                     children: [
@@ -325,6 +347,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
                     setState(() {
                       _isGridView = false;
                     });
+                    _saveViewPreference();
                   },
                   child: Row(
                     children: [
@@ -566,9 +589,9 @@ class _CharacterScreenState extends State<CharacterScreen> {
 
     final gridDelegate = SliverGridDelegateWithFixedCrossAxisCount(
       crossAxisCount: 2,
-      childAspectRatio: 0.55,
+      childAspectRatio: 0.592,
       crossAxisSpacing: spacing,
-      mainAxisSpacing: 0,
+      mainAxisSpacing: spacing,
     );
 
     final padding = EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16.0);

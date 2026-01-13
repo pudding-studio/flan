@@ -28,8 +28,7 @@ class CharacterListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.of(context).size.width;
-    final imageSize = (screenWidth * 0.45) * 0.6;
+    final imageSize = 70.0;
 
     return GestureDetector(
       onTap: onTap,
@@ -37,7 +36,7 @@ class CharacterListItem extends StatelessWidget {
         clipBehavior: Clip.none,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(20.0),
@@ -96,10 +95,15 @@ class CharacterListItem extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 8),
-                      Wrap(
-                        spacing: 4,
-                        runSpacing: 4,
-                        children: tags.map((tag) => TagChip(label: tag)).toList(),
+                      SizedBox(
+                        height: 24,
+                        child: ClipRect(
+                          child: Wrap(
+                            spacing: 4,
+                            runSpacing: 4,
+                            children: tags.map((tag) => TagChip(label: tag)).toList(),
+                          ),
+                        ),
                       ),
                     ],
                   ),
@@ -109,8 +113,8 @@ class CharacterListItem extends StatelessWidget {
           ),
           if (isEditMode)
             Positioned(
-              top: 8,
-              right: 8,
+              top: -4,
+              right: -4,
               child: Container(
                 width: 24,
                 height: 24,
@@ -135,8 +139,8 @@ class CharacterListItem extends StatelessWidget {
             ),
           if (!isEditMode)
             Positioned(
-              top: -4,
-              right: -4,
+              top: -8,
+              right: -8,
               child: PopupMenuButton<String>(
                 icon: Container(
                   width: 24,
