@@ -78,7 +78,7 @@ class ChatRoomCard extends StatelessWidget {
                           width: 3,
                         )
                       : null,
-                    borderRadius: BorderRadius.circular(20.0),
+                    borderRadius: BorderRadius.circular(16.0),
                   ),
                   child: imageWidget,
                 ),

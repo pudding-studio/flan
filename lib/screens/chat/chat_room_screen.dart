@@ -240,7 +240,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     constraints: const BoxConstraints(),
                     visualDensity: VisualDensity.compact,
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 0),
                   IconButton(
                     icon: const Icon(Icons.delete_outline, size: 18),
                     onPressed: () => _deleteMessage(message.id!),
@@ -249,7 +249,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     visualDensity: VisualDensity.compact,
                   ),
                   if (!isUser) ...[
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 0),
                     IconButton(
                       icon: const Icon(Icons.refresh, size: 18),
                       onPressed: () => _regenerateMessage(message.id!),
@@ -332,7 +332,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 BoxShadow(
                   color: Colors.black.withValues(alpha: 0.05),
                   blurRadius: 4,
-                  offset: const Offset(0, -2),
+                  offset: const Offset(0, 0),
                 ),
               ],
             ),
@@ -347,11 +347,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                         decoration: InputDecoration(
                           hintText: '메시지를 입력하세요',
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(16),
                           ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
-                            vertical: 12,
+                            vertical: 5,
                           ),
                         ),
                         maxLines: null,
