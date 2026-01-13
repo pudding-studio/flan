@@ -18,10 +18,20 @@ class CharacterScreen extends StatefulWidget {
   State<CharacterScreen> createState() => _CharacterScreenState();
 }
 
+enum SortMethod {
+  nameAsc,
+  nameDesc,
+  updatedAtAsc,
+  updatedAtDesc,
+  createdAtAsc,
+  createdAtDesc,
+  custom,
+}
+
 class _CharacterScreenState extends State<CharacterScreen> {
   final DatabaseHelper _db = DatabaseHelper.instance;
   bool _isGridView = true;
-  String _sortMethod = 'date';
+  SortMethod _sortMethod = SortMethod.createdAtDesc;
   List<Character> _characters = [];
   bool _isLoading = true;
   Map<int, String?> _characterCoverImages = {};
@@ -39,7 +49,11 @@ class _CharacterScreenState extends State<CharacterScreen> {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
       _isGridView = prefs.getBool('character_is_grid_view') ?? true;
-      _sortMethod = prefs.getString('character_sort_method') ?? 'date';
+      final sortMethodString = prefs.getString('character_sort_method') ?? 'createdAtDesc';
+      _sortMethod = SortMethod.values.firstWhere(
+        (e) => e.name == sortMethodString,
+        orElse: () => SortMethod.createdAtDesc,
+      );
     });
   }
 
@@ -50,7 +64,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
 
   Future<void> _saveSortPreference() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('character_sort_method', _sortMethod);
+    await prefs.setString('character_sort_method', _sortMethod.name);
   }
 
   Future<void> _loadCharacters() async {
@@ -94,13 +108,25 @@ class _CharacterScreenState extends State<CharacterScreen> {
 
   void _sortCharacters() {
     switch (_sortMethod) {
-      case 'date':
-        _characters.sort((a, b) => b.createdAt.compareTo(a.createdAt));
-        break;
-      case 'name':
+      case SortMethod.nameAsc:
         _characters.sort((a, b) => a.name.compareTo(b.name));
         break;
-      case 'custom':
+      case SortMethod.nameDesc:
+        _characters.sort((a, b) => b.name.compareTo(a.name));
+        break;
+      case SortMethod.updatedAtAsc:
+        _characters.sort((a, b) => a.updatedAt.compareTo(b.updatedAt));
+        break;
+      case SortMethod.updatedAtDesc:
+        _characters.sort((a, b) => b.updatedAt.compareTo(a.updatedAt));
+        break;
+      case SortMethod.createdAtAsc:
+        _characters.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+        break;
+      case SortMethod.createdAtDesc:
+        _characters.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+        break;
+      case SortMethod.custom:
         _characters.sort((a, b) {
           if (a.sortOrder == null && b.sortOrder == null) return 0;
           if (a.sortOrder == null) return 1;
@@ -242,14 +268,20 @@ class _CharacterScreenState extends State<CharacterScreen> {
 
   String _getSortMethodLabel() {
     switch (_sortMethod) {
-      case 'date':
-        return '정렬방식: 날짜순';
-      case 'name':
-        return '정렬방식: 이름(오름차순)';
-      case 'custom':
+      case SortMethod.nameAsc:
+        return '정렬방식: 캐릭터명 (오름차순)';
+      case SortMethod.nameDesc:
+        return '정렬방식: 캐릭터명 (내림차순)';
+      case SortMethod.updatedAtAsc:
+        return '정렬방식: 수정일시 (오름차순)';
+      case SortMethod.updatedAtDesc:
+        return '정렬방식: 수정일시 (내림차순)';
+      case SortMethod.createdAtAsc:
+        return '정렬방식: 생성일시 (오름차순)';
+      case SortMethod.createdAtDesc:
+        return '정렬방식: 생성일시 (내림차순)';
+      case SortMethod.custom:
         return '정렬방식: 사용자 지정';
-      default:
-        return '정렬방식';
     }
   }
 
@@ -300,15 +332,6 @@ class _CharacterScreenState extends State<CharacterScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
-            onSelected: (String value) {
-              if (value == 'date' || value == 'name' || value == 'custom') {
-                setState(() {
-                  _sortMethod = value;
-                  _sortCharacters();
-                });
-                _saveSortPreference();
-              }
-            },
             itemBuilder: (BuildContext context) {
               return [
                 PopupMenuItem<String>(
@@ -357,57 +380,6 @@ class _CharacterScreenState extends State<CharacterScreen> {
                         const SizedBox(width: 20),
                       const SizedBox(width: 12),
                       const Text('리스트뷰'),
-                    ],
-                  ),
-                ),
-                const PopupMenuDivider(),
-                PopupMenuItem<String>(
-                  enabled: false,
-                  child: Text(
-                    '정렬방식',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                PopupMenuItem<String>(
-                  value: 'date',
-                  child: Row(
-                    children: [
-                      if (_sortMethod == 'date')
-                        const Icon(Icons.check, size: 20)
-                      else
-                        const SizedBox(width: 20),
-                      const SizedBox(width: 12),
-                      const Text('날짜순'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem<String>(
-                  value: 'name',
-                  child: Row(
-                    children: [
-                      if (_sortMethod == 'name')
-                        const Icon(Icons.check, size: 20)
-                      else
-                        const SizedBox(width: 20),
-                      const SizedBox(width: 12),
-                      const Text('이름(오름차순)'),
-                    ],
-                  ),
-                ),
-                PopupMenuItem<String>(
-                  value: 'custom',
-                  child: Row(
-                    children: [
-                      if (_sortMethod == 'custom')
-                        const Icon(Icons.check, size: 20)
-                      else
-                        const SizedBox(width: 20),
-                      const SizedBox(width: 12),
-                      const Text('사용자 지정'),
                     ],
                   ),
                 ),
@@ -510,15 +482,141 @@ class _CharacterScreenState extends State<CharacterScreen> {
       body: Column(
         children: [
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 0.0),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
-                Text(
-                  _getSortMethodLabel(),
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+                PopupMenuButton<SortMethod>(
+                  offset: const Offset(0, 32),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  onSelected: (selectedMethod) {
+                    if (selectedMethod != _sortMethod) {
+                      setState(() {
+                        _sortMethod = selectedMethod;
+                        _sortCharacters();
+                      });
+                      _saveSortPreference();
+                    }
+                  },
+                  itemBuilder: (BuildContext context) {
+                    return [
+                      PopupMenuItem<SortMethod>(
+                        value: SortMethod.nameAsc,
+                        child: Row(
+                          children: [
+                            if (_sortMethod == SortMethod.nameAsc)
+                              const Icon(Icons.check, size: 20)
+                            else
+                              const SizedBox(width: 20),
+                            const SizedBox(width: 12),
+                            const Text('캐릭터명 (오름차순)'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem<SortMethod>(
+                        value: SortMethod.nameDesc,
+                        child: Row(
+                          children: [
+                            if (_sortMethod == SortMethod.nameDesc)
+                              const Icon(Icons.check, size: 20)
+                            else
+                              const SizedBox(width: 20),
+                            const SizedBox(width: 12),
+                            const Text('캐릭터명 (내림차순)'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem<SortMethod>(
+                        value: SortMethod.updatedAtAsc,
+                        child: Row(
+                          children: [
+                            if (_sortMethod == SortMethod.updatedAtAsc)
+                              const Icon(Icons.check, size: 20)
+                            else
+                              const SizedBox(width: 20),
+                            const SizedBox(width: 12),
+                            const Text('수정일시 (오름차순)'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem<SortMethod>(
+                        value: SortMethod.updatedAtDesc,
+                        child: Row(
+                          children: [
+                            if (_sortMethod == SortMethod.updatedAtDesc)
+                              const Icon(Icons.check, size: 20)
+                            else
+                              const SizedBox(width: 20),
+                            const SizedBox(width: 12),
+                            const Text('수정일시 (내림차순)'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem<SortMethod>(
+                        value: SortMethod.createdAtAsc,
+                        child: Row(
+                          children: [
+                            if (_sortMethod == SortMethod.createdAtAsc)
+                              const Icon(Icons.check, size: 20)
+                            else
+                              const SizedBox(width: 20),
+                            const SizedBox(width: 12),
+                            const Text('생성일시 (오름차순)'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem<SortMethod>(
+                        value: SortMethod.createdAtDesc,
+                        child: Row(
+                          children: [
+                            if (_sortMethod == SortMethod.createdAtDesc)
+                              const Icon(Icons.check, size: 20)
+                            else
+                              const SizedBox(width: 20),
+                            const SizedBox(width: 12),
+                            const Text('생성일시 (내림차순)'),
+                          ],
+                        ),
+                      ),
+                      PopupMenuItem<SortMethod>(
+                        value: SortMethod.custom,
+                        child: Row(
+                          children: [
+                            if (_sortMethod == SortMethod.custom)
+                              const Icon(Icons.check, size: 20)
+                            else
+                              const SizedBox(width: 20),
+                            const SizedBox(width: 12),
+                            const Text('사용자 지정'),
+                          ],
+                        ),
+                      ),
+                    ];
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          _getSortMethodLabel(),
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+                          ),
+                        ),
+                        const SizedBox(width: 4),
+                        Icon(
+                          Icons.arrow_drop_down,
+                          size: 18,
+                          color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ],
@@ -635,7 +733,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
       );
     }
 
-    if (_sortMethod == 'custom') {
+    if (_sortMethod == SortMethod.custom) {
       return ReorderableGridView.builder(
         padding: padding,
         itemCount: _characters.length,
@@ -692,7 +790,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
     final screenWidth = MediaQuery.of(context).size.width;
     final horizontalPadding = screenWidth * 0.05;
 
-    if (_sortMethod == 'custom') {
+    if (_sortMethod == SortMethod.custom) {
       return ReorderableListView.builder(
         padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16.0),
         itemCount: _characters.length,
@@ -700,7 +798,8 @@ class _CharacterScreenState extends State<CharacterScreen> {
         itemBuilder: (context, index) {
           return Padding(
             key: ValueKey(_characters[index].id),
-            padding: const EdgeInsets.only(bottom: 16.0),
+            padding: const EdgeInsets.only(top: 8.0, bottom: 8.0),
+            
             child: CharacterListItem(
               title: _characters[index].name,
               description: _characters[index].summary ?? '',
@@ -738,6 +837,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
             ),
           );
         },
+
       );
     }
 
