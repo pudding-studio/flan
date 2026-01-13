@@ -597,6 +597,17 @@ class _CharacterScreenState extends State<CharacterScreen> {
             }
           }
         },
+        onEdit: () async {
+          final result = await Navigator.push<bool>(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CharacterEditScreen(characterId: _characters[index].id),
+            ),
+          );
+          if (result == true) {
+            _loadCharacters();
+          }
+        },
         onDelete: () => _deleteCharacter(_characters[index].id!),
       );
     }
@@ -689,6 +700,17 @@ class _CharacterScreenState extends State<CharacterScreen> {
                   }
                 }
               },
+              onEdit: () async {
+                final result = await Navigator.push<bool>(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => CharacterEditScreen(characterId: _characters[index].id),
+                  ),
+                );
+                if (result == true) {
+                  _loadCharacters();
+                }
+              },
               onDelete: () => _deleteCharacter(_characters[index].id!),
             ),
           );
@@ -722,6 +744,17 @@ class _CharacterScreenState extends State<CharacterScreen> {
                 if (result == true) {
                   _loadCharacters();
                 }
+              }
+            },
+            onEdit: () async {
+              final result = await Navigator.push<bool>(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => CharacterEditScreen(characterId: _characters[index].id),
+                ),
+              );
+              if (result == true) {
+                _loadCharacters();
               }
             },
             onDelete: () => _deleteCharacter(_characters[index].id!),
