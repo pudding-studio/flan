@@ -13,8 +13,12 @@ class PromptBuilder {
     final buffer = StringBuffer();
 
     buffer.writeln('# 시스템 프롬프트');
-    if (chatPrompt != null) {
-      buffer.writeln(chatPrompt.content);
+    if (chatPrompt != null && chatPrompt.items.isNotEmpty) {
+      for (final item in chatPrompt.items) {
+        buffer.writeln('## ${item.role.displayName}');
+        buffer.writeln(item.content);
+        buffer.writeln();
+      }
     } else {
       buffer.writeln('(채팅 프롬프트가 선택되지 않았습니다)');
     }

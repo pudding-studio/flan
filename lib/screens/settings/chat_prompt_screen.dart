@@ -89,6 +89,18 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
     }
   }
 
+  Future<void> _navigateToEdit(ChatPrompt? prompt) async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => PromptEditScreen(prompt: prompt),
+      ),
+    );
+    if (result == true) {
+      _loadPrompts();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -148,46 +160,25 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
                   ),
                   itemCount: _prompts.length,
                   itemBuilder: (context, index) {
+                    final prompt = _prompts[index];
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 16.0),
                       child: PromptListItem(
-                        title: _prompts[index].name,
-                        description: _prompts[index].content,
-                        isSelected: _prompts[index].isSelected,
-                        onRadioTap: () => _selectPrompt(_prompts[index].id!),
-                        onTap: () async {
-                          final result = await Navigator.push<bool>(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => PromptEditScreen(
-                                prompt: _prompts[index],
-                              ),
-                            ),
-                          );
-                          if (result == true) {
-                            _loadPrompts();
-                          }
-                        },
+                        title: prompt.name,
+                        description: prompt.description ?? '${prompt.items.length}개 항목',
+                        isSelected: prompt.isSelected,
+                        onRadioTap: () => _selectPrompt(prompt.id!),
+                        onTap: () => _navigateToEdit(prompt),
                         onDelete: () => _deletePrompt(
-                          _prompts[index].id!,
-                          _prompts[index].name,
+                          prompt.id!,
+                          prompt.name,
                         ),
                       ),
                     );
                   },
                 ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final result = await Navigator.push<bool>(
-            context,
-            MaterialPageRoute(
-              builder: (context) => const PromptEditScreen(),
-            ),
-          );
-          if (result == true) {
-            _loadPrompts();
-          }
-        },
+        onPressed: () => _navigateToEdit(null),
         elevation: 0,
         child: const Icon(Icons.add),
       ),

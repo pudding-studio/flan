@@ -6,6 +6,7 @@ import '../models/character/persona.dart';
 import '../models/character/start_scenario.dart';
 import '../models/character/cover_image.dart';
 import '../models/prompt/chat_prompt.dart';
+import '../models/prompt/prompt_item.dart';
 import '../models/chat/chat_room.dart';
 import '../models/chat/chat_message.dart';
 
@@ -27,7 +28,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 5,
+      version: 8,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -157,10 +158,25 @@ class DatabaseHelper {
       CREATE TABLE chat_prompts (
         id $idType,
         name $textType,
-        content $textType,
+        description $textTypeNullable,
+        supported_model $textType DEFAULT 'ALL',
+        parameters $textTypeNullable,
         is_selected $boolType,
+        `order` $intType DEFAULT 0,
         created_at $textType,
         updated_at $textType
+      )
+    ''');
+
+    // 프롬프트 항목 테이블
+    await db.execute('''
+      CREATE TABLE prompt_items (
+        id $idType,
+        chat_prompt_id $intType,
+        role $textType DEFAULT 'system',
+        content $textTypeNullable,
+        `order` $intType DEFAULT 0,
+        FOREIGN KEY (chat_prompt_id) REFERENCES chat_prompts (id) ON DELETE CASCADE
       )
     ''');
 
@@ -277,6 +293,97 @@ class DatabaseHelper {
     if (oldVersion < 5) {
       await db.execute('''
         ALTER TABLE characters ADD COLUMN sort_order INTEGER
+      ''');
+    }
+
+    if (oldVersion < 6) {
+      await db.execute('''
+        ALTER TABLE chat_prompts ADD COLUMN role TEXT DEFAULT 'system'
+      ''');
+      await db.execute('''
+        ALTER TABLE chat_prompts ADD COLUMN `order` INTEGER NOT NULL DEFAULT 0
+      ''');
+    }
+
+    if (oldVersion < 7) {
+      // 기존 chat_prompts 데이터를 임시 테이블로 백업
+      await db.execute('''
+        CREATE TABLE chat_prompts_backup (
+          id INTEGER,
+          name TEXT,
+          content TEXT,
+          role TEXT,
+          is_selected INTEGER,
+          `order` INTEGER,
+          created_at TEXT,
+          updated_at TEXT
+        )
+      ''');
+
+      await db.execute('''
+        INSERT INTO chat_prompts_backup
+        SELECT id, name, content, role, is_selected, `order`, created_at, updated_at
+        FROM chat_prompts
+      ''');
+
+      // 기존 chat_prompts 테이블 삭제
+      await db.execute('DROP TABLE chat_prompts');
+
+      // 새로운 chat_prompts 테이블 생성
+      await db.execute('''
+        CREATE TABLE chat_prompts (
+          id $idType,
+          name $textType,
+          is_selected $boolType,
+          `order` $intType DEFAULT 0,
+          created_at $textType,
+          updated_at $textType
+        )
+      ''');
+
+      // prompt_items 테이블 생성
+      await db.execute('''
+        CREATE TABLE prompt_items (
+          id $idType,
+          chat_prompt_id $intType,
+          role $textType DEFAULT 'system',
+          content $textTypeNullable,
+          `order` $intType DEFAULT 0,
+          FOREIGN KEY (chat_prompt_id) REFERENCES chat_prompts (id) ON DELETE CASCADE
+        )
+      ''');
+
+      // 백업 데이터를 새 구조로 마이그레이션
+      await db.execute('''
+        INSERT INTO chat_prompts (id, name, is_selected, `order`, created_at, updated_at)
+        SELECT id, name, is_selected, `order`, created_at, updated_at
+        FROM chat_prompts_backup
+      ''');
+
+      // 각 chat_prompt에 대해 prompt_item 생성
+      await db.execute('''
+        INSERT INTO prompt_items (chat_prompt_id, role, content, `order`)
+        SELECT id, role, content, 0
+        FROM chat_prompts_backup
+        WHERE content IS NOT NULL AND content != ''
+      ''');
+
+      // 백업 테이블 삭제
+      await db.execute('DROP TABLE chat_prompts_backup');
+    }
+
+    if (oldVersion < 8) {
+      // chat_prompts 테이블에 새 컬럼 추가
+      await db.execute('''
+        ALTER TABLE chat_prompts ADD COLUMN description $textTypeNullable
+      ''');
+
+      await db.execute('''
+        ALTER TABLE chat_prompts ADD COLUMN supported_model $textType DEFAULT 'ALL'
+      ''');
+
+      await db.execute('''
+        ALTER TABLE chat_prompts ADD COLUMN parameters $textTypeNullable
       ''');
     }
   }
@@ -590,7 +697,9 @@ class DatabaseHelper {
     );
 
     if (maps.isNotEmpty) {
-      return ChatPrompt.fromMap(maps.first);
+      final prompt = ChatPrompt.fromMap(maps.first);
+      final items = await readPromptItemsByChatPrompt(id);
+      return prompt.copyWith(items: items);
     }
     return null;
   }
@@ -599,7 +708,14 @@ class DatabaseHelper {
     final db = await database;
     const orderBy = 'created_at DESC';
     final result = await db.query('chat_prompts', orderBy: orderBy);
-    return result.map((map) => ChatPrompt.fromMap(map)).toList();
+    final prompts = result.map((map) => ChatPrompt.fromMap(map)).toList();
+
+    for (var prompt in prompts) {
+      final items = await readPromptItemsByChatPrompt(prompt.id!);
+      prompt.items.addAll(items);
+    }
+
+    return prompts;
   }
 
   Future<int> updateChatPrompt(ChatPrompt prompt) async {
@@ -635,6 +751,60 @@ class DatabaseHelper {
         whereArgs: [id],
       );
     });
+  }
+
+  // ==================== 프롬프트 항목 CRUD ====================
+
+  Future<int> createPromptItem(PromptItem item) async {
+    final db = await database;
+    final map = item.toMap();
+    map.remove('id');
+    return await db.insert('prompt_items', map);
+  }
+
+  Future<PromptItem?> readPromptItem(int id) async {
+    final db = await database;
+    final maps = await db.query(
+      'prompt_items',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+
+    if (maps.isNotEmpty) {
+      return PromptItem.fromMap(maps.first);
+    }
+    return null;
+  }
+
+  Future<List<PromptItem>> readPromptItemsByChatPrompt(int chatPromptId) async {
+    final db = await database;
+    const orderBy = '`order` ASC';
+    final result = await db.query(
+      'prompt_items',
+      where: 'chat_prompt_id = ?',
+      whereArgs: [chatPromptId],
+      orderBy: orderBy,
+    );
+    return result.map((map) => PromptItem.fromMap(map)).toList();
+  }
+
+  Future<int> updatePromptItem(PromptItem item) async {
+    final db = await database;
+    return await db.update(
+      'prompt_items',
+      item.toMap(),
+      where: 'id = ?',
+      whereArgs: [item.id],
+    );
+  }
+
+  Future<int> deletePromptItem(int id) async {
+    final db = await database;
+    return await db.delete(
+      'prompt_items',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   Future<ChatPrompt?> readSelectedChatPrompt() async {

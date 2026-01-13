@@ -20,15 +20,17 @@ class PromptListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      onLongPress: onDelete,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 5.0),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 5.0),
+      child: GestureDetector(
+        onTap: onTap,
+        onLongPress: onDelete,
+        behavior: HitTestBehavior.opaque,
         child: Row(
           children: [
             GestureDetector(
               onTap: onRadioTap,
+              behavior: HitTestBehavior.opaque,
               child: Container(
                 padding: const EdgeInsets.all(8.0),
                 child: Icon(
