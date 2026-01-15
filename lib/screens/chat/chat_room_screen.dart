@@ -133,13 +133,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       await _db.createChatMessage(userMessage);
       _messageController.clear();
 
-      await _loadChatData();
-
       final systemPrompt = await _generateSystemPrompt();
 
       final aiResponse = await _geminiService.sendMessage(
         systemPrompt: systemPrompt,
-        chatHistory: _messages.where((m) => m.id != userMessage.id).toList(),
+        chatHistory: _messages,
         userMessage: text,
         chatRoomId: widget.chatRoomId,
         characterId: _character?.id,
@@ -158,7 +156,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       );
       await _db.updateChatRoom(updatedChatRoom);
 
-      await _loadChatData();
     } catch (e) {
       debugPrint('Error sending message: $e');
       if (!mounted) return;
@@ -166,6 +163,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         SnackBar(content: Text('메시지 전송 중 오류가 발생했습니다: $e')),
       );
     } finally {
+      await _loadChatData();
       if (mounted) {
         setState(() => _isSending = false);
       }
