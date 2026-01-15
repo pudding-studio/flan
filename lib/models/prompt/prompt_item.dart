@@ -20,6 +20,7 @@ class PromptItem {
   final int? chatPromptId;
   final PromptRole role;
   final String content;
+  final String? name;
   final int order;
   bool isExpanded;
 
@@ -28,6 +29,7 @@ class PromptItem {
     this.chatPromptId,
     required this.role,
     required this.content,
+    this.name,
     this.order = 0,
     this.isExpanded = false,
   });
@@ -41,6 +43,7 @@ class PromptItem {
         orElse: () => PromptRole.system,
       ),
       content: map['content'] as String,
+      name: map['name'] as String?,
       order: map['order'] as int? ?? 0,
     );
   }
@@ -51,6 +54,7 @@ class PromptItem {
       'chat_prompt_id': chatPromptId,
       'role': role.name,
       'content': content,
+      'name': name,
       'order': order,
     };
   }
@@ -60,6 +64,7 @@ class PromptItem {
     int? chatPromptId,
     PromptRole? role,
     String? content,
+    String? name,
     int? order,
     bool? isExpanded,
   }) {
@@ -68,6 +73,7 @@ class PromptItem {
       chatPromptId: chatPromptId ?? this.chatPromptId,
       role: role ?? this.role,
       content: content ?? this.content,
+      name: name ?? this.name,
       order: order ?? this.order,
       isExpanded: isExpanded ?? this.isExpanded,
     );

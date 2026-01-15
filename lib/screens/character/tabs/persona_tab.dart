@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../constants/ui_constants.dart';
 import '../../../models/character/persona.dart';
+import '../../../utils/common_dialog.dart';
+import '../../../widgets/label_with_help.dart';
 
 class PersonaTab extends StatefulWidget {
   final List<Persona> personas;
@@ -21,8 +23,6 @@ class _PersonaTabState extends State<PersonaTab> {
   static const double _lorebookItemHorizontalPadding = 10.0;
   static const double _lorebookItemVerticalPadding = 10.0;
 
-  int? _editingPersonaId;
-  final Map<int, TextEditingController> _editControllers = {};
   final Map<String, TextEditingController> _fieldControllers = {};
 
   int _nextTempId = -1;
@@ -30,9 +30,6 @@ class _PersonaTabState extends State<PersonaTab> {
 
   @override
   void dispose() {
-    for (var controller in _editControllers.values) {
-      controller.dispose();
-    }
     for (var controller in _fieldControllers.values) {
       controller.dispose();
     }
@@ -65,59 +62,20 @@ class _PersonaTabState extends State<PersonaTab> {
     _notifyUpdate();
   }
 
-  void _deletePersona(Persona persona) {
-    showDialog(
+  Future<void> _deletePersona(Persona persona) async {
+    final confirmed = await CommonDialog.showDeleteConfirmation(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('페르소나 삭제'),
-        content: Text('${persona.name}을(를) 삭제하시겠습니까?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                widget.personas.remove(persona);
-              });
-              _notifyUpdate();
-              Navigator.pop(context);
-            },
-            child: const Text('삭제'),
-          ),
-        ],
-      ),
+      itemName: persona.name,
     );
+
+    if (confirmed) {
+      setState(() {
+        widget.personas.remove(persona);
+      });
+      _notifyUpdate();
+    }
   }
 
-  void _togglePersonaEdit(Persona persona) {
-    setState(() {
-      if (_editingPersonaId == persona.id) {
-        final controller = _editControllers[persona.id!];
-        if (controller != null && controller.text.isNotEmpty) {
-          persona.name = controller.text;
-        }
-        _editingPersonaId = null;
-        _editControllers.remove(persona.id!)?.dispose();
-        _notifyUpdate();
-      } else {
-        _editingPersonaId = persona.id;
-        _editControllers[persona.id!] = TextEditingController(text: persona.name);
-      }
-    });
-  }
-
-  void _savePersonaName(Persona persona, String value) {
-    setState(() {
-      if (value.isNotEmpty) {
-        persona.name = value;
-      }
-      _editingPersonaId = null;
-      _editControllers.remove(persona.id!)?.dispose();
-    });
-    _notifyUpdate();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -126,39 +84,11 @@ class _PersonaTabState extends State<PersonaTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 5),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  '페르소나',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        content: const Text('캐릭터의 페르소나 정보를 추가할 수 있습니다.'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('확인'),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                  child: Icon(
-                    Icons.help_outline,
-                    size: 16,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 5),
+            child: LabelWithHelp(
+              label: '페르소나',
+              helpMessage: '캐릭터의 페르소나 정보를 추가할 수 있습니다.',
             ),
           ),
           const SizedBox(height: 8),
@@ -226,31 +156,11 @@ class _PersonaTabState extends State<PersonaTab> {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _editingPersonaId == persona.id
-                        ? TextField(
-                            controller: _editControllers[persona.id!],
-                            style: Theme.of(context).textTheme.bodyMedium,
-                            decoration: const InputDecoration(
-                              border: InputBorder.none,
-                              isDense: true,
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                            autofocus: true,
-                            onSubmitted: (value) => _savePersonaName(persona, value),
-                          )
-                        : Text(
-                            persona.name,
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                  ),
-                  GestureDetector(
-                    onTap: () => _togglePersonaEdit(persona),
-                    child: Icon(
-                      _editingPersonaId == persona.id ? Icons.check : Icons.edit_outlined,
-                      size: 18,
+                    child: Text(
+                      persona.name,
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ),
-                  const SizedBox(width: 12),
                   GestureDetector(
                     onTap: () => _deletePersona(persona),
                     child: const Icon(Icons.delete_outline, size: 18),
@@ -267,8 +177,45 @@ class _PersonaTabState extends State<PersonaTab> {
           if (persona.isExpanded) ...[
             const Divider(height: 1),
             Padding(
-              padding: const EdgeInsets.all(6),
-              child: _buildPersonaContentField(persona),
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '이름',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 6),
+                  TextFormField(
+                    initialValue: persona.name,
+                    decoration: InputDecoration(
+                      hintText: '페르소나 이름',
+                      hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      isDense: true,
+                    ),
+                    style: Theme.of(context).textTheme.bodySmall,
+                    onChanged: (value) {
+                      if (value.trim().isNotEmpty) {
+                        persona.name = value.trim();
+                        _notifyUpdate();
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
+                  _buildPersonaContentField(persona),
+                ],
+              ),
             ),
           ],
         ],

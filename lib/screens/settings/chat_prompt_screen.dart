@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../database/database_helper.dart';
 import '../../models/prompt/chat_prompt.dart';
+import '../../utils/common_dialog.dart';
 import 'widgets/prompt_list_item.dart';
 import 'prompt_edit_screen.dart';
 
@@ -29,8 +30,9 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
       setState(() => _prompts = prompts);
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('프롬프트 목록을 불러오는데 실패했습니다: $e')),
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '프롬프트 목록을 불러오는데 실패했습니다: $e',
         );
       }
     } finally {
@@ -44,45 +46,35 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
       await _loadPrompts();
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('프롬프트 선택에 실패했습니다: $e')),
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '프롬프트 선택에 실패했습니다: $e',
         );
       }
     }
   }
 
   Future<void> _deletePrompt(int id, String name) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await CommonDialog.showDeleteConfirmation(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('프롬프트 삭제'),
-        content: Text('\'$name\'을(를) 삭제하시겠습니까?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('삭제', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+      itemName: name,
     );
 
-    if (confirm == true) {
+    if (confirm) {
       try {
         await _db.deleteChatPrompt(id);
         await _loadPrompts();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('프롬프트가 삭제되었습니다')),
+          CommonDialog.showSnackBar(
+            context: context,
+            message: '프롬프트가 삭제되었습니다',
           );
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('프롬프트 삭제에 실패했습니다: $e')),
+          CommonDialog.showSnackBar(
+            context: context,
+            message: '프롬프트 삭제에 실패했습니다: $e',
           );
         }
       }

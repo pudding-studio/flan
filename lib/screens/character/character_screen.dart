@@ -6,6 +6,7 @@ import '../../providers/theme_provider.dart';
 import '../../database/database_helper.dart';
 import '../../models/character/character.dart';
 import '../../models/character/cover_image.dart';
+import '../../utils/common_dialog.dart';
 import 'character_edit_screen.dart';
 import 'character_view_screen.dart';
 import 'widgets/character_card.dart';
@@ -97,8 +98,9 @@ class _CharacterScreenState extends State<CharacterScreen> {
       });
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('캐릭터 목록을 불러오는데 실패했습니다: $e')),
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '캐릭터 목록을 불러오는데 실패했습니다: $e',
         );
       }
     } finally {
@@ -174,8 +176,9 @@ class _CharacterScreenState extends State<CharacterScreen> {
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('순서 변경에 실패했습니다: $e')),
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '순서 변경에 실패했습니다: $e',
         );
       }
       await _loadCharacters();
@@ -185,22 +188,12 @@ class _CharacterScreenState extends State<CharacterScreen> {
   Future<void> _deleteSelectedCharacters() async {
     if (_selectedCharacterIds.isEmpty) return;
 
-    final confirm = await showDialog<bool>(
+    final confirm = await CommonDialog.showConfirmation(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('캐릭터 삭제'),
-        content: Text('선택한 ${_selectedCharacterIds.length}개의 캐릭터를 삭제하시겠습니까? 관련된 모든 데이터가 삭제됩니다.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('삭제', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+      title: '캐릭터 삭제',
+      content: '선택한 ${_selectedCharacterIds.length}개의 캐릭터를 삭제하시겠습니까? 관련된 모든 데이터가 삭제됩니다.',
+      confirmText: '삭제',
+      isDestructive: true,
     );
 
     if (confirm == true) {
@@ -214,14 +207,16 @@ class _CharacterScreenState extends State<CharacterScreen> {
         });
         await _loadCharacters();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('선택한 캐릭터가 삭제되었습니다')),
+          CommonDialog.showSnackBar(
+            context: context,
+            message: '선택한 캐릭터가 삭제되었습니다',
           );
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('캐릭터 삭제에 실패했습니다: $e')),
+          CommonDialog.showSnackBar(
+            context: context,
+            message: '캐릭터 삭제에 실패했습니다: $e',
           );
         }
       }
@@ -229,22 +224,12 @@ class _CharacterScreenState extends State<CharacterScreen> {
   }
 
   Future<void> _deleteCharacter(int id) async {
-    final confirm = await showDialog<bool>(
+    final confirm = await CommonDialog.showConfirmation(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('캐릭터 삭제'),
-        content: const Text('이 캐릭터를 삭제하시겠습니까? 관련된 모든 데이터가 삭제됩니다.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('삭제', style: TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+      title: '캐릭터 삭제',
+      content: '이 캐릭터를 삭제하시겠습니까? 관련된 모든 데이터가 삭제됩니다.',
+      confirmText: '삭제',
+      isDestructive: true,
     );
 
     if (confirm == true) {
@@ -252,14 +237,16 @@ class _CharacterScreenState extends State<CharacterScreen> {
         await _db.deleteCharacter(id);
         await _loadCharacters();
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('캐릭터가 삭제되었습니다')),
+          CommonDialog.showSnackBar(
+            context: context,
+            message: '캐릭터가 삭제되었습니다',
           );
         }
       } catch (e) {
         if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('캐릭터 삭제에 실패했습니다: $e')),
+          CommonDialog.showSnackBar(
+            context: context,
+            message: '캐릭터 삭제에 실패했습니다: $e',
           );
         }
       }

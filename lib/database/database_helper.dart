@@ -28,7 +28,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 8,
+      version: 9,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -175,6 +175,7 @@ class DatabaseHelper {
         chat_prompt_id $intType,
         role $textType DEFAULT 'system',
         content $textTypeNullable,
+        name $textTypeNullable,
         `order` $intType DEFAULT 0,
         FOREIGN KEY (chat_prompt_id) REFERENCES chat_prompts (id) ON DELETE CASCADE
       )
@@ -384,6 +385,12 @@ class DatabaseHelper {
 
       await db.execute('''
         ALTER TABLE chat_prompts ADD COLUMN parameters $textTypeNullable
+      ''');
+    }
+
+    if (oldVersion < 9) {
+      await db.execute('''
+        ALTER TABLE prompt_items ADD COLUMN name $textTypeNullable
       ''');
     }
   }

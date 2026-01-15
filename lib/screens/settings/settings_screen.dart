@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/theme_provider.dart';
+import '../../utils/common_dialog.dart';
 import 'api_key_screen.dart';
 import 'chat_prompt_screen.dart';
 
@@ -241,30 +242,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showClearCacheDialog() {
-    showDialog(
+  Future<void> _showClearCacheDialog() async {
+    final confirmed = await CommonDialog.showConfirmation(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('캐시 삭제'),
-        content: const Text('캐시를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
-          ),
-          FilledButton(
-            onPressed: () {
-              // TODO: 캐시 삭제 로직
-              Navigator.pop(context);
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(content: Text('캐시가 삭제되었습니다')),
-              );
-            },
-            child: const Text('삭제'),
-          ),
-        ],
-      ),
+      title: '캐시 삭제',
+      content: '캐시를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.',
+      confirmText: '삭제',
+      isDestructive: true,
     );
+
+    if (confirmed == true) {
+      // TODO: 캐시 삭제 로직
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '캐시가 삭제되었습니다',
+        );
+      }
+    }
   }
 
   void _showAboutDialog() {

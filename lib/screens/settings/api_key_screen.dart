@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../utils/common_dialog.dart';
 import '../../widgets/custom_text_field.dart';
 
 enum ApiKeyType {
@@ -42,8 +43,9 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
       _apiKeyController.text = apiKey;
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('API 키 불러오기 실패: $e')),
+        CommonDialog.showSnackBar(
+          context: context,
+          message: 'API 키 불러오기 실패: $e',
         );
       }
     } finally {
@@ -62,18 +64,20 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
       await prefs.setString('api_key', _apiKeyController.text.trim());
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('API 키가 저장되었습니다')),
+        CommonDialog.showSnackBar(
+          context: context,
+          message: 'API 키가 저장되었습니다',
         );
         Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('API 키 저장 실패: $e')),
+        CommonDialog.showSnackBar(
+          context: context,
+          message: 'API 키 저장 실패: $e',
         );
       }
-    } finally {
+    } finally{
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -81,22 +85,12 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
   }
 
   Future<void> _deleteApiKey() async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await CommonDialog.showConfirmation(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('API 키 삭제'),
-        content: const Text('저장된 API 키를 삭제하시겠습니까?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.pop(context, true),
-            child: const Text('삭제'),
-          ),
-        ],
-      ),
+      title: 'API 키 삭제',
+      content: '저장된 API 키를 삭제하시겠습니까?',
+      confirmText: '삭제',
+      isDestructive: true,
     );
 
     if (confirmed != true) return;
@@ -108,14 +102,16 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
       _apiKeyController.clear();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('API 키가 삭제되었습니다')),
+        CommonDialog.showSnackBar(
+          context: context,
+          message: 'API 키가 삭제되었습니다',
         );
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('API 키 삭제 실패: $e')),
+        CommonDialog.showSnackBar(
+          context: context,
+          message: 'API 키 삭제 실패: $e',
         );
       }
     } finally {

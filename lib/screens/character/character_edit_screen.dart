@@ -10,6 +10,7 @@ import '../../models/character/cover_image.dart';
 import '../../models/character/lorebook_folder.dart';
 import '../../models/character/persona.dart';
 import '../../models/character/start_scenario.dart';
+import '../../utils/common_dialog.dart';
 import '../../widgets/custom_text_field.dart';
 import 'tabs/cover_image_tab.dart';
 import 'tabs/lorebook_tab.dart';
@@ -146,8 +147,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       setState(() {});
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('데이터 로드 실패: $e')),
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '데이터 로드 실패: $e',
         );
       }
     } finally {
@@ -403,26 +405,14 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       // 편집 모드에서는 자동 저장 데이터가 있으면 복원 여부 묻기
       if (!mounted) return;
 
-      final shouldRestore = await showDialog<bool>(
+      final shouldRestore = await CommonDialog.showConfirmation(
         context: context,
-        builder: (context) => AlertDialog(
-          title: const Text('작성 중인 데이터 발견'),
-          content: Text(
-            '저장되지 않은 작성 중인 데이터가 있습니다.\n'
+        title: '작성 중인 데이터 발견',
+        content: '저장되지 않은 작성 중인 데이터가 있습니다.\n'
             '마지막 작성 시간: ${_formatTimestamp(timestamp)}\n\n'
             '불러오시겠습니까?',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('취소'),
-            ),
-            TextButton(
-              onPressed: () => Navigator.pop(context, true),
-              child: const Text('불러오기'),
-            ),
-          ],
-        ),
+        confirmText: '불러오기',
+        cancelText: '취소',
       );
 
       if (shouldRestore == true && mounted) {
@@ -529,8 +519,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   Future<void> _handleSave() async {
     // 이름만 필수로 체크
     if (_nameController.text.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('캐릭터 이름을 입력해주세요')),
+      CommonDialog.showSnackBar(
+        context: context,
+        message: '캐릭터 이름을 입력해주세요',
       );
       return;
     }
@@ -582,19 +573,17 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           _isSaving = false;
         });
 
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              _isEditMode ? '캐릭터가 수정되었습니다' : '캐릭터가 생성되었습니다',
-            ),
-          ),
+        CommonDialog.showSnackBar(
+          context: context,
+          message: _isEditMode ? '캐릭터가 수정되었습니다' : '캐릭터가 생성되었습니다',
         );
         Navigator.pop(context, true); // true를 반환하여 목록 새로고침 유도
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('저장 실패: $e')),
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '저장 실패: $e',
         );
         setState(() {
           _isLoading = false;

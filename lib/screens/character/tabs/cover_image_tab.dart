@@ -5,6 +5,8 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../constants/ui_constants.dart';
 import '../../../models/character/cover_image.dart';
+import '../../../utils/common_dialog.dart';
+import '../../../widgets/label_with_help.dart';
 
 class CoverImageTab extends StatefulWidget {
   final List<CoverImage> coverImages;
@@ -74,38 +76,26 @@ class _CoverImageTabState extends State<CoverImageTab> {
     }
   }
 
-  void _deleteCoverImage(CoverImage coverImage) {
-    showDialog(
+  Future<void> _deleteCoverImage(CoverImage coverImage) async {
+    final confirmed = await CommonDialog.showDeleteConfirmation(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('표지 이미지 삭제'),
-        content: Text('${coverImage.name}을(를) 삭제하시겠습니까?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                widget.coverImages.remove(coverImage);
-
-                // 선택된 표지를 삭제한 경우
-                if (widget.selectedCoverImageId == coverImage.id) {
-                  // 첫 번째 표지를 선택하거나, 없으면 null
-                  widget.onSelectedCoverImageChanged(
-                    widget.coverImages.isNotEmpty ? widget.coverImages.first.id : null,
-                  );
-                }
-              });
-              _notifyUpdate();
-              Navigator.pop(context);
-            },
-            child: const Text('삭제'),
-          ),
-        ],
-      ),
+      itemName: coverImage.name,
     );
+
+    if (confirmed) {
+      setState(() {
+        widget.coverImages.remove(coverImage);
+
+        // 선택된 표지를 삭제한 경우
+        if (widget.selectedCoverImageId == coverImage.id) {
+          // 첫 번째 표지를 선택하거나, 없으면 null
+          widget.onSelectedCoverImageChanged(
+            widget.coverImages.isNotEmpty ? widget.coverImages.first.id : null,
+          );
+        }
+      });
+      _notifyUpdate();
+    }
   }
 
   void _toggleCoverImageEdit(CoverImage coverImage) {
@@ -143,39 +133,11 @@ class _CoverImageTabState extends State<CoverImageTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 5),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  '표지',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        content: const Text('캐릭터의 표지 이미지를 추가할 수 있습니다.'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('확인'),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                  child: Icon(
-                    Icons.help_outline,
-                    size: 16,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 5),
+            child: LabelWithHelp(
+              label: '표지',
+              helpMessage: '캐릭터의 표지 이미지를 추가할 수 있습니다.',
             ),
           ),
           const SizedBox(height: 8),

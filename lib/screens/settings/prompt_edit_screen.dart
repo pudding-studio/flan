@@ -5,7 +5,9 @@ import '../../database/database_helper.dart';
 import '../../models/prompt/chat_prompt.dart';
 import '../../models/prompt/prompt_item.dart';
 import '../../models/prompt/prompt_parameters.dart';
+import '../../utils/common_dialog.dart';
 import '../../widgets/custom_text_field.dart';
+import '../../widgets/label_with_help.dart';
 import 'tabs/prompt_items_tab.dart';
 
 class PromptEditScreen extends StatefulWidget {
@@ -126,17 +128,17 @@ class _PromptEditScreenState extends State<PromptEditScreen>
       }
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('프롬프트가 ${_isEditing ? "수정" : "생성"}되었습니다'),
-          ),
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '프롬프트가 ${_isEditing ? "수정" : "생성"}되었습니다',
         );
         Navigator.pop(context, true);
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('프롬프트 저장 실패: $e')),
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '프롬프트 저장 실패: $e',
         );
       }
     } finally {
@@ -160,30 +162,18 @@ class _PromptEditScreenState extends State<PromptEditScreen>
     });
   }
 
-  void _deleteItem(PromptItem item) {
-    showDialog(
+  Future<void> _deleteItem(PromptItem item) async {
+    final confirmed = await CommonDialog.showDeleteConfirmation(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('항목 삭제'),
-        content: Text('${item.role.displayName} 항목을 삭제하시겠습니까?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                _items.remove(item);
-                _contentControllers.remove(item.id)?.dispose();
-              });
-              Navigator.pop(context);
-            },
-            child: const Text('삭제'),
-          ),
-        ],
-      ),
+      itemName: item.name ?? item.role.displayName,
     );
+
+    if (confirmed) {
+      setState(() {
+        _items.remove(item);
+        _contentControllers.remove(item.id)?.dispose();
+      });
+    }
   }
 
   void _moveItem(PromptItem draggedItem, PromptItem targetItem) {
@@ -350,8 +340,8 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                   ),
                   isDense: true,
                 ),
-                maxLines: 4,
-                minLines: 4,
+                maxLines: null,
+                minLines: 3,
               ),
             ],
           ),

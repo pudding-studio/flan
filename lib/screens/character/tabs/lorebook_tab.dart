@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../../../constants/ui_constants.dart';
 import '../../../models/character/lorebook_folder.dart';
+import '../../../utils/common_dialog.dart';
+import '../../../widgets/label_with_help.dart';
 
 class LorebookTab extends StatefulWidget {
   final List<LorebookFolder> folders;
@@ -24,9 +26,6 @@ class _LorebookTabState extends State<LorebookTab> {
   static const double _lorebookItemVerticalPadding = 10.0;
   static const double _segmentedButtonBorderRadius = 8.0;
 
-  int? _editingFolderId;
-  int? _editingLorebookId;
-  final Map<int, TextEditingController> _editControllers = {};
   final Map<String, TextEditingController> _fieldControllers = {};
 
   int _nextTempId = -1;
@@ -34,9 +33,6 @@ class _LorebookTabState extends State<LorebookTab> {
 
   @override
   void dispose() {
-    for (var controller in _editControllers.values) {
-      controller.dispose();
-    }
     for (var controller in _fieldControllers.values) {
       controller.dispose();
     }
@@ -88,60 +84,39 @@ class _LorebookTabState extends State<LorebookTab> {
     _notifyUpdate();
   }
 
-  void _deleteFolder(LorebookFolder folder) {
-    showDialog(
+  Future<void> _deleteFolder(LorebookFolder folder) async {
+    final confirmed = await CommonDialog.showConfirmation(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('폴더 삭제'),
-        content: Text('${folder.name} 폴더를 삭제하시겠습니까?\n폴더 내 모든 로어북도 함께 삭제됩니다.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                widget.folders.remove(folder);
-              });
-              _notifyUpdate();
-              Navigator.pop(context);
-            },
-            child: const Text('삭제'),
-          ),
-        ],
-      ),
+      title: '폴더 삭제',
+      content: '${folder.name} 폴더를 삭제하시겠습니까?\n폴더 내 모든 로어북도 함께 삭제됩니다.',
+      confirmText: '삭제',
+      isDestructive: true,
     );
+
+    if (confirmed == true) {
+      setState(() {
+        widget.folders.remove(folder);
+      });
+      _notifyUpdate();
+    }
   }
 
-  void _deleteLorebook(Lorebook lorebook, LorebookFolder? folder) {
-    showDialog(
+  Future<void> _deleteLorebook(Lorebook lorebook, LorebookFolder? folder) async {
+    final confirmed = await CommonDialog.showDeleteConfirmation(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('로어북 삭제'),
-        content: Text('${lorebook.name}을(를) 삭제하시겠습니까?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () {
-              setState(() {
-                if (folder != null) {
-                  folder.lorebooks.remove(lorebook);
-                } else {
-                  widget.standaloneLorebooks.remove(lorebook);
-                }
-              });
-              _notifyUpdate();
-              Navigator.pop(context);
-            },
-            child: const Text('삭제'),
-          ),
-        ],
-      ),
+      itemName: lorebook.name,
     );
+
+    if (confirmed) {
+      setState(() {
+        if (folder != null) {
+          folder.lorebooks.remove(lorebook);
+        } else {
+          widget.standaloneLorebooks.remove(lorebook);
+        }
+      });
+      _notifyUpdate();
+    }
   }
 
   void _moveLorebookToFolder(Lorebook lorebook, LorebookFolder? fromFolder, LorebookFolder toFolder) {
@@ -166,61 +141,6 @@ class _LorebookTabState extends State<LorebookTab> {
     _notifyUpdate();
   }
 
-  void _toggleFolderEdit(LorebookFolder folder) {
-    setState(() {
-      if (_editingFolderId == folder.id) {
-        final controller = _editControllers[folder.id!];
-        if (controller != null && controller.text.isNotEmpty) {
-          folder.name = controller.text;
-        }
-        _editingFolderId = null;
-        _editControllers.remove(folder.id!)?.dispose();
-        _notifyUpdate();
-      } else {
-        _editingFolderId = folder.id;
-        _editControllers[folder.id!] = TextEditingController(text: folder.name);
-      }
-    });
-  }
-
-  void _saveFolderName(LorebookFolder folder, String value) {
-    setState(() {
-      if (value.isNotEmpty) {
-        folder.name = value;
-      }
-      _editingFolderId = null;
-      _editControllers.remove(folder.id!)?.dispose();
-    });
-    _notifyUpdate();
-  }
-
-  void _toggleLorebookEdit(Lorebook lorebook) {
-    setState(() {
-      if (_editingLorebookId == lorebook.id) {
-        final controller = _editControllers[lorebook.id!];
-        if (controller != null && controller.text.isNotEmpty) {
-          lorebook.name = controller.text;
-        }
-        _editingLorebookId = null;
-        _editControllers.remove(lorebook.id!)?.dispose();
-        _notifyUpdate();
-      } else {
-        _editingLorebookId = lorebook.id;
-        _editControllers[lorebook.id!] = TextEditingController(text: lorebook.name);
-      }
-    });
-  }
-
-  void _saveLorebookName(Lorebook lorebook, String value) {
-    setState(() {
-      if (value.isNotEmpty) {
-        lorebook.name = value;
-      }
-      _editingLorebookId = null;
-      _editControllers.remove(lorebook.id!)?.dispose();
-    });
-    _notifyUpdate();
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -229,39 +149,11 @@ class _LorebookTabState extends State<LorebookTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 5),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  '로어북',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                GestureDetector(
-                  onTap: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        content: const Text('캐릭터의 세계관과 관련된 정보를 로어북에 추가할 수 있습니다.'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('확인'),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                  child: Icon(
-                    Icons.help_outline,
-                    size: 16,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 5),
+            child: LabelWithHelp(
+              label: '로어북',
+              helpMessage: '캐릭터의 세계관과 관련된 정보를 로어북에 추가할 수 있습니다.',
             ),
           ),
           const SizedBox(height: 8),
@@ -392,35 +284,13 @@ class _LorebookTabState extends State<LorebookTab> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: _editingFolderId == folder.id
-                            ? TextField(
-                                controller: _editControllers[folder.id!],
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                decoration: const InputDecoration(
-                                  border: InputBorder.none,
-                                  isDense: true,
-                                  contentPadding: EdgeInsets.zero,
-                                ),
-                                autofocus: true,
-                                onSubmitted: (value) => _saveFolderName(folder, value),
-                              )
-                            : Text(
-                                folder.name,
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                        child: Text(
+                          folder.name,
+                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
                               ),
-                      ),
-                      GestureDetector(
-                        onTap: () => _toggleFolderEdit(folder),
-                        child: Icon(
-                          _editingFolderId == folder.id ? Icons.check : Icons.edit_outlined,
-                          size: 18,
                         ),
                       ),
-                      const SizedBox(width: 12),
                       GestureDetector(
                         onTap: () => _deleteFolder(folder),
                         child: const Icon(Icons.delete_outline, size: 18),
@@ -436,6 +306,46 @@ class _LorebookTabState extends State<LorebookTab> {
               ),
               if (folder.isExpanded) ...[
                 const Divider(height: 8),
+                Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '이름',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        initialValue: folder.name,
+                        decoration: InputDecoration(
+                          hintText: '폴더 이름',
+                          hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          isDense: true,
+                        ),
+                        style: Theme.of(context).textTheme.bodySmall,
+                        onChanged: (value) {
+                          if (value.trim().isNotEmpty) {
+                            folder.name = value.trim();
+                            _notifyUpdate();
+                          }
+                        },
+                      ),
+                      const SizedBox(height: 12),
+                    ],
+                  ),
+                ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8.0),
                   child: Column(
@@ -547,31 +457,11 @@ class _LorebookTabState extends State<LorebookTab> {
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _editingLorebookId == lorebook.id
-                        ? TextField(
-                            controller: _editControllers[lorebook.id!],
-                            style: Theme.of(context).textTheme.bodyMedium,
-                            decoration: const InputDecoration(
-                              border: InputBorder.none,
-                              isDense: true,
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                            autofocus: true,
-                            onSubmitted: (value) => _saveLorebookName(lorebook, value),
-                          )
-                        : Text(
-                            lorebook.name,
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                  ),
-                  GestureDetector(
-                    onTap: () => _toggleLorebookEdit(lorebook),
-                    child: Icon(
-                      _editingLorebookId == lorebook.id ? Icons.check : Icons.edit_outlined,
-                      size: 18,
+                    child: Text(
+                      lorebook.name,
+                      style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ),
-                  const SizedBox(width: 12),
                   GestureDetector(
                     onTap: () => _deleteLorebook(lorebook, folder),
                     child: const Icon(Icons.delete_outline, size: 18),
@@ -588,10 +478,42 @@ class _LorebookTabState extends State<LorebookTab> {
           if (lorebook.isExpanded) ...[
             const Divider(height: 1),
             Padding(
-              padding: const EdgeInsets.all(6),
+              padding: const EdgeInsets.all(12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  Text(
+                    '이름',
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                  const SizedBox(height: 6),
+                  TextFormField(
+                    initialValue: lorebook.name,
+                    decoration: InputDecoration(
+                      hintText: '로어북 이름',
+                      hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 8,
+                      ),
+                      isDense: true,
+                    ),
+                    style: Theme.of(context).textTheme.bodySmall,
+                    onChanged: (value) {
+                      if (value.trim().isNotEmpty) {
+                        lorebook.name = value.trim();
+                        _notifyUpdate();
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 12),
                   _buildActivationConditionField(lorebook),
                   if (lorebook.activationCondition == LorebookActivationCondition.keyBased) ...[
                     _buildActivationKeysField(lorebook),

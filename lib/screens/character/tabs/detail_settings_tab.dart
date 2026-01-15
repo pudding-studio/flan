@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../constants/ui_constants.dart';
+import '../../../widgets/label_with_help.dart';
 
 class DetailSettingsTab extends StatelessWidget {
   final TextEditingController worldSettingController;
@@ -21,33 +22,9 @@ class DetailSettingsTab extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(
-                  '세계관 설정',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(width: 4),
-                GestureDetector(
-                  onTap: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        content: const Text('캐릭터가 속한 세계관이나 배경 설정을 자유롭게 작성해주세요.'),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('확인'),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                  child: Icon(
-                    Icons.help_outline,
-                    size: 16,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
+                const LabelWithHelp(
+                  label: '세계관 설정',
+                  helpMessage: '캐릭터가 속한 세계관이나 배경 설정을 자유롭게 작성해주세요.',
                 ),
                 const Spacer(),
                 ValueListenableBuilder<TextEditingValue>(

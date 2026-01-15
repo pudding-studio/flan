@@ -5,6 +5,7 @@ import '../../models/chat/chat_message.dart';
 import '../../models/character/character.dart';
 import '../../models/character/cover_image.dart';
 import '../../database/database_helper.dart';
+import '../../utils/common_dialog.dart';
 import '../../utils/token_counter.dart';
 import 'chat_room_screen.dart';
 
@@ -119,25 +120,12 @@ class _ChatScreenState extends State<ChatScreen> {
   Future<void> _deleteSelectedChatRooms() async {
     if (_selectedChatRoomIds.isEmpty) return;
 
-    final confirmed = await showDialog<bool>(
+    final confirmed = await CommonDialog.showConfirmation(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('채팅방 삭제'),
-        content: Text('선택한 ${_selectedChatRoomIds.length}개의 채팅방을 삭제하시겠습니까?\n모든 메시지가 삭제됩니다.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('삭제'),
-          ),
-        ],
-      ),
+      title: '채팅방 삭제',
+      content: '선택한 ${_selectedChatRoomIds.length}개의 채팅방을 삭제하시겠습니까?\n모든 메시지가 삭제됩니다.',
+      confirmText: '삭제',
+      isDestructive: true,
     );
 
     if (confirmed == true) {
@@ -151,14 +139,16 @@ class _ChatScreenState extends State<ChatScreen> {
         });
         _loadChatRooms();
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('선택한 채팅방이 삭제되었습니다')),
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '선택한 채팅방이 삭제되었습니다',
         );
       } catch (e) {
         debugPrint('Error deleting chat rooms: $e');
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('채팅방 삭제 중 오류가 발생했습니다')),
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '채팅방 삭제 중 오류가 발생했습니다',
         );
       }
     }
@@ -224,8 +214,9 @@ class _ChatScreenState extends State<ChatScreen> {
       } catch (e) {
         debugPrint('Error renaming chat room: $e');
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('채팅방 이름 수정 중 오류가 발생했습니다')),
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '채팅방 이름 수정 중 오류가 발생했습니다',
         );
       }
     }
@@ -234,25 +225,12 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _showDeleteChatRoomDialog(ChatRoom chatRoom) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await CommonDialog.showConfirmation(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('채팅방 삭제'),
-        content: Text('\'${chatRoom.name}\' 채팅방을 삭제하시겠습니까?\n모든 메시지가 삭제됩니다.'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: TextButton.styleFrom(
-              foregroundColor: Theme.of(context).colorScheme.error,
-            ),
-            child: const Text('삭제'),
-          ),
-        ],
-      ),
+      title: '채팅방 삭제',
+      content: '\'${chatRoom.name}\' 채팅방을 삭제하시겠습니까?\n모든 메시지가 삭제됩니다.',
+      confirmText: '삭제',
+      isDestructive: true,
     );
 
     if (confirmed == true) {
@@ -260,14 +238,16 @@ class _ChatScreenState extends State<ChatScreen> {
         await _db.deleteChatRoom(chatRoom.id!);
         _loadChatRooms();
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('채팅방이 삭제되었습니다')),
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '채팅방이 삭제되었습니다',
         );
       } catch (e) {
         debugPrint('Error deleting chat room: $e');
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('채팅방 삭제 중 오류가 발생했습니다')),
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '채팅방 삭제 중 오류가 발생했습니다',
         );
       }
     }

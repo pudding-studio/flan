@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../constants/ui_constants.dart';
 import '../../../models/prompt/prompt_item.dart';
+import '../../../widgets/label_with_help.dart';
 
 class PromptItemsTab extends StatefulWidget {
   final List<PromptItem> items;
@@ -32,44 +33,13 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 5),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                Text(
-                  '프롬프트 항목',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(width: 4),
-                GestureDetector(
-                  onTap: () {
-                    showDialog(
-                      context: context,
-                      builder: (context) => AlertDialog(
-                        content: const Text(
-                          'AI에게 전달될 프롬프트 항목들을 추가하세요. '
-                          '순서대로 전달됩니다.\n\n'
-                          '길게 눌러 순서를 변경할 수 있습니다.',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.pop(context),
-                            child: const Text('확인'),
-                          ),
-                        ],
-                      ),
-                    );
-                  },
-                  child: Icon(
-                    Icons.help_outline,
-                    size: 16,
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                  ),
-                ),
-              ],
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 5),
+            child: LabelWithHelp(
+              label: '프롬프트 항목',
+              helpMessage: 'AI에게 전달될 프롬프트 항목들을 추가하세요. '
+                  '순서대로 전달됩니다.\n\n'
+                  '길게 눌러 순서를 변경할 수 있습니다.',
             ),
           ),
           const SizedBox(height: 8),
@@ -149,7 +119,7 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  item.role.displayName,
+                  item.name ?? item.role.displayName,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -212,7 +182,7 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          item.role.displayName,
+                          item.name ?? item.role.displayName,
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                                 fontWeight: FontWeight.w600,
                               ),
@@ -238,6 +208,38 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
+                      Text(
+                        '이름',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                            ),
+                      ),
+                      const SizedBox(height: 6),
+                      TextFormField(
+                        initialValue: item.name ?? '',
+                        decoration: InputDecoration(
+                          hintText: '항목 이름 (예: 시스템 설정, 캐릭터 성격)',
+                          hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 8,
+                          ),
+                          isDense: true,
+                        ),
+                        style: Theme.of(context).textTheme.bodySmall,
+                        onChanged: (value) {
+                          final updatedItem = item.copyWith(name: value.trim().isEmpty ? null : value.trim());
+                          final index = widget.items.indexOf(item);
+                          widget.items[index] = updatedItem;
+                          widget.onUpdate();
+                        },
+                      ),
+                      const SizedBox(height: 12),
                       Text(
                         '역할',
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -306,8 +308,8 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
                           isDense: true,
                         ),
                         style: Theme.of(context).textTheme.bodySmall,
-                        maxLines: 8,
-                        minLines: 8,
+                        maxLines: null,
+                        minLines: 5,
                       ),
                     ],
                   ),
