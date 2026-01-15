@@ -135,10 +135,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       final systemPrompt = await _generateSystemPrompt();
 
+      ChatPrompt? chatPrompt;
+      if (_chatRoom!.selectedChatPromptId != null) {
+        chatPrompt = await _db.readChatPrompt(_chatRoom!.selectedChatPromptId!);
+      }
+
       final aiResponse = await _geminiService.sendMessage(
         systemPrompt: systemPrompt,
         chatHistory: _messages,
         userMessage: text,
+        promptParameters: chatPrompt?.parameters,
         chatRoomId: widget.chatRoomId,
         characterId: _character?.id,
       );
@@ -201,10 +207,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       final systemPrompt = await _generateSystemPrompt();
       final historyBeforeMessage = _messages.sublist(0, messageIndex - 1);
 
+      ChatPrompt? chatPrompt;
+      if (_chatRoom!.selectedChatPromptId != null) {
+        chatPrompt = await _db.readChatPrompt(_chatRoom!.selectedChatPromptId!);
+      }
+
       final aiResponse = await _geminiService.sendMessage(
         systemPrompt: systemPrompt,
         chatHistory: historyBeforeMessage,
         userMessage: previousMessage.content,
+        promptParameters: chatPrompt?.parameters,
         chatRoomId: widget.chatRoomId,
         characterId: _character?.id,
       );

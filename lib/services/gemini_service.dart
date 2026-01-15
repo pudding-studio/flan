@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/chat/chat_message.dart';
 import '../models/chat/chat_log.dart';
+import '../models/prompt/prompt_parameters.dart';
 import '../database/database_helper.dart';
 
 class GeminiService {
@@ -44,24 +45,86 @@ class GeminiService {
     }
   }
 
+  Map<String, dynamic>? _buildGenerationConfig(PromptParameters? parameters) {
+    if (parameters == null) {
+      return null;
+    }
+
+    final config = <String, dynamic>{};
+
+    if (parameters.maxOutputTokens != null) {
+      config['maxOutputTokens'] = parameters.maxOutputTokens;
+    }
+
+    if (parameters.temperature != null) {
+      config['temperature'] = parameters.temperature;
+    }
+
+    if (parameters.topP != null) {
+      config['topP'] = parameters.topP;
+    }
+
+    if (parameters.topK != null) {
+      config['topK'] = parameters.topK;
+    }
+
+    if (parameters.presencePenalty != null && parameters.presencePenalty != 0.0) {
+      config['presencePenalty'] = parameters.presencePenalty;
+    }
+
+    if (parameters.frequencyPenalty != null && parameters.frequencyPenalty != 0.0) {
+      config['frequencyPenalty'] = parameters.frequencyPenalty;
+    }
+
+    if (parameters.includeThoughts != null) {
+      config['includeThoughts'] = parameters.includeThoughts;
+    }
+
+    if (parameters.thinkingMaxTokens != null || parameters.thinkingLevel != null) {
+      final thinkingConfig = <String, dynamic>{};
+
+      if (parameters.thinkingMaxTokens != null) {
+        thinkingConfig['thinkingMaxTokens'] = parameters.thinkingMaxTokens;
+      }
+
+      if (parameters.thinkingLevel != null) {
+        thinkingConfig['thinkingLevel'] = parameters.thinkingLevel!.apiValue;
+      }
+
+      if (thinkingConfig.isNotEmpty) {
+        config['thinkingConfig'] = thinkingConfig;
+      }
+    }
+
+    return config.isEmpty ? null : config;
+  }
+
   Future<String> sendMessage({
     required String systemPrompt,
     required List<ChatMessage> chatHistory,
     required String userMessage,
+    PromptParameters? promptParameters,
     int? chatRoomId,
     int? characterId,
   }) async {
     final modelId = await _getSelectedModelId();
     final apiKey = await _getApiKey();
+    final generationConfig = _buildGenerationConfig(promptParameters);
 
     final contents = _buildContents(
-      systemPrompt: systemPrompt,
       chatHistory: chatHistory,
       userMessage: userMessage,
     );
 
     final requestBody = {
       'model': modelId,
+      if (systemPrompt.isNotEmpty)
+        'systemInstruction': {
+          'parts': [
+            {'text': systemPrompt}
+          ]
+        },
+      if (generationConfig != null) 'generationConfig': generationConfig,
       'contents': contents,
     };
 
@@ -131,17 +194,26 @@ class GeminiService {
     required String systemPrompt,
     required List<ChatMessage> chatHistory,
     required String userMessage,
+    PromptParameters? promptParameters,
   }) async* {
     final modelId = await _getSelectedModelId();
     final apiKey = await _getApiKey();
+    final generationConfig = _buildGenerationConfig(promptParameters);
 
     final contents = _buildContents(
-      systemPrompt: systemPrompt,
       chatHistory: chatHistory,
       userMessage: userMessage,
     );
 
     final requestBody = {
+      'model': modelId,
+      if (systemPrompt.isNotEmpty)
+        'systemInstruction': {
+          'parts': [
+            {'text': systemPrompt}
+          ]
+        },
+      if (generationConfig != null) 'generationConfig': generationConfig,
       'contents': contents,
     };
 
@@ -178,26 +250,10 @@ class GeminiService {
   }
 
   List<Map<String, dynamic>> _buildContents({
-    required String systemPrompt,
     required List<ChatMessage> chatHistory,
     required String userMessage,
   }) {
     final contents = <Map<String, dynamic>>[];
-
-    if (systemPrompt.isNotEmpty) {
-      contents.add({
-        'role': 'user',
-        'parts': [
-          {'text': systemPrompt}
-        ]
-      });
-      contents.add({
-        'role': 'model',
-        'parts': [
-          {'text': '알겠습니다. 지정된 캐릭터로 대화하겠습니다.'}
-        ]
-      });
-    }
 
     for (final message in chatHistory) {
       if (message.role == MessageRole.user) {

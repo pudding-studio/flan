@@ -7,7 +7,6 @@ import '../../models/prompt/prompt_item.dart';
 import '../../models/prompt/prompt_parameters.dart';
 import '../../utils/common_dialog.dart';
 import '../../widgets/custom_text_field.dart';
-import '../../widgets/label_with_help.dart';
 import 'tabs/prompt_items_tab.dart';
 
 class PromptEditScreen extends StatefulWidget {
@@ -470,9 +469,43 @@ class _PromptEditScreenState extends State<PromptEditScreen>
           ),
         ),
         const SizedBox(height: 24),
-        _buildSliderParameter(
-          label: 'Temperature (온도)',
+        _buildSimpleTextFieldParameter(
+          label: '최대 입력 크기',
+          value: _parameters.maxInputTokens,
+          helpText: '입력할 수 있는 최대 토큰 수입니다.',
+          onChanged: (value) {
+            setState(() {
+              _parameters = _parameters.copyWith(maxInputTokens: value);
+            });
+          },
+        ),
+        const SizedBox(height: UIConstants.spacing20),
+        _buildSimpleTextFieldParameter(
+          label: '최대 응답 크기',
+          value: _parameters.maxOutputTokens,
+          helpText: '생성할 수 있는 최대 토큰 수입니다.',
+          onChanged: (value) {
+            setState(() {
+              _parameters = _parameters.copyWith(maxOutputTokens: value);
+            });
+          },
+        ),
+        const SizedBox(height: UIConstants.spacing20),
+        _buildCheckableTextFieldParameter(
+          label: '사고토큰',
+          value: _parameters.thinkingTokens,
+          helpText: '사고에 사용할 토큰 수입니다.',
+          onChanged: (value) {
+            setState(() {
+              _parameters = _parameters.copyWith(thinkingTokens: value);
+            });
+          },
+        ),
+        const SizedBox(height: UIConstants.spacing20),
+        _buildCheckableSliderParameter(
+          label: '온도',
           value: _parameters.temperature,
+          defaultValue: 1.0,
           min: 0.0,
           max: 2.0,
           divisions: 40,
@@ -484,22 +517,10 @@ class _PromptEditScreenState extends State<PromptEditScreen>
           },
         ),
         const SizedBox(height: UIConstants.spacing20),
-        _buildIntParameter(
-          label: 'Max Tokens (최대 토큰)',
-          value: _parameters.maxTokens,
-          min: 1,
-          max: 8192,
-          helpText: '생성할 수 있는 최대 토큰 수입니다.',
-          onChanged: (value) {
-            setState(() {
-              _parameters = _parameters.copyWith(maxTokens: value);
-            });
-          },
-        ),
-        const SizedBox(height: UIConstants.spacing20),
-        _buildSliderParameter(
+        _buildCheckableSliderParameter(
           label: 'Top P',
           value: _parameters.topP,
+          defaultValue: 0.95,
           min: 0.0,
           max: 1.0,
           divisions: 100,
@@ -511,59 +532,64 @@ class _PromptEditScreenState extends State<PromptEditScreen>
           },
         ),
         const SizedBox(height: UIConstants.spacing20),
-        _buildIntParameter(
+        _buildCheckableSliderParameter(
           label: 'Top K',
-          value: _parameters.topK,
-          min: 1,
-          max: 40,
+          value: _parameters.topK?.toDouble(),
+          defaultValue: 40.0,
+          min: 1.0,
+          max: 100.0,
+          divisions: 99,
           helpText: '고려할 상위 토큰의 수입니다.',
           onChanged: (value) {
             setState(() {
-              _parameters = _parameters.copyWith(topK: value);
+              _parameters = _parameters.copyWith(topK: value?.round());
             });
           },
         ),
         const SizedBox(height: UIConstants.spacing20),
-        _buildSliderParameter(
-          label: 'Frequency Penalty',
-          value: _parameters.frequencyPenalty,
-          min: -2.0,
-          max: 2.0,
-          divisions: 80,
-          helpText: '양수 값은 반복을 줄이고, 음수 값은 반복을 증가시킵니다. (OpenAI 모델)',
-          onChanged: (value) {
-            setState(() {
-              _parameters = _parameters.copyWith(frequencyPenalty: value);
-            });
-          },
-        ),
-        const SizedBox(height: UIConstants.spacing20),
-        _buildSliderParameter(
-          label: 'Presence Penalty',
+        _buildCheckableSliderParameter(
+          label: '프리센스 패널티',
           value: _parameters.presencePenalty,
+          defaultValue: 0.0,
           min: -2.0,
           max: 2.0,
           divisions: 80,
-          helpText: '양수 값은 새로운 주제를 장려하고, 음수 값은 기존 주제에 집중합니다. (OpenAI 모델)',
+          helpText: '양수 값은 새로운 주제를 장려하고, 음수 값은 기존 주제에 집중합니다.',
           onChanged: (value) {
             setState(() {
               _parameters = _parameters.copyWith(presencePenalty: value);
             });
           },
         ),
+        const SizedBox(height: UIConstants.spacing20),
+        _buildCheckableSliderParameter(
+          label: '빈도 패널티',
+          value: _parameters.frequencyPenalty,
+          defaultValue: 0.0,
+          min: -2.0,
+          max: 2.0,
+          divisions: 80,
+          helpText: '양수 값은 반복을 줄이고, 음수 값은 반복을 증가시킵니다.',
+          onChanged: (value) {
+            setState(() {
+              _parameters = _parameters.copyWith(frequencyPenalty: value);
+            });
+          },
+        ),
+        const SizedBox(height: 24),
+        _buildThinkingSection(),
       ],
     );
   }
 
-  Widget _buildSliderParameter({
+  Widget _buildCheckableTextFieldParameter({
     required String label,
-    required double value,
-    required double min,
-    required double max,
-    required int divisions,
+    required int? value,
     required String helpText,
-    required ValueChanged<double> onChanged,
+    required ValueChanged<int?> onChanged,
   }) {
+    final isEnabled = value != null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -572,6 +598,150 @@ class _PromptEditScreenState extends State<PromptEditScreen>
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
+              SizedBox(
+                width: 24,
+                height: 24,
+                child: Checkbox(
+                  value: isEnabled,
+                  onChanged: (checked) {
+                    if (checked == true) {
+                      onChanged(0);
+                    } else {
+                      onChanged(null);
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              const SizedBox(width: CustomTextField.labelIconSpacing),
+              GestureDetector(
+                onTap: () {
+                  showDialog(
+                    context: context,
+                    builder: (context) => AlertDialog(
+                      content: Text(helpText),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('확인'),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+                child: Icon(
+                  Icons.help_outline,
+                  size: CustomTextField.helpIconSize,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: CustomTextField.labelBottomSpacing),
+        TextFormField(
+          initialValue: value?.toString() ?? '',
+          enabled: isEnabled,
+          keyboardType: TextInputType.number,
+          style: Theme.of(context).textTheme.bodyMedium,
+          decoration: InputDecoration(
+            hintText: '숫자 입력',
+            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.outline.withValues(alpha: CustomTextField.borderOpacity),
+              ),
+            ),
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.outline.withValues(alpha: CustomTextField.borderOpacity),
+              ),
+            ),
+            disabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: CustomTextField.horizontalPadding,
+              vertical: CustomTextField.verticalPadding,
+            ),
+            isDense: true,
+          ),
+          onTapOutside: (event) {
+            FocusScope.of(context).unfocus();
+          },
+          onFieldSubmitted: (text) {
+            if (text.isEmpty) {
+              onChanged(0);
+            } else {
+              final newValue = int.tryParse(text);
+              if (newValue != null) {
+                onChanged(newValue);
+              }
+            }
+          },
+          onEditingComplete: () {
+            FocusScope.of(context).unfocus();
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCheckableSliderParameter({
+    required String label,
+    required double? value,
+    required double defaultValue,
+    required double min,
+    required double max,
+    required int divisions,
+    required String helpText,
+    required ValueChanged<double?> onChanged,
+  }) {
+    final isEnabled = value != null;
+    final displayValue = value ?? defaultValue;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: CustomTextField.labelHorizontalPadding),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 24,
+                height: 24,
+                child: Checkbox(
+                  value: isEnabled,
+                  onChanged: (checked) {
+                    if (checked == true) {
+                      onChanged(defaultValue);
+                    } else {
+                      onChanged(null);
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
               Text(
                 label,
                 style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -602,10 +772,12 @@ class _PromptEditScreenState extends State<PromptEditScreen>
               ),
               const Spacer(),
               Text(
-                value.toStringAsFixed(2),
+                displayValue.toStringAsFixed(2),
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w600,
-                      color: Theme.of(context).colorScheme.primary,
+                      color: isEnabled
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
                     ),
               ),
             ],
@@ -613,24 +785,24 @@ class _PromptEditScreenState extends State<PromptEditScreen>
         ),
         const SizedBox(height: CustomTextField.labelBottomSpacing),
         Slider(
-          value: value,
+          value: displayValue,
           min: min,
           max: max,
           divisions: divisions,
-          label: value.toStringAsFixed(2),
-          onChanged: onChanged,
+          label: displayValue.toStringAsFixed(2),
+          onChanged: isEnabled
+              ? (newValue) => onChanged(newValue)
+              : null,
         ),
       ],
     );
   }
 
-  Widget _buildIntParameter({
+  Widget _buildSimpleTextFieldParameter({
     required String label,
-    required int value,
-    required int min,
-    required int max,
+    required int? value,
     required String helpText,
-    required ValueChanged<int> onChanged,
+    required ValueChanged<int?> onChanged,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -672,46 +844,195 @@ class _PromptEditScreenState extends State<PromptEditScreen>
           ),
         ),
         const SizedBox(height: CustomTextField.labelBottomSpacing),
-        Row(
-          children: [
-            Expanded(
-              child: Slider(
-                value: value.toDouble(),
-                min: min.toDouble(),
-                max: max.toDouble(),
-                divisions: max - min,
-                label: value.toString(),
-                onChanged: (v) => onChanged(v.round()),
+        TextFormField(
+          initialValue: value?.toString() ?? '',
+          keyboardType: TextInputType.number,
+          style: Theme.of(context).textTheme.bodyMedium,
+          decoration: InputDecoration(
+            hintText: '숫자 입력',
+            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.outline.withValues(alpha: CustomTextField.borderOpacity),
               ),
             ),
-            const SizedBox(width: 12),
-            SizedBox(
-              width: 80,
-              child: TextFormField(
-                initialValue: value.toString(),
-                keyboardType: TextInputType.number,
-                style: Theme.of(context).textTheme.bodyMedium,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  isDense: true,
+            enabledBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.outline.withValues(alpha: CustomTextField.borderOpacity),
+              ),
+            ),
+            focusedBorder: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+              borderSide: BorderSide(
+                color: Theme.of(context).colorScheme.primary,
+              ),
+            ),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: CustomTextField.horizontalPadding,
+              vertical: CustomTextField.verticalPadding,
+            ),
+            isDense: true,
+          ),
+          onTapOutside: (event) {
+            FocusScope.of(context).unfocus();
+          },
+          onFieldSubmitted: (text) {
+            if (text.isEmpty) {
+              onChanged(null);
+            } else {
+              final newValue = int.tryParse(text);
+              if (newValue != null) {
+                onChanged(newValue);
+              }
+            }
+          },
+          onEditingComplete: () {
+            FocusScope.of(context).unfocus();
+          },
+        ),
+      ],
+    );
+  }
+
+  Widget _buildThinkingSection() {
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+        ),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          title: Row(
+            children: [
+              Text(
+                '사고기능 구성',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
+              ),
+              const SizedBox(width: 8),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer,
+                  borderRadius: BorderRadius.circular(4),
                 ),
-                onChanged: (text) {
-                  final newValue = int.tryParse(text);
-                  if (newValue != null && newValue >= min && newValue <= max) {
-                    onChanged(newValue);
-                  }
-                },
+                child: Text(
+                  'Gemini',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ),
+            ],
+          ),
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Checkbox(
+                        value: _parameters.includeThoughts ?? false,
+                        onChanged: (value) {
+                          setState(() {
+                            _parameters = _parameters.copyWith(
+                              includeThoughts: value == true ? true : null,
+                            );
+                          });
+                        },
+                      ),
+                      Text(
+                        '생각 포함',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  _buildSimpleTextFieldParameter(
+                    label: '생각토큰 수',
+                    value: _parameters.thinkingMaxTokens,
+                    helpText: '생각에 사용할 최대 토큰 수입니다.',
+                    onChanged: (value) {
+                      setState(() {
+                        _parameters = _parameters.copyWith(thinkingMaxTokens: value);
+                      });
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: CustomTextField.labelHorizontalPadding),
+                        child: Text(
+                          '생각 수준',
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                        ),
+                      ),
+                      const SizedBox(height: CustomTextField.labelBottomSpacing),
+                      DropdownButtonFormField<ThinkingLevel>(
+                        value: _parameters.thinkingLevel ?? ThinkingLevel.unspecified,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                        decoration: InputDecoration(
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+                            borderSide: BorderSide(
+                              color: Theme.of(context).colorScheme.outline.withValues(alpha: CustomTextField.borderOpacity),
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+                            borderSide: BorderSide(
+                              color: Theme.of(context).colorScheme.outline.withValues(alpha: CustomTextField.borderOpacity),
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+                            borderSide: BorderSide(
+                              color: Theme.of(context).colorScheme.primary,
+                            ),
+                          ),
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: CustomTextField.horizontalPadding,
+                            vertical: CustomTextField.verticalPadding,
+                          ),
+                          isDense: true,
+                        ),
+                        items: ThinkingLevel.values.map((level) {
+                          return DropdownMenuItem(
+                            value: level,
+                            child: Text(level.displayName),
+                          );
+                        }).toList(),
+                        onChanged: (value) {
+                          if (value != null) {
+                            setState(() {
+                              _parameters = _parameters.copyWith(thinkingLevel: value);
+                            });
+                          }
+                        },
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ],
         ),
-      ],
+      ),
     );
   }
 }
