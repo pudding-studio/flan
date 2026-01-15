@@ -26,6 +26,8 @@ class _LorebookTabState extends State<LorebookTab> {
   static const double _lorebookItemVerticalPadding = 10.0;
   static const double _segmentedButtonBorderRadius = 8.0;
 
+  int? _editingFolderId;
+  final Map<int, TextEditingController> _editControllers = {};
   final Map<String, TextEditingController> _fieldControllers = {};
 
   int _nextTempId = -1;
@@ -33,6 +35,9 @@ class _LorebookTabState extends State<LorebookTab> {
 
   @override
   void dispose() {
+    for (var controller in _editControllers.values) {
+      controller.dispose();
+    }
     for (var controller in _fieldControllers.values) {
       controller.dispose();
     }
@@ -141,6 +146,33 @@ class _LorebookTabState extends State<LorebookTab> {
     _notifyUpdate();
   }
 
+  void _toggleFolderEdit(LorebookFolder folder) {
+    setState(() {
+      if (_editingFolderId == folder.id) {
+        final controller = _editControllers[folder.id!];
+        if (controller != null && controller.text.isNotEmpty) {
+          folder.name = controller.text;
+        }
+        _editingFolderId = null;
+        _editControllers.remove(folder.id!)?.dispose();
+        _notifyUpdate();
+      } else {
+        _editingFolderId = folder.id;
+        _editControllers[folder.id!] = TextEditingController(text: folder.name);
+      }
+    });
+  }
+
+  void _saveFolderName(LorebookFolder folder, String value) {
+    setState(() {
+      if (value.isNotEmpty) {
+        folder.name = value;
+      }
+      _editingFolderId = null;
+      _editControllers.remove(folder.id!)?.dispose();
+    });
+    _notifyUpdate();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -284,13 +316,35 @@ class _LorebookTabState extends State<LorebookTab> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: Text(
-                          folder.name,
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
+                        child: _editingFolderId == folder.id
+                            ? TextField(
+                                controller: _editControllers[folder.id!],
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                decoration: const InputDecoration(
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                                autofocus: true,
+                                onSubmitted: (value) => _saveFolderName(folder, value),
+                              )
+                            : Text(
+                                folder.name,
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
                               ),
+                      ),
+                      GestureDetector(
+                        onTap: () => _toggleFolderEdit(folder),
+                        child: Icon(
+                          _editingFolderId == folder.id ? Icons.check : Icons.edit_outlined,
+                          size: 18,
                         ),
                       ),
+                      const SizedBox(width: 12),
                       GestureDetector(
                         onTap: () => _deleteFolder(folder),
                         child: const Icon(Icons.delete_outline, size: 18),
@@ -306,46 +360,6 @@ class _LorebookTabState extends State<LorebookTab> {
               ),
               if (folder.isExpanded) ...[
                 const Divider(height: 8),
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        '이름',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              fontWeight: FontWeight.w600,
-                            ),
-                      ),
-                      const SizedBox(height: 6),
-                      TextFormField(
-                        initialValue: folder.name,
-                        decoration: InputDecoration(
-                          hintText: '폴더 이름',
-                          hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 8,
-                          ),
-                          isDense: true,
-                        ),
-                        style: Theme.of(context).textTheme.bodySmall,
-                        onChanged: (value) {
-                          if (value.trim().isNotEmpty) {
-                            folder.name = value.trim();
-                            _notifyUpdate();
-                          }
-                        },
-                      ),
-                      const SizedBox(height: 12),
-                    ],
-                  ),
-                ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8.0),
                   child: Column(
