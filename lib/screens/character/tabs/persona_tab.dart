@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../constants/ui_constants.dart';
 import '../../../models/character/persona.dart';
 import '../../../utils/common_dialog.dart';
+import '../../../widgets/editable_expandable_item.dart';
 import '../../../widgets/label_with_help.dart';
 
 class PersonaTab extends StatefulWidget {
@@ -122,104 +123,27 @@ class _PersonaTabState extends State<PersonaTab> {
   }
 
   Widget _buildPersonaItem(Persona persona) {
-    return Container(
+    return EditableExpandableItem(
       key: ValueKey(persona.id),
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
-        ),
+      icon: Icon(
+        Icons.person_outline,
+        size: UIConstants.iconSizeMedium,
+        color: Theme.of(context).colorScheme.secondary,
       ),
-      child: Column(
-        children: [
-          InkWell(
-            onTap: () {
-              setState(() {
-                persona.isExpanded = !persona.isExpanded;
-              });
-            },
-            overlayColor: WidgetStateProperty.all(Colors.transparent),
-            borderRadius: BorderRadius.circular(10),
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: _lorebookItemHorizontalPadding,
-                vertical: _lorebookItemVerticalPadding,
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.person_outline,
-                    size: 18,
-                    color: Theme.of(context).colorScheme.secondary,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      persona.name,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () => _deletePersona(persona),
-                    child: const Icon(Icons.delete_outline, size: 18),
-                  ),
-                  const SizedBox(width: 12),
-                  Icon(
-                    persona.isExpanded ? Icons.expand_less : Icons.expand_more,
-                    size: 20,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (persona.isExpanded) ...[
-            const Divider(height: 1),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '이름',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                  const SizedBox(height: 6),
-                  TextFormField(
-                    initialValue: persona.name,
-                    decoration: InputDecoration(
-                      hintText: '페르소나 이름',
-                      hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      isDense: true,
-                    ),
-                    style: Theme.of(context).textTheme.bodySmall,
-                    onChanged: (value) {
-                      if (value.trim().isNotEmpty) {
-                        persona.name = value.trim();
-                        _notifyUpdate();
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  _buildPersonaContentField(persona),
-                ],
-              ),
-            ),
-          ],
-        ],
-      ),
+      name: persona.name,
+      isExpanded: persona.isExpanded,
+      onToggleExpanded: () {
+        setState(() {
+          persona.isExpanded = !persona.isExpanded;
+        });
+      },
+      onDelete: () => _deletePersona(persona),
+      nameHint: '페르소나 이름',
+      onNameChanged: (value) {
+        persona.name = value;
+        _notifyUpdate();
+      },
+      content: _buildPersonaContentField(persona),
     );
   }
 

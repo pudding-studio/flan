@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../constants/ui_constants.dart';
 import '../../../models/character/lorebook_folder.dart';
 import '../../../utils/common_dialog.dart';
+import '../../../widgets/editable_expandable_item.dart';
 import '../../../widgets/label_with_help.dart';
 
 class LorebookTab extends StatefulWidget {
@@ -284,82 +285,35 @@ class _LorebookTabState extends State<LorebookTab> {
           margin: const EdgeInsets.only(bottom: 8),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(10),
+            borderRadius: BorderRadius.circular(UIConstants.borderRadiusMedium),
             border: Border.all(
               color: candidateData.isNotEmpty
                   ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+                  : Theme.of(context).colorScheme.outline.withValues(alpha: UIConstants.opacityMedium),
               width: candidateData.isNotEmpty ? 2 : 1,
             ),
           ),
-          child: Column(
-            children: [
-              InkWell(
-                onTap: () {
-                  setState(() {
-                    folder.isExpanded = !folder.isExpanded;
-                  });
-                },
-                overlayColor: WidgetStateProperty.all(Colors.transparent),
-                borderRadius: BorderRadius.circular(10),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: _lorebookItemHorizontalPadding,
-                    vertical: _lorebookItemVerticalPadding,
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.folder_outlined,
-                        size: 20,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _editingFolderId == folder.id
-                            ? TextField(
-                                controller: _editControllers[folder.id!],
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                decoration: const InputDecoration(
-                                  border: InputBorder.none,
-                                  isDense: true,
-                                  contentPadding: EdgeInsets.zero,
-                                ),
-                                autofocus: true,
-                                onSubmitted: (value) => _saveFolderName(folder, value),
-                              )
-                            : Text(
-                                folder.name,
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                              ),
-                      ),
-                      GestureDetector(
-                        onTap: () => _toggleFolderEdit(folder),
-                        child: Icon(
-                          _editingFolderId == folder.id ? Icons.check : Icons.edit_outlined,
-                          size: 18,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      GestureDetector(
-                        onTap: () => _deleteFolder(folder),
-                        child: const Icon(Icons.delete_outline, size: 18),
-                      ),
-                      const SizedBox(width: 12),
-                      Icon(
-                        folder.isExpanded ? Icons.expand_less : Icons.expand_more,
-                        size: 20,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              if (folder.isExpanded) ...[
-                const Divider(height: 8),
+          child: EditableExpandableItem(
+            icon: Icon(
+              Icons.folder_outlined,
+              size: UIConstants.iconSizeLarge,
+              color: Theme.of(context).colorScheme.primary,
+            ),
+            name: folder.name,
+            isExpanded: folder.isExpanded,
+            onToggleExpanded: () {
+              setState(() {
+                folder.isExpanded = !folder.isExpanded;
+              });
+            },
+            onDelete: () => _deleteFolder(folder),
+            showNameField: false,
+            isEditing: _editingFolderId == folder.id,
+            onToggleEdit: () => _toggleFolderEdit(folder),
+            editController: _editControllers[folder.id],
+            onSaveEdit: (value) => _saveFolderName(folder, value),
+            content: Column(
+              children: [
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8.0),
                   child: Column(
@@ -382,7 +336,7 @@ class _LorebookTabState extends State<LorebookTab> {
                   ),
                 ),
               ],
-            ],
+            ),
           ),
         );
       },
@@ -437,108 +391,36 @@ class _LorebookTabState extends State<LorebookTab> {
   }
 
   Widget _buildLorebookCard(Lorebook lorebook, LorebookFolder? folder) {
-    return Container(
+    return EditableExpandableItem(
       key: ValueKey(lorebook.id),
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
-        ),
+      icon: Icon(
+        Icons.description_outlined,
+        size: UIConstants.iconSizeMedium,
+        color: Theme.of(context).colorScheme.secondary,
       ),
-      child: Column(
+      name: lorebook.name,
+      isExpanded: lorebook.isExpanded,
+      onToggleExpanded: () {
+        setState(() {
+          lorebook.isExpanded = !lorebook.isExpanded;
+        });
+      },
+      onDelete: () => _deleteLorebook(lorebook, folder),
+      nameHint: '로어북 이름',
+      onNameChanged: (value) {
+        lorebook.name = value;
+        _notifyUpdate();
+      },
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          InkWell(
-            onTap: () {
-              setState(() {
-                lorebook.isExpanded = !lorebook.isExpanded;
-              });
-            },
-            overlayColor: WidgetStateProperty.all(Colors.transparent),
-            borderRadius: BorderRadius.circular(10),
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: _lorebookItemHorizontalPadding,
-                vertical: _lorebookItemVerticalPadding,
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.description_outlined,
-                    size: 18,
-                    color: Theme.of(context).colorScheme.secondary,
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      lorebook.name,
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () => _deleteLorebook(lorebook, folder),
-                    child: const Icon(Icons.delete_outline, size: 18),
-                  ),
-                  const SizedBox(width: 12),
-                  Icon(
-                    lorebook.isExpanded ? Icons.expand_less : Icons.expand_more,
-                    size: 20,
-                  ),
-                ],
-              ),
-            ),
-          ),
-          if (lorebook.isExpanded) ...[
-            const Divider(height: 1),
-            Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    '이름',
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                  const SizedBox(height: 6),
-                  TextFormField(
-                    initialValue: lorebook.name,
-                    decoration: InputDecoration(
-                      hintText: '로어북 이름',
-                      hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 8,
-                      ),
-                      isDense: true,
-                    ),
-                    style: Theme.of(context).textTheme.bodySmall,
-                    onChanged: (value) {
-                      if (value.trim().isNotEmpty) {
-                        lorebook.name = value.trim();
-                        _notifyUpdate();
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 12),
-                  _buildActivationConditionField(lorebook),
-                  if (lorebook.activationCondition == LorebookActivationCondition.keyBased) ...[
-                    _buildActivationKeysField(lorebook),
-                    _buildKeyConditionField(lorebook),
-                  ],
-                  _buildDeploymentOrderField(lorebook),
-                  _buildContentField(lorebook),
-                ],
-              ),
-            ),
+          _buildActivationConditionField(lorebook),
+          if (lorebook.activationCondition == LorebookActivationCondition.keyBased) ...[
+            _buildActivationKeysField(lorebook),
+            _buildKeyConditionField(lorebook),
           ],
+          _buildDeploymentOrderField(lorebook),
+          _buildContentField(lorebook),
         ],
       ),
     );
