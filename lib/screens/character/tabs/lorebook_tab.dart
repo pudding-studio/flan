@@ -293,27 +293,74 @@ class _LorebookTabState extends State<LorebookTab> {
               width: candidateData.isNotEmpty ? 2 : 1,
             ),
           ),
-          child: EditableExpandableItem(
-            icon: Icon(
-              Icons.folder_outlined,
-              size: UIConstants.iconSizeLarge,
-              color: Theme.of(context).colorScheme.primary,
-            ),
-            name: folder.name,
-            isExpanded: folder.isExpanded,
-            onToggleExpanded: () {
-              setState(() {
-                folder.isExpanded = !folder.isExpanded;
-              });
-            },
-            onDelete: () => _deleteFolder(folder),
-            showNameField: false,
-            isEditing: _editingFolderId == folder.id,
-            onToggleEdit: () => _toggleFolderEdit(folder),
-            editController: _editControllers[folder.id],
-            onSaveEdit: (value) => _saveFolderName(folder, value),
-            content: Column(
-              children: [
+          child: Column(
+            children: [
+              InkWell(
+                onTap: () {
+                  setState(() {
+                    folder.isExpanded = !folder.isExpanded;
+                  });
+                },
+                overlayColor: WidgetStateProperty.all(Colors.transparent),
+                borderRadius: BorderRadius.circular(UIConstants.borderRadiusMedium),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: _lorebookItemHorizontalPadding,
+                    vertical: _lorebookItemVerticalPadding,
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.folder_outlined,
+                        size: UIConstants.iconSizeLarge,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                      const SizedBox(width: UIConstants.spacing12),
+                      Expanded(
+                        child: _editingFolderId == folder.id
+                            ? TextField(
+                                controller: _editControllers[folder.id!],
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                decoration: const InputDecoration(
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                                autofocus: true,
+                                onSubmitted: (value) => _saveFolderName(folder, value),
+                              )
+                            : Text(
+                                folder.name,
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                              ),
+                      ),
+                      GestureDetector(
+                        onTap: () => _toggleFolderEdit(folder),
+                        child: Icon(
+                          _editingFolderId == folder.id ? Icons.check : Icons.edit_outlined,
+                          size: UIConstants.iconSizeMedium,
+                        ),
+                      ),
+                      const SizedBox(width: UIConstants.spacing12),
+                      GestureDetector(
+                        onTap: () => _deleteFolder(folder),
+                        child: const Icon(Icons.delete_outline, size: UIConstants.iconSizeMedium),
+                      ),
+                      const SizedBox(width: UIConstants.spacing12),
+                      Icon(
+                        folder.isExpanded ? Icons.expand_less : Icons.expand_more,
+                        size: UIConstants.iconSizeLarge,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              if (folder.isExpanded) ...[
+                const Divider(height: 8),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8.0),
                   child: Column(
@@ -336,7 +383,7 @@ class _LorebookTabState extends State<LorebookTab> {
                   ),
                 ),
               ],
-            ),
+            ],
           ),
         );
       },
