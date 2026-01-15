@@ -41,6 +41,7 @@ dependencies:
   path_provider: ^2.1.1
   path: ^1.8.3
   reorderable_grid_view: ^2.2.8
+  google_generative_ai: ^0.4.7
 
 dev_dependencies:
   flutter_test:

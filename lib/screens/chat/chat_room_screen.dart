@@ -9,6 +9,7 @@ import '../../models/character/lorebook_folder.dart';
 import '../../models/prompt/chat_prompt.dart';
 import '../../database/database_helper.dart';
 import '../../utils/prompt_builder.dart';
+import '../../services/gemini_service.dart';
 
 class ChatRoomScreen extends StatefulWidget {
   final int chatRoomId;
@@ -24,6 +25,7 @@ class ChatRoomScreen extends StatefulWidget {
 
 class _ChatRoomScreenState extends State<ChatRoomScreen> {
   final DatabaseHelper _db = DatabaseHelper.instance;
+  final GeminiService _geminiService = GeminiService();
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
@@ -32,6 +34,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   List<ChatMessage> _messages = [];
   List<CoverImage> _coverImages = [];
   bool _isLoading = true;
+  bool _isSending = false;
 
   @override
   void initState() {
@@ -116,7 +119,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
-    if (text.isEmpty || _chatRoom == null) return;
+    if (text.isEmpty || _chatRoom == null || _isSending) return;
+
+    setState(() => _isSending = true);
 
     try {
       final userMessage = ChatMessage(
@@ -128,12 +133,22 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       await _db.createChatMessage(userMessage);
       _messageController.clear();
 
+      await _loadChatData();
+
       final systemPrompt = await _generateSystemPrompt();
+
+      final aiResponse = await _geminiService.sendMessage(
+        systemPrompt: systemPrompt,
+        chatHistory: _messages.where((m) => m.id != userMessage.id).toList(),
+        userMessage: text,
+        chatRoomId: widget.chatRoomId,
+        characterId: _character?.id,
+      );
 
       final assistantMessage = ChatMessage(
         chatRoomId: widget.chatRoomId,
         role: MessageRole.assistant,
-        content: systemPrompt,
+        content: aiResponse,
       );
 
       await _db.createChatMessage(assistantMessage);
@@ -148,8 +163,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       debugPrint('Error sending message: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('메시지 전송 중 오류가 발생했습니다')),
+        SnackBar(content: Text('메시지 전송 중 오류가 발생했습니다: $e')),
       );
+    } finally {
+      if (mounted) {
+        setState(() => _isSending = false);
+      }
     }
   }
 
@@ -167,14 +186,33 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   Future<void> _regenerateMessage(int messageId) async {
-    try {
-      final systemPrompt = await _generateSystemPrompt();
+    if (_isSending) return;
 
+    setState(() => _isSending = true);
+
+    try {
       final message = await _db.readChatMessage(messageId);
       if (message == null) return;
 
+      final messageIndex = _messages.indexWhere((m) => m.id == messageId);
+      if (messageIndex <= 0) return;
+
+      final previousMessage = _messages[messageIndex - 1];
+      if (previousMessage.role != MessageRole.user) return;
+
+      final systemPrompt = await _generateSystemPrompt();
+      final historyBeforeMessage = _messages.sublist(0, messageIndex - 1);
+
+      final aiResponse = await _geminiService.sendMessage(
+        systemPrompt: systemPrompt,
+        chatHistory: historyBeforeMessage,
+        userMessage: previousMessage.content,
+        chatRoomId: widget.chatRoomId,
+        characterId: _character?.id,
+      );
+
       final updatedMessage = message.copyWith(
-        content: systemPrompt,
+        content: aiResponse,
         editedAt: DateTime.now(),
       );
 
@@ -184,8 +222,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       debugPrint('Error regenerating message: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('메시지 재생성 중 오류가 발생했습니다')),
+        SnackBar(content: Text('메시지 재생성 중 오류가 발생했습니다: $e')),
       );
+    } finally {
+      if (mounted) {
+        setState(() => _isSending = false);
+      }
     }
   }
 
@@ -344,8 +386,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     Expanded(
                       child: TextField(
                         controller: _messageController,
+                        enabled: !_isSending,
                         decoration: InputDecoration(
-                          hintText: '메시지를 입력하세요',
+                          hintText: _isSending ? '전송 중...' : '메시지를 입력하세요',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
                           ),
@@ -361,8 +404,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     ),
                     const SizedBox(width: 8),
                     IconButton(
-                      icon: const Icon(Icons.send),
-                      onPressed: _sendMessage,
+                      icon: _isSending
+                          ? const SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Icon(Icons.send),
+                      onPressed: _isSending ? null : _sendMessage,
                       style: IconButton.styleFrom(
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         foregroundColor: Theme.of(context).colorScheme.onPrimary,

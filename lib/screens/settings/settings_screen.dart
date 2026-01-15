@@ -4,6 +4,7 @@ import '../../providers/theme_provider.dart';
 import '../../utils/common_dialog.dart';
 import 'api_key_screen.dart';
 import 'chat_prompt_screen.dart';
+import 'log_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -144,6 +145,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const Divider(),
           _buildSectionHeader('데이터'),
+          _buildListTile(
+            icon: Icons.article_outlined,
+            title: '로그',
+            subtitle: 'API 요청/응답 로그 확인',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const LogScreen()),
+              );
+            },
+          ),
           _buildListTile(
             icon: Icons.storage,
             title: '저장공간',

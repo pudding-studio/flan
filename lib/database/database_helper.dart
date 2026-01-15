@@ -9,6 +9,7 @@ import '../models/prompt/chat_prompt.dart';
 import '../models/prompt/prompt_item.dart';
 import '../models/chat/chat_room.dart';
 import '../models/chat/chat_message.dart';
+import '../models/chat/chat_log.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -28,7 +29,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 9,
+      version: 10,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -221,6 +222,27 @@ class DatabaseHelper {
       CREATE INDEX idx_chat_room_id_messages
       ON chat_messages (chat_room_id)
     ''');
+
+    // 채팅 로그 테이블
+    await db.execute('''
+      CREATE TABLE chat_logs (
+        id $idType,
+        timestamp $textType,
+        type $textType,
+        request $textType,
+        response $textType,
+        chat_room_id INTEGER,
+        character_id INTEGER,
+        FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE,
+        FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE
+      )
+    ''');
+
+    // 인덱스 생성
+    await db.execute('''
+      CREATE INDEX idx_timestamp_chat_logs
+      ON chat_logs (timestamp DESC)
+    ''');
   }
 
   Future<void> _upgradeDB(Database db, int oldVersion, int newVersion) async {
@@ -391,6 +413,27 @@ class DatabaseHelper {
     if (oldVersion < 9) {
       await db.execute('''
         ALTER TABLE prompt_items ADD COLUMN name $textTypeNullable
+      ''');
+    }
+
+    if (oldVersion < 10) {
+      await db.execute('''
+        CREATE TABLE chat_logs (
+          id $idType,
+          timestamp $textType,
+          type $textType,
+          request $textType,
+          response $textType,
+          chat_room_id INTEGER,
+          character_id INTEGER,
+          FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE,
+          FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE
+        )
+      ''');
+
+      await db.execute('''
+        CREATE INDEX idx_timestamp_chat_logs
+        ON chat_logs (timestamp DESC)
       ''');
     }
   }
@@ -933,6 +976,60 @@ class DatabaseHelper {
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  // ==================== 채팅 로그 CRUD ====================
+
+  Future<int> createChatLog(ChatLog log) async {
+    final db = await database;
+    final map = log.toMap();
+    map.remove('id');
+    return await db.insert('chat_logs', map);
+  }
+
+  Future<List<ChatLog>> readAllChatLogs() async {
+    final db = await database;
+    final result = await db.query(
+      'chat_logs',
+      orderBy: 'timestamp DESC',
+    );
+    return result.map((map) => ChatLog.fromMap(map)).toList();
+  }
+
+  Future<List<ChatLog>> readChatLogsByChatRoom(int chatRoomId) async {
+    final db = await database;
+    final result = await db.query(
+      'chat_logs',
+      where: 'chat_room_id = ?',
+      whereArgs: [chatRoomId],
+      orderBy: 'timestamp DESC',
+    );
+    return result.map((map) => ChatLog.fromMap(map)).toList();
+  }
+
+  Future<List<ChatLog>> readChatLogsByCharacter(int characterId) async {
+    final db = await database;
+    final result = await db.query(
+      'chat_logs',
+      where: 'character_id = ?',
+      whereArgs: [characterId],
+      orderBy: 'timestamp DESC',
+    );
+    return result.map((map) => ChatLog.fromMap(map)).toList();
+  }
+
+  Future<int> deleteChatLog(int id) async {
+    final db = await database;
+    return await db.delete(
+      'chat_logs',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> deleteAllChatLogs() async {
+    final db = await database;
+    return await db.delete('chat_logs');
   }
 
   // ==================== 유틸리티 ====================
