@@ -110,6 +110,25 @@ class _LogScreenState extends State<LogScreen> {
     );
   }
 
+  String _extractUserMessage(String request) {
+    try {
+      final data = jsonDecode(request);
+      final contents = data['contents'] as List<dynamic>?;
+      if (contents == null || contents.isEmpty) return '';
+
+      final lastContent = contents.last as Map<String, dynamic>;
+      if (lastContent['role'] != 'user') return '';
+
+      final parts = lastContent['parts'] as List<dynamic>?;
+      if (parts == null || parts.isEmpty) return '';
+
+      final text = parts[0]['text'] as String? ?? '';
+      return text.length > 50 ? '${text.substring(0, 50)}...' : text;
+    } catch (e) {
+      return '';
+    }
+  }
+
   String _formatTimestamp(DateTime timestamp) {
     return '${timestamp.year}-${timestamp.month.toString().padLeft(2, '0')}-${timestamp.day.toString().padLeft(2, '0')} '
         '${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}:${timestamp.second.toString().padLeft(2, '0')}';
@@ -156,6 +175,7 @@ class _LogScreenState extends State<LogScreen> {
                   separatorBuilder: (context, index) => const Divider(height: 1),
                   itemBuilder: (context, index) {
                     final log = _logs[index];
+                    final userMessage = _extractUserMessage(log.request);
                     return ListTile(
                       title: Text(
                         _formatTimestamp(log.timestamp),
@@ -163,9 +183,23 @@ class _LogScreenState extends State<LogScreen> {
                               fontWeight: FontWeight.w500,
                             ),
                       ),
-                      subtitle: Text(
-                        'Type: ${log.type}',
-                        style: Theme.of(context).textTheme.bodySmall,
+                      subtitle: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Type: ${log.type}',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                          if (userMessage.isNotEmpty)
+                            Text(
+                              userMessage,
+                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                  ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
                       ),
                       trailing: IconButton(
                         icon: const Icon(Icons.delete_outline),
@@ -198,6 +232,31 @@ class _LogDetailSheetState extends State<_LogDetailSheet> {
       return const JsonEncoder.withIndent('  ').convert(json);
     } catch (e) {
       return jsonString;
+    }
+  }
+
+  String _extractModelId() {
+    try {
+      final data = jsonDecode(widget.log.request);
+      final modelId = data['model'] as String?;
+      if (modelId == null) return 'Gemini API';
+
+      switch (modelId) {
+        case 'gemini-3-pro-preview':
+          return 'Gemini 3 Pro Preview';
+        case 'gemini-3-flash-preview':
+          return 'Gemini 3 Flash Preview';
+        case 'gemini-2.5-pro':
+          return 'Gemini 2.5 Pro';
+        case 'gemini-2.5-flash':
+          return 'Gemini 2.5 Flash';
+        case 'gemini-2.5-flash-lite':
+          return 'Gemini 2.5 Flash Lite';
+        default:
+          return modelId;
+      }
+    } catch (e) {
+      return 'Unknown';
     }
   }
 
@@ -284,6 +343,7 @@ class _LogDetailSheetState extends State<_LogDetailSheet> {
             const SizedBox(height: 12),
             _buildInfoRow('시간', _formatTimestamp(widget.log.timestamp)),
             _buildInfoRow('타입', widget.log.type),
+            _buildInfoRow('모델', _extractModelId()),
             if (widget.log.chatRoomId != null)
               _buildInfoRow('채팅방 ID', widget.log.chatRoomId.toString()),
             if (widget.log.characterId != null)

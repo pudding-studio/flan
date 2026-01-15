@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../utils/common_dialog.dart';
 import 'api_key_screen.dart';
+import 'chat_model_screen.dart';
 import 'chat_prompt_screen.dart';
 import 'log_screen.dart';
 
@@ -130,6 +131,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const ApiKeyScreen()),
+              );
+            },
+          ),
+          _buildListTile(
+            icon: Icons.psychology,
+            title: '채팅 모델',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const ChatModelScreen()),
               );
             },
           ),

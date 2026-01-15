@@ -1,19 +1,15 @@
 import 'dart:convert';
-import 'package:google_generative_ai/google_generative_ai.dart';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/chat/chat_message.dart';
 import '../models/chat/chat_log.dart';
 import '../database/database_helper.dart';
 
 class GeminiService {
-  static const String _defaultModel = 'gemini-2.0-flash-exp';
-
-  GenerativeModel? _model;
+  static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
   final DatabaseHelper _db = DatabaseHelper.instance;
 
-  Future<void> _initializeModel() async {
-    if (_model != null) return;
-
+  Future<String> _getApiKey() async {
     final prefs = await SharedPreferences.getInstance();
     final apiKey = prefs.getString('api_key');
 
@@ -21,10 +17,31 @@ class GeminiService {
       throw Exception('API 키가 설정되지 않았습니다');
     }
 
-    _model = GenerativeModel(
-      model: _defaultModel,
-      apiKey: apiKey,
-    );
+    return apiKey;
+  }
+
+  Future<String> _getSelectedModelId() async {
+    final prefs = await SharedPreferences.getInstance();
+    final modelString = prefs.getString('chat_model');
+
+    if (modelString == null) {
+      return 'gemini-3-pro-preview';
+    }
+
+    switch (modelString) {
+      case 'geminiPro3Preview':
+        return 'gemini-3-pro-preview';
+      case 'geminiFlash3Preview':
+        return 'gemini-3-flash-preview';
+      case 'geminiPro25':
+        return 'gemini-2.5-pro';
+      case 'geminiFlash25':
+        return 'gemini-2.5-flash';
+      case 'geminiFlashLite25':
+        return 'gemini-2.5-flash-lite';
+      default:
+        return 'gemini-3-pro-preview';
+    }
   }
 
   Future<String> sendMessage({
@@ -34,7 +51,8 @@ class GeminiService {
     int? chatRoomId,
     int? characterId,
   }) async {
-    await _initializeModel();
+    final modelId = await _getSelectedModelId();
+    final apiKey = await _getApiKey();
 
     final contents = _buildContents(
       systemPrompt: systemPrompt,
@@ -42,25 +60,42 @@ class GeminiService {
       userMessage: userMessage,
     );
 
-    final requestJson = _buildRequestJson(contents);
+    final requestBody = {
+      'model': modelId,
+      'contents': contents,
+    };
+
+    final requestJson = jsonEncode(requestBody);
     final startTime = DateTime.now();
 
     try {
-      final response = await _model!.generateContent(contents);
+      final url = Uri.parse('$_baseUrl/$modelId:generateContent?key=$apiKey');
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: requestJson,
+      );
 
-      if (response.text == null || response.text!.isEmpty) {
+      if (response.statusCode != 200) {
+        throw Exception('API 요청 실패: ${response.statusCode} - ${response.body}');
+      }
+
+      final responseData = jsonDecode(response.body);
+      final text = _extractTextFromResponse(responseData);
+
+      if (text.isEmpty) {
         throw Exception('AI 응답을 받지 못했습니다');
       }
 
       await _saveChatLog(
         request: requestJson,
-        response: response.text!,
+        response: text,
         timestamp: startTime,
         chatRoomId: chatRoomId,
         characterId: characterId,
       );
 
-      return response.text!;
+      return text;
     } catch (e) {
       await _saveChatLog(
         request: requestJson,
@@ -73,12 +108,32 @@ class GeminiService {
     }
   }
 
+  String _extractTextFromResponse(Map<String, dynamic> response) {
+    try {
+      final candidates = response['candidates'] as List<dynamic>?;
+      if (candidates == null || candidates.isEmpty) {
+        return '';
+      }
+
+      final content = candidates[0]['content'];
+      final parts = content['parts'] as List<dynamic>?;
+      if (parts == null || parts.isEmpty) {
+        return '';
+      }
+
+      return parts[0]['text'] as String? ?? '';
+    } catch (e) {
+      return '';
+    }
+  }
+
   Stream<String> sendMessageStream({
     required String systemPrompt,
     required List<ChatMessage> chatHistory,
     required String userMessage,
   }) async* {
-    await _initializeModel();
+    final modelId = await _getSelectedModelId();
+    final apiKey = await _getApiKey();
 
     final contents = _buildContents(
       systemPrompt: systemPrompt,
@@ -86,56 +141,90 @@ class GeminiService {
       userMessage: userMessage,
     );
 
-    final response = _model!.generateContentStream(contents);
+    final requestBody = {
+      'contents': contents,
+    };
 
-    await for (final chunk in response) {
-      if (chunk.text != null && chunk.text!.isNotEmpty) {
-        yield chunk.text!;
+    final url = Uri.parse('$_baseUrl/$modelId:streamGenerateContent?alt=sse&key=$apiKey');
+    final request = http.Request('POST', url);
+    request.headers['Content-Type'] = 'application/json';
+    request.body = jsonEncode(requestBody);
+
+    final streamedResponse = await request.send();
+
+    if (streamedResponse.statusCode != 200) {
+      throw Exception('API 요청 실패: ${streamedResponse.statusCode}');
+    }
+
+    await for (final chunk in streamedResponse.stream.transform(utf8.decoder)) {
+      final lines = chunk.split('\n');
+      for (final line in lines) {
+        if (line.startsWith('data: ')) {
+          final jsonStr = line.substring(6);
+          if (jsonStr.trim().isEmpty) continue;
+
+          try {
+            final data = jsonDecode(jsonStr);
+            final text = _extractTextFromResponse(data);
+            if (text.isNotEmpty) {
+              yield text;
+            }
+          } catch (e) {
+            continue;
+          }
+        }
       }
     }
   }
 
-  List<Content> _buildContents({
+  List<Map<String, dynamic>> _buildContents({
     required String systemPrompt,
     required List<ChatMessage> chatHistory,
     required String userMessage,
   }) {
-    final contents = <Content>[];
+    final contents = <Map<String, dynamic>>[];
 
     if (systemPrompt.isNotEmpty) {
-      contents.add(Content.text(systemPrompt));
-      contents.add(Content.model([TextPart('알겠습니다. 지정된 캐릭터로 대화하겠습니다.')]));
+      contents.add({
+        'role': 'user',
+        'parts': [
+          {'text': systemPrompt}
+        ]
+      });
+      contents.add({
+        'role': 'model',
+        'parts': [
+          {'text': '알겠습니다. 지정된 캐릭터로 대화하겠습니다.'}
+        ]
+      });
     }
 
     for (final message in chatHistory) {
       if (message.role == MessageRole.user) {
-        contents.add(Content.text(message.content));
+        contents.add({
+          'role': 'user',
+          'parts': [
+            {'text': message.content}
+          ]
+        });
       } else if (message.role == MessageRole.assistant) {
-        contents.add(Content.model([TextPart(message.content)]));
+        contents.add({
+          'role': 'model',
+          'parts': [
+            {'text': message.content}
+          ]
+        });
       }
     }
 
-    contents.add(Content.text(userMessage));
+    contents.add({
+      'role': 'user',
+      'parts': [
+        {'text': userMessage}
+      ]
+    });
 
     return contents;
-  }
-
-  String _buildRequestJson(List<Content> contents) {
-    final request = {
-      'model': _defaultModel,
-      'contents': contents.map((content) {
-        return {
-          'role': content.role,
-          'parts': content.parts.map((part) {
-            if (part is TextPart) {
-              return {'text': part.text};
-            }
-            return {};
-          }).toList(),
-        };
-      }).toList(),
-    };
-    return jsonEncode(request);
   }
 
   Future<void> _saveChatLog({
