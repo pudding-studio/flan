@@ -147,6 +147,45 @@ class _LorebookTabState extends State<LorebookTab> {
     _notifyUpdate();
   }
 
+  void _reorderLorebookInFolder(Lorebook draggedLorebook, Lorebook targetLorebook, LorebookFolder? folder) {
+    setState(() {
+      if (folder != null) {
+        // 폴더 내에서 순서 변경
+        final lorebooks = folder.lorebooks;
+        final draggedIndex = lorebooks.indexOf(draggedLorebook);
+        final targetIndex = lorebooks.indexOf(targetLorebook);
+
+        if (draggedIndex != -1 && targetIndex != -1) {
+          lorebooks.removeAt(draggedIndex);
+          final newIndex = lorebooks.indexOf(targetLorebook);
+          lorebooks.insert(newIndex, draggedLorebook);
+
+          // order 업데이트
+          for (var i = 0; i < lorebooks.length; i++) {
+            lorebooks[i].order = i;
+          }
+        }
+      } else {
+        // standalone 로어북 순서 변경
+        final lorebooks = widget.standaloneLorebooks;
+        final draggedIndex = lorebooks.indexOf(draggedLorebook);
+        final targetIndex = lorebooks.indexOf(targetLorebook);
+
+        if (draggedIndex != -1 && targetIndex != -1) {
+          lorebooks.removeAt(draggedIndex);
+          final newIndex = lorebooks.indexOf(targetLorebook);
+          lorebooks.insert(newIndex, draggedLorebook);
+
+          // order 업데이트
+          for (var i = 0; i < lorebooks.length; i++) {
+            lorebooks[i].order = i;
+          }
+        }
+      }
+    });
+    _notifyUpdate();
+  }
+
   void _toggleFolderEdit(LorebookFolder folder) {
     setState(() {
       if (_editingFolderId == folder.id) {
@@ -433,7 +472,34 @@ class _LorebookTabState extends State<LorebookTab> {
         opacity: 0.3,
         child: _buildLorebookCard(lorebook, folder),
       ),
-      child: _buildLorebookCard(lorebook, folder),
+      child: DragTarget<Map<String, dynamic>>(
+        onWillAcceptWithDetails: (details) {
+          final data = details.data;
+          // 같은 폴더 내에서만 순서 변경 허용
+          return data['type'] == 'lorebook' &&
+                 data['lorebook'] != lorebook &&
+                 data['fromFolder'] == folder;
+        },
+        onAcceptWithDetails: (details) {
+          final data = details.data;
+          final draggedLorebook = data['lorebook'] as Lorebook;
+          _reorderLorebookInFolder(draggedLorebook, lorebook, folder);
+        },
+        builder: (context, candidateData, rejectedData) {
+          return Container(
+            decoration: candidateData.isNotEmpty
+                ? BoxDecoration(
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.primary,
+                      width: 2,
+                    ),
+                    borderRadius: BorderRadius.circular(UIConstants.borderRadiusMedium),
+                  )
+                : null,
+            child: _buildLorebookCard(lorebook, folder),
+          );
+        },
+      ),
     );
   }
 
