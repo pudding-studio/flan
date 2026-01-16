@@ -10,6 +10,7 @@ class CharacterListItem extends StatelessWidget {
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
   final VoidCallback? onEdit;
+  final VoidCallback? onExport;
   final bool isEditMode;
   final bool isSelected;
 
@@ -22,6 +23,7 @@ class CharacterListItem extends StatelessWidget {
     this.onTap,
     this.onDelete,
     this.onEdit,
+    this.onExport,
     this.isEditMode = false,
     this.isSelected = false,
   });
@@ -168,6 +170,17 @@ class CharacterListItem extends StatelessWidget {
                         Icon(Icons.edit_outlined, size: 20),
                         SizedBox(width: 12),
                         Text('수정'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'export',
+                    onTap: onExport,
+                    child: const Row(
+                      children: [
+                        Icon(Icons.upload_outlined, size: 20),
+                        SizedBox(width: 12),
+                        Text('내보내기'),
                       ],
                     ),
                   ),

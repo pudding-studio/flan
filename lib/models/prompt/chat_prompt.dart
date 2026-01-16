@@ -86,4 +86,28 @@ class ChatPrompt {
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'name': name,
+      'description': description,
+      'supportedModel': supportedModel,
+      'parameters': parameters?.toJson(),
+      'items': items.map((item) => item.toMap()).toList(),
+    };
+  }
+
+  factory ChatPrompt.fromJson(Map<String, dynamic> json) {
+    return ChatPrompt(
+      name: json['name'] as String,
+      description: json['description'] as String?,
+      supportedModel: json['supportedModel'] as String?,
+      parameters: json['parameters'] != null
+          ? PromptParameters.fromJson(json['parameters'] as Map<String, dynamic>)
+          : null,
+      items: (json['items'] as List<dynamic>?)
+          ?.map((item) => PromptItem.fromMap(item as Map<String, dynamic>))
+          .toList(),
+    );
+  }
 }

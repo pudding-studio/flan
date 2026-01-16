@@ -1,3 +1,8 @@
+import 'persona.dart';
+import 'start_scenario.dart';
+import 'lorebook_folder.dart';
+import 'cover_image.dart';
+
 class Character {
   final int? id;
   final String name;
@@ -79,6 +84,50 @@ class Character {
       updatedAt: updatedAt ?? this.updatedAt,
       isDraft: isDraft ?? this.isDraft,
       sortOrder: sortOrder ?? this.sortOrder,
+    );
+  }
+
+  Map<String, dynamic> toJson({
+    List<Persona>? personas,
+    List<StartScenario>? startScenarios,
+    List<LorebookFolder>? lorebookFolders,
+    List<Lorebook>? standaloneLorebooks,
+    List<CoverImage>? coverImages,
+  }) {
+    return {
+      'format': 'flan_v1',
+      'name': name,
+      'summary': summary,
+      'keywords': keywords,
+      'worldSetting': worldSetting,
+      'selectedCoverImageId': selectedCoverImageId,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+      'isDraft': isDraft,
+      'sortOrder': sortOrder,
+      'personas': personas?.map((p) => p.toJson()).toList(),
+      'startScenarios': startScenarios?.map((s) => s.toJson()).toList(),
+      'lorebookFolders': lorebookFolders?.map((f) => f.toJson()).toList(),
+      'standaloneLorebooks': standaloneLorebooks?.map((l) => l.toJson()).toList(),
+      'coverImages': coverImages?.map((c) => c.toJson()).toList(),
+    };
+  }
+
+  factory Character.fromJson(Map<String, dynamic> json) {
+    return Character(
+      name: json['name'] as String,
+      summary: json['summary'] as String?,
+      keywords: json['keywords'] as String?,
+      worldSetting: json['worldSetting'] as String?,
+      selectedCoverImageId: json['selectedCoverImageId'] as int?,
+      createdAt: json['createdAt'] != null
+          ? DateTime.parse(json['createdAt'] as String)
+          : null,
+      updatedAt: json['updatedAt'] != null
+          ? DateTime.parse(json['updatedAt'] as String)
+          : null,
+      isDraft: json['isDraft'] as bool? ?? false,
+      sortOrder: json['sortOrder'] as int?,
     );
   }
 }

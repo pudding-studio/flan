@@ -1,4 +1,9 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../database/database_helper.dart';
 import '../../models/prompt/chat_prompt.dart';
 import '../../utils/common_dialog.dart';
@@ -93,6 +98,102 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
     }
   }
 
+  Future<void> _exportPrompt(ChatPrompt prompt) async {
+    try {
+      final promptWithItems = ChatPrompt(
+        name: prompt.name,
+        description: prompt.description,
+        supportedModel: prompt.supportedModel,
+        parameters: prompt.parameters,
+        items: await _db.readPromptItemsByChatPrompt(prompt.id!),
+      );
+
+      final jsonString = const JsonEncoder.withIndent('  ').convert(promptWithItems.toJson());
+      final fileName = '${prompt.name}.json';
+
+      if (Platform.isAndroid) {
+        const platform = MethodChannel('com.example.flan/file_saver');
+        final result = await platform.invokeMethod('saveToDownloads', {
+          'fileName': fileName,
+          'content': jsonString,
+        });
+
+        if (mounted) {
+          CommonDialog.showSnackBar(
+            context: context,
+            message: result == true
+              ? 'Download/$fileName에 저장되었습니다'
+              : '저장에 실패했습니다',
+          );
+        }
+      } else if (Platform.isIOS) {
+        final directory = await getApplicationDocumentsDirectory();
+        final filePath = '${directory.path}/$fileName';
+        final file = File(filePath);
+        await file.writeAsString(jsonString);
+
+        if (mounted) {
+          CommonDialog.showSnackBar(
+            context: context,
+            message: '$filePath에 저장되었습니다',
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '프롬프트 내보내기 실패: $e',
+        );
+      }
+    }
+  }
+
+  Future<void> _importPrompt() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
+
+      if (result == null || result.files.isEmpty) return;
+
+      final file = File(result.files.single.path!);
+      final jsonString = await file.readAsString();
+      final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
+
+      final prompt = ChatPrompt.fromJson(jsonData);
+      final promptId = await _db.createChatPrompt(prompt);
+
+      for (int i = 0; i < prompt.items.length; i++) {
+        final item = prompt.items[i];
+        await _db.createPromptItem(
+          item.copyWith(
+            id: null,
+            chatPromptId: promptId,
+            order: i,
+          ),
+        );
+      }
+
+      await _loadPrompts();
+
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '프롬프트가 가져오기 되었습니다',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '프롬프트 가져오기 실패: $e',
+        );
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
@@ -101,6 +202,32 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('채팅 프롬프트'),
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(16),
+            ),
+            offset: const Offset(0, 50),
+            itemBuilder: (context) => [
+              const PopupMenuItem<String>(
+                value: 'import',
+                child: Row(
+                  children: [
+                    Icon(Icons.download_outlined, size: 20),
+                    SizedBox(width: 12),
+                    Text('가져오기'),
+                  ],
+                ),
+              ),
+            ],
+            onSelected: (value) {
+              if (value == 'import') {
+                _importPrompt();
+              }
+            },
+          ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -161,6 +288,8 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
                         isSelected: prompt.isSelected,
                         onRadioTap: () => _selectPrompt(prompt.id!),
                         onTap: () => _navigateToEdit(prompt),
+                        onEdit: () => _navigateToEdit(prompt),
+                        onExport: () => _exportPrompt(prompt),
                         onDelete: () => _deletePrompt(
                           prompt.id!,
                           prompt.name,

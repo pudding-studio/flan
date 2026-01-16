@@ -1,12 +1,21 @@
+import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../database/database_helper.dart';
 import '../../models/character/character.dart';
+import '../../models/character/persona.dart';
+import '../../models/character/start_scenario.dart';
+import '../../models/character/lorebook_folder.dart';
 import '../../models/character/cover_image.dart';
 import '../../utils/common_dialog.dart';
+import '../../utils/character_card_parser.dart';
 import 'character_edit_screen.dart';
 import 'character_view_screen.dart';
 import 'widgets/character_card.dart';
@@ -253,6 +262,209 @@ class _CharacterScreenState extends State<CharacterScreen> {
     }
   }
 
+  Future<void> _exportCharacter(int characterId) async {
+    try {
+      // 캐릭터와 관련 데이터 로드
+      final character = await _db.readCharacter(characterId);
+      if (character == null) {
+        throw Exception('캐릭터를 찾을 수 없습니다');
+      }
+
+      final personas = await _db.readPersonas(characterId);
+      final startScenarios = await _db.readStartScenarios(characterId);
+      final lorebookFolders = await _db.readLorebookFolders(characterId);
+      final standaloneLorebooks = await _db.readLorebooks(characterId);
+      final coverImages = await _db.readCoverImages(characterId);
+
+      // 각 폴더의 로어북 로드
+      for (final folder in lorebookFolders) {
+        folder.lorebooks.addAll(await _db.readLorebooksByFolder(folder.id!));
+      }
+
+      // JSON 생성
+      final jsonData = character.toJson(
+        personas: personas,
+        startScenarios: startScenarios,
+        lorebookFolders: lorebookFolders,
+        standaloneLorebooks: standaloneLorebooks,
+        coverImages: coverImages,
+      );
+
+      final jsonString = const JsonEncoder.withIndent('  ').convert(jsonData);
+      final fileName = '${character.name}.json';
+
+      // 파일 저장
+      if (Platform.isAndroid) {
+        const platform = MethodChannel('com.example.flan/file_saver');
+        final result = await platform.invokeMethod('saveToDownloads', {
+          'fileName': fileName,
+          'content': jsonString,
+        });
+
+        if (result == true && mounted) {
+          final downloadsPath = '/storage/emulated/0/Download/$fileName';
+          CommonDialog.showSnackBar(
+            context: context,
+            message: '내보내기 완료: $downloadsPath',
+          );
+        } else if (mounted) {
+          CommonDialog.showSnackBar(
+            context: context,
+            message: '파일 저장에 실패했습니다',
+          );
+        }
+      } else if (Platform.isIOS) {
+        final directory = await getApplicationDocumentsDirectory();
+        final filePath = '${directory.path}/$fileName';
+        await File(filePath).writeAsString(jsonString);
+
+        if (mounted) {
+          CommonDialog.showSnackBar(
+            context: context,
+            message: '내보내기 완료: $filePath',
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '내보내기 실패: $e',
+        );
+      }
+    }
+  }
+
+  Future<void> _importCharacter() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json', 'png'],
+      );
+
+      if (result == null || result.files.isEmpty) return;
+
+      final file = File(result.files.single.path!);
+      final extension = result.files.single.extension?.toLowerCase();
+
+      Character? character;
+      List<Persona>? personas;
+      List<StartScenario>? startScenarios;
+      List<LorebookFolder>? lorebookFolders;
+      List<Lorebook>? standaloneLorebooks;
+      List<CoverImage>? coverImages;
+
+      if (extension == 'json') {
+        // JSON 파일 처리
+        final jsonString = await file.readAsString();
+        final jsonData = json.decode(jsonString) as Map<String, dynamic>;
+
+        final format = jsonData['format'] as String?;
+
+        if (format == 'flan_v1') {
+          // 자체 형식
+          character = Character.fromJson(jsonData);
+          // 관련 데이터 파싱 (임시 characterId 0 사용)
+          personas = (jsonData['personas'] as List?)
+              ?.map((p) => Persona.fromJson(p as Map<String, dynamic>))
+              .toList();
+          startScenarios = (jsonData['startScenarios'] as List?)
+              ?.map((s) => StartScenario.fromJson(s as Map<String, dynamic>))
+              .toList();
+          lorebookFolders = (jsonData['lorebookFolders'] as List?)
+              ?.map((f) => LorebookFolder.fromJson(f as Map<String, dynamic>))
+              .toList();
+          standaloneLorebooks = (jsonData['standaloneLorebooks'] as List?)
+              ?.map((l) => Lorebook.fromJson(l as Map<String, dynamic>))
+              .toList();
+          coverImages = (jsonData['coverImages'] as List?)
+              ?.map((c) => CoverImage.fromJson(c as Map<String, dynamic>))
+              .toList();
+        } else if (format == 'chara_card_v2' || format == 'chara_card_v3') {
+          // Character Card V2/V3 JSON 형식
+          character = CharacterCardParser.parseCharacterCard(jsonData);
+        } else {
+          throw FormatException('지원하지 않는 형식입니다: $format');
+        }
+      } else if (extension == 'png') {
+        // PNG 파일에서 메타데이터 추출
+        final pngBytes = await file.readAsBytes();
+        final metadata = CharacterCardParser.extractMetadataFromPng(pngBytes);
+
+        if (metadata == null) {
+          throw FormatException('PNG 파일에서 캐릭터 데이터를 찾을 수 없습니다');
+        }
+
+        character = CharacterCardParser.parseCharacterCard(metadata);
+      } else {
+        throw FormatException('지원하지 않는 파일 형식입니다');
+      }
+
+      if (character == null) {
+        throw Exception('캐릭터 데이터를 파싱할 수 없습니다');
+      }
+
+      // DB에 저장
+      final characterId = await _db.createCharacter(character);
+
+      // 관련 데이터 저장
+      if (personas != null) {
+        for (final persona in personas) {
+          await _db.createPersona(persona.copyWith(characterId: characterId));
+        }
+      }
+
+      if (startScenarios != null) {
+        for (final scenario in startScenarios) {
+          await _db.createStartScenario(
+              scenario.copyWith(characterId: characterId));
+        }
+      }
+
+      if (lorebookFolders != null) {
+        for (final folder in lorebookFolders) {
+          final folderId = await _db.createLorebookFolder(
+              folder.copyWith(characterId: characterId));
+
+          // 폴더 내 로어북 저장
+          for (final lorebook in folder.lorebooks) {
+            await _db.createLorebook(
+                lorebook.copyWith(characterId: characterId, folderId: folderId));
+          }
+        }
+      }
+
+      if (standaloneLorebooks != null) {
+        for (final lorebook in standaloneLorebooks) {
+          await _db.createLorebook(
+              lorebook.copyWith(characterId: characterId));
+        }
+      }
+
+      if (coverImages != null) {
+        for (final image in coverImages) {
+          await _db.createCoverImage(image.copyWith(characterId: characterId));
+        }
+      }
+
+      await _loadCharacters();
+
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '캐릭터를 성공적으로 가져왔습니다',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '캐릭터 가져오기 실패: $e',
+        );
+      }
+    }
+  }
+
   String _getSortMethodLabel() {
     switch (_sortMethod) {
       case SortMethod.nameAsc:
@@ -319,8 +531,24 @@ class _CharacterScreenState extends State<CharacterScreen> {
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(16),
             ),
+            onSelected: (value) {
+              if (value == 'import') {
+                _importCharacter();
+              }
+            },
             itemBuilder: (BuildContext context) {
               return [
+                const PopupMenuItem<String>(
+                  value: 'import',
+                  child: Row(
+                    children: [
+                      Icon(Icons.download_outlined, size: 20),
+                      SizedBox(width: 12),
+                      Text('가져오기'),
+                    ],
+                  ),
+                ),
+                const PopupMenuDivider(),
                 PopupMenuItem<String>(
                   enabled: false,
                   child: Text(
@@ -716,6 +944,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
             _loadCharacters();
           }
         },
+        onExport: () => _exportCharacter(_characters[index].id!),
         onDelete: () => _deleteCharacter(_characters[index].id!),
       );
     }
@@ -820,6 +1049,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
                   _loadCharacters();
                 }
               },
+              onExport: () => _exportCharacter(_characters[index].id!),
               onDelete: () => _deleteCharacter(_characters[index].id!),
             ),
           );
@@ -867,6 +1097,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
                 _loadCharacters();
               }
             },
+            onExport: () => _exportCharacter(_characters[index].id!),
             onDelete: () => _deleteCharacter(_characters[index].id!),
           ),
         );

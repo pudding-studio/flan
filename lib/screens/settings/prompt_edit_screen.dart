@@ -36,6 +36,12 @@ class _PromptEditScreenState extends State<PromptEditScreen>
   int _nextTempId = -1;
   int _getNextTempId() => _nextTempId--;
 
+  // Parameter controllers
+  final _maxInputTokensController = TextEditingController();
+  final _maxOutputTokensController = TextEditingController();
+  final _thinkingTokensController = TextEditingController();
+  final _thinkingMaxTokensController = TextEditingController();
+
   bool get _isEditing => widget.prompt != null;
 
   @override
@@ -55,6 +61,12 @@ class _PromptEditScreenState extends State<PromptEditScreen>
     _selectedModel = prompt.supportedModel;
     _parameters = prompt.parameters ?? const PromptParameters();
 
+    // Load parameter values to controllers
+    _maxInputTokensController.text = _parameters.maxInputTokens?.toString() ?? '';
+    _maxOutputTokensController.text = _parameters.maxOutputTokens?.toString() ?? '';
+    _thinkingTokensController.text = _parameters.thinkingTokens?.toString() ?? '';
+    _thinkingMaxTokensController.text = _parameters.thinkingMaxTokens?.toString() ?? '';
+
     _items.addAll(prompt.items);
     for (var item in _items) {
       _contentControllers[item.id!] = TextEditingController(text: item.content);
@@ -69,7 +81,34 @@ class _PromptEditScreenState extends State<PromptEditScreen>
     for (var controller in _contentControllers.values) {
       controller.dispose();
     }
+    _maxInputTokensController.dispose();
+    _maxOutputTokensController.dispose();
+    _thinkingTokensController.dispose();
+    _thinkingMaxTokensController.dispose();
     super.dispose();
+  }
+
+  void _syncParametersFromControllers() {
+    // TextField controller 값을 _parameters에 동기화
+    final maxInputTokens = _maxInputTokensController.text.isEmpty
+        ? null
+        : int.tryParse(_maxInputTokensController.text);
+    final maxOutputTokens = _maxOutputTokensController.text.isEmpty
+        ? null
+        : int.tryParse(_maxOutputTokensController.text);
+    final thinkingTokens = _thinkingTokensController.text.isEmpty
+        ? null
+        : int.tryParse(_thinkingTokensController.text);
+    final thinkingMaxTokens = _thinkingMaxTokensController.text.isEmpty
+        ? null
+        : int.tryParse(_thinkingMaxTokensController.text);
+
+    _parameters = _parameters.copyWith(
+      maxInputTokens: maxInputTokens,
+      maxOutputTokens: maxOutputTokens,
+      thinkingTokens: thinkingTokens,
+      thinkingMaxTokens: thinkingMaxTokens,
+    );
   }
 
   Future<void> _savePrompt() async {
@@ -77,6 +116,9 @@ class _PromptEditScreenState extends State<PromptEditScreen>
       _tabController.animateTo(0);
       return;
     }
+
+    // Controller 값을 parameters에 반영
+    _syncParametersFromControllers();
 
     setState(() => _isLoading = true);
 
@@ -245,28 +287,29 @@ class _PromptEditScreenState extends State<PromptEditScreen>
           ),
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          _buildBasicInfoTab(),
-          _buildParametersTab(),
-          PromptItemsTab(
-            items: _items,
-            contentControllers: _contentControllers,
-            onUpdate: () => setState(() {}),
-            onDelete: _deleteItem,
-            onMove: _moveItem,
-            onAdd: _addItem,
-          ),
-        ],
+      body: Form(
+        key: _formKey,
+        child: TabBarView(
+          controller: _tabController,
+          children: [
+            _buildBasicInfoTab(),
+            _buildParametersTab(),
+            PromptItemsTab(
+              items: _items,
+              contentControllers: _contentControllers,
+              onUpdate: () => setState(() {}),
+              onDelete: _deleteItem,
+              onMove: _moveItem,
+              onAdd: _addItem,
+            ),
+          ],
+        ),
       ),
     );
   }
 
   Widget _buildBasicInfoTab() {
-    return Form(
-      key: _formKey,
-      child: ListView(
+    return ListView(
         padding: const EdgeInsets.all(UIConstants.spacing20),
         children: [
           CustomTextField(
@@ -431,7 +474,6 @@ class _PromptEditScreenState extends State<PromptEditScreen>
             ],
           ),
         ],
-      ),
     );
   }
 
@@ -473,6 +515,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
           label: '최대 입력 크기',
           value: _parameters.maxInputTokens,
           helpText: '입력할 수 있는 최대 토큰 수입니다.',
+          controller: _maxInputTokensController,
           onChanged: (value) {
             setState(() {
               _parameters = _parameters.copyWith(maxInputTokens: value);
@@ -484,6 +527,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
           label: '최대 응답 크기',
           value: _parameters.maxOutputTokens,
           helpText: '생성할 수 있는 최대 토큰 수입니다.',
+          controller: _maxOutputTokensController,
           onChanged: (value) {
             setState(() {
               _parameters = _parameters.copyWith(maxOutputTokens: value);
@@ -495,6 +539,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
           label: '사고토큰',
           value: _parameters.thinkingTokens,
           helpText: '사고에 사용할 토큰 수입니다.',
+          controller: _thinkingTokensController,
           onChanged: (value) {
             setState(() {
               _parameters = _parameters.copyWith(thinkingTokens: value);
@@ -587,6 +632,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
     required int? value,
     required String helpText,
     required ValueChanged<int?> onChanged,
+    TextEditingController? controller,
   }) {
     final isEnabled = value != null;
 
@@ -646,7 +692,8 @@ class _PromptEditScreenState extends State<PromptEditScreen>
         ),
         const SizedBox(height: CustomTextField.labelBottomSpacing),
         TextFormField(
-          initialValue: value?.toString() ?? '',
+          controller: controller,
+          initialValue: controller == null ? (value?.toString() ?? '') : null,
           enabled: isEnabled,
           keyboardType: TextInputType.number,
           style: Theme.of(context).textTheme.bodyMedium,
@@ -803,6 +850,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
     required int? value,
     required String helpText,
     required ValueChanged<int?> onChanged,
+    TextEditingController? controller,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -845,7 +893,8 @@ class _PromptEditScreenState extends State<PromptEditScreen>
         ),
         const SizedBox(height: CustomTextField.labelBottomSpacing),
         TextFormField(
-          initialValue: value?.toString() ?? '',
+          controller: controller,
+          initialValue: controller == null ? (value?.toString() ?? '') : null,
           keyboardType: TextInputType.number,
           style: Theme.of(context).textTheme.bodyMedium,
           decoration: InputDecoration(
@@ -963,6 +1012,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                     label: '생각토큰 수',
                     value: _parameters.thinkingMaxTokens,
                     helpText: '생각에 사용할 최대 토큰 수입니다.',
+                    controller: _thinkingMaxTokensController,
                     onChanged: (value) {
                       setState(() {
                         _parameters = _parameters.copyWith(thinkingMaxTokens: value);
