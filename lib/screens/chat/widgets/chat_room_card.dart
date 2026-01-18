@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
+import 'dart:typed_data';
 
 class ChatRoomCard extends StatelessWidget {
   final String title;
   final String lastMessage;
   final String date;
-  final String? imageUrl;
-  final String? imagePath;
+  final Uint8List? imageData;
   final int messageCount;
   final int tokenCount;
   final bool isEditMode;
@@ -17,8 +16,7 @@ class ChatRoomCard extends StatelessWidget {
     required this.title,
     required this.lastMessage,
     required this.date,
-    this.imageUrl,
-    this.imagePath,
+    this.imageData,
     required this.messageCount,
     required this.tokenCount,
     this.isEditMode = false,
@@ -37,9 +35,9 @@ class ChatRoomCard extends StatelessWidget {
     const double imageSize = 60.0;
 
     Widget imageWidget;
-    if (imagePath != null && imagePath!.isNotEmpty) {
-      imageWidget = Image.file(
-        File(imagePath!),
+    if (imageData != null) {
+      imageWidget = Image.memory(
+        imageData!,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
           return Icon(
@@ -49,8 +47,6 @@ class ChatRoomCard extends StatelessWidget {
           );
         },
       );
-    } else if (imageUrl != null) {
-      imageWidget = Image.network(imageUrl!, fit: BoxFit.cover);
     } else {
       imageWidget = Icon(
         Icons.person,

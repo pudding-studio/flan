@@ -452,7 +452,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         title: data.chatRoom.name,
                         lastMessage: data.lastMessage?.content ?? '메시지가 없습니다',
                         date: _formatDate(data.chatRoom.updatedAt),
-                        imagePath: data.coverImage?.imagePath,
+                        imageData: data.coverImage?.imageData,
                         messageCount: data.messageCount,
                         tokenCount: data.tokenCount,
                         isEditMode: _isEditMode,
