@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
 import '../../models/character/character.dart';
 import '../../models/character/cover_image.dart';
 import '../../models/character/persona.dart';
@@ -157,7 +156,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
       selectedCover = _coverImages.first;
     }
 
-    if (selectedCover == null || selectedCover.imagePath == null || selectedCover.imagePath!.isEmpty) {
+    if (selectedCover == null || selectedCover.imageData == null) {
       return AspectRatio(
         aspectRatio: 1,
         child: Container(
@@ -178,8 +177,8 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
       borderRadius: BorderRadius.circular(16),
       child: AspectRatio(
         aspectRatio: 1,
-        child: Image.file(
-          File(selectedCover.imagePath!),
+        child: Image.memory(
+          selectedCover.imageData!,
           fit: BoxFit.cover,
           errorBuilder: (context, error, stackTrace) {
             return Container(

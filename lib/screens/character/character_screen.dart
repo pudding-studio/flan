@@ -44,7 +44,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
   SortMethod _sortMethod = SortMethod.createdAtDesc;
   List<Character> _characters = [];
   bool _isLoading = true;
-  Map<int, String?> _characterCoverImages = {};
+  Map<int, Uint8List?> _characterCoverImages = {};
   bool _isEditMode = false;
   final Set<int> _selectedCharacterIds = {};
 
@@ -83,7 +83,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
       final characters = await _db.readAllCharacters();
 
       // 각 캐릭터의 표지 이미지 로드
-      final coverImages = <int, String?>{};
+      final coverImages = <int, Uint8List?>{};
       for (var character in characters) {
         final images = await _db.readCoverImages(character.id!);
         if (images.isNotEmpty) {
@@ -96,7 +96,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
           } else {
             selectedImage = images.first;
           }
-          coverImages[character.id!] = selectedImage.imagePath;
+          coverImages[character.id!] = selectedImage.imageData;
         }
       }
 
@@ -398,10 +398,6 @@ class _CharacterScreenState extends State<CharacterScreen> {
         character = CharacterCardParser.parseCharacterCard(metadata);
       } else {
         throw FormatException('지원하지 않는 파일 형식입니다');
-      }
-
-      if (character == null) {
-        throw Exception('캐릭터 데이터를 파싱할 수 없습니다');
       }
 
       // DB에 저장
@@ -915,7 +911,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
         title: _characters[index].name,
         description: _characters[index].summary ?? '',
         tags: _characters[index].keywords?.split(',').map((e) => e.trim()).toList() ?? [],
-        imageUrl: _characterCoverImages[_characters[index].id],
+        imageData: _characterCoverImages[_characters[index].id],
         isEditMode: _isEditMode,
         isSelected: _selectedCharacterIds.contains(_characters[index].id),
         onTap: () async {
@@ -1020,7 +1016,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
               title: _characters[index].name,
               description: _characters[index].summary ?? '',
               tags: _characters[index].keywords?.split(',').map((e) => e.trim()).toList() ?? [],
-              imageUrl: _characterCoverImages[_characters[index].id],
+              imageData: _characterCoverImages[_characters[index].id],
               isEditMode: _isEditMode,
               isSelected: _selectedCharacterIds.contains(_characters[index].id),
               onTap: () async {
@@ -1068,7 +1064,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
             title: _characters[index].name,
             description: _characters[index].summary ?? '',
             tags: _characters[index].keywords?.split(',').map((e) => e.trim()).toList() ?? [],
-            imageUrl: _characterCoverImages[_characters[index].id],
+            imageData: _characterCoverImages[_characters[index].id],
             isEditMode: _isEditMode,
             isSelected: _selectedCharacterIds.contains(_characters[index].id),
             onTap: () async {

@@ -66,7 +66,7 @@ class CoverImage {
       'name': name,
       'order': order,
       'isExpanded': isExpanded,
-      'imageData': imageData != null ? imageData!.toList() : null,
+      'imageData': imageData?.toList(),
     };
   }
 

@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'dart:io';
+import 'dart:typed_data';
 import 'tag_chip.dart';
 
 class CharacterCard extends StatelessWidget {
   final String title;
   final String description;
   final List<String> tags;
-  final String? imageUrl;
+  final Uint8List? imageData;
   final VoidCallback? onTap;
   final VoidCallback? onDelete;
   final VoidCallback? onEdit;
@@ -19,7 +19,7 @@ class CharacterCard extends StatelessWidget {
     required this.title,
     required this.description,
     required this.tags,
-    this.imageUrl,
+    this.imageData,
     this.onTap,
     this.onDelete,
     this.onEdit,
@@ -58,9 +58,9 @@ class CharacterCard extends StatelessWidget {
                             : null,
                           borderRadius: BorderRadius.circular(20.0),
                         ),
-                        child: imageUrl != null && imageUrl!.isNotEmpty
-                            ? Image.file(
-                                File(imageUrl!),
+                        child: imageData != null
+                            ? Image.memory(
+                                imageData!,
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) => Icon(
                                   Icons.person,
