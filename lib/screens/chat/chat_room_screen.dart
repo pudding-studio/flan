@@ -9,6 +9,7 @@ import '../../models/character/lorebook_folder.dart';
 import '../../models/prompt/chat_prompt.dart';
 import '../../database/database_helper.dart';
 import '../../utils/prompt_builder.dart';
+import '../../utils/common_dialog.dart';
 import '../../services/gemini_service.dart';
 
 class ChatRoomScreen extends StatefulWidget {
@@ -35,6 +36,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   List<CoverImage> _coverImages = [];
   bool _isLoading = true;
   bool _isSending = false;
+  int? _editingMessageId;
+  final Map<int, TextEditingController> _editControllers = {};
 
   @override
   void initState() {
@@ -46,6 +49,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   void dispose() {
     _messageController.dispose();
     _scrollController.dispose();
+    for (var controller in _editControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -177,14 +183,78 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   Future<void> _deleteMessage(int messageId) async {
+    final confirmed = await CommonDialog.showDeleteConfirmation(
+      context: context,
+      itemName: '이 메시지',
+    );
+
+    if (!confirmed) return;
+
     try {
       await _db.deleteChatMessage(messageId);
       await _loadChatData();
+      if (!mounted) return;
+      CommonDialog.showSnackBar(
+        context: context,
+        message: '메시지가 삭제되었습니다',
+      );
     } catch (e) {
       debugPrint('Error deleting message: $e');
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('메시지 삭제 중 오류가 발생했습니다')),
+      CommonDialog.showSnackBar(
+        context: context,
+        message: '메시지 삭제 중 오류가 발생했습니다',
+      );
+    }
+  }
+
+  void _startEditMessage(ChatMessage message) {
+    setState(() {
+      _editingMessageId = message.id;
+      _editControllers[message.id!] = TextEditingController(text: message.content);
+    });
+  }
+
+  void _cancelEditMessage() {
+    if (_editingMessageId != null) {
+      _editControllers[_editingMessageId]?.dispose();
+      _editControllers.remove(_editingMessageId);
+      setState(() {
+        _editingMessageId = null;
+      });
+    }
+  }
+
+  Future<void> _saveEditMessage(ChatMessage message) async {
+    final controller = _editControllers[message.id];
+    if (controller == null) return;
+
+    final newContent = controller.text.trim();
+    if (newContent.isEmpty || newContent == message.content) {
+      _cancelEditMessage();
+      return;
+    }
+
+    try {
+      final updatedMessage = message.copyWith(
+        content: newContent,
+        editedAt: DateTime.now(),
+      );
+
+      await _db.updateChatMessage(updatedMessage);
+      _cancelEditMessage();
+      await _loadChatData();
+      if (!mounted) return;
+      CommonDialog.showSnackBar(
+        context: context,
+        message: '메시지가 수정되었습니다',
+      );
+    } catch (e) {
+      debugPrint('Error editing message: $e');
+      if (!mounted) return;
+      CommonDialog.showSnackBar(
+        context: context,
+        message: '메시지 수정 중 오류가 발생했습니다',
       );
     }
   }
@@ -266,6 +336,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   Widget _buildMessage(ChatMessage message, int index) {
     final isUser = message.role == MessageRole.user;
+    final isEditing = _editingMessageId == message.id;
 
     return Column(
       children: [
@@ -274,41 +345,72 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                message.content,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
+              if (isEditing)
+                TextField(
+                  controller: _editControllers[message.id],
+                  decoration: const InputDecoration(
+                    border: OutlineInputBorder(),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                  ),
+                  maxLines: null,
+                  autofocus: true,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                )
+              else
+                Text(
+                  message.content,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
               const SizedBox(height: 8),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
                   const Spacer(),
-                  IconButton(
-                    icon: const Icon(Icons.edit_outlined, size: 18),
-                    onPressed: () {
-                      // TODO: 메시지 편집 기능
-                    },
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  const SizedBox(width: 0),
-                  IconButton(
-                    icon: const Icon(Icons.delete_outline, size: 18),
-                    onPressed: () => _deleteMessage(message.id!),
-                    padding: EdgeInsets.zero,
-                    constraints: const BoxConstraints(),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  if (!isUser) ...[
-                    const SizedBox(width: 0),
+                  if (isEditing) ...[
                     IconButton(
-                      icon: const Icon(Icons.refresh, size: 18),
-                      onPressed: () => _regenerateMessage(message.id!),
+                      icon: const Icon(Icons.close, size: 18),
+                      onPressed: _cancelEditMessage,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                       visualDensity: VisualDensity.compact,
                     ),
+                    const SizedBox(width: 0),
+                    IconButton(
+                      icon: const Icon(Icons.check, size: 18),
+                      onPressed: () => _saveEditMessage(message),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                  ] else ...[
+                    IconButton(
+                      icon: const Icon(Icons.edit_outlined, size: 18),
+                      onPressed: () => _startEditMessage(message),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    const SizedBox(width: 0),
+                    IconButton(
+                      icon: const Icon(Icons.delete_outline, size: 18),
+                      onPressed: () => _deleteMessage(message.id!),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      visualDensity: VisualDensity.compact,
+                    ),
+                    if (!isUser) ...[
+                      const SizedBox(width: 0),
+                      IconButton(
+                        icon: const Icon(Icons.refresh, size: 18),
+                        onPressed: () => _regenerateMessage(message.id!),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints(),
+                        visualDensity: VisualDensity.compact,
+                      ),
+                    ],
                   ],
                 ],
               ),
