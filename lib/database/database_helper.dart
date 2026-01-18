@@ -29,7 +29,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 10,
+      version: 11,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -123,7 +123,7 @@ class DatabaseHelper {
         name $textType,
         `order` $intType,
         is_expanded $boolType,
-        image_path $textTypeNullable,
+        image_data BLOB,
         FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE
       )
     ''');
@@ -435,6 +435,26 @@ class DatabaseHelper {
         CREATE INDEX idx_timestamp_chat_logs
         ON chat_logs (timestamp DESC)
       ''');
+    }
+
+    if (oldVersion < 11) {
+      // image_path 컬럼을 image_data BLOB로 변경
+      await db.execute('ALTER TABLE cover_images RENAME TO cover_images_old');
+
+      await db.execute('''
+        CREATE TABLE cover_images (
+          id $idType,
+          character_id $intType,
+          name $textType,
+          `order` $intType,
+          is_expanded $boolType,
+          image_data BLOB,
+          FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE
+        )
+      ''');
+
+      // 기존 데이터는 image_path가 있었으므로 삭제 (바이너리로 재저장 필요)
+      await db.execute('DROP TABLE cover_images_old');
     }
   }
 
