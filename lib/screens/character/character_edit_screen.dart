@@ -216,7 +216,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       name: image.name,
       order: image.order,
       isExpanded: image.isExpanded,
-      imagePath: image.imagePath,
+      imageData: image.imageData,
     );
   }
 
@@ -283,11 +283,11 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       }
     }
 
-    // 표지 이미지 변경 확인 (name과 imagePath 비교)
+    // 표지 이미지 변경 확인 (name과 imageData 비교)
     if (_coverImages.length != _originalCoverImages.length) return true;
     for (int i = 0; i < _coverImages.length; i++) {
       if (_coverImages[i].name != _originalCoverImages[i].name ||
-          _coverImages[i].imagePath != _originalCoverImages[i].imagePath) {
+          _coverImages[i].imageData != _originalCoverImages[i].imageData) {
         return true;
       }
     }

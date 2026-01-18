@@ -314,9 +314,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   Widget _buildCharacterAvatar() {
     final selectedCover = _coverImages.isNotEmpty ? _coverImages.first : null;
 
-    if (selectedCover == null ||
-        selectedCover.imagePath == null ||
-        selectedCover.imagePath!.isEmpty) {
+    if (selectedCover == null || selectedCover.imageData == null) {
       return const CircleAvatar(
         radius: 16,
         backgroundColor: Color(0xFFE0E0E0),
@@ -330,7 +328,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
     return CircleAvatar(
       radius: 16,
-      backgroundImage: FileImage(File(selectedCover.imagePath!)),
+      backgroundImage: MemoryImage(selectedCover.imageData!),
     );
   }
 

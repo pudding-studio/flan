@@ -1,10 +1,12 @@
+import 'dart:typed_data';
+
 class CoverImage {
   final int? id; // autoincrement primary key
   final int characterId; // foreign key to character
   String name;
   int order;
   bool isExpanded;
-  String? imagePath;
+  Uint8List? imageData; // webp 512x512 바이너리 데이터
 
   CoverImage({
     this.id,
@@ -12,7 +14,7 @@ class CoverImage {
     required this.name,
     required this.order,
     this.isExpanded = false,
-    this.imagePath,
+    this.imageData,
   });
 
   // DB에서 읽어올 때 사용
@@ -23,7 +25,7 @@ class CoverImage {
       name: map['name'] as String,
       order: map['order'] as int,
       isExpanded: (map['is_expanded'] as int?) == 1,
-      imagePath: map['image_path'] as String?,
+      imageData: map['image_data'] as Uint8List?,
     );
   }
 
@@ -35,7 +37,7 @@ class CoverImage {
       'name': name,
       'order': order,
       'is_expanded': isExpanded ? 1 : 0,
-      'image_path': imagePath,
+      'image_data': imageData,
     };
   }
 
@@ -45,7 +47,7 @@ class CoverImage {
     String? name,
     int? order,
     bool? isExpanded,
-    String? imagePath,
+    Uint8List? imageData,
   }) {
     return CoverImage(
       id: id ?? this.id,
@@ -53,7 +55,7 @@ class CoverImage {
       name: name ?? this.name,
       order: order ?? this.order,
       isExpanded: isExpanded ?? this.isExpanded,
-      imagePath: imagePath ?? this.imagePath,
+      imageData: imageData ?? this.imageData,
     );
   }
 
@@ -64,18 +66,19 @@ class CoverImage {
       'name': name,
       'order': order,
       'isExpanded': isExpanded,
-      'imagePath': imagePath,
+      'imageData': imageData != null ? imageData!.toList() : null,
     };
   }
 
   factory CoverImage.fromJson(Map<String, dynamic> json) {
+    final imageDataList = json['imageData'] as List<dynamic>?;
     return CoverImage(
       id: json['id'] as int?,
       characterId: json['characterId'] as int,
       name: json['name'] as String,
       order: json['order'] as int,
       isExpanded: json['isExpanded'] as bool? ?? false,
-      imagePath: json['imagePath'] as String?,
+      imageData: imageDataList != null ? Uint8List.fromList(imageDataList.cast<int>()) : null,
     );
   }
 }
