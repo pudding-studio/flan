@@ -6,6 +6,7 @@ import 'api_key_screen.dart';
 import 'chat_model_screen.dart';
 import 'chat_prompt_screen.dart';
 import 'log_screen.dart';
+import 'legal_document_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -203,14 +204,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
             icon: Icons.description,
             title: '이용약관',
             onTap: () {
-              // TODO: 이용약관 페이지로 이동
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const LegalDocumentScreen(
+                    title: '이용약관',
+                    koreanUrl: 'https://github.com/pudding-studio/Flan_official/wiki/이용약관',
+                    englishUrl: 'https://github.com/pudding-studio/Flan_official/wiki/Terms-of-Service',
+                  ),
+                ),
+              );
             },
           ),
           _buildListTile(
             icon: Icons.privacy_tip,
             title: '개인정보 처리방침',
             onTap: () {
-              // TODO: 개인정보 처리방침 페이지로 이동
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const LegalDocumentScreen(
+                    title: '개인정보 처리방침',
+                    koreanUrl: 'https://github.com/pudding-studio/Flan_official/wiki/개인정보처리방침',
+                    englishUrl: 'https://github.com/pudding-studio/Flan_official/wiki/Privacy-Policy',
+                  ),
+                ),
+              );
             },
           ),
           const SizedBox(height: 32),
