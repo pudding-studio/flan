@@ -93,7 +93,7 @@ class ChatPrompt {
       'description': description,
       'supportedModel': supportedModel,
       'parameters': parameters?.toJson(),
-      'items': items.map((item) => item.toMap()).toList(),
+      'items': items.map((item) => item.toJson()).toList(),
     };
   }
 

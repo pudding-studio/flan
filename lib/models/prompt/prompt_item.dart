@@ -59,6 +59,14 @@ class PromptItem {
     };
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'role': role.name,
+      'content': content,
+      'name': name,
+    };
+  }
+
   PromptItem copyWith({
     int? id,
     int? chatPromptId,
