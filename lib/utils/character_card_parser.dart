@@ -130,7 +130,7 @@ class CharacterCardParser {
       if (firstMessage != null && firstMessage.isNotEmpty) {
         scenarios.add(StartScenario(
           characterId: characterId,
-          name: '시작설정 1',
+          name: '시작설정 ${order + 1}',
           order: order++,
           startSetting: null,
           startMessage: firstMessage,
