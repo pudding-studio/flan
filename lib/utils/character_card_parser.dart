@@ -108,44 +108,27 @@ class CharacterCardParser {
   }
 
   /// Character Card V2/V3에서 personas를 추출합니다
+  /// Flan에서는 personality를 지원하지 않으므로 빈 배열 반환
   static List<Persona> parsePersonas(
       Map<String, dynamic> cardData, int characterId) {
-    try {
-      final data = cardData['data'] as Map<String, dynamic>;
-      final personaContent = data['personality'] as String?;
-
-      if (personaContent != null && personaContent.isNotEmpty) {
-        return [
-          Persona(
-            characterId: characterId,
-            name: '기본 페르소나',
-            order: 0,
-            content: personaContent,
-          ),
-        ];
-      }
-    } catch (e) {
-      // 에러 무시
-    }
-
     return [];
   }
 
   /// Character Card V2/V3에서 start scenarios를 추출합니다
+  /// Flan에서는 scenario를 지원하지 않으므로 first_mes만 사용
   static List<StartScenario> parseStartScenarios(
       Map<String, dynamic> cardData, int characterId) {
     try {
       final data = cardData['data'] as Map<String, dynamic>;
       final firstMessage = data['first_mes'] as String?;
-      final scenario = data['scenario'] as String?;
 
-      if (firstMessage != null || scenario != null) {
+      if (firstMessage != null && firstMessage.isNotEmpty) {
         return [
           StartScenario(
             characterId: characterId,
             name: '기본 시나리오',
             order: 0,
-            startSetting: scenario,
+            startSetting: null,
             startMessage: firstMessage,
           ),
         ];
@@ -201,7 +184,6 @@ class CharacterCardParser {
     List<StartScenario>? startScenarios,
     List<Lorebook>? lorebooks,
   }) {
-    final persona = personas?.isNotEmpty == true ? personas!.first : null;
     final scenario = startScenarios?.isNotEmpty == true ? startScenarios!.first : null;
 
     return {
@@ -210,8 +192,8 @@ class CharacterCardParser {
       'data': {
         'name': character.name,
         'description': character.description ?? '',
-        'personality': persona?.content ?? '',
-        'scenario': scenario?.startSetting ?? '',
+        'personality': '',
+        'scenario': '',
         'first_mes': scenario?.startMessage ?? '',
         'mes_example': '',
         'creator_notes': character.creatorNotes ?? '',
