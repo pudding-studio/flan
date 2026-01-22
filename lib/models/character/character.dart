@@ -6,9 +6,9 @@ import 'cover_image.dart';
 class Character {
   final int? id;
   final String name;
-  final String? summary;
+  final String? creatorNotes;
   final String? keywords;
-  final String? worldSetting;
+  final String? description;
   final int? selectedCoverImageId;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -18,9 +18,9 @@ class Character {
   Character({
     this.id,
     required this.name,
-    this.summary,
+    this.creatorNotes,
     this.keywords,
-    this.worldSetting,
+    this.description,
     this.selectedCoverImageId,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -33,9 +33,9 @@ class Character {
     return Character(
       id: map['id'] as int?,
       name: map['name'] as String,
-      summary: map['summary'] as String?,
+      creatorNotes: map['creator_notes'] as String?,
       keywords: map['keywords'] as String?,
-      worldSetting: map['world_setting'] as String?,
+      description: map['description'] as String?,
       selectedCoverImageId: map['selected_cover_image_id'] != null
           ? int.tryParse(map['selected_cover_image_id'].toString())
           : null,
@@ -50,9 +50,9 @@ class Character {
     return {
       'id': id,
       'name': name,
-      'summary': summary,
+      'creator_notes': creatorNotes,
       'keywords': keywords,
-      'world_setting': worldSetting,
+      'description': description,
       'selected_cover_image_id': selectedCoverImageId?.toString(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
@@ -64,9 +64,9 @@ class Character {
   Character copyWith({
     int? id,
     String? name,
-    String? summary,
+    String? creatorNotes,
     String? keywords,
-    String? worldSetting,
+    String? description,
     int? selectedCoverImageId,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -76,9 +76,9 @@ class Character {
     return Character(
       id: id ?? this.id,
       name: name ?? this.name,
-      summary: summary ?? this.summary,
+      creatorNotes: creatorNotes ?? this.creatorNotes,
       keywords: keywords ?? this.keywords,
-      worldSetting: worldSetting ?? this.worldSetting,
+      description: description ?? this.description,
       selectedCoverImageId: selectedCoverImageId ?? this.selectedCoverImageId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -97,9 +97,9 @@ class Character {
     return {
       'format': 'flan_v1',
       'name': name,
-      'summary': summary,
+      'creatorNotes': creatorNotes,
       'keywords': keywords,
-      'worldSetting': worldSetting,
+      'description': description,
       'selectedCoverImageId': selectedCoverImageId,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
@@ -116,9 +116,9 @@ class Character {
   factory Character.fromJson(Map<String, dynamic> json) {
     return Character(
       name: json['name'] as String,
-      summary: json['summary'] as String?,
+      creatorNotes: json['creatorNotes'] as String?,
       keywords: json['keywords'] as String?,
-      worldSetting: json['worldSetting'] as String?,
+      description: json['description'] as String?,
       selectedCoverImageId: json['selectedCoverImageId'] as int?,
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'] as String)

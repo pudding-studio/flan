@@ -424,7 +424,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
                 const SizedBox(height: 20),
 
                 // 한 줄 소개
-                if (_character!.summary != null && _character!.summary!.isNotEmpty) ...[
+                if (_character!.creatorNotes != null && _character!.creatorNotes!.isNotEmpty) ...[
                   Text(
                     '한 줄 소개',
                     style: Theme.of(context).textTheme.labelLarge?.copyWith(
@@ -433,7 +433,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    _character!.summary!,
+                    _character!.creatorNotes!,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),

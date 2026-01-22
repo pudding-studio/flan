@@ -5,14 +5,14 @@ import '../../../constants/ui_constants.dart';
 class ProfileTab extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final TextEditingController nameController;
-  final TextEditingController summaryController;
+  final TextEditingController creatorNotesController;
   final TextEditingController keywordsController;
 
   const ProfileTab({
     super.key,
     required this.formKey,
     required this.nameController,
-    required this.summaryController,
+    required this.creatorNotesController,
     required this.keywordsController,
   });
 
@@ -39,7 +39,7 @@ class ProfileTab extends StatelessWidget {
           ),
           const SizedBox(height: UIConstants.spacing20),
           CustomTextField(
-            controller: summaryController,
+            controller: creatorNotesController,
             label: '한 줄 소개',
             helpText: '캐릭터를 간단히 설명하는 한 문장을 작성해주세요.',
             hintText: '어떤 캐릭터인지 설명할 수 있는 간단한 소개를 입력해주세요.',

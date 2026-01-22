@@ -3,11 +3,11 @@ import '../../../constants/ui_constants.dart';
 import '../../../widgets/label_with_help.dart';
 
 class DetailSettingsTab extends StatelessWidget {
-  final TextEditingController worldSettingController;
+  final TextEditingController descriptionController;
 
   const DetailSettingsTab({
     super.key,
-    required this.worldSettingController,
+    required this.descriptionController,
   });
 
   @override
@@ -28,7 +28,7 @@ class DetailSettingsTab extends StatelessWidget {
                 ),
                 const Spacer(),
                 ValueListenableBuilder<TextEditingValue>(
-                  valueListenable: worldSettingController,
+                  valueListenable: descriptionController,
                   builder: (context, value, child) {
                     return Text(
                       '${value.text.length}',
@@ -44,7 +44,7 @@ class DetailSettingsTab extends StatelessWidget {
           const SizedBox(height: 8),
           Expanded(
             child: TextFormField(
-              controller: worldSettingController,
+              controller: descriptionController,
               style: Theme.of(context).textTheme.bodyMedium,
               decoration: InputDecoration(
                 hintText: '세계관 설정을 입력해주세요.',

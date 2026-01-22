@@ -33,9 +33,9 @@ class PromptBuilder {
 
     buffer.writeln('# ${character.name}');
 
-    if (character.worldSetting != null && character.worldSetting!.isNotEmpty) {
+    if (character.description != null && character.description!.isNotEmpty) {
       buffer.writeln('## 세계관 설정:');
-      buffer.writeln(character.worldSetting);
+      buffer.writeln(character.description);
       buffer.writeln();
     }
 

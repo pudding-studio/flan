@@ -34,9 +34,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   late TabController _tabController;
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _summaryController = TextEditingController();
+  final _creatorNotesController = TextEditingController();
   final _keywordsController = TextEditingController();
-  final _worldSettingController = TextEditingController();
+  final _descriptionController = TextEditingController();
 
   // 로어북 관련 상태
   final List<LorebookFolder> _folders = [];
@@ -59,9 +59,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
 
   // 원본 데이터 저장 (변경 감지용)
   String _originalName = '';
-  String _originalSummary = '';
+  String _originalCreatorNotes = '';
   String _originalKeywords = '';
-  String _originalWorldSetting = '';
+  String _originalDescription = '';
   int? _originalSelectedCoverImageId;
   List<LorebookFolder> _originalFolders = [];
   List<Lorebook> _originalStandaloneLorebooks = [];
@@ -87,9 +87,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
 
     // 텍스트 컨트롤러에 리스너 추가하여 자동 저장
     _nameController.addListener(_autoSave);
-    _summaryController.addListener(_autoSave);
+    _creatorNotesController.addListener(_autoSave);
     _keywordsController.addListener(_autoSave);
-    _worldSettingController.addListener(_autoSave);
+    _descriptionController.addListener(_autoSave);
   }
 
   Future<void> _loadCharacterData() async {
@@ -102,16 +102,16 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       final character = await _db.readCharacter(widget.characterId!);
       if (character != null) {
         _nameController.text = character.name;
-        _summaryController.text = character.summary ?? '';
+        _creatorNotesController.text = character.creatorNotes ?? '';
         _keywordsController.text = character.keywords ?? '';
-        _worldSettingController.text = character.worldSetting ?? '';
+        _descriptionController.text = character.description ?? '';
         _selectedCoverImageId = character.selectedCoverImageId;
 
         // 원본 데이터 저장
         _originalName = character.name;
-        _originalSummary = character.summary ?? '';
+        _originalCreatorNotes = character.creatorNotes ?? '';
         _originalKeywords = character.keywords ?? '';
-        _originalWorldSetting = character.worldSetting ?? '';
+        _originalDescription = character.description ?? '';
         _originalSelectedCoverImageId = character.selectedCoverImageId;
       }
 
@@ -224,9 +224,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   bool _hasChanges() {
     // 기본 정보 변경 확인
     if (_nameController.text != _originalName ||
-        _summaryController.text != _originalSummary ||
+        _creatorNotesController.text != _originalCreatorNotes ||
         _keywordsController.text != _originalKeywords ||
-        _worldSettingController.text != _originalWorldSetting ||
+        _descriptionController.text != _originalDescription ||
         _selectedCoverImageId != _originalSelectedCoverImageId) {
       return true;
     }
@@ -301,9 +301,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     if (_nameController.text.isEmpty) return false;
 
     // 기본 정보 확인
-    if (_summaryController.text.isNotEmpty ||
+    if (_creatorNotesController.text.isNotEmpty ||
         _keywordsController.text.isNotEmpty ||
-        _worldSettingController.text.isNotEmpty ||
+        _descriptionController.text.isNotEmpty ||
         _selectedCoverImageId != null) {
       return true;
     }
@@ -332,9 +332,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
 
     _tabController.dispose();
     _nameController.dispose();
-    _summaryController.dispose();
+    _creatorNotesController.dispose();
     _keywordsController.dispose();
-    _worldSettingController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -365,9 +365,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       final prefs = await SharedPreferences.getInstance();
       final data = {
         'name': _nameController.text,
-        'summary': _summaryController.text,
+        'creatorNotes': _creatorNotesController.text,
         'keywords': _keywordsController.text,
-        'worldSetting': _worldSettingController.text,
+        'description': _descriptionController.text,
         'selectedCoverImageId': _selectedCoverImageId,
         'folders': _folders.map((f) {
           final folderMap = f.toMap();
@@ -418,9 +418,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       if (shouldRestore == true && mounted) {
         setState(() {
           _nameController.text = data['name'] as String? ?? '';
-          _summaryController.text = data['summary'] as String? ?? '';
+          _creatorNotesController.text = data['creatorNotes'] as String? ?? '';
           _keywordsController.text = data['keywords'] as String? ?? '';
-          _worldSettingController.text = data['worldSetting'] as String? ?? '';
+          _descriptionController.text = data['description'] as String? ?? '';
           _selectedCoverImageId = data['selectedCoverImageId'] as int?;
 
           // 로어북 폴더 복원
@@ -473,9 +473,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         // 복원한 데이터를 원본으로 설정 (편집 모드인 경우)
         if (_isEditMode) {
           _originalName = _nameController.text;
-          _originalSummary = _summaryController.text;
+          _originalCreatorNotes = _creatorNotesController.text;
           _originalKeywords = _keywordsController.text;
-          _originalWorldSetting = _worldSettingController.text;
+          _originalDescription = _descriptionController.text;
           _originalSelectedCoverImageId = _selectedCoverImageId;
           _originalFolders = _folders.map((f) => _copyFolder(f)).toList();
           _originalStandaloneLorebooks = _standaloneLorebooks.map((lb) => _copyLorebook(lb)).toList();
@@ -540,9 +540,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         final character = Character(
           id: characterId,
           name: _nameController.text,
-          summary: _summaryController.text.isEmpty ? null : _summaryController.text,
+          creatorNotes: _creatorNotesController.text.isEmpty ? null : _creatorNotesController.text,
           keywords: _keywordsController.text.isEmpty ? null : _keywordsController.text,
-          worldSetting: _worldSettingController.text.isEmpty ? null : _worldSettingController.text,
+          description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
           selectedCoverImageId: _selectedCoverImageId,
           updatedAt: DateTime.now(),
           isDraft: false,
@@ -552,9 +552,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         // 새 캐릭터 생성
         final character = Character(
           name: _nameController.text,
-          summary: _summaryController.text.isEmpty ? null : _summaryController.text,
+          creatorNotes: _creatorNotesController.text.isEmpty ? null : _creatorNotesController.text,
           keywords: _keywordsController.text.isEmpty ? null : _keywordsController.text,
-          worldSetting: _worldSettingController.text.isEmpty ? null : _worldSettingController.text,
+          description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
           selectedCoverImageId: _selectedCoverImageId,
           isDraft: false,
         );
@@ -989,7 +989,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           ),
           const SizedBox(height: UIConstants.spacing20),
           CustomTextField(
-            controller: _summaryController,
+            controller: _creatorNotesController,
             label: '한 줄 소개',
             helpText: '캐릭터를 간단히 설명하는 한 문장을 작성해주세요.',
             hintText: '어떤 캐릭터인지 설명할 수 있는 간단한 소개를 입력해주세요.',
@@ -1051,7 +1051,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
                 ),
                 const Spacer(),
                 ValueListenableBuilder<TextEditingValue>(
-                  valueListenable: _worldSettingController,
+                  valueListenable: _descriptionController,
                   builder: (context, value, child) {
                     return Text(
                       '${value.text.length}',
@@ -1067,7 +1067,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           const SizedBox(height: 8),
           Expanded(
             child: TextFormField(
-              controller: _worldSettingController,
+              controller: _descriptionController,
               style: Theme.of(context).textTheme.bodyMedium,
               decoration: InputDecoration(
                 hintText: '세계관 설정을 입력해주세요.',

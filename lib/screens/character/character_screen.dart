@@ -909,7 +909,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
       return CharacterCard(
         key: ValueKey(_characters[index].id),
         title: _characters[index].name,
-        description: _characters[index].summary ?? '',
+        description: _characters[index].creatorNotes ?? '',
         tags: _characters[index].keywords?.split(',').map((e) => e.trim()).toList() ?? [],
         imageData: _characterCoverImages[_characters[index].id],
         isEditMode: _isEditMode,
@@ -1014,7 +1014,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
             
             child: CharacterListItem(
               title: _characters[index].name,
-              description: _characters[index].summary ?? '',
+              description: _characters[index].creatorNotes ?? '',
               tags: _characters[index].keywords?.split(',').map((e) => e.trim()).toList() ?? [],
               imageData: _characterCoverImages[_characters[index].id],
               isEditMode: _isEditMode,
@@ -1062,7 +1062,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
           padding: const EdgeInsets.only(bottom: 16.0),
           child: CharacterListItem(
             title: _characters[index].name,
-            description: _characters[index].summary ?? '',
+            description: _characters[index].creatorNotes ?? '',
             tags: _characters[index].keywords?.split(',').map((e) => e.trim()).toList() ?? [],
             imageData: _characterCoverImages[_characters[index].id],
             isEditMode: _isEditMode,

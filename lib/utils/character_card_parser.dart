@@ -91,11 +91,11 @@ class CharacterCardParser {
 
       return Character(
         name: data['name'] as String? ?? 'Unknown',
-        summary: data['description'] as String?,
+        creatorNotes: data['creator_notes'] as String?,
         keywords: data['tags'] != null
             ? (data['tags'] as List).join(', ')
             : null,
-        worldSetting: data['scenario'] as String?,
+        description: data['description'] as String?,
         isDraft: false,
       );
     }
@@ -206,12 +206,12 @@ class CharacterCardParser {
       'spec_version': '2.0',
       'data': {
         'name': character.name,
-        'description': character.summary ?? '',
+        'description': character.description ?? '',
         'personality': persona?.content ?? '',
-        'scenario': scenario?.startSetting ?? character.worldSetting ?? '',
+        'scenario': scenario?.startSetting ?? '',
         'first_mes': scenario?.startMessage ?? '',
         'mes_example': '',
-        'creator_notes': '',
+        'creator_notes': character.creatorNotes ?? '',
         'system_prompt': '',
         'post_history_instructions': '',
         'alternate_greetings': [],

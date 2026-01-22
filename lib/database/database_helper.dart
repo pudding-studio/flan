@@ -29,7 +29,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 11,
+      version: 13,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -46,9 +46,9 @@ class DatabaseHelper {
       CREATE TABLE characters (
         id $idType,
         name $textType,
-        summary $textTypeNullable,
+        creator_notes $textTypeNullable,
         keywords $textTypeNullable,
-        world_setting $textTypeNullable,
+        description $textTypeNullable,
         selected_cover_image_id $textTypeNullable,
         created_at $textType,
         updated_at $textType,
@@ -455,6 +455,16 @@ class DatabaseHelper {
 
       // 기존 데이터는 image_path가 있었으므로 삭제 (바이너리로 재저장 필요)
       await db.execute('DROP TABLE cover_images_old');
+    }
+
+    if (oldVersion < 12) {
+      // summary 컬럼을 creator_notes로 변경
+      await db.execute('ALTER TABLE characters RENAME COLUMN summary TO creator_notes');
+    }
+
+    if (oldVersion < 13) {
+      // world_setting 컬럼을 description으로 변경
+      await db.execute('ALTER TABLE characters RENAME COLUMN world_setting TO description');
     }
   }
 
