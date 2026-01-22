@@ -149,10 +149,10 @@ class Lorebook {
       order: map['order'] as int,
       isExpanded: (map['is_expanded'] as int?) == 1,
       enabled: LorebookActivationCondition.values.firstWhere(
-        (e) => e.name == (map['activation_condition'] as String),
+        (e) => e.name == (map['enabled'] as String),
         orElse: () => LorebookActivationCondition.disabled,
       ),
-      keys: (map['activation_keys'] as String?)?.split(',') ?? [],
+      keys: (map['keys'] as String?)?.split(',') ?? [],
       keyCondition: LorebookKeyCondition.values.firstWhere(
         (e) => e.name == (map['key_condition'] as String),
         orElse: () => LorebookKeyCondition.and,
@@ -171,8 +171,8 @@ class Lorebook {
       'name': name,
       'order': order,
       'is_expanded': isExpanded ? 1 : 0,
-      'activation_condition': enabled.name,
-      'activation_keys': keys.join(','),
+      'enabled': enabled.name,
+      'keys': keys.join(','),
       'key_condition': keyCondition.name,
       'deployment_order': deploymentOrder,
       'content': content,

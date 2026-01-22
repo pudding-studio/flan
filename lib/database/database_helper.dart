@@ -29,7 +29,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 14,
+      version: 15,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -78,8 +78,8 @@ class DatabaseHelper {
         name $textType,
         `order` $intType,
         is_expanded $boolType,
-        activation_condition $textType,
-        activation_keys $textTypeNullable,
+        enabled $textType,
+        keys $textTypeNullable,
         key_condition $textType,
         deployment_order $intType,
         content $textTypeNullable,
@@ -470,6 +470,12 @@ class DatabaseHelper {
     if (oldVersion < 14) {
       // keywords 컬럼을 tags로 변경
       await db.execute('ALTER TABLE characters RENAME COLUMN keywords TO tags');
+    }
+
+    if (oldVersion < 15) {
+      // lorebooks 테이블의 컬럼명 변경
+      await db.execute('ALTER TABLE lorebooks RENAME COLUMN activation_condition TO enabled');
+      await db.execute('ALTER TABLE lorebooks RENAME COLUMN activation_keys TO keys');
     }
   }
 
