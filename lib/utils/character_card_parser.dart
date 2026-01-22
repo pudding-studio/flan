@@ -130,7 +130,7 @@ class CharacterCardParser {
       if (firstMessage != null && firstMessage.isNotEmpty) {
         scenarios.add(StartScenario(
           characterId: characterId,
-          name: '기본 인사',
+          name: '시작설정 1',
           order: order++,
           startSetting: null,
           startMessage: firstMessage,
@@ -143,7 +143,7 @@ class CharacterCardParser {
           if (greeting is String && greeting.isNotEmpty) {
             scenarios.add(StartScenario(
               characterId: characterId,
-              name: '대체 인사 ${order}',
+              name: '시작설정 ${order + 1}',
               order: order++,
               startSetting: null,
               startMessage: greeting,
@@ -209,12 +209,34 @@ class CharacterCardParser {
         ? (List<StartScenario>.from(startScenarios)..sort((a, b) => a.order.compareTo(b.order)))
         : <StartScenario>[];
 
-    // 첫 번째 시나리오를 first_mes로 사용
-    final firstMessage = sortedScenarios.isNotEmpty ? sortedScenarios.first.startMessage ?? '' : '';
+    // 첫 번째 시나리오를 first_mes로 사용 (startSetting + startMessage 결합)
+    String firstMessage = '';
+    if (sortedScenarios.isNotEmpty) {
+      final first = sortedScenarios.first;
+      final setting = first.startSetting?.trim() ?? '';
+      final message = first.startMessage?.trim() ?? '';
+      if (setting.isNotEmpty && message.isNotEmpty) {
+        firstMessage = '$setting\n\n$message';
+      } else if (setting.isNotEmpty) {
+        firstMessage = setting;
+      } else {
+        firstMessage = message;
+      }
+    }
 
-    // 나머지 시나리오들을 alternate_greetings로 변환
+    // 나머지 시나리오들을 alternate_greetings로 변환 (startSetting + startMessage 결합)
     final alternateGreetings = sortedScenarios.length > 1
-        ? sortedScenarios.skip(1).map((s) => s.startMessage ?? '').where((msg) => msg.isNotEmpty).toList()
+        ? sortedScenarios.skip(1).map((s) {
+            final setting = s.startSetting?.trim() ?? '';
+            final message = s.startMessage?.trim() ?? '';
+            if (setting.isNotEmpty && message.isNotEmpty) {
+              return '$setting\n\n$message';
+            } else if (setting.isNotEmpty) {
+              return setting;
+            } else {
+              return message;
+            }
+          }).where((msg) => msg.isNotEmpty).toList()
         : <String>[];
 
     return {
