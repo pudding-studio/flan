@@ -528,7 +528,7 @@ class _LorebookTabState extends State<LorebookTab> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _buildActivationConditionField(lorebook),
-          if (lorebook.activationCondition == LorebookActivationCondition.keyBased) ...[
+          if (lorebook.enabled == LorebookActivationCondition.keyBased) ...[
             _buildActivationKeysField(lorebook),
             _buildKeyConditionField(lorebook),
           ],
@@ -560,10 +560,10 @@ class _LorebookTabState extends State<LorebookTab> {
                       label: Text(condition.displayName, style: const TextStyle(fontSize: 13)),
                     ))
                 .toList(),
-            selected: {lorebook.activationCondition},
+            selected: {lorebook.enabled},
             onSelectionChanged: (Set<LorebookActivationCondition> selected) {
               setState(() {
-                lorebook.activationCondition = selected.first;
+                lorebook.enabled = selected.first;
               });
               _notifyUpdate();
             },

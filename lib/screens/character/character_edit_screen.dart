@@ -178,7 +178,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       name: lorebook.name,
       order: lorebook.order,
       isExpanded: lorebook.isExpanded,
-      activationCondition: lorebook.activationCondition,
+      enabled: lorebook.enabled,
       keys: List<String>.from(lorebook.keys),
       keyCondition: lorebook.keyCondition,
       deploymentOrder: lorebook.deploymentOrder,
@@ -244,7 +244,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         final original = _originalFolders[i].lorebooks[j];
         if (current.name != original.name ||
             current.content != original.content ||
-            current.activationCondition != original.activationCondition ||
+            current.enabled != original.enabled ||
             current.keys.join(',') != original.keys.join(',')) {
           return true;
         }
@@ -258,7 +258,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       final original = _originalStandaloneLorebooks[i];
       if (current.name != original.name ||
           current.content != original.content ||
-          current.activationCondition != original.activationCondition ||
+          current.enabled != original.enabled ||
           current.keys.join(',') != original.keys.join(',')) {
         return true;
       }
