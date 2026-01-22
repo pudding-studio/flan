@@ -120,7 +120,7 @@ class Lorebook {
   int order;
   bool isExpanded;
   LorebookActivationCondition activationCondition;
-  List<String> activationKeys;
+  List<String> keys;
   LorebookKeyCondition keyCondition;
   int deploymentOrder;
   String? content;
@@ -133,11 +133,11 @@ class Lorebook {
     required this.order,
     this.isExpanded = false,
     this.activationCondition = LorebookActivationCondition.disabled,
-    List<String>? activationKeys,
+    List<String>? keys,
     this.keyCondition = LorebookKeyCondition.and,
     this.deploymentOrder = 0,
     this.content,
-  }) : activationKeys = activationKeys ?? [];
+  }) : keys = keys ?? [];
 
   // DB에서 읽어올 때 사용
   factory Lorebook.fromMap(Map<String, dynamic> map) {
@@ -152,7 +152,7 @@ class Lorebook {
         (e) => e.name == (map['activation_condition'] as String),
         orElse: () => LorebookActivationCondition.disabled,
       ),
-      activationKeys: (map['activation_keys'] as String?)?.split(',') ?? [],
+      keys: (map['activation_keys'] as String?)?.split(',') ?? [],
       keyCondition: LorebookKeyCondition.values.firstWhere(
         (e) => e.name == (map['key_condition'] as String),
         orElse: () => LorebookKeyCondition.and,
@@ -172,7 +172,7 @@ class Lorebook {
       'order': order,
       'is_expanded': isExpanded ? 1 : 0,
       'activation_condition': activationCondition.name,
-      'activation_keys': activationKeys.join(','),
+      'activation_keys': keys.join(','),
       'key_condition': keyCondition.name,
       'deployment_order': deploymentOrder,
       'content': content,
@@ -187,7 +187,7 @@ class Lorebook {
     int? order,
     bool? isExpanded,
     LorebookActivationCondition? activationCondition,
-    List<String>? activationKeys,
+    List<String>? keys,
     LorebookKeyCondition? keyCondition,
     int? deploymentOrder,
     String? content,
@@ -200,7 +200,7 @@ class Lorebook {
       order: order ?? this.order,
       isExpanded: isExpanded ?? this.isExpanded,
       activationCondition: activationCondition ?? this.activationCondition,
-      activationKeys: activationKeys ?? this.activationKeys,
+      keys: keys ?? this.keys,
       keyCondition: keyCondition ?? this.keyCondition,
       deploymentOrder: deploymentOrder ?? this.deploymentOrder,
       content: content ?? this.content,
@@ -216,7 +216,7 @@ class Lorebook {
       'order': order,
       'isExpanded': isExpanded,
       'activationCondition': activationCondition.name,
-      'activationKeys': activationKeys,
+      'keys': keys,
       'keyCondition': keyCondition.name,
       'deploymentOrder': deploymentOrder,
       'content': content,
@@ -235,7 +235,7 @@ class Lorebook {
         (e) => e.name == json['activationCondition'],
         orElse: () => LorebookActivationCondition.disabled,
       ),
-      activationKeys: (json['activationKeys'] as List<dynamic>?)
+      keys: (json['keys'] as List<dynamic>?)
               ?.map((e) => e as String)
               .toList() ??
           [],

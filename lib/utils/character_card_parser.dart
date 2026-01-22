@@ -179,7 +179,7 @@ class CharacterCardParser {
               name: item['name'] as String? ?? 'Lorebook ${idx + 1}',
               order: idx,
               content: item['content'] as String?,
-              activationKeys: (item['keys'] as List?)
+              keys: (item['keys'] as List?)
                   ?.map((k) => k.toString())
                   .toList() ?? [],
               activationCondition: (item['enabled'] as bool? ?? false)
@@ -256,7 +256,7 @@ class CharacterCardParser {
         'character_book': lorebooks != null && lorebooks.isNotEmpty
             ? {
                 'entries': lorebooks.map((l) => {
-                  'keys': l.activationKeys,
+                  'keys': l.keys,
                   'content': l.content ?? '',
                   'extensions': {},
                   'enabled': l.activationCondition != LorebookActivationCondition.disabled,

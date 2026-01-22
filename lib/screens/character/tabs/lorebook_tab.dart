@@ -586,7 +586,7 @@ class _LorebookTabState extends State<LorebookTab> {
 
   Widget _buildActivationKeysField(Lorebook lorebook) {
     final key = 'lorebook_${lorebook.id}_activation_keys';
-    final controller = _getFieldController(key, lorebook.activationKeys.join(', '));
+    final controller = _getFieldController(key, lorebook.keys.join(', '));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -613,7 +613,7 @@ class _LorebookTabState extends State<LorebookTab> {
           ),
           style: Theme.of(context).textTheme.bodySmall,
           onChanged: (value) {
-            lorebook.activationKeys = value
+            lorebook.keys = value
                 .split(',')
                 .map((e) => e.trim())
                 .where((e) => e.isNotEmpty)
