@@ -115,24 +115,44 @@ class CharacterCardParser {
   }
 
   /// Character Card V2/V3에서 start scenarios를 추출합니다
-  /// Flan에서는 scenario를 지원하지 않으므로 first_mes만 사용
+  /// first_mes와 alternate_greetings를 StartScenario로 변환
   static List<StartScenario> parseStartScenarios(
       Map<String, dynamic> cardData, int characterId) {
     try {
       final data = cardData['data'] as Map<String, dynamic>;
       final firstMessage = data['first_mes'] as String?;
+      final alternateGreetings = data['alternate_greetings'] as List?;
 
+      final scenarios = <StartScenario>[];
+      int order = 0;
+
+      // first_mes를 첫 번째 시나리오로 추가
       if (firstMessage != null && firstMessage.isNotEmpty) {
-        return [
-          StartScenario(
-            characterId: characterId,
-            name: '기본 시나리오',
-            order: 0,
-            startSetting: null,
-            startMessage: firstMessage,
-          ),
-        ];
+        scenarios.add(StartScenario(
+          characterId: characterId,
+          name: '기본 인사',
+          order: order++,
+          startSetting: null,
+          startMessage: firstMessage,
+        ));
       }
+
+      // alternate_greetings를 추가 시나리오로 변환
+      if (alternateGreetings != null) {
+        for (var greeting in alternateGreetings) {
+          if (greeting is String && greeting.isNotEmpty) {
+            scenarios.add(StartScenario(
+              characterId: characterId,
+              name: '대체 인사 ${order}',
+              order: order++,
+              startSetting: null,
+              startMessage: greeting,
+            ));
+          }
+        }
+      }
+
+      return scenarios;
     } catch (e) {
       // 에러 무시
     }
@@ -184,7 +204,18 @@ class CharacterCardParser {
     List<StartScenario>? startScenarios,
     List<Lorebook>? lorebooks,
   }) {
-    final scenario = startScenarios?.isNotEmpty == true ? startScenarios!.first : null;
+    // startScenarios를 정렬
+    final sortedScenarios = startScenarios != null
+        ? (List<StartScenario>.from(startScenarios)..sort((a, b) => a.order.compareTo(b.order)))
+        : <StartScenario>[];
+
+    // 첫 번째 시나리오를 first_mes로 사용
+    final firstMessage = sortedScenarios.isNotEmpty ? sortedScenarios.first.startMessage ?? '' : '';
+
+    // 나머지 시나리오들을 alternate_greetings로 변환
+    final alternateGreetings = sortedScenarios.length > 1
+        ? sortedScenarios.skip(1).map((s) => s.startMessage ?? '').where((msg) => msg.isNotEmpty).toList()
+        : <String>[];
 
     return {
       'spec': 'chara_card_v2',
@@ -194,12 +225,12 @@ class CharacterCardParser {
         'description': character.description ?? '',
         'personality': '',
         'scenario': '',
-        'first_mes': scenario?.startMessage ?? '',
+        'first_mes': firstMessage,
         'mes_example': '',
         'creator_notes': character.creatorNotes ?? '',
         'system_prompt': '',
         'post_history_instructions': '',
-        'alternate_greetings': [],
+        'alternate_greetings': alternateGreetings,
         'character_book': lorebooks != null && lorebooks.isNotEmpty
             ? {
                 'entries': lorebooks.map((l) => {
