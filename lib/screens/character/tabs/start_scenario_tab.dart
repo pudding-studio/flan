@@ -21,9 +21,6 @@ class StartScenarioTab extends StatefulWidget {
 }
 
 class _StartScenarioTabState extends State<StartScenarioTab> {
-  static const double _lorebookItemHorizontalPadding = 10.0;
-  static const double _lorebookItemVerticalPadding = 10.0;
-
   final Map<String, TextEditingController> _fieldControllers = {};
 
   int _nextTempId = -1;

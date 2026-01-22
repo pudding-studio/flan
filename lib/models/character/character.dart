@@ -1,7 +1,7 @@
 import 'dart:convert';
 import 'persona.dart';
 import 'start_scenario.dart';
-import 'lorebook_folder.dart';
+import 'character_book_folder.dart';
 import 'cover_image.dart';
 
 class Character {
@@ -108,8 +108,8 @@ class Character {
   Map<String, dynamic> toJson({
     List<Persona>? personas,
     List<StartScenario>? startScenarios,
-    List<LorebookFolder>? lorebookFolders,
-    List<Lorebook>? standaloneLorebooks,
+    List<CharacterBookFolder>? characterBookFolders,
+    List<CharacterBook>? standaloneCharacterBooks,
     List<CoverImage>? coverImages,
   }) {
     return {
@@ -125,8 +125,8 @@ class Character {
       'sortOrder': sortOrder,
       'personas': personas?.map((p) => p.toJson()).toList(),
       'startScenarios': startScenarios?.map((s) => s.toJson()).toList(),
-      'lorebookFolders': lorebookFolders?.map((f) => f.toJson()).toList(),
-      'standaloneLorebooks': standaloneLorebooks?.map((l) => l.toJson()).toList(),
+      'characterBookFolders': characterBookFolders?.map((f) => f.toJson()).toList(),
+      'standaloneCharacterBooks': standaloneCharacterBooks?.map((l) => l.toJson()).toList(),
       'coverImages': coverImages?.map((c) => c.toJson()).toList(),
     };
   }

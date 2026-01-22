@@ -4,7 +4,7 @@ import '../../models/chat/chat_message.dart';
 import '../../models/character/character.dart';
 import '../../models/character/cover_image.dart';
 import '../../models/character/persona.dart';
-import '../../models/character/lorebook_folder.dart';
+import '../../models/character/character_book_folder.dart';
 import '../../models/prompt/chat_prompt.dart';
 import '../../database/database_helper.dart';
 import '../../utils/prompt_builder.dart';
@@ -109,16 +109,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       persona = await _db.readPersona(_chatRoom!.selectedPersonaId!);
     }
 
-    final allLorebooks = await _db.readLorebooks(_character!.id!);
-    final activeLorebooks = allLorebooks.where((lorebook) {
-      return lorebook.enabled == LorebookActivationCondition.enabled;
+    final allCharacterBooks = await _db.readCharacterBooks(_character!.id!);
+    final activeCharacterBooks = allCharacterBooks.where((characterBook) {
+      return characterBook.enabled == CharacterBookActivationCondition.enabled;
     }).toList();
 
     return PromptBuilder.buildSystemPrompt(
       chatPrompt: chatPrompt,
       character: _character!,
       persona: persona,
-      activeLorebooks: activeLorebooks,
+      activeCharacterBooks: activeCharacterBooks,
     );
   }
 

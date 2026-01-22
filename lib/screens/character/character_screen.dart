@@ -12,7 +12,7 @@ import '../../database/database_helper.dart';
 import '../../models/character/character.dart';
 import '../../models/character/persona.dart';
 import '../../models/character/start_scenario.dart';
-import '../../models/character/lorebook_folder.dart';
+import '../../models/character/character_book_folder.dart';
 import '../../models/character/cover_image.dart';
 import '../../utils/common_dialog.dart';
 import '../../utils/character_card_parser.dart';
@@ -272,21 +272,21 @@ class _CharacterScreenState extends State<CharacterScreen> {
 
       final personas = await _db.readPersonas(characterId);
       final startScenarios = await _db.readStartScenarios(characterId);
-      final lorebookFolders = await _db.readLorebookFolders(characterId);
-      final standaloneLorebooks = await _db.readLorebooks(characterId);
+      final characterBookFolders = await _db.readCharacterBookFolders(characterId);
+      final standaloneCharacterBooks = await _db.readCharacterBooks(characterId);
       final coverImages = await _db.readCoverImages(characterId);
 
-      // 각 폴더의 로어북 로드
-      for (final folder in lorebookFolders) {
-        folder.lorebooks.addAll(await _db.readLorebooksByFolder(folder.id!));
+      // 각 폴더의 캐릭터북 로드
+      for (final folder in characterBookFolders) {
+        folder.characterBooks.addAll(await _db.readCharacterBooksByFolder(folder.id!));
       }
 
       // JSON 생성
       final jsonData = character.toJson(
         personas: personas,
         startScenarios: startScenarios,
-        lorebookFolders: lorebookFolders,
-        standaloneLorebooks: standaloneLorebooks,
+        characterBookFolders: characterBookFolders,
+        standaloneCharacterBooks: standaloneCharacterBooks,
         coverImages: coverImages,
       );
 
@@ -350,8 +350,8 @@ class _CharacterScreenState extends State<CharacterScreen> {
       Character? character;
       List<Persona>? personas;
       List<StartScenario>? startScenarios;
-      List<LorebookFolder>? lorebookFolders;
-      List<Lorebook>? standaloneLorebooks;
+      List<CharacterBookFolder>? characterBookFolders;
+      List<CharacterBook>? standaloneCharacterBooks;
       List<CoverImage>? coverImages;
 
       if (extension == 'json') {
@@ -371,11 +371,16 @@ class _CharacterScreenState extends State<CharacterScreen> {
           startScenarios = (jsonData['startScenarios'] as List?)
               ?.map((s) => StartScenario.fromJson(s as Map<String, dynamic>))
               .toList();
-          lorebookFolders = (jsonData['lorebookFolders'] as List?)
-              ?.map((f) => LorebookFolder.fromJson(f as Map<String, dynamic>))
+          // 하위 호환성: 이전 키명도 지원
+          characterBookFolders = (jsonData['characterBookFolders'] as List?)
+              ?.map((f) => CharacterBookFolder.fromJson(f as Map<String, dynamic>))
+              .toList() ?? (jsonData['lorebookFolders'] as List?)
+              ?.map((f) => CharacterBookFolder.fromJson(f as Map<String, dynamic>))
               .toList();
-          standaloneLorebooks = (jsonData['standaloneLorebooks'] as List?)
-              ?.map((l) => Lorebook.fromJson(l as Map<String, dynamic>))
+          standaloneCharacterBooks = (jsonData['standaloneCharacterBooks'] as List?)
+              ?.map((l) => CharacterBook.fromJson(l as Map<String, dynamic>))
+              .toList() ?? (jsonData['standaloneLorebooks'] as List?)
+              ?.map((l) => CharacterBook.fromJson(l as Map<String, dynamic>))
               .toList();
           coverImages = (jsonData['coverImages'] as List?)
               ?.map((c) => CoverImage.fromJson(c as Map<String, dynamic>))
@@ -417,23 +422,23 @@ class _CharacterScreenState extends State<CharacterScreen> {
         }
       }
 
-      if (lorebookFolders != null) {
-        for (final folder in lorebookFolders) {
-          final folderId = await _db.createLorebookFolder(
+      if (characterBookFolders != null) {
+        for (final folder in characterBookFolders) {
+          final folderId = await _db.createCharacterBookFolder(
               folder.copyWith(characterId: characterId));
 
-          // 폴더 내 로어북 저장
-          for (final lorebook in folder.lorebooks) {
-            await _db.createLorebook(
-                lorebook.copyWith(characterId: characterId, folderId: folderId));
+          // 폴더 내 캐릭터북 저장
+          for (final characterBook in folder.characterBooks) {
+            await _db.createCharacterBook(
+                characterBook.copyWith(characterId: characterId, folderId: folderId));
           }
         }
       }
 
-      if (standaloneLorebooks != null) {
-        for (final lorebook in standaloneLorebooks) {
-          await _db.createLorebook(
-              lorebook.copyWith(characterId: characterId));
+      if (standaloneCharacterBooks != null) {
+        for (final characterBook in standaloneCharacterBooks) {
+          await _db.createCharacterBook(
+              characterBook.copyWith(characterId: characterId));
         }
       }
 

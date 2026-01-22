@@ -1,30 +1,30 @@
 import 'package:flutter/material.dart';
 
 import '../../../constants/ui_constants.dart';
-import '../../../models/character/lorebook_folder.dart';
+import '../../../models/character/character_book_folder.dart';
 import '../../../utils/common_dialog.dart';
 import '../../../widgets/editable_expandable_item.dart';
 import '../../../widgets/label_with_help.dart';
 
-class LorebookTab extends StatefulWidget {
-  final List<LorebookFolder> folders;
-  final List<Lorebook> standaloneLorebooks;
+class CharacterBookTab extends StatefulWidget {
+  final List<CharacterBookFolder> folders;
+  final List<CharacterBook> standaloneCharacterBooks;
   final VoidCallback onUpdate;
 
-  const LorebookTab({
+  const CharacterBookTab({
     super.key,
     required this.folders,
-    required this.standaloneLorebooks,
+    required this.standaloneCharacterBooks,
     required this.onUpdate,
   });
 
   @override
-  State<LorebookTab> createState() => _LorebookTabState();
+  State<CharacterBookTab> createState() => _CharacterBookTabState();
 }
 
-class _LorebookTabState extends State<LorebookTab> {
-  static const double _lorebookItemHorizontalPadding = 10.0;
-  static const double _lorebookItemVerticalPadding = 10.0;
+class _CharacterBookTabState extends State<CharacterBookTab> {
+  static const double _characterBookItemHorizontalPadding = 10.0;
+  static const double _characterBookItemVerticalPadding = 10.0;
   static const double _segmentedButtonBorderRadius = 8.0;
 
   int? _editingFolderId;
@@ -59,7 +59,7 @@ class _LorebookTabState extends State<LorebookTab> {
 
   void _addFolder() {
     setState(() {
-      final newFolder = LorebookFolder(
+      final newFolder = CharacterBookFolder(
         id: _getNextTempId(),
         characterId: -1, // Will be set when saving
         name: '새 폴더',
@@ -70,31 +70,31 @@ class _LorebookTabState extends State<LorebookTab> {
     _notifyUpdate();
   }
 
-  void _addLorebook(LorebookFolder? folder) {
+  void _addCharacterBook(CharacterBookFolder? folder) {
     setState(() {
-      final newLorebook = Lorebook(
+      final newCharacterBook = CharacterBook(
         id: _getNextTempId(),
         characterId: -1, // Will be set when saving
         folderId: folder?.id,
-        name: '새 로어북',
-        order: folder != null ? folder.lorebooks.length : widget.standaloneLorebooks.length,
+        name: '새 캐릭터북',
+        order: folder != null ? folder.characterBooks.length : widget.standaloneCharacterBooks.length,
         isExpanded: true,
       );
 
       if (folder != null) {
-        folder.lorebooks.add(newLorebook);
+        folder.characterBooks.add(newCharacterBook);
       } else {
-        widget.standaloneLorebooks.add(newLorebook);
+        widget.standaloneCharacterBooks.add(newCharacterBook);
       }
     });
     _notifyUpdate();
   }
 
-  Future<void> _deleteFolder(LorebookFolder folder) async {
+  Future<void> _deleteFolder(CharacterBookFolder folder) async {
     final confirmed = await CommonDialog.showConfirmation(
       context: context,
       title: '폴더 삭제',
-      content: '${folder.name} 폴더를 삭제하시겠습니까?\n폴더 내 모든 로어북도 함께 삭제됩니다.',
+      content: '${folder.name} 폴더를 삭제하시겠습니까?\n폴더 내 모든 캐릭터북도 함께 삭제됩니다.',
       confirmText: '삭제',
       isDestructive: true,
     );
@@ -107,78 +107,78 @@ class _LorebookTabState extends State<LorebookTab> {
     }
   }
 
-  Future<void> _deleteLorebook(Lorebook lorebook, LorebookFolder? folder) async {
+  Future<void> _deleteCharacterBook(CharacterBook characterBook, CharacterBookFolder? folder) async {
     final confirmed = await CommonDialog.showDeleteConfirmation(
       context: context,
-      itemName: lorebook.name,
+      itemName: characterBook.name,
     );
 
     if (confirmed) {
       setState(() {
         if (folder != null) {
-          folder.lorebooks.remove(lorebook);
+          folder.characterBooks.remove(characterBook);
         } else {
-          widget.standaloneLorebooks.remove(lorebook);
+          widget.standaloneCharacterBooks.remove(characterBook);
         }
       });
       _notifyUpdate();
     }
   }
 
-  void _moveLorebookToFolder(Lorebook lorebook, LorebookFolder? fromFolder, LorebookFolder toFolder) {
+  void _moveCharacterBookToFolder(CharacterBook characterBook, CharacterBookFolder? fromFolder, CharacterBookFolder toFolder) {
     setState(() {
       if (fromFolder != null) {
-        fromFolder.lorebooks.remove(lorebook);
+        fromFolder.characterBooks.remove(characterBook);
       } else {
-        widget.standaloneLorebooks.remove(lorebook);
+        widget.standaloneCharacterBooks.remove(characterBook);
       }
-      toFolder.lorebooks.add(lorebook);
-      lorebook.order = toFolder.lorebooks.length - 1;
+      toFolder.characterBooks.add(characterBook);
+      characterBook.order = toFolder.characterBooks.length - 1;
     });
     _notifyUpdate();
   }
 
-  void _moveLorebookOutOfFolder(Lorebook lorebook, LorebookFolder fromFolder) {
+  void _moveCharacterBookOutOfFolder(CharacterBook characterBook, CharacterBookFolder fromFolder) {
     setState(() {
-      fromFolder.lorebooks.remove(lorebook);
-      widget.standaloneLorebooks.add(lorebook);
-      lorebook.order = widget.standaloneLorebooks.length - 1;
+      fromFolder.characterBooks.remove(characterBook);
+      widget.standaloneCharacterBooks.add(characterBook);
+      characterBook.order = widget.standaloneCharacterBooks.length - 1;
     });
     _notifyUpdate();
   }
 
-  void _reorderLorebookInFolder(Lorebook draggedLorebook, Lorebook targetLorebook, LorebookFolder? folder) {
+  void _reorderCharacterBookInFolder(CharacterBook draggedCharacterBook, CharacterBook targetCharacterBook, CharacterBookFolder? folder) {
     setState(() {
       if (folder != null) {
         // 폴더 내에서 순서 변경
-        final lorebooks = folder.lorebooks;
-        final draggedIndex = lorebooks.indexOf(draggedLorebook);
-        final targetIndex = lorebooks.indexOf(targetLorebook);
+        final characterBooks = folder.characterBooks;
+        final draggedIndex = characterBooks.indexOf(draggedCharacterBook);
+        final targetIndex = characterBooks.indexOf(targetCharacterBook);
 
         if (draggedIndex != -1 && targetIndex != -1) {
-          lorebooks.removeAt(draggedIndex);
-          final newIndex = lorebooks.indexOf(targetLorebook);
-          lorebooks.insert(newIndex, draggedLorebook);
+          characterBooks.removeAt(draggedIndex);
+          final newIndex = characterBooks.indexOf(targetCharacterBook);
+          characterBooks.insert(newIndex, draggedCharacterBook);
 
           // order 업데이트
-          for (var i = 0; i < lorebooks.length; i++) {
-            lorebooks[i].order = i;
+          for (var i = 0; i < characterBooks.length; i++) {
+            characterBooks[i].order = i;
           }
         }
       } else {
-        // standalone 로어북 순서 변경
-        final lorebooks = widget.standaloneLorebooks;
-        final draggedIndex = lorebooks.indexOf(draggedLorebook);
-        final targetIndex = lorebooks.indexOf(targetLorebook);
+        // standalone 캐릭터북 순서 변경
+        final characterBooks = widget.standaloneCharacterBooks;
+        final draggedIndex = characterBooks.indexOf(draggedCharacterBook);
+        final targetIndex = characterBooks.indexOf(targetCharacterBook);
 
         if (draggedIndex != -1 && targetIndex != -1) {
-          lorebooks.removeAt(draggedIndex);
-          final newIndex = lorebooks.indexOf(targetLorebook);
-          lorebooks.insert(newIndex, draggedLorebook);
+          characterBooks.removeAt(draggedIndex);
+          final newIndex = characterBooks.indexOf(targetCharacterBook);
+          characterBooks.insert(newIndex, draggedCharacterBook);
 
           // order 업데이트
-          for (var i = 0; i < lorebooks.length; i++) {
-            lorebooks[i].order = i;
+          for (var i = 0; i < characterBooks.length; i++) {
+            characterBooks[i].order = i;
           }
         }
       }
@@ -186,7 +186,7 @@ class _LorebookTabState extends State<LorebookTab> {
     _notifyUpdate();
   }
 
-  void _toggleFolderEdit(LorebookFolder folder) {
+  void _toggleFolderEdit(CharacterBookFolder folder) {
     setState(() {
       if (_editingFolderId == folder.id) {
         final controller = _editControllers[folder.id!];
@@ -203,7 +203,7 @@ class _LorebookTabState extends State<LorebookTab> {
     });
   }
 
-  void _saveFolderName(LorebookFolder folder, String value) {
+  void _saveFolderName(CharacterBookFolder folder, String value) {
     setState(() {
       if (value.isNotEmpty) {
         folder.name = value;
@@ -224,27 +224,27 @@ class _LorebookTabState extends State<LorebookTab> {
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 5),
             child: LabelWithHelp(
-              label: '로어북',
-              helpMessage: '캐릭터의 세계관과 관련된 정보를 로어북에 추가할 수 있습니다.',
+              label: '캐릭터북',
+              helpMessage: '캐릭터의 세계관과 관련된 정보를 캐릭터북에 추가할 수 있습니다.',
             ),
           ),
           const SizedBox(height: 8),
           Expanded(
-            child: widget.folders.isEmpty && widget.standaloneLorebooks.isEmpty
+            child: widget.folders.isEmpty && widget.standaloneCharacterBooks.isEmpty
                 ? const Center(
-                    child: Text('로어북 항목이 없습니다'),
+                    child: Text('캐릭터북 항목이 없습니다'),
                   )
                 : DragTarget<Map<String, dynamic>>(
                     onWillAcceptWithDetails: (details) {
                       final data = details.data;
-                      return data['type'] == 'lorebook' && data['fromFolder'] != null;
+                      return data['type'] == 'characterBook' && data['fromFolder'] != null;
                     },
                     onAcceptWithDetails: (details) {
                       final data = details.data;
-                      final lorebook = data['lorebook'] as Lorebook;
-                      final fromFolder = data['fromFolder'] as LorebookFolder?;
+                      final characterBook = data['characterBook'] as CharacterBook;
+                      final fromFolder = data['fromFolder'] as CharacterBookFolder?;
                       if (fromFolder != null) {
-                        _moveLorebookOutOfFolder(lorebook, fromFolder);
+                        _moveCharacterBookOutOfFolder(characterBook, fromFolder);
                       }
                     },
                     builder: (context, candidateData, rejectedData) {
@@ -259,13 +259,13 @@ class _LorebookTabState extends State<LorebookTab> {
                               )
                             : null,
                         child: ListView.builder(
-                          itemCount: widget.folders.length + widget.standaloneLorebooks.length,
+                          itemCount: widget.folders.length + widget.standaloneCharacterBooks.length,
                           itemBuilder: (context, index) {
                             if (index < widget.folders.length) {
                               return _buildFolderItem(widget.folders[index]);
                             } else {
-                              return _buildLorebookItem(
-                                widget.standaloneLorebooks[index - widget.folders.length],
+                              return _buildCharacterBookItem(
+                                widget.standaloneCharacterBooks[index - widget.folders.length],
                                 null,
                               );
                             }
@@ -291,9 +291,9 @@ class _LorebookTabState extends State<LorebookTab> {
               const SizedBox(width: 12),
               Expanded(
                 child: FilledButton.icon(
-                  onPressed: () => _addLorebook(null),
+                  onPressed: () => _addCharacterBook(null),
                   icon: const Icon(Icons.add),
-                  label: const Text('로어북 추가'),
+                  label: const Text('캐릭터북 추가'),
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 12),
                   ),
@@ -306,17 +306,17 @@ class _LorebookTabState extends State<LorebookTab> {
     );
   }
 
-  Widget _buildFolderItem(LorebookFolder folder) {
+  Widget _buildFolderItem(CharacterBookFolder folder) {
     return DragTarget<Map<String, dynamic>>(
       onWillAcceptWithDetails: (details) {
         final data = details.data;
-        return data['type'] == 'lorebook' && data['fromFolder'] != folder;
+        return data['type'] == 'characterBook' && data['fromFolder'] != folder;
       },
       onAcceptWithDetails: (details) {
         final data = details.data;
-        final lorebook = data['lorebook'] as Lorebook;
-        final fromFolder = data['fromFolder'] as LorebookFolder?;
-        _moveLorebookToFolder(lorebook, fromFolder, folder);
+        final characterBook = data['characterBook'] as CharacterBook;
+        final fromFolder = data['fromFolder'] as CharacterBookFolder?;
+        _moveCharacterBookToFolder(characterBook, fromFolder, folder);
       },
       builder: (context, candidateData, rejectedData) {
         return Container(
@@ -344,8 +344,8 @@ class _LorebookTabState extends State<LorebookTab> {
                 borderRadius: BorderRadius.circular(UIConstants.borderRadiusMedium),
                 child: Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: _lorebookItemHorizontalPadding,
-                    vertical: _lorebookItemVerticalPadding,
+                    horizontal: _characterBookItemHorizontalPadding,
+                    vertical: _characterBookItemVerticalPadding,
                   ),
                   child: Row(
                     children: [
@@ -403,7 +403,7 @@ class _LorebookTabState extends State<LorebookTab> {
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 8.0),
                   child: Column(
-                    children: folder.lorebooks.map((lorebook) => _buildLorebookItem(lorebook, folder)).toList(),
+                    children: folder.characterBooks.map((characterBook) => _buildCharacterBookItem(characterBook, folder)).toList(),
                   ),
                 ),
                 Padding(
@@ -411,9 +411,9 @@ class _LorebookTabState extends State<LorebookTab> {
                   child: SizedBox(
                     width: double.infinity,
                     child: OutlinedButton.icon(
-                      onPressed: () => _addLorebook(folder),
+                      onPressed: () => _addCharacterBook(folder),
                       icon: const Icon(Icons.add, size: 16),
-                      label: const Text('로어북 추가', style: TextStyle(fontSize: 13)),
+                      label: const Text('캐릭터북 추가', style: TextStyle(fontSize: 13)),
                       style: OutlinedButton.styleFrom(
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         overlayColor: Colors.transparent,
@@ -429,11 +429,11 @@ class _LorebookTabState extends State<LorebookTab> {
     );
   }
 
-  Widget _buildLorebookItem(Lorebook lorebook, LorebookFolder? folder) {
+  Widget _buildCharacterBookItem(CharacterBook characterBook, CharacterBookFolder? folder) {
     return LongPressDraggable<Map<String, dynamic>>(
       data: {
-        'type': 'lorebook',
-        'lorebook': lorebook,
+        'type': 'characterBook',
+        'characterBook': characterBook,
         'fromFolder': folder,
       },
       feedback: Material(
@@ -442,8 +442,8 @@ class _LorebookTabState extends State<LorebookTab> {
         child: Container(
           width: 300,
           padding: const EdgeInsets.symmetric(
-            horizontal: _lorebookItemHorizontalPadding,
-            vertical: _lorebookItemVerticalPadding,
+            horizontal: _characterBookItemHorizontalPadding,
+            vertical: _characterBookItemVerticalPadding,
           ),
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.surface,
@@ -459,7 +459,7 @@ class _LorebookTabState extends State<LorebookTab> {
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  lorebook.name,
+                  characterBook.name,
                   style: Theme.of(context).textTheme.bodyMedium,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -470,20 +470,20 @@ class _LorebookTabState extends State<LorebookTab> {
       ),
       childWhenDragging: Opacity(
         opacity: 0.3,
-        child: _buildLorebookCard(lorebook, folder),
+        child: _buildCharacterBookCard(characterBook, folder),
       ),
       child: DragTarget<Map<String, dynamic>>(
         onWillAcceptWithDetails: (details) {
           final data = details.data;
           // 같은 폴더 내에서만 순서 변경 허용
-          return data['type'] == 'lorebook' &&
-                 data['lorebook'] != lorebook &&
+          return data['type'] == 'characterBook' &&
+                 data['characterBook'] != characterBook &&
                  data['fromFolder'] == folder;
         },
         onAcceptWithDetails: (details) {
           final data = details.data;
-          final draggedLorebook = data['lorebook'] as Lorebook;
-          _reorderLorebookInFolder(draggedLorebook, lorebook, folder);
+          final draggedCharacterBook = data['characterBook'] as CharacterBook;
+          _reorderCharacterBookInFolder(draggedCharacterBook, characterBook, folder);
         },
         builder: (context, candidateData, rejectedData) {
           return Container(
@@ -496,50 +496,50 @@ class _LorebookTabState extends State<LorebookTab> {
                     borderRadius: BorderRadius.circular(UIConstants.borderRadiusMedium),
                   )
                 : null,
-            child: _buildLorebookCard(lorebook, folder),
+            child: _buildCharacterBookCard(characterBook, folder),
           );
         },
       ),
     );
   }
 
-  Widget _buildLorebookCard(Lorebook lorebook, LorebookFolder? folder) {
+  Widget _buildCharacterBookCard(CharacterBook characterBook, CharacterBookFolder? folder) {
     return EditableExpandableItem(
-      key: ValueKey(lorebook.id),
+      key: ValueKey(characterBook.id),
       icon: Icon(
         Icons.description_outlined,
         size: UIConstants.iconSizeMedium,
         color: Theme.of(context).colorScheme.secondary,
       ),
-      name: lorebook.name,
-      isExpanded: lorebook.isExpanded,
+      name: characterBook.name,
+      isExpanded: characterBook.isExpanded,
       onToggleExpanded: () {
         setState(() {
-          lorebook.isExpanded = !lorebook.isExpanded;
+          characterBook.isExpanded = !characterBook.isExpanded;
         });
       },
-      onDelete: () => _deleteLorebook(lorebook, folder),
-      nameHint: '로어북 이름',
+      onDelete: () => _deleteCharacterBook(characterBook, folder),
+      nameHint: '캐릭터북 이름',
       onNameChanged: (value) {
-        lorebook.name = value;
+        characterBook.name = value;
         _notifyUpdate();
       },
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildActivationConditionField(lorebook),
-          if (lorebook.enabled == LorebookActivationCondition.keyBased) ...[
-            _buildActivationKeysField(lorebook),
-            _buildKeyConditionField(lorebook),
+          _buildActivationConditionField(characterBook),
+          if (characterBook.enabled == CharacterBookActivationCondition.keyBased) ...[
+            _buildActivationKeysField(characterBook),
+            _buildKeyConditionField(characterBook),
           ],
-          _buildDeploymentOrderField(lorebook),
-          _buildContentField(lorebook),
+          _buildDeploymentOrderField(characterBook),
+          _buildContentField(characterBook),
         ],
       ),
     );
   }
 
-  Widget _buildActivationConditionField(Lorebook lorebook) {
+  Widget _buildActivationConditionField(CharacterBook characterBook) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -552,18 +552,18 @@ class _LorebookTabState extends State<LorebookTab> {
         const SizedBox(height: 2),
         SizedBox(
           width: double.infinity,
-          child: SegmentedButton<LorebookActivationCondition>(
+          child: SegmentedButton<CharacterBookActivationCondition>(
             showSelectedIcon: false,
-            segments: LorebookActivationCondition.values
+            segments: CharacterBookActivationCondition.values
                 .map((condition) => ButtonSegment(
                       value: condition,
                       label: Text(condition.displayName, style: const TextStyle(fontSize: 13)),
                     ))
                 .toList(),
-            selected: {lorebook.enabled},
-            onSelectionChanged: (Set<LorebookActivationCondition> selected) {
+            selected: {characterBook.enabled},
+            onSelectionChanged: (Set<CharacterBookActivationCondition> selected) {
               setState(() {
-                lorebook.enabled = selected.first;
+                characterBook.enabled = selected.first;
               });
               _notifyUpdate();
             },
@@ -584,9 +584,9 @@ class _LorebookTabState extends State<LorebookTab> {
     );
   }
 
-  Widget _buildActivationKeysField(Lorebook lorebook) {
-    final key = 'lorebook_${lorebook.id}_activation_keys';
-    final controller = _getFieldController(key, lorebook.keys.join(', '));
+  Widget _buildActivationKeysField(CharacterBook characterBook) {
+    final key = 'characterBook_${characterBook.id}_activation_keys';
+    final controller = _getFieldController(key, characterBook.keys.join(', '));
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -613,7 +613,7 @@ class _LorebookTabState extends State<LorebookTab> {
           ),
           style: Theme.of(context).textTheme.bodySmall,
           onChanged: (value) {
-            lorebook.keys = value
+            characterBook.keys = value
                 .split(',')
                 .map((e) => e.trim())
                 .where((e) => e.isNotEmpty)
@@ -626,7 +626,7 @@ class _LorebookTabState extends State<LorebookTab> {
     );
   }
 
-  Widget _buildKeyConditionField(Lorebook lorebook) {
+  Widget _buildKeyConditionField(CharacterBook characterBook) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -639,18 +639,18 @@ class _LorebookTabState extends State<LorebookTab> {
         const SizedBox(height: 2),
         SizedBox(
           width: double.infinity,
-          child: SegmentedButton<LorebookKeyCondition>(
+          child: SegmentedButton<CharacterBookKeyCondition>(
             showSelectedIcon: false,
-            segments: LorebookKeyCondition.values
+            segments: CharacterBookKeyCondition.values
                 .map((condition) => ButtonSegment(
                       value: condition,
                       label: Text(condition.displayName, style: const TextStyle(fontSize: 13)),
                     ))
                 .toList(),
-            selected: {lorebook.keyCondition},
-            onSelectionChanged: (Set<LorebookKeyCondition> selected) {
+            selected: {characterBook.keyCondition},
+            onSelectionChanged: (Set<CharacterBookKeyCondition> selected) {
               setState(() {
-                lorebook.keyCondition = selected.first;
+                characterBook.keyCondition = selected.first;
               });
               _notifyUpdate();
             },
@@ -671,9 +671,9 @@ class _LorebookTabState extends State<LorebookTab> {
     );
   }
 
-  Widget _buildDeploymentOrderField(Lorebook lorebook) {
-    final key = 'lorebook_${lorebook.id}_insertion_order';
-    final controller = _getFieldController(key, lorebook.insertion_order.toString());
+  Widget _buildDeploymentOrderField(CharacterBook characterBook) {
+    final key = 'characterBook_${characterBook.id}_insertion_order';
+    final controller = _getFieldController(key, characterBook.insertion_order.toString());
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -700,7 +700,7 @@ class _LorebookTabState extends State<LorebookTab> {
           onChanged: (value) {
             final intValue = int.tryParse(value);
             if (intValue != null) {
-              lorebook.insertion_order = intValue;
+              characterBook.insertion_order = intValue;
               _notifyUpdate();
             }
           },
@@ -710,9 +710,9 @@ class _LorebookTabState extends State<LorebookTab> {
     );
   }
 
-  Widget _buildContentField(Lorebook lorebook) {
-    final key = 'lorebook_${lorebook.id}_content';
-    final controller = _getFieldController(key, lorebook.content ?? '');
+  Widget _buildContentField(CharacterBook characterBook) {
+    final key = 'characterBook_${characterBook.id}_content';
+    final controller = _getFieldController(key, characterBook.content ?? '');
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -727,7 +727,7 @@ class _LorebookTabState extends State<LorebookTab> {
         TextField(
           controller: controller,
           decoration: InputDecoration(
-            hintText: '로어북 내용을 입력해주세요',
+            hintText: '캐릭터북 내용을 입력해주세요',
             hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
@@ -741,7 +741,7 @@ class _LorebookTabState extends State<LorebookTab> {
           maxLines: null,
           minLines: 5,
           onChanged: (value) {
-            lorebook.content = value;
+            characterBook.content = value;
             _notifyUpdate();
           },
         ),

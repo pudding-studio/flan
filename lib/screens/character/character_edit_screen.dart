@@ -7,13 +7,13 @@ import '../../constants/ui_constants.dart';
 import '../../database/database_helper.dart';
 import '../../models/character/character.dart';
 import '../../models/character/cover_image.dart';
-import '../../models/character/lorebook_folder.dart';
+import '../../models/character/character_book_folder.dart';
 import '../../models/character/persona.dart';
 import '../../models/character/start_scenario.dart';
 import '../../utils/common_dialog.dart';
 import '../../widgets/custom_text_field.dart';
 import 'tabs/cover_image_tab.dart';
-import 'tabs/lorebook_tab.dart';
+import 'tabs/character_book_tab.dart';
 import 'tabs/persona_tab.dart';
 import 'tabs/start_scenario_tab.dart';
 
@@ -39,8 +39,8 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   final _descriptionController = TextEditingController();
 
   // 로어북 관련 상태
-  final List<LorebookFolder> _folders = [];
-  final List<Lorebook> _standaloneLorebooks = [];
+  final List<CharacterBookFolder> _folders = [];
+  final List<CharacterBook> _standaloneCharacterBooks = [];
 
   // 페르소나 관련 상태
   final List<Persona> _personas = [];
@@ -63,8 +63,8 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   String _originalKeywords = '';
   String _originalDescription = '';
   int? _originalSelectedCoverImageId;
-  List<LorebookFolder> _originalFolders = [];
-  List<Lorebook> _originalStandaloneLorebooks = [];
+  List<CharacterBookFolder> _originalFolders = [];
+  List<CharacterBook> _originalStandaloneCharacterBooks = [];
   List<Persona> _originalPersonas = [];
   List<StartScenario> _originalStartScenarios = [];
   List<CoverImage> _originalCoverImages = [];
@@ -116,18 +116,18 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       }
 
       // 로어북 폴더 및 로어북 로드
-      final folders = await _db.readLorebookFolders(widget.characterId!);
+      final folders = await _db.readCharacterBookFolders(widget.characterId!);
       for (var folder in folders) {
-        final lorebooks = await _db.readLorebooksByFolder(folder.id!);
-        folder.lorebooks.addAll(lorebooks);
+        final characterBooks = await _db.readCharacterBooksByFolder(folder.id!);
+        folder.characterBooks.addAll(characterBooks);
       }
       _folders.addAll(folders);
       _originalFolders = _folders.map((f) => _copyFolder(f)).toList();
 
       // 독립형 로어북 로드
-      final standaloneLorebooks = await _db.readStandaloneLorebooks(widget.characterId!);
-      _standaloneLorebooks.addAll(standaloneLorebooks);
-      _originalStandaloneLorebooks = standaloneLorebooks.map((lb) => _copyLorebook(lb)).toList();
+      final standaloneCharacterBooks = await _db.readStandaloneCharacterBooks(widget.characterId!);
+      _standaloneCharacterBooks.addAll(standaloneCharacterBooks);
+      _originalStandaloneCharacterBooks = standaloneCharacterBooks.map((lb) => _copyCharacterBook(lb)).toList();
 
       // 페르소나 로드
       final personas = await _db.readPersonas(widget.characterId!);
@@ -158,31 +158,31 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   }
 
   // 데이터 복사 헬퍼 메서드들
-  LorebookFolder _copyFolder(LorebookFolder folder) {
-    final copied = LorebookFolder(
+  CharacterBookFolder _copyFolder(CharacterBookFolder folder) {
+    final copied = CharacterBookFolder(
       id: folder.id,
       characterId: folder.characterId,
       name: folder.name,
       order: folder.order,
       isExpanded: folder.isExpanded,
     );
-    copied.lorebooks.addAll(folder.lorebooks.map((lb) => _copyLorebook(lb)));
+    copied.characterBooks.addAll(folder.characterBooks.map((lb) => _copyCharacterBook(lb)));
     return copied;
   }
 
-  Lorebook _copyLorebook(Lorebook lorebook) {
-    return Lorebook(
-      id: lorebook.id,
-      characterId: lorebook.characterId,
-      folderId: lorebook.folderId,
-      name: lorebook.name,
-      order: lorebook.order,
-      isExpanded: lorebook.isExpanded,
-      enabled: lorebook.enabled,
-      keys: List<String>.from(lorebook.keys),
-      keyCondition: lorebook.keyCondition,
-      insertion_order: lorebook.insertion_order,
-      content: lorebook.content,
+  CharacterBook _copyCharacterBook(CharacterBook characterBook) {
+    return CharacterBook(
+      id: characterBook.id,
+      characterId: characterBook.characterId,
+      folderId: characterBook.folderId,
+      name: characterBook.name,
+      order: characterBook.order,
+      isExpanded: characterBook.isExpanded,
+      enabled: characterBook.enabled,
+      keys: List<String>.from(characterBook.keys),
+      keyCondition: characterBook.keyCondition,
+      insertion_order: characterBook.insertion_order,
+      content: characterBook.content,
     );
   }
 
@@ -236,12 +236,12 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     for (int i = 0; i < _folders.length; i++) {
       if (_folders[i].name != _originalFolders[i].name ||
           _folders[i].isExpanded != _originalFolders[i].isExpanded ||
-          _folders[i].lorebooks.length != _originalFolders[i].lorebooks.length) {
+          _folders[i].characterBooks.length != _originalFolders[i].characterBooks.length) {
         return true;
       }
-      for (int j = 0; j < _folders[i].lorebooks.length; j++) {
-        final current = _folders[i].lorebooks[j];
-        final original = _originalFolders[i].lorebooks[j];
+      for (int j = 0; j < _folders[i].characterBooks.length; j++) {
+        final current = _folders[i].characterBooks[j];
+        final original = _originalFolders[i].characterBooks[j];
         if (current.name != original.name ||
             current.content != original.content ||
             current.enabled != original.enabled ||
@@ -252,10 +252,10 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     }
 
     // 독립형 로어북 변경 확인
-    if (_standaloneLorebooks.length != _originalStandaloneLorebooks.length) return true;
-    for (int i = 0; i < _standaloneLorebooks.length; i++) {
-      final current = _standaloneLorebooks[i];
-      final original = _originalStandaloneLorebooks[i];
+    if (_standaloneCharacterBooks.length != _originalStandaloneCharacterBooks.length) return true;
+    for (int i = 0; i < _standaloneCharacterBooks.length; i++) {
+      final current = _standaloneCharacterBooks[i];
+      final original = _originalStandaloneCharacterBooks[i];
       if (current.name != original.name ||
           current.content != original.content ||
           current.enabled != original.enabled ||
@@ -310,7 +310,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
 
     // 하위 데이터 확인
     if (_folders.isNotEmpty ||
-        _standaloneLorebooks.isNotEmpty ||
+        _standaloneCharacterBooks.isNotEmpty ||
         _personas.isNotEmpty ||
         _startScenarios.isNotEmpty ||
         _coverImages.isNotEmpty) {
@@ -371,10 +371,10 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         'selectedCoverImageId': _selectedCoverImageId,
         'folders': _folders.map((f) {
           final folderMap = f.toMap();
-          folderMap['lorebooks'] = f.lorebooks.map((lb) => lb.toMap()).toList();
+          folderMap['characterBooks'] = f.characterBooks.map((lb) => lb.toMap()).toList();
           return folderMap;
         }).toList(),
-        'standaloneLorebooks': _standaloneLorebooks.map((lb) => lb.toMap()).toList(),
+        'standaloneCharacterBooks': _standaloneCharacterBooks.map((lb) => lb.toMap()).toList(),
         'personas': _personas.map((p) => p.toMap()).toList(),
         'startScenarios': _startScenarios.map((s) => s.toMap()).toList(),
         'coverImages': _coverImages.map((c) => c.toMap()).toList(),
@@ -427,10 +427,10 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           _folders.clear();
           if (data['folders'] != null) {
             for (var folderMap in data['folders'] as List) {
-              final folder = LorebookFolder.fromMap(folderMap as Map<String, dynamic>);
-              if (folderMap['lorebooks'] != null) {
-                for (var lbMap in folderMap['lorebooks'] as List) {
-                  folder.lorebooks.add(Lorebook.fromMap(lbMap as Map<String, dynamic>));
+              final folder = CharacterBookFolder.fromMap(folderMap as Map<String, dynamic>);
+              if (folderMap['characterBooks'] != null) {
+                for (var lbMap in folderMap['characterBooks'] as List) {
+                  folder.characterBooks.add(CharacterBook.fromMap(lbMap as Map<String, dynamic>));
                 }
               }
               _folders.add(folder);
@@ -438,10 +438,10 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           }
 
           // 독립형 로어북 복원
-          _standaloneLorebooks.clear();
-          if (data['standaloneLorebooks'] != null) {
-            for (var lbMap in data['standaloneLorebooks'] as List) {
-              _standaloneLorebooks.add(Lorebook.fromMap(lbMap as Map<String, dynamic>));
+          _standaloneCharacterBooks.clear();
+          if (data['standaloneCharacterBooks'] != null) {
+            for (var lbMap in data['standaloneCharacterBooks'] as List) {
+              _standaloneCharacterBooks.add(CharacterBook.fromMap(lbMap as Map<String, dynamic>));
             }
           }
 
@@ -478,7 +478,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           _originalDescription = _descriptionController.text;
           _originalSelectedCoverImageId = _selectedCoverImageId;
           _originalFolders = _folders.map((f) => _copyFolder(f)).toList();
-          _originalStandaloneLorebooks = _standaloneLorebooks.map((lb) => _copyLorebook(lb)).toList();
+          _originalStandaloneCharacterBooks = _standaloneCharacterBooks.map((lb) => _copyCharacterBook(lb)).toList();
           _originalPersonas = _personas.map((p) => _copyPersona(p)).toList();
           _originalStartScenarios = _startScenarios.map((s) => _copyStartScenario(s)).toList();
           _originalCoverImages = _coverImages.map((c) => _copyCoverImage(c)).toList();
@@ -610,27 +610,27 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     // Edit 모드일 때: DB에 있지만 메모리에 없는 항목들 삭제
     if (_isEditMode) {
       // 로어북 폴더 삭제 처리
-      final existingFolders = await _db.readLorebookFolders(characterId);
+      final existingFolders = await _db.readCharacterBookFolders(characterId);
       final currentFolderIds = _folders
           .where((f) => f.id != null && f.id! > 0)
           .map((f) => f.id!)
           .toSet();
       for (var existingFolder in existingFolders) {
         if (!currentFolderIds.contains(existingFolder.id)) {
-          await _db.deleteLorebookFolder(existingFolder.id!);
+          await _db.deleteCharacterBookFolder(existingFolder.id!);
           debugPrint('폴더 삭제: ${existingFolder.id}');
         }
       }
 
       // 독립형 로어북 삭제 처리
-      final existingStandaloneLorebooks = await _db.readStandaloneLorebooks(characterId);
-      final currentStandaloneLbIds = _standaloneLorebooks
+      final existingStandaloneCharacterBooks = await _db.readStandaloneCharacterBooks(characterId);
+      final currentStandaloneLbIds = _standaloneCharacterBooks
           .where((lb) => lb.id != null && lb.id! > 0)
           .map((lb) => lb.id!)
           .toSet();
-      for (var existingLb in existingStandaloneLorebooks) {
+      for (var existingLb in existingStandaloneCharacterBooks) {
         if (!currentStandaloneLbIds.contains(existingLb.id)) {
-          await _db.deleteLorebook(existingLb.id!);
+          await _db.deleteCharacterBook(existingLb.id!);
           debugPrint('독립형 로어북 삭제: ${existingLb.id}');
         }
       }
@@ -687,7 +687,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       if (folder.id == null || folder.id! < 0) {
         debugPrint('분기: 새 폴더 생성 (id null or < 0)');
         // 새 폴더 생성
-        folderId = await _db.createLorebookFolder(folder.copyWith(
+        folderId = await _db.createCharacterBookFolder(folder.copyWith(
           id: null,
           characterId: characterId,
         ));
@@ -695,7 +695,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       } else if (!_isEditMode || folder.characterId != characterId) {
         debugPrint('분기: 새 캐릭터로 복사 (!_isEditMode || folder.characterId != characterId)');
         // 새 캐릭터로 복사하는 경우 새로 생성
-        folderId = await _db.createLorebookFolder(folder.copyWith(
+        folderId = await _db.createCharacterBookFolder(folder.copyWith(
           id: null,
           characterId: characterId,
         ));
@@ -703,7 +703,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       } else {
         debugPrint('분기: 기존 폴더 업데이트');
         // 기존 폴더 업데이트 (같은 캐릭터, 기존 ID)
-        await _db.updateLorebookFolder(folder.copyWith(
+        await _db.updateCharacterBookFolder(folder.copyWith(
           characterId: characterId,
         ));
         folderId = folder.id!;
@@ -712,36 +712,36 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
 
       // 폴더 내 로어북 삭제 처리 (Edit 모드이고 기존 폴더인 경우)
       if (_isEditMode && folder.id != null && folder.id! > 0) {
-        final existingLorebooks = await _db.readLorebooksByFolder(folderId);
-        final currentLbIds = folder.lorebooks
+        final existingCharacterBooks = await _db.readCharacterBooksByFolder(folderId);
+        final currentLbIds = folder.characterBooks
             .where((lb) => lb.id != null && lb.id! > 0)
             .map((lb) => lb.id!)
             .toSet();
-        for (var existingLb in existingLorebooks) {
+        for (var existingLb in existingCharacterBooks) {
           if (!currentLbIds.contains(existingLb.id)) {
-            await _db.deleteLorebook(existingLb.id!);
+            await _db.deleteCharacterBook(existingLb.id!);
             debugPrint('폴더 내 로어북 삭제: ${existingLb.id}');
           }
         }
       }
 
       // 폴더 내 로어북 저장
-      for (var lorebook in folder.lorebooks) {
-        if (lorebook.id == null || lorebook.id! < 0) {
-          await _db.createLorebook(lorebook.copyWith(
+      for (var characterBook in folder.characterBooks) {
+        if (characterBook.id == null || characterBook.id! < 0) {
+          await _db.createCharacterBook(characterBook.copyWith(
             id: null,
             characterId: characterId,
             folderId: folderId,
           ));
-        } else if (!_isEditMode || lorebook.characterId != characterId) {
+        } else if (!_isEditMode || characterBook.characterId != characterId) {
           // 새 캐릭터로 복사하는 경우 새로 생성
-          await _db.createLorebook(lorebook.copyWith(
+          await _db.createCharacterBook(characterBook.copyWith(
             id: null,
             characterId: characterId,
             folderId: folderId,
           ));
         } else {
-          await _db.updateLorebook(lorebook.copyWith(
+          await _db.updateCharacterBook(characterBook.copyWith(
             characterId: characterId,
             folderId: folderId,
           ));
@@ -750,21 +750,21 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     }
 
     // 독립형 로어북 저장
-    for (var lorebook in _standaloneLorebooks) {
-      if (lorebook.id == null || lorebook.id! < 0) {
-        await _db.createLorebook(lorebook.copyWith(
+    for (var characterBook in _standaloneCharacterBooks) {
+      if (characterBook.id == null || characterBook.id! < 0) {
+        await _db.createCharacterBook(characterBook.copyWith(
           id: null,
           characterId: characterId,
           folderId: null,
         ));
-      } else if (!_isEditMode || lorebook.characterId != characterId) {
-        await _db.createLorebook(lorebook.copyWith(
+      } else if (!_isEditMode || characterBook.characterId != characterId) {
+        await _db.createCharacterBook(characterBook.copyWith(
           id: null,
           characterId: characterId,
           folderId: null,
         ));
       } else {
-        await _db.updateLorebook(lorebook.copyWith(
+        await _db.updateCharacterBook(characterBook.copyWith(
           characterId: characterId,
         ));
       }
@@ -926,9 +926,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         children: [
           _buildProfileTab(),
           _buildDetailSettingsTab(),
-          LorebookTab(
+          CharacterBookTab(
             folders: _folders,
-            standaloneLorebooks: _standaloneLorebooks,
+            standaloneCharacterBooks: _standaloneCharacterBooks,
             onUpdate: () {
               setState(() {});
               _autoSave();

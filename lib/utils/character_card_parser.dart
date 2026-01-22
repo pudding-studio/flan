@@ -4,7 +4,7 @@ import 'package:image/image.dart' as img;
 import '../models/character/character.dart';
 import '../models/character/persona.dart';
 import '../models/character/start_scenario.dart';
-import '../models/character/lorebook_folder.dart';
+import '../models/character/character_book_folder.dart';
 
 class CharacterCardParser {
   /// PNG 파일에서 Character Card V2/V3 메타데이터를 추출합니다
@@ -160,8 +160,8 @@ class CharacterCardParser {
     return [];
   }
 
-  /// Character Card V2/V3에서 lorebooks를 추출합니다
-  static List<Lorebook> parseLorebooks(
+  /// Character Card V2/V3에서 character books를 추출합니다
+  static List<CharacterBook> parseCharacterBooks(
       Map<String, dynamic> cardData, int characterId) {
     try {
       final data = cardData['data'] as Map<String, dynamic>;
@@ -174,17 +174,17 @@ class CharacterCardParser {
             final idx = entry.key;
             final item = entry.value as Map<String, dynamic>;
 
-            return Lorebook(
+            return CharacterBook(
               characterId: characterId,
-              name: item['name'] as String? ?? 'Lorebook ${idx + 1}',
+              name: item['name'] as String? ?? 'CharacterBook ${idx + 1}',
               order: idx,
               content: item['content'] as String?,
               keys: (item['keys'] as List?)
                   ?.map((k) => k.toString())
                   .toList() ?? [],
               enabled: (item['enabled'] as bool? ?? false)
-                  ? LorebookActivationCondition.keyBased
-                  : LorebookActivationCondition.disabled,
+                  ? CharacterBookActivationCondition.keyBased
+                  : CharacterBookActivationCondition.disabled,
               insertion_order: item['insertion_order'] as int? ?? 0,
             );
           }).toList();
@@ -202,7 +202,7 @@ class CharacterCardParser {
     required Character character,
     List<Persona>? personas,
     List<StartScenario>? startScenarios,
-    List<Lorebook>? lorebooks,
+    List<CharacterBook>? characterBooks,
   }) {
     // startScenarios를 정렬
     final sortedScenarios = startScenarios != null
@@ -253,15 +253,15 @@ class CharacterCardParser {
         'system_prompt': '',
         'post_history_instructions': '',
         'alternate_greetings': alternateGreetings,
-        'character_book': lorebooks != null && lorebooks.isNotEmpty
+        'character_book': characterBooks != null && characterBooks.isNotEmpty
             ? {
-                'entries': lorebooks.map((l) => {
-                  'keys': l.keys,
-                  'content': l.content ?? '',
+                'entries': characterBooks.map((cb) => {
+                  'keys': cb.keys,
+                  'content': cb.content ?? '',
                   'extensions': {},
-                  'enabled': l.enabled != LorebookActivationCondition.disabled,
-                  'insertion_order': l.insertion_order,
-                  'name': l.name,
+                  'enabled': cb.enabled != CharacterBookActivationCondition.disabled,
+                  'insertion_order': cb.insertion_order,
+                  'name': cb.name,
                 }).toList(),
               }
             : null,

@@ -1,7 +1,7 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 import '../models/character/character.dart';
-import '../models/character/lorebook_folder.dart';
+import '../models/character/character_book_folder.dart';
 import '../models/character/persona.dart';
 import '../models/character/start_scenario.dart';
 import '../models/character/cover_image.dart';
@@ -568,14 +568,14 @@ class DatabaseHelper {
 
   // ==================== 캐릭터 북 폴더 CRUD ====================
 
-  Future<int> createLorebookFolder(LorebookFolder folder) async {
+  Future<int> createCharacterBookFolder(CharacterBookFolder characterBookFolder) async {
     final db = await database;
-    final map = folder.toMap();
+    final map = characterBookFolder.toMap();
     map.remove('id'); // id는 자동 생성되므로 제거
     return await db.insert('character_book_folders', map);
   }
 
-  Future<List<LorebookFolder>> readLorebookFolders(int characterId) async {
+  Future<List<CharacterBookFolder>> readCharacterBookFolders(int characterId) async {
     final db = await database;
     final result = await db.query(
       'character_book_folders',
@@ -583,20 +583,20 @@ class DatabaseHelper {
       whereArgs: [characterId],
       orderBy: '`order` ASC',
     );
-    return result.map((map) => LorebookFolder.fromMap(map)).toList();
+    return result.map((map) => CharacterBookFolder.fromMap(map)).toList();
   }
 
-  Future<int> updateLorebookFolder(LorebookFolder folder) async {
+  Future<int> updateCharacterBookFolder(CharacterBookFolder characterBookFolder) async {
     final db = await database;
     return await db.update(
       'character_book_folders',
-      folder.toMap(),
+      characterBookFolder.toMap(),
       where: 'id = ?',
-      whereArgs: [folder.id],
+      whereArgs: [characterBookFolder.id],
     );
   }
 
-  Future<int> deleteLorebookFolder(int id) async {
+  Future<int> deleteCharacterBookFolder(int id) async {
     final db = await database;
     return await db.delete(
       'character_book_folders',
@@ -607,14 +607,14 @@ class DatabaseHelper {
 
   // ==================== 캐릭터 북 CRUD ====================
 
-  Future<int> createLorebook(Lorebook lorebook) async {
+  Future<int> createCharacterBook(CharacterBook characterBook) async {
     final db = await database;
-    final map = lorebook.toMap();
+    final map = characterBook.toMap();
     map.remove('id'); // id는 자동 생성되므로 제거
     return await db.insert('character_books', map);
   }
 
-  Future<List<Lorebook>> readLorebooks(int characterId) async {
+  Future<List<CharacterBook>> readCharacterBooks(int characterId) async {
     final db = await database;
     final result = await db.query(
       'character_books',
@@ -622,10 +622,10 @@ class DatabaseHelper {
       whereArgs: [characterId],
       orderBy: '`order` ASC',
     );
-    return result.map((map) => Lorebook.fromMap(map)).toList();
+    return result.map((map) => CharacterBook.fromMap(map)).toList();
   }
 
-  Future<List<Lorebook>> readLorebooksByFolder(int folderId) async {
+  Future<List<CharacterBook>> readCharacterBooksByFolder(int folderId) async {
     final db = await database;
     final result = await db.query(
       'character_books',
@@ -633,10 +633,10 @@ class DatabaseHelper {
       whereArgs: [folderId],
       orderBy: '`order` ASC',
     );
-    return result.map((map) => Lorebook.fromMap(map)).toList();
+    return result.map((map) => CharacterBook.fromMap(map)).toList();
   }
 
-  Future<List<Lorebook>> readStandaloneLorebooks(int characterId) async {
+  Future<List<CharacterBook>> readStandaloneCharacterBooks(int characterId) async {
     final db = await database;
     final result = await db.query(
       'character_books',
@@ -644,20 +644,20 @@ class DatabaseHelper {
       whereArgs: [characterId],
       orderBy: '`order` ASC',
     );
-    return result.map((map) => Lorebook.fromMap(map)).toList();
+    return result.map((map) => CharacterBook.fromMap(map)).toList();
   }
 
-  Future<int> updateLorebook(Lorebook lorebook) async {
+  Future<int> updateCharacterBook(CharacterBook characterBook) async {
     final db = await database;
     return await db.update(
       'character_books',
-      lorebook.toMap(),
+      characterBook.toMap(),
       where: 'id = ?',
-      whereArgs: [lorebook.id],
+      whereArgs: [characterBook.id],
     );
   }
 
-  Future<int> deleteLorebook(int id) async {
+  Future<int> deleteCharacterBook(int id) async {
     final db = await database;
     return await db.delete(
       'character_books',

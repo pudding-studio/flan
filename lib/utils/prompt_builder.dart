@@ -1,6 +1,6 @@
 import '../models/character/character.dart';
 import '../models/character/persona.dart';
-import '../models/character/lorebook_folder.dart';
+import '../models/character/character_book_folder.dart';
 import '../models/prompt/chat_prompt.dart';
 
 class PromptBuilder {
@@ -8,7 +8,7 @@ class PromptBuilder {
     required ChatPrompt? chatPrompt,
     required Character character,
     Persona? persona,
-    List<Lorebook>? activeLorebooks,
+    List<CharacterBook>? activeCharacterBooks,
   }) {
     final buffer = StringBuffer();
 
@@ -39,12 +39,12 @@ class PromptBuilder {
       buffer.writeln();
     }
 
-    if (activeLorebooks != null && activeLorebooks.isNotEmpty) {
+    if (activeCharacterBooks != null && activeCharacterBooks.isNotEmpty) {
       buffer.writeln('## 로어북:');
-      for (final lorebook in activeLorebooks) {
-        if (lorebook.content != null && lorebook.content!.isNotEmpty) {
-          buffer.writeln('### ${lorebook.name}');
-          buffer.writeln(lorebook.content);
+      for (final characterBook in activeCharacterBooks) {
+        if (characterBook.content != null && characterBook.content!.isNotEmpty) {
+          buffer.writeln('### ${characterBook.name}');
+          buffer.writeln(characterBook.content);
           buffer.writeln();
         }
       }
