@@ -35,8 +35,16 @@ class Character {
     List<String> parsedTags = [];
     if (map['tags'] != null) {
       final tagsData = map['tags'];
-      if (tagsData is String) {
-        parsedTags = (json.decode(tagsData) as List).cast<String>();
+      if (tagsData is String && tagsData.isNotEmpty) {
+        try {
+          final decoded = json.decode(tagsData);
+          if (decoded is List) {
+            parsedTags = decoded.cast<String>();
+          }
+        } catch (e) {
+          // JSON 파싱 실패 시 빈 배열 사용
+          parsedTags = [];
+        }
       }
     }
 
