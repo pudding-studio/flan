@@ -157,7 +157,7 @@ class CharacterBook {
         (e) => e.name == (map['key_condition'] as String),
         orElse: () => CharacterBookKeyCondition.and,
       ),
-      insertionOrder: map['insertionOrder'] as int? ?? 0,
+      insertionOrder: map['insertion_order'] as int? ?? 0,
       content: map['content'] as String?,
     );
   }
@@ -174,7 +174,7 @@ class CharacterBook {
       'enabled': enabled.name,
       'keys': keys.join(','),
       'key_condition': keyCondition.name,
-      'insertionOrder': insertionOrder,
+      'insertion_order': insertionOrder,
       'content': content,
     };
   }
