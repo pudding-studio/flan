@@ -122,7 +122,7 @@ class Lorebook {
   LorebookActivationCondition enabled;
   List<String> keys;
   LorebookKeyCondition keyCondition;
-  int deploymentOrder;
+  int insertion_order;
   String? content;
 
   Lorebook({
@@ -135,7 +135,7 @@ class Lorebook {
     this.enabled = LorebookActivationCondition.disabled,
     List<String>? keys,
     this.keyCondition = LorebookKeyCondition.and,
-    this.deploymentOrder = 0,
+    this.insertion_order = 0,
     this.content,
   }) : keys = keys ?? [];
 
@@ -157,7 +157,7 @@ class Lorebook {
         (e) => e.name == (map['key_condition'] as String),
         orElse: () => LorebookKeyCondition.and,
       ),
-      deploymentOrder: map['deployment_order'] as int? ?? 0,
+      insertion_order: map['insertion_order'] as int? ?? 0,
       content: map['content'] as String?,
     );
   }
@@ -174,7 +174,7 @@ class Lorebook {
       'enabled': enabled.name,
       'keys': keys.join(','),
       'key_condition': keyCondition.name,
-      'deployment_order': deploymentOrder,
+      'insertion_order': insertion_order,
       'content': content,
     };
   }
@@ -189,7 +189,7 @@ class Lorebook {
     LorebookActivationCondition? enabled,
     List<String>? keys,
     LorebookKeyCondition? keyCondition,
-    int? deploymentOrder,
+    int? insertion_order,
     String? content,
   }) {
     return Lorebook(
@@ -202,7 +202,7 @@ class Lorebook {
       enabled: enabled ?? this.enabled,
       keys: keys ?? this.keys,
       keyCondition: keyCondition ?? this.keyCondition,
-      deploymentOrder: deploymentOrder ?? this.deploymentOrder,
+      insertion_order: insertion_order ?? this.insertion_order,
       content: content ?? this.content,
     );
   }
@@ -218,7 +218,7 @@ class Lorebook {
       'enabled': enabled.name,
       'keys': keys,
       'keyCondition': keyCondition.name,
-      'deploymentOrder': deploymentOrder,
+      'insertion_order': insertion_order,
       'content': content,
     };
   }
@@ -243,7 +243,7 @@ class Lorebook {
         (e) => e.name == json['keyCondition'],
         orElse: () => LorebookKeyCondition.and,
       ),
-      deploymentOrder: json['deploymentOrder'] as int? ?? 0,
+      insertion_order: json['insertion_order'] as int? ?? 0,
       content: json['content'] as String?,
     );
   }

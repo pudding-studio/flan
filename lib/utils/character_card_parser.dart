@@ -185,7 +185,7 @@ class CharacterCardParser {
               enabled: (item['enabled'] as bool? ?? false)
                   ? LorebookActivationCondition.keyBased
                   : LorebookActivationCondition.disabled,
-              deploymentOrder: item['insertion_order'] as int? ?? 0,
+              insertion_order: item['insertion_order'] as int? ?? 0,
             );
           }).toList();
         }
@@ -260,7 +260,7 @@ class CharacterCardParser {
                   'content': l.content ?? '',
                   'extensions': {},
                   'enabled': l.enabled != LorebookActivationCondition.disabled,
-                  'insertion_order': l.deploymentOrder,
+                  'insertion_order': l.insertion_order,
                   'name': l.name,
                 }).toList(),
               }

@@ -181,7 +181,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       enabled: lorebook.enabled,
       keys: List<String>.from(lorebook.keys),
       keyCondition: lorebook.keyCondition,
-      deploymentOrder: lorebook.deploymentOrder,
+      insertion_order: lorebook.insertion_order,
       content: lorebook.content,
     );
   }

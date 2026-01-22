@@ -672,8 +672,8 @@ class _LorebookTabState extends State<LorebookTab> {
   }
 
   Widget _buildDeploymentOrderField(Lorebook lorebook) {
-    final key = 'lorebook_${lorebook.id}_deployment_order';
-    final controller = _getFieldController(key, lorebook.deploymentOrder.toString());
+    final key = 'lorebook_${lorebook.id}_insertion_order';
+    final controller = _getFieldController(key, lorebook.insertion_order.toString());
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -700,7 +700,7 @@ class _LorebookTabState extends State<LorebookTab> {
           onChanged: (value) {
             final intValue = int.tryParse(value);
             if (intValue != null) {
-              lorebook.deploymentOrder = intValue;
+              lorebook.insertion_order = intValue;
               _notifyUpdate();
             }
           },
