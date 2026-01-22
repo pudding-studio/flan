@@ -29,7 +29,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 15,
+      version: 16,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -57,9 +57,9 @@ class DatabaseHelper {
       )
     ''');
 
-    // 로어북 폴더 테이블
+    // 캐릭터 북 폴더 테이블
     await db.execute('''
-      CREATE TABLE lorebook_folders (
+      CREATE TABLE character_book_folders (
         id $idType,
         character_id $intType,
         name $textType,
@@ -69,9 +69,9 @@ class DatabaseHelper {
       )
     ''');
 
-    // 로어북 테이블
+    // 캐릭터 북 테이블
     await db.execute('''
-      CREATE TABLE lorebooks (
+      CREATE TABLE character_books (
         id $idType,
         character_id $intType,
         folder_id INTEGER,
@@ -81,10 +81,10 @@ class DatabaseHelper {
         enabled $textType,
         keys $textTypeNullable,
         key_condition $textType,
-        deployment_order $intType,
+        insertion_order $intType,
         content $textTypeNullable,
         FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE,
-        FOREIGN KEY (folder_id) REFERENCES lorebook_folders (id) ON DELETE CASCADE
+        FOREIGN KEY (folder_id) REFERENCES character_book_folders (id) ON DELETE CASCADE
       )
     ''');
 
@@ -130,16 +130,16 @@ class DatabaseHelper {
 
     // 인덱스 생성 (성능 향상)
     await db.execute('''
-      CREATE INDEX idx_character_id_lorebook_folders
-      ON lorebook_folders (character_id)
+      CREATE INDEX idx_character_id_character_book_folders
+      ON character_book_folders (character_id)
     ''');
     await db.execute('''
-      CREATE INDEX idx_character_id_lorebooks
-      ON lorebooks (character_id)
+      CREATE INDEX idx_character_id_character_books
+      ON character_books (character_id)
     ''');
     await db.execute('''
-      CREATE INDEX idx_folder_id_lorebooks
-      ON lorebooks (folder_id)
+      CREATE INDEX idx_folder_id_character_books
+      ON character_books (folder_id)
     ''');
     await db.execute('''
       CREATE INDEX idx_character_id_personas
@@ -473,9 +473,36 @@ class DatabaseHelper {
     }
 
     if (oldVersion < 15) {
-      // lorebooks 테이블의 컬럼명 변경
+      // lorebooks 테이블의 컬럼명 변경 (테이블명은 아직 lorebooks)
       await db.execute('ALTER TABLE lorebooks RENAME COLUMN activation_condition TO enabled');
       await db.execute('ALTER TABLE lorebooks RENAME COLUMN activation_keys TO keys');
+    }
+
+    if (oldVersion < 16) {
+      // lorebook_folders -> character_book_folders 테이블명 변경
+      await db.execute('ALTER TABLE lorebook_folders RENAME TO character_book_folders');
+
+      // lorebooks -> character_books 테이블명 변경 및 컬럼명 변경
+      await db.execute('ALTER TABLE lorebooks RENAME TO character_books');
+      await db.execute('ALTER TABLE character_books RENAME COLUMN deployment_order TO insertion_order');
+
+      // 인덱스 재생성
+      await db.execute('DROP INDEX IF EXISTS idx_character_id_lorebook_folders');
+      await db.execute('DROP INDEX IF EXISTS idx_character_id_lorebooks');
+      await db.execute('DROP INDEX IF EXISTS idx_folder_id_lorebooks');
+
+      await db.execute('''
+        CREATE INDEX idx_character_id_character_book_folders
+        ON character_book_folders (character_id)
+      ''');
+      await db.execute('''
+        CREATE INDEX idx_character_id_character_books
+        ON character_books (character_id)
+      ''');
+      await db.execute('''
+        CREATE INDEX idx_folder_id_character_books
+        ON character_books (folder_id)
+      ''');
     }
   }
 
@@ -539,19 +566,19 @@ class DatabaseHelper {
     );
   }
 
-  // ==================== 로어북 폴더 CRUD ====================
+  // ==================== 캐릭터 북 폴더 CRUD ====================
 
   Future<int> createLorebookFolder(LorebookFolder folder) async {
     final db = await database;
     final map = folder.toMap();
     map.remove('id'); // id는 자동 생성되므로 제거
-    return await db.insert('lorebook_folders', map);
+    return await db.insert('character_book_folders', map);
   }
 
   Future<List<LorebookFolder>> readLorebookFolders(int characterId) async {
     final db = await database;
     final result = await db.query(
-      'lorebook_folders',
+      'character_book_folders',
       where: 'character_id = ?',
       whereArgs: [characterId],
       orderBy: '`order` ASC',
@@ -562,7 +589,7 @@ class DatabaseHelper {
   Future<int> updateLorebookFolder(LorebookFolder folder) async {
     final db = await database;
     return await db.update(
-      'lorebook_folders',
+      'character_book_folders',
       folder.toMap(),
       where: 'id = ?',
       whereArgs: [folder.id],
@@ -572,25 +599,25 @@ class DatabaseHelper {
   Future<int> deleteLorebookFolder(int id) async {
     final db = await database;
     return await db.delete(
-      'lorebook_folders',
+      'character_book_folders',
       where: 'id = ?',
       whereArgs: [id],
     );
   }
 
-  // ==================== 로어북 CRUD ====================
+  // ==================== 캐릭터 북 CRUD ====================
 
   Future<int> createLorebook(Lorebook lorebook) async {
     final db = await database;
     final map = lorebook.toMap();
     map.remove('id'); // id는 자동 생성되므로 제거
-    return await db.insert('lorebooks', map);
+    return await db.insert('character_books', map);
   }
 
   Future<List<Lorebook>> readLorebooks(int characterId) async {
     final db = await database;
     final result = await db.query(
-      'lorebooks',
+      'character_books',
       where: 'character_id = ?',
       whereArgs: [characterId],
       orderBy: '`order` ASC',
@@ -601,7 +628,7 @@ class DatabaseHelper {
   Future<List<Lorebook>> readLorebooksByFolder(int folderId) async {
     final db = await database;
     final result = await db.query(
-      'lorebooks',
+      'character_books',
       where: 'folder_id = ?',
       whereArgs: [folderId],
       orderBy: '`order` ASC',
@@ -612,7 +639,7 @@ class DatabaseHelper {
   Future<List<Lorebook>> readStandaloneLorebooks(int characterId) async {
     final db = await database;
     final result = await db.query(
-      'lorebooks',
+      'character_books',
       where: 'character_id = ? AND folder_id IS NULL',
       whereArgs: [characterId],
       orderBy: '`order` ASC',
@@ -623,7 +650,7 @@ class DatabaseHelper {
   Future<int> updateLorebook(Lorebook lorebook) async {
     final db = await database;
     return await db.update(
-      'lorebooks',
+      'character_books',
       lorebook.toMap(),
       where: 'id = ?',
       whereArgs: [lorebook.id],
@@ -633,7 +660,7 @@ class DatabaseHelper {
   Future<int> deleteLorebook(int id) async {
     final db = await database;
     return await db.delete(
-      'lorebooks',
+      'character_books',
       where: 'id = ?',
       whereArgs: [id],
     );
