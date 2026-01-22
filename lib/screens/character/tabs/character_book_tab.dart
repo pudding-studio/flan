@@ -672,8 +672,8 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
   }
 
   Widget _buildDeploymentOrderField(CharacterBook characterBook) {
-    final key = 'characterBook_${characterBook.id}_insertion_order';
-    final controller = _getFieldController(key, characterBook.insertion_order.toString());
+    final key = 'characterBook_${characterBook.id}_insertionOrder';
+    final controller = _getFieldController(key, characterBook.insertionOrder.toString());
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -700,7 +700,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
           onChanged: (value) {
             final intValue = int.tryParse(value);
             if (intValue != null) {
-              characterBook.insertion_order = intValue;
+              characterBook.insertionOrder = intValue;
               _notifyUpdate();
             }
           },

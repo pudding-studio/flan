@@ -185,7 +185,7 @@ class CharacterCardParser {
               enabled: (item['enabled'] as bool? ?? false)
                   ? CharacterBookActivationCondition.keyBased
                   : CharacterBookActivationCondition.disabled,
-              insertion_order: item['insertion_order'] as int? ?? 0,
+              insertionOrder: item['insertion_order'] as int? ?? 0,
             );
           }).toList();
         }
@@ -260,7 +260,7 @@ class CharacterCardParser {
                   'content': cb.content ?? '',
                   'extensions': {},
                   'enabled': cb.enabled != CharacterBookActivationCondition.disabled,
-                  'insertion_order': cb.insertion_order,
+                  'insertion_order': cb.insertionOrder,
                   'name': cb.name,
                 }).toList(),
               }

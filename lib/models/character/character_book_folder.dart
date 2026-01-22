@@ -122,7 +122,7 @@ class CharacterBook {
   CharacterBookActivationCondition enabled;
   List<String> keys;
   CharacterBookKeyCondition keyCondition;
-  int insertion_order;
+  int insertionOrder;
   String? content;
 
   CharacterBook({
@@ -135,7 +135,7 @@ class CharacterBook {
     this.enabled = CharacterBookActivationCondition.disabled,
     List<String>? keys,
     this.keyCondition = CharacterBookKeyCondition.and,
-    this.insertion_order = 0,
+    this.insertionOrder = 0,
     this.content,
   }) : keys = keys ?? [];
 
@@ -157,7 +157,7 @@ class CharacterBook {
         (e) => e.name == (map['key_condition'] as String),
         orElse: () => CharacterBookKeyCondition.and,
       ),
-      insertion_order: map['insertion_order'] as int? ?? 0,
+      insertionOrder: map['insertionOrder'] as int? ?? 0,
       content: map['content'] as String?,
     );
   }
@@ -174,7 +174,7 @@ class CharacterBook {
       'enabled': enabled.name,
       'keys': keys.join(','),
       'key_condition': keyCondition.name,
-      'insertion_order': insertion_order,
+      'insertionOrder': insertionOrder,
       'content': content,
     };
   }
@@ -189,7 +189,7 @@ class CharacterBook {
     CharacterBookActivationCondition? enabled,
     List<String>? keys,
     CharacterBookKeyCondition? keyCondition,
-    int? insertion_order,
+    int? insertionOrder,
     String? content,
   }) {
     return CharacterBook(
@@ -202,7 +202,7 @@ class CharacterBook {
       enabled: enabled ?? this.enabled,
       keys: keys ?? this.keys,
       keyCondition: keyCondition ?? this.keyCondition,
-      insertion_order: insertion_order ?? this.insertion_order,
+      insertionOrder: insertionOrder ?? this.insertionOrder,
       content: content ?? this.content,
     );
   }
@@ -218,7 +218,7 @@ class CharacterBook {
       'enabled': enabled.name,
       'keys': keys,
       'keyCondition': keyCondition.name,
-      'insertion_order': insertion_order,
+      'insertionOrder': insertionOrder,
       'content': content,
     };
   }
@@ -243,7 +243,7 @@ class CharacterBook {
         (e) => e.name == json['keyCondition'],
         orElse: () => CharacterBookKeyCondition.and,
       ),
-      insertion_order: json['insertion_order'] as int? ?? 0,
+      insertionOrder: json['insertionOrder'] as int? ?? 0,
       content: json['content'] as String?,
     );
   }

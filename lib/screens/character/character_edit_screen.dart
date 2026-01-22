@@ -181,7 +181,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       enabled: characterBook.enabled,
       keys: List<String>.from(characterBook.keys),
       keyCondition: characterBook.keyCondition,
-      insertion_order: characterBook.insertion_order,
+      insertionOrder: characterBook.insertionOrder,
       content: characterBook.content,
     );
   }
