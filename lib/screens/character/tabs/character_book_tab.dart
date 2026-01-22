@@ -585,7 +585,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
   }
 
   Widget _buildActivationKeysField(CharacterBook characterBook) {
-    final key = 'characterBook_${characterBook.id}_activation_keys';
+    final key = 'characterBook_${characterBook.id}_keys';
     final controller = _getFieldController(key, characterBook.keys.join(', '));
 
     return Column(
