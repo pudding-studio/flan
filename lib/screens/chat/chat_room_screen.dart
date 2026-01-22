@@ -111,7 +111,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
     final allLorebooks = await _db.readLorebooks(_character!.id!);
     final activeLorebooks = allLorebooks.where((lorebook) {
-      return lorebook.activationCondition == LorebookActivationCondition.enabled;
+      return lorebook.enabled == LorebookActivationCondition.enabled;
     }).toList();
 
     return PromptBuilder.buildSystemPrompt(
