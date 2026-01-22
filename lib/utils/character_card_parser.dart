@@ -89,12 +89,15 @@ class CharacterCardParser {
     if (spec == 'chara_card_v2' || spec == 'chara_card_v3') {
       final data = cardData['data'] as Map<String, dynamic>;
 
+      List<String> tags = [];
+      if (data['tags'] != null) {
+        tags = (data['tags'] as List).map((e) => e.toString()).toList();
+      }
+
       return Character(
         name: data['name'] as String? ?? 'Unknown',
         creatorNotes: data['creator_notes'] as String?,
-        keywords: data['tags'] != null
-            ? (data['tags'] as List).join(', ')
-            : null,
+        tags: tags,
         description: data['description'] as String?,
         isDraft: false,
       );
@@ -227,7 +230,7 @@ class CharacterCardParser {
                 }).toList(),
               }
             : null,
-        'tags': character.keywords?.split(',').map((t) => t.trim()).toList() ?? [],
+        'tags': character.tags,
         'creator': '',
         'character_version': '',
         'extensions': {},

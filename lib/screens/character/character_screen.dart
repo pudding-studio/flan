@@ -910,7 +910,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
         key: ValueKey(_characters[index].id),
         title: _characters[index].name,
         description: _characters[index].creatorNotes ?? '',
-        tags: _characters[index].keywords?.split(',').map((e) => e.trim()).toList() ?? [],
+        tags: _characters[index].tags,
         imageData: _characterCoverImages[_characters[index].id],
         isEditMode: _isEditMode,
         isSelected: _selectedCharacterIds.contains(_characters[index].id),
@@ -1015,7 +1015,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
             child: CharacterListItem(
               title: _characters[index].name,
               description: _characters[index].creatorNotes ?? '',
-              tags: _characters[index].keywords?.split(',').map((e) => e.trim()).toList() ?? [],
+              tags: _characters[index].tags,
               imageData: _characterCoverImages[_characters[index].id],
               isEditMode: _isEditMode,
               isSelected: _selectedCharacterIds.contains(_characters[index].id),
@@ -1063,7 +1063,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
           child: CharacterListItem(
             title: _characters[index].name,
             description: _characters[index].creatorNotes ?? '',
-            tags: _characters[index].keywords?.split(',').map((e) => e.trim()).toList() ?? [],
+            tags: _characters[index].tags,
             imageData: _characterCoverImages[_characters[index].id],
             isEditMode: _isEditMode,
             isSelected: _selectedCharacterIds.contains(_characters[index].id),

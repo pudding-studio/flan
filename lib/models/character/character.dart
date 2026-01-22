@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'persona.dart';
 import 'start_scenario.dart';
 import 'lorebook_folder.dart';
@@ -7,7 +8,7 @@ class Character {
   final int? id;
   final String name;
   final String? creatorNotes;
-  final String? keywords;
+  final List<String> tags;
   final String? description;
   final int? selectedCoverImageId;
   final DateTime createdAt;
@@ -19,22 +20,31 @@ class Character {
     this.id,
     required this.name,
     this.creatorNotes,
-    this.keywords,
+    List<String>? tags,
     this.description,
     this.selectedCoverImageId,
     DateTime? createdAt,
     DateTime? updatedAt,
     this.isDraft = false,
     this.sortOrder,
-  })  : createdAt = createdAt ?? DateTime.now(),
+  })  : tags = tags ?? [],
+        createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now();
 
   factory Character.fromMap(Map<String, dynamic> map) {
+    List<String> parsedTags = [];
+    if (map['tags'] != null) {
+      final tagsData = map['tags'];
+      if (tagsData is String) {
+        parsedTags = (json.decode(tagsData) as List).cast<String>();
+      }
+    }
+
     return Character(
       id: map['id'] as int?,
       name: map['name'] as String,
       creatorNotes: map['creator_notes'] as String?,
-      keywords: map['keywords'] as String?,
+      tags: parsedTags,
       description: map['description'] as String?,
       selectedCoverImageId: map['selected_cover_image_id'] != null
           ? int.tryParse(map['selected_cover_image_id'].toString())
@@ -51,7 +61,7 @@ class Character {
       'id': id,
       'name': name,
       'creator_notes': creatorNotes,
-      'keywords': keywords,
+      'tags': json.encode(tags),
       'description': description,
       'selected_cover_image_id': selectedCoverImageId?.toString(),
       'created_at': createdAt.toIso8601String(),
@@ -65,7 +75,7 @@ class Character {
     int? id,
     String? name,
     String? creatorNotes,
-    String? keywords,
+    List<String>? tags,
     String? description,
     int? selectedCoverImageId,
     DateTime? createdAt,
@@ -77,7 +87,7 @@ class Character {
       id: id ?? this.id,
       name: name ?? this.name,
       creatorNotes: creatorNotes ?? this.creatorNotes,
-      keywords: keywords ?? this.keywords,
+      tags: tags ?? this.tags,
       description: description ?? this.description,
       selectedCoverImageId: selectedCoverImageId ?? this.selectedCoverImageId,
       createdAt: createdAt ?? this.createdAt,
@@ -98,7 +108,7 @@ class Character {
       'format': 'flan_v1',
       'name': name,
       'creatorNotes': creatorNotes,
-      'keywords': keywords,
+      'tags': tags,
       'description': description,
       'selectedCoverImageId': selectedCoverImageId,
       'createdAt': createdAt.toIso8601String(),
@@ -114,10 +124,15 @@ class Character {
   }
 
   factory Character.fromJson(Map<String, dynamic> json) {
+    List<String> parsedTags = [];
+    if (json['tags'] != null) {
+      parsedTags = (json['tags'] as List).cast<String>();
+    }
+
     return Character(
       name: json['name'] as String,
       creatorNotes: json['creatorNotes'] as String?,
-      keywords: json['keywords'] as String?,
+      tags: parsedTags,
       description: json['description'] as String?,
       selectedCoverImageId: json['selectedCoverImageId'] as int?,
       createdAt: json['createdAt'] != null

@@ -29,7 +29,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 13,
+      version: 14,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -47,7 +47,7 @@ class DatabaseHelper {
         id $idType,
         name $textType,
         creator_notes $textTypeNullable,
-        keywords $textTypeNullable,
+        tags $textTypeNullable,
         description $textTypeNullable,
         selected_cover_image_id $textTypeNullable,
         created_at $textType,
@@ -465,6 +465,11 @@ class DatabaseHelper {
     if (oldVersion < 13) {
       // world_setting 컬럼을 description으로 변경
       await db.execute('ALTER TABLE characters RENAME COLUMN world_setting TO description');
+    }
+
+    if (oldVersion < 14) {
+      // keywords 컬럼을 tags로 변경
+      await db.execute('ALTER TABLE characters RENAME COLUMN keywords TO tags');
     }
   }
 

@@ -103,14 +103,14 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       if (character != null) {
         _nameController.text = character.name;
         _creatorNotesController.text = character.creatorNotes ?? '';
-        _keywordsController.text = character.keywords ?? '';
+        _keywordsController.text = character.tags.join(', ');
         _descriptionController.text = character.description ?? '';
         _selectedCoverImageId = character.selectedCoverImageId;
 
         // 원본 데이터 저장
         _originalName = character.name;
         _originalCreatorNotes = character.creatorNotes ?? '';
-        _originalKeywords = character.keywords ?? '';
+        _originalKeywords = character.tags.join(', ');
         _originalDescription = character.description ?? '';
         _originalSelectedCoverImageId = character.selectedCoverImageId;
       }
@@ -537,11 +537,15 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       if (_isEditMode) {
         // 기존 캐릭터 수정
         characterId = widget.characterId!;
+        final tags = _keywordsController.text.isEmpty
+            ? <String>[]
+            : _keywordsController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+
         final character = Character(
           id: characterId,
           name: _nameController.text,
           creatorNotes: _creatorNotesController.text.isEmpty ? null : _creatorNotesController.text,
-          keywords: _keywordsController.text.isEmpty ? null : _keywordsController.text,
+          tags: tags,
           description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
           selectedCoverImageId: _selectedCoverImageId,
           updatedAt: DateTime.now(),
@@ -550,10 +554,14 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         await _db.updateCharacter(character);
       } else {
         // 새 캐릭터 생성
+        final tags = _keywordsController.text.isEmpty
+            ? <String>[]
+            : _keywordsController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+
         final character = Character(
           name: _nameController.text,
           creatorNotes: _creatorNotesController.text.isEmpty ? null : _creatorNotesController.text,
-          keywords: _keywordsController.text.isEmpty ? null : _keywordsController.text,
+          tags: tags,
           description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
           selectedCoverImageId: _selectedCoverImageId,
           isDraft: false,

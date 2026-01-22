@@ -380,7 +380,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
       );
     }
 
-    final keywords = _character!.keywords?.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList() ?? [];
+    final keywords = _character!.tags;
 
     return PopScope(
       canPop: false,
