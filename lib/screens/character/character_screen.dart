@@ -496,33 +496,30 @@ class _CharacterScreenState extends State<CharacterScreen> {
           : '캐릭터',
         showBackButton: false,
         showCloseButton: _isEditMode,
+        onClosePressed: _toggleEditMode,
         actions: [
           if (!_isEditMode)
             AppBarIconButton(
               icon: Icons.edit_outlined,
               onPressed: _toggleEditMode,
               tooltip: '편집',
-              offsetX: 30,
             ),
           if (_isEditMode)
             AppBarIconButton(
               icon: Icons.delete_outline,
               onPressed: _selectedCharacterIds.isEmpty ? null : _deleteSelectedCharacters,
               tooltip: '삭제',
-              offsetX: 4,
             ),
           if (!_isEditMode)
-            Transform.translate(
-              offset: const Offset(20, 0),
-              child: PopupMenuButton<String>(
-                tooltip: '더보기',
-                onSelected: (value) {
-                  if (value == 'import') {
-                    _importCharacter();
-                  }
-                },
-                itemBuilder: (BuildContext context) {
-                return [
+            AppBarPopupMenuButton<String>(
+              tooltip: '더보기',
+              onSelected: (value) {
+                if (value == 'import') {
+                  _importCharacter();
+                }
+              },
+              itemBuilder: (BuildContext context) {
+              return [
                 const PopupMenuItem<String>(
                   value: 'import',
                   child: Row(
@@ -674,10 +671,8 @@ class _CharacterScreenState extends State<CharacterScreen> {
                   ),
                 ),
               ];
-                },
-              ),
+              },
             ),
-          const SizedBox(width: 16),
         ],
       ),
       body: Column(

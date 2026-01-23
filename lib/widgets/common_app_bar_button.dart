@@ -6,20 +6,25 @@ class AppBarIconButton extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onPressed;
   final String? tooltip;
-  final double offsetX;
+  final double? offsetX;
 
   const AppBarIconButton({
     super.key,
     required this.icon,
     this.onPressed,
     this.tooltip,
-    this.offsetX = 16.0,
+    this.offsetX,
   });
 
   @override
   Widget build(BuildContext context) {
+    // 편집 버튼은 30.0, 삭제 버튼은 16.0, 나머지는 20.0
+    final double effectiveOffsetX = offsetX ??
+      (icon == Icons.edit_outlined ? 30.0 :
+       icon == Icons.delete_outline ? 16.0 : 20.0);
+
     return Transform.translate(
-      offset: Offset(offsetX, 0),
+      offset: Offset(effectiveOffsetX, 0),
       child: IconButton(
         icon: Icon(icon),
         onPressed: onPressed,
@@ -45,7 +50,7 @@ class AppBarPopupMenuButton<T> extends StatelessWidget {
     super.key,
     this.icon = Icons.more_vert,
     this.tooltip,
-    this.offsetX = 8.0,
+    this.offsetX = 20.0,
     this.onSelected,
     required this.itemBuilder,
     this.shape,

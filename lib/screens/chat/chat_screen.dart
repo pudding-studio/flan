@@ -267,36 +267,33 @@ class _ChatScreenState extends State<ChatScreen> {
           : '채팅',
         showBackButton: false,
         showCloseButton: _isEditMode,
+        onClosePressed: _toggleEditMode,
         actions: [
           if (!_isEditMode)
             AppBarIconButton(
               icon: Icons.edit_outlined,
               onPressed: _toggleEditMode,
               tooltip: '편집',
-              offsetX: 16,
             ),
           if (_isEditMode)
             AppBarIconButton(
               icon: Icons.delete_outline,
               onPressed: _selectedChatRoomIds.isEmpty ? null : _deleteSelectedChatRooms,
               tooltip: '삭제',
-              offsetX: 4,
             ),
           if (!_isEditMode)
-            Transform.translate(
-              offset: const Offset(8, 0),
-              child: PopupMenuButton<String>(
-                tooltip: '더보기',
-                onSelected: (String value) {
-                  if (value == 'date' || value == 'name' || value == 'message_count') {
-                    setState(() {
-                      _sortMethod = value;
-                      _sortChatRooms();
-                    });
-                  }
-                },
-                itemBuilder: (BuildContext context) {
-                  return [
+            AppBarPopupMenuButton<String>(
+              tooltip: '더보기',
+              onSelected: (String value) {
+                if (value == 'date' || value == 'name' || value == 'message_count') {
+                  setState(() {
+                    _sortMethod = value;
+                    _sortChatRooms();
+                  });
+                }
+              },
+              itemBuilder: (BuildContext context) {
+                return [
                   PopupMenuItem<String>(
                     enabled: false,
                     child: Text(
@@ -348,10 +345,8 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                   ),
                 ];
-                },
-              ),
+              },
             ),
-          const SizedBox(width: 16),
         ],
       ),
       body: _isLoading
