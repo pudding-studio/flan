@@ -21,6 +21,7 @@ import 'character_view_screen.dart';
 import 'widgets/character_card.dart';
 import 'widgets/character_list_item.dart';
 import '../../widgets/common_app_bar_button.dart';
+import '../../widgets/common_settings_widgets.dart';
 
 class CharacterScreen extends StatefulWidget {
   const CharacterScreen({super.key});
@@ -489,23 +490,19 @@ class _CharacterScreenState extends State<CharacterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: CommonAppBar(
         title: _isEditMode
-          ? Text('${_selectedCharacterIds.length}개 선택됨')
-          : const Text('캐릭터'),
-        leading: _isEditMode
-          ? IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: _toggleEditMode,
-            )
-          : null,
+          ? '${_selectedCharacterIds.length}개 선택됨'
+          : '캐릭터',
+        showBackButton: false,
+        showCloseButton: _isEditMode,
         actions: [
           if (!_isEditMode)
             AppBarIconButton(
               icon: Icons.edit_outlined,
               onPressed: _toggleEditMode,
               tooltip: '편집',
-              offsetX: 16,
+              offsetX: 30,
             ),
           if (_isEditMode)
             AppBarIconButton(
@@ -515,16 +512,17 @@ class _CharacterScreenState extends State<CharacterScreen> {
               offsetX: 4,
             ),
           if (!_isEditMode)
-            AppBarPopupMenuButton<String>(
-              tooltip: '더보기',
-              offsetX: 8,
-              onSelected: (value) {
-                if (value == 'import') {
-                  _importCharacter();
-                }
-              },
-              itemBuilder: (BuildContext context) {
-              return [
+            Transform.translate(
+              offset: const Offset(20, 0),
+              child: PopupMenuButton<String>(
+                tooltip: '더보기',
+                onSelected: (value) {
+                  if (value == 'import') {
+                    _importCharacter();
+                  }
+                },
+                itemBuilder: (BuildContext context) {
+                return [
                 const PopupMenuItem<String>(
                   value: 'import',
                   child: Row(
@@ -676,7 +674,8 @@ class _CharacterScreenState extends State<CharacterScreen> {
                   ),
                 ),
               ];
-              },
+                },
+              ),
             ),
           const SizedBox(width: 16),
         ],

@@ -8,6 +8,7 @@ import '../../database/database_helper.dart';
 import '../../utils/common_dialog.dart';
 import '../../utils/token_counter.dart';
 import '../../widgets/common_app_bar_button.dart';
+import '../../widgets/common_settings_widgets.dart';
 import 'chat_room_screen.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -260,16 +261,12 @@ class _ChatScreenState extends State<ChatScreen> {
     final horizontalPadding = screenWidth * 0.05;
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: CommonAppBar(
         title: _isEditMode
-          ? Text('${_selectedChatRoomIds.length}개 선택됨')
-          : const Text('채팅'),
-        leading: _isEditMode
-          ? IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: _toggleEditMode,
-            )
-          : null,
+          ? '${_selectedChatRoomIds.length}개 선택됨'
+          : '채팅',
+        showBackButton: false,
+        showCloseButton: _isEditMode,
         actions: [
           if (!_isEditMode)
             AppBarIconButton(
@@ -286,19 +283,20 @@ class _ChatScreenState extends State<ChatScreen> {
               offsetX: 4,
             ),
           if (!_isEditMode)
-            AppBarPopupMenuButton<String>(
-              tooltip: '더보기',
-              offsetX: 8,
-              onSelected: (String value) {
-                if (value == 'date' || value == 'name' || value == 'message_count') {
-                  setState(() {
-                    _sortMethod = value;
-                    _sortChatRooms();
-                  });
-                }
-              },
-              itemBuilder: (BuildContext context) {
-                return [
+            Transform.translate(
+              offset: const Offset(8, 0),
+              child: PopupMenuButton<String>(
+                tooltip: '더보기',
+                onSelected: (String value) {
+                  if (value == 'date' || value == 'name' || value == 'message_count') {
+                    setState(() {
+                      _sortMethod = value;
+                      _sortChatRooms();
+                    });
+                  }
+                },
+                itemBuilder: (BuildContext context) {
+                  return [
                   PopupMenuItem<String>(
                     enabled: false,
                     child: Text(
@@ -350,7 +348,8 @@ class _ChatScreenState extends State<ChatScreen> {
                     ),
                   ),
                 ];
-              },
+                },
+              ),
             ),
           const SizedBox(width: 16),
         ],

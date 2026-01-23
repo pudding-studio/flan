@@ -4,6 +4,7 @@ import 'dart:convert';
 import '../../models/chat/chat_log.dart';
 import '../../database/database_helper.dart';
 import '../../utils/common_dialog.dart';
+import '../../widgets/common_settings_widgets.dart';
 
 class LogScreen extends StatefulWidget {
   const LogScreen({super.key});
@@ -137,8 +138,8 @@ class _LogScreenState extends State<LogScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('API 로그'),
+      appBar: CommonAppBar(
+        title: 'API 로그',
         actions: [
           if (_logs.isNotEmpty)
             IconButton(

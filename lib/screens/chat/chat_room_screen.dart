@@ -10,6 +10,7 @@ import '../../database/database_helper.dart';
 import '../../utils/prompt_builder.dart';
 import '../../utils/common_dialog.dart';
 import '../../services/gemini_service.dart';
+import '../../widgets/common_settings_widgets.dart';
 
 class ChatRoomScreen extends StatefulWidget {
   final int chatRoomId;
@@ -444,12 +445,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
-        ),
-        title: Row(
+      appBar: CommonAppBar(
+        title: _character!.name,
+        titleWidget: Row(
           children: [
             _buildCharacterAvatar(),
             const SizedBox(width: 12),

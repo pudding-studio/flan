@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/chat/chat_model.dart';
 import '../../providers/chat_model_provider.dart';
+import '../../widgets/common_settings_widgets.dart';
 
 class ChatModelScreen extends StatelessWidget {
   const ChatModelScreen({super.key});
@@ -9,8 +10,8 @@ class ChatModelScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('채팅 모델'),
+      appBar: const CommonAppBar(
+        title: '채팅 모델',
       ),
       body: Consumer<ChatModelSettingsProvider>(
         builder: (context, provider, child) {

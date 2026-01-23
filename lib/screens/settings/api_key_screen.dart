@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/common_dialog.dart';
 import '../../widgets/custom_text_field.dart';
+import '../../widgets/common_settings_widgets.dart';
 
 enum ApiKeyType {
   googleAiStudio('Google AI Studio');
@@ -155,8 +156,8 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('API 키 등록'),
+      appBar: CommonAppBar(
+        title: 'API 키 등록',
         actions: [
           if (_apiKeyController.text.isNotEmpty)
             IconButton(

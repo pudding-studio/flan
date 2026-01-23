@@ -12,6 +12,7 @@ import '../../models/character/persona.dart';
 import '../../models/character/start_scenario.dart';
 import '../../utils/common_dialog.dart';
 import '../../widgets/custom_text_field.dart';
+import '../../widgets/common_settings_widgets.dart';
 import 'tabs/cover_image_tab.dart';
 import 'tabs/character_book_tab.dart';
 import 'tabs/persona_tab.dart';
@@ -833,45 +834,26 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     return Stack(
       children: [
         Scaffold(
-          appBar: AppBar(
-        automaticallyImplyLeading: false,
-        titleSpacing: 0,
-        title: Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => Navigator.pop(context),
-              padding: EdgeInsets.only(left: 16),
+          appBar: CommonAppBar(
+        title: _isEditMode ? '캐릭터 수정' : '캐릭터 만들기',
+        actions: [
+          TextButton(
+            onPressed: _handleSave,
+            style: TextButton.styleFrom(
+              padding: EdgeInsets.zero,
               visualDensity: VisualDensity.compact,
-              constraints: const BoxConstraints(),
+              minimumSize: Size.zero,
+              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
             ),
-
-            const SizedBox(width: 4),
-            Expanded(
-              child: Text(
-                _isEditMode ? '캐릭터 수정' : '캐릭터 만들기',
-                overflow: TextOverflow.ellipsis,
+            child: const Text(
+              '저장',
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
               ),
             ),
-            TextButton(
-              onPressed: _handleSave,
-              style: TextButton.styleFrom(
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: const Text(
-                '저장',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-          ],
-        ),
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(UIConstants.tabBarHeight),
           child: TabBar(

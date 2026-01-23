@@ -7,6 +7,7 @@ import '../../models/prompt/prompt_item.dart';
 import '../../models/prompt/prompt_parameters.dart';
 import '../../utils/common_dialog.dart';
 import '../../widgets/custom_text_field.dart';
+import '../../widgets/common_settings_widgets.dart';
 import 'tabs/prompt_items_tab.dart';
 
 class PromptEditScreen extends StatefulWidget {
@@ -236,8 +237,8 @@ class _PromptEditScreenState extends State<PromptEditScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(_isEditing ? '프롬프트 수정' : '새 프롬프트'),
+      appBar: CommonAppBar(
+        title: _isEditing ? '프롬프트 수정' : '새 프롬프트',
         actions: [
           if (_isLoading)
             const Center(

@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../database/database_helper.dart';
 import '../../models/prompt/chat_prompt.dart';
 import '../../utils/common_dialog.dart';
+import '../../widgets/common_settings_widgets.dart';
 import 'widgets/prompt_list_item.dart';
 import 'prompt_edit_screen.dart';
 
@@ -200,8 +201,8 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
     final horizontalPadding = screenWidth * 0.05;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('채팅 프롬프트'),
+      appBar: CommonAppBar(
+        title: '채팅 프롬프트',
         actions: [
           PopupMenuButton<String>(
             icon: const Icon(Icons.more_vert),
