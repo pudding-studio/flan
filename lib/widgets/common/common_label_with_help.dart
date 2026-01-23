@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:flan/constants/ui_constants.dart';
+import '../../constants/ui_constants.dart';
 
-class LabelWithHelp extends StatelessWidget {
+class CommonLabelWithHelp extends StatelessWidget {
   final String label;
   final String helpMessage;
   final TextStyle? labelStyle;
 
-  const LabelWithHelp({
+  const CommonLabelWithHelp({
     super.key,
     required this.label,
     required this.helpMessage,

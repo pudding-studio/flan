@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../providers/theme_provider.dart';
-import '../../widgets/common_settings_widgets.dart';
+import '../../widgets/common/common_appbar.dart';
 import 'api_key_screen.dart';
 import 'chat_model_screen.dart';
 import 'chat_prompt_screen.dart';

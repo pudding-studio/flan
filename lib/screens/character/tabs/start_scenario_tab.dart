@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../constants/ui_constants.dart';
 import '../../../models/character/start_scenario.dart';
 import '../../../utils/common_dialog.dart';
-import '../../../widgets/editable_expandable_item.dart';
-import '../../../widgets/label_with_help.dart';
+import '../../../widgets/common/common_editable_expandable_item.dart';
+import '../../../widgets/common/common_label_with_help.dart';
 
 class StartScenarioTab extends StatefulWidget {
   final List<StartScenario> startScenarios;
@@ -84,7 +84,7 @@ class _StartScenarioTabState extends State<StartScenarioTab> {
         children: [
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 5),
-            child: LabelWithHelp(
+            child: CommonLabelWithHelp(
               label: '시작설정',
               helpMessage: '대화의 시작 설정 정보를 추가할 수 있습니다.',
             ),
@@ -120,7 +120,7 @@ class _StartScenarioTabState extends State<StartScenarioTab> {
   }
 
   Widget _buildStartScenarioItem(StartScenario scenario) {
-    return EditableExpandableItem(
+    return CommonEditableExpandableItem(
       key: ValueKey(scenario.id),
       icon: Icon(
         Icons.play_circle_outline,

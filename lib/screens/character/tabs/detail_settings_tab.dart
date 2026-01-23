@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../constants/ui_constants.dart';
-import '../../../widgets/label_with_help.dart';
+import '../../../widgets/common/common_label_with_help.dart';
 
 class DetailSettingsTab extends StatelessWidget {
   final TextEditingController descriptionController;
@@ -22,7 +22,7 @@ class DetailSettingsTab extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const LabelWithHelp(
+                const CommonLabelWithHelp(
                   label: '세계관 설정',
                   helpMessage: '캐릭터가 속한 세계관이나 배경 설정을 자유롭게 작성해주세요.',
                 ),

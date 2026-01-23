@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:typed_data';
-import 'tag_chip.dart';
+import 'character_tag_chip.dart';
 
 class CharacterListItem extends StatelessWidget {
   final String title;
@@ -103,7 +103,7 @@ class CharacterListItem extends StatelessWidget {
                           child: Wrap(
                             spacing: 4,
                             runSpacing: 4,
-                            children: tags.map((tag) => TagChip(label: tag)).toList(),
+                            children: tags.map((tag) => CharacterTagChip(label: tag)).toList(),
                           ),
                         ),
                       ),

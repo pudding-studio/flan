@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import '../../../constants/ui_constants.dart';
 import '../../../models/prompt/prompt_item.dart';
-import '../../../widgets/editable_expandable_item.dart';
-import '../../../widgets/label_with_help.dart';
+import '../../../widgets/common/common_editable_expandable_item.dart';
+import '../../../widgets/common/common_label_with_help.dart';
 
 class PromptItemsTab extends StatefulWidget {
   final List<PromptItem> items;
@@ -36,7 +36,7 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
         children: [
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 5),
-            child: LabelWithHelp(
+            child: CommonLabelWithHelp(
               label: '프롬프트 항목',
               helpMessage: 'AI에게 전달될 프롬프트 항목들을 추가하세요. '
                   '순서대로 전달됩니다.\n\n'
@@ -160,7 +160,7 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
               width: candidateData.isNotEmpty ? 2 : 1,
             ),
           ),
-          child: EditableExpandableItem(
+          child: CommonEditableExpandableItem(
             icon: Icon(
               _getRoleIcon(item.role),
               size: UIConstants.iconSizeMedium,

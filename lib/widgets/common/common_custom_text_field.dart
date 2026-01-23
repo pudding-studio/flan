@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class CustomTextField extends StatefulWidget {
+class CommonCustomTextField extends StatefulWidget {
   // 스타일 상수
   static const double borderRadius = 10;
   static const double borderOpacity = 0.3;
@@ -22,7 +22,7 @@ class CustomTextField extends StatefulWidget {
   final bool obscureText;
   final bool enableObscureToggle;
 
-  const CustomTextField({
+  const CommonCustomTextField({
     super.key,
     this.controller,
     this.hintText,
@@ -37,10 +37,10 @@ class CustomTextField extends StatefulWidget {
   });
 
   @override
-  State<CustomTextField> createState() => _CustomTextFieldState();
+  State<CommonCustomTextField> createState() => _CommonCustomTextFieldState();
 }
 
-class _CustomTextFieldState extends State<CustomTextField> {
+class _CommonCustomTextFieldState extends State<CommonCustomTextField> {
   int _currentLength = 0;
   late bool _isObscured;
 
@@ -74,7 +74,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
       children: [
         if (widget.label != null)
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: CustomTextField.labelHorizontalPadding),
+            padding: const EdgeInsets.symmetric(horizontal: CommonCustomTextField.labelHorizontalPadding),
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
@@ -85,7 +85,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
                   ),
                 ),
                 if (widget.helpText != null) ...[
-                  const SizedBox(width: CustomTextField.labelIconSpacing),
+                  const SizedBox(width: CommonCustomTextField.labelIconSpacing),
                   GestureDetector(
                     onTap: () {
                       showDialog(
@@ -103,7 +103,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
                     },
                     child: Icon(
                       Icons.help_outline,
-                      size: CustomTextField.helpIconSize,
+                      size: CommonCustomTextField.helpIconSize,
                       color: colorScheme.onSurfaceVariant,
                     ),
                   ),
@@ -119,7 +119,7 @@ class _CustomTextFieldState extends State<CustomTextField> {
               ],
             ),
           ),
-        if (widget.label != null) const SizedBox(height: CustomTextField.labelBottomSpacing),
+        if (widget.label != null) const SizedBox(height: CommonCustomTextField.labelBottomSpacing),
         TextFormField(
           controller: widget.controller,
           style: textTheme.bodyMedium,
@@ -130,26 +130,26 @@ class _CustomTextFieldState extends State<CustomTextField> {
               color: colorScheme.onSurfaceVariant,
             ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+              borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
               borderSide: BorderSide(
-                color: colorScheme.outline.withValues(alpha: CustomTextField.borderOpacity),
+                color: colorScheme.outline.withValues(alpha: CommonCustomTextField.borderOpacity),
               ),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+              borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
               borderSide: BorderSide(
-                color: colorScheme.outline.withValues(alpha: CustomTextField.borderOpacity),
+                color: colorScheme.outline.withValues(alpha: CommonCustomTextField.borderOpacity),
               ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+              borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
               borderSide: BorderSide(
                 color: colorScheme.primary,
               ),
             ),
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: CustomTextField.horizontalPadding,
-              vertical: CustomTextField.verticalPadding,
+              horizontal: CommonCustomTextField.horizontalPadding,
+              vertical: CommonCustomTextField.verticalPadding,
             ),
             suffixIcon: widget.enableObscureToggle
                 ? IconButton(

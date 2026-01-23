@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/chat/chat_model.dart';
 import '../../providers/chat_model_provider.dart';
-import '../../widgets/common_settings_widgets.dart';
+import '../../widgets/common/common_appbar.dart';
 
 class ChatModelScreen extends StatelessWidget {
   const ChatModelScreen({super.key});

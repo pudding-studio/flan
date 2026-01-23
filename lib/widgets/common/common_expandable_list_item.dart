@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flan/constants/ui_constants.dart';
 
-class ExpandableListItem extends StatefulWidget {
+class CommonExpandableListItem extends StatefulWidget {
   final Widget titleIcon;
   final String title;
   final Widget content;
@@ -10,7 +10,7 @@ class ExpandableListItem extends StatefulWidget {
   final bool initiallyExpanded;
   final String? subtitle;
 
-  const ExpandableListItem({
+  const CommonExpandableListItem({
     super.key,
     required this.titleIcon,
     required this.title,
@@ -22,10 +22,10 @@ class ExpandableListItem extends StatefulWidget {
   });
 
   @override
-  State<ExpandableListItem> createState() => _ExpandableListItemState();
+  State<CommonExpandableListItem> createState() => _CommonExpandableListItemState();
 }
 
-class _ExpandableListItemState extends State<ExpandableListItem> {
+class _CommonExpandableListItemState extends State<CommonExpandableListItem> {
   late bool _isExpanded;
 
   @override

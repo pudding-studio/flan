@@ -7,7 +7,7 @@ import '../../database/database_helper.dart';
 import '../../models/chat/chat_room.dart';
 import '../chat/chat_room_screen.dart';
 import 'character_edit_screen.dart';
-import 'widgets/tag_chip.dart';
+import '../../widgets/character/character_tag_chip.dart';
 
 class CharacterViewScreen extends StatefulWidget {
   final int characterId;
@@ -453,7 +453,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
-                    children: keywords.map((keyword) => TagChip(label: keyword)).toList(),
+                    children: keywords.map((keyword) => CharacterTagChip(label: keyword)).toList(),
                   ),
                   const SizedBox(height: 24),
                 ],

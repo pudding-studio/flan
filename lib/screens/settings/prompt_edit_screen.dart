@@ -6,9 +6,8 @@ import '../../models/prompt/chat_prompt.dart';
 import '../../models/prompt/prompt_item.dart';
 import '../../models/prompt/prompt_parameters.dart';
 import '../../utils/common_dialog.dart';
-import '../../widgets/custom_text_field.dart';
-import '../../widgets/common_settings_widgets.dart';
-import '../../widgets/common_app_bar_button.dart';
+import '../../widgets/common/common_custom_text_field.dart';
+import '../../widgets/common/common_appbar.dart';
 import 'tabs/prompt_items_tab.dart';
 
 class PromptEditScreen extends StatefulWidget {
@@ -251,7 +250,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
               ),
             )
           else
-            AppBarIconButton(
+            CommonAppBarIconButton(
               icon: Icons.check,
               onPressed: _savePrompt,
             ),
@@ -312,7 +311,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
     return ListView(
         padding: const EdgeInsets.all(UIConstants.spacing20),
         children: [
-          CustomTextField(
+          CommonCustomTextField(
             controller: _nameController,
             label: '프롬프트 이름',
             hintText: '예: 친근한 도우미, 전문가 모드',
@@ -330,7 +329,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: CustomTextField.labelHorizontalPadding),
+                padding: const EdgeInsets.symmetric(horizontal: CommonCustomTextField.labelHorizontalPadding),
                 child: Row(
                   children: [
                     Text(
@@ -349,7 +348,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                   ],
                 ),
               ),
-              const SizedBox(height: CustomTextField.labelBottomSpacing),
+              const SizedBox(height: CommonCustomTextField.labelBottomSpacing),
               TextField(
                 controller: _descriptionController,
                 style: Theme.of(context).textTheme.bodyMedium,
@@ -359,26 +358,26 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+                    borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
                     borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.outline.withValues(alpha: CustomTextField.borderOpacity),
+                      color: Theme.of(context).colorScheme.outline.withValues(alpha: CommonCustomTextField.borderOpacity),
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+                    borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
                     borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.outline.withValues(alpha: CustomTextField.borderOpacity),
+                      color: Theme.of(context).colorScheme.outline.withValues(alpha: CommonCustomTextField.borderOpacity),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+                    borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
                     borderSide: BorderSide(
                       color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
                   contentPadding: const EdgeInsets.symmetric(
-                    horizontal: CustomTextField.horizontalPadding,
-                    vertical: CustomTextField.verticalPadding,
+                    horizontal: CommonCustomTextField.horizontalPadding,
+                    vertical: CommonCustomTextField.verticalPadding,
                   ),
                   isDense: true,
                 ),
@@ -392,7 +391,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: CustomTextField.labelHorizontalPadding),
+                padding: const EdgeInsets.symmetric(horizontal: CommonCustomTextField.labelHorizontalPadding),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
@@ -402,7 +401,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                             fontWeight: FontWeight.w600,
                           ),
                     ),
-                    const SizedBox(width: CustomTextField.labelIconSpacing),
+                    const SizedBox(width: CommonCustomTextField.labelIconSpacing),
                     GestureDetector(
                       onTap: () {
                         showDialog(
@@ -423,39 +422,39 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                       },
                       child: Icon(
                         Icons.help_outline,
-                        size: CustomTextField.helpIconSize,
+                        size: CommonCustomTextField.helpIconSize,
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                       ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: CustomTextField.labelBottomSpacing),
+              const SizedBox(height: CommonCustomTextField.labelBottomSpacing),
               DropdownButtonFormField<String>(
                 value: _selectedModel,
                 style: Theme.of(context).textTheme.bodyMedium,
                 decoration: InputDecoration(
                   border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+                    borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
                     borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.outline.withValues(alpha: CustomTextField.borderOpacity),
+                      color: Theme.of(context).colorScheme.outline.withValues(alpha: CommonCustomTextField.borderOpacity),
                     ),
                   ),
                   enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+                    borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
                     borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.outline.withValues(alpha: CustomTextField.borderOpacity),
+                      color: Theme.of(context).colorScheme.outline.withValues(alpha: CommonCustomTextField.borderOpacity),
                     ),
                   ),
                   focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+                    borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
                     borderSide: BorderSide(
                       color: Theme.of(context).colorScheme.primary,
                     ),
                   ),
                   contentPadding: const EdgeInsets.symmetric(
-                    horizontal: CustomTextField.horizontalPadding,
-                    vertical: CustomTextField.verticalPadding,
+                    horizontal: CommonCustomTextField.horizontalPadding,
+                    vertical: CommonCustomTextField.verticalPadding,
                   ),
                   isDense: true,
                 ),
@@ -640,7 +639,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: CustomTextField.labelHorizontalPadding),
+          padding: const EdgeInsets.symmetric(horizontal: CommonCustomTextField.labelHorizontalPadding),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -665,7 +664,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                       fontWeight: FontWeight.w600,
                     ),
               ),
-              const SizedBox(width: CustomTextField.labelIconSpacing),
+              const SizedBox(width: CommonCustomTextField.labelIconSpacing),
               GestureDetector(
                 onTap: () {
                   showDialog(
@@ -683,14 +682,14 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                 },
                 child: Icon(
                   Icons.help_outline,
-                  size: CustomTextField.helpIconSize,
+                  size: CommonCustomTextField.helpIconSize,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: CustomTextField.labelBottomSpacing),
+        const SizedBox(height: CommonCustomTextField.labelBottomSpacing),
         TextFormField(
           controller: controller,
           initialValue: controller == null ? (value?.toString() ?? '') : null,
@@ -703,32 +702,32 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+              borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
               borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withValues(alpha: CustomTextField.borderOpacity),
+                color: Theme.of(context).colorScheme.outline.withValues(alpha: CommonCustomTextField.borderOpacity),
               ),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+              borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
               borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withValues(alpha: CustomTextField.borderOpacity),
+                color: Theme.of(context).colorScheme.outline.withValues(alpha: CommonCustomTextField.borderOpacity),
               ),
             ),
             disabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+              borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
               borderSide: BorderSide(
                 color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
               ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+              borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
               borderSide: BorderSide(
                 color: Theme.of(context).colorScheme.primary,
               ),
             ),
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: CustomTextField.horizontalPadding,
-              vertical: CustomTextField.verticalPadding,
+              horizontal: CommonCustomTextField.horizontalPadding,
+              vertical: CommonCustomTextField.verticalPadding,
             ),
             isDense: true,
           ),
@@ -770,7 +769,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: CustomTextField.labelHorizontalPadding),
+          padding: const EdgeInsets.symmetric(horizontal: CommonCustomTextField.labelHorizontalPadding),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -795,7 +794,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                       fontWeight: FontWeight.w600,
                     ),
               ),
-              const SizedBox(width: CustomTextField.labelIconSpacing),
+              const SizedBox(width: CommonCustomTextField.labelIconSpacing),
               GestureDetector(
                 onTap: () {
                   showDialog(
@@ -813,7 +812,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                 },
                 child: Icon(
                   Icons.help_outline,
-                  size: CustomTextField.helpIconSize,
+                  size: CommonCustomTextField.helpIconSize,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
@@ -830,7 +829,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
             ],
           ),
         ),
-        const SizedBox(height: CustomTextField.labelBottomSpacing),
+        const SizedBox(height: CommonCustomTextField.labelBottomSpacing),
         Slider(
           value: displayValue,
           min: min,
@@ -856,7 +855,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(horizontal: CustomTextField.labelHorizontalPadding),
+          padding: const EdgeInsets.symmetric(horizontal: CommonCustomTextField.labelHorizontalPadding),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
@@ -866,7 +865,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                       fontWeight: FontWeight.w600,
                     ),
               ),
-              const SizedBox(width: CustomTextField.labelIconSpacing),
+              const SizedBox(width: CommonCustomTextField.labelIconSpacing),
               GestureDetector(
                 onTap: () {
                   showDialog(
@@ -884,14 +883,14 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                 },
                 child: Icon(
                   Icons.help_outline,
-                  size: CustomTextField.helpIconSize,
+                  size: CommonCustomTextField.helpIconSize,
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: CustomTextField.labelBottomSpacing),
+        const SizedBox(height: CommonCustomTextField.labelBottomSpacing),
         TextFormField(
           controller: controller,
           initialValue: controller == null ? (value?.toString() ?? '') : null,
@@ -903,26 +902,26 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
             border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+              borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
               borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withValues(alpha: CustomTextField.borderOpacity),
+                color: Theme.of(context).colorScheme.outline.withValues(alpha: CommonCustomTextField.borderOpacity),
               ),
             ),
             enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+              borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
               borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withValues(alpha: CustomTextField.borderOpacity),
+                color: Theme.of(context).colorScheme.outline.withValues(alpha: CommonCustomTextField.borderOpacity),
               ),
             ),
             focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+              borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
               borderSide: BorderSide(
                 color: Theme.of(context).colorScheme.primary,
               ),
             ),
             contentPadding: const EdgeInsets.symmetric(
-              horizontal: CustomTextField.horizontalPadding,
-              vertical: CustomTextField.verticalPadding,
+              horizontal: CommonCustomTextField.horizontalPadding,
+              vertical: CommonCustomTextField.verticalPadding,
             ),
             isDense: true,
           ),
@@ -1024,7 +1023,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: CustomTextField.labelHorizontalPadding),
+                        padding: const EdgeInsets.symmetric(horizontal: CommonCustomTextField.labelHorizontalPadding),
                         child: Text(
                           '생각 수준',
                           style: Theme.of(context).textTheme.titleSmall?.copyWith(
@@ -1032,32 +1031,32 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                               ),
                         ),
                       ),
-                      const SizedBox(height: CustomTextField.labelBottomSpacing),
+                      const SizedBox(height: CommonCustomTextField.labelBottomSpacing),
                       DropdownButtonFormField<ThinkingLevel>(
                         value: _parameters.thinkingLevel ?? ThinkingLevel.unspecified,
                         style: Theme.of(context).textTheme.bodyMedium,
                         decoration: InputDecoration(
                           border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+                            borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
                             borderSide: BorderSide(
-                              color: Theme.of(context).colorScheme.outline.withValues(alpha: CustomTextField.borderOpacity),
+                              color: Theme.of(context).colorScheme.outline.withValues(alpha: CommonCustomTextField.borderOpacity),
                             ),
                           ),
                           enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+                            borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
                             borderSide: BorderSide(
-                              color: Theme.of(context).colorScheme.outline.withValues(alpha: CustomTextField.borderOpacity),
+                              color: Theme.of(context).colorScheme.outline.withValues(alpha: CommonCustomTextField.borderOpacity),
                             ),
                           ),
                           focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(CustomTextField.borderRadius),
+                            borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
                             borderSide: BorderSide(
                               color: Theme.of(context).colorScheme.primary,
                             ),
                           ),
                           contentPadding: const EdgeInsets.symmetric(
-                            horizontal: CustomTextField.horizontalPadding,
-                            vertical: CustomTextField.verticalPadding,
+                            horizontal: CommonCustomTextField.horizontalPadding,
+                            vertical: CommonCustomTextField.verticalPadding,
                           ),
                           isDense: true,
                         ),

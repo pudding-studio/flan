@@ -3,8 +3,8 @@ import 'package:flutter/material.dart';
 import '../../../constants/ui_constants.dart';
 import '../../../models/character/persona.dart';
 import '../../../utils/common_dialog.dart';
-import '../../../widgets/editable_expandable_item.dart';
-import '../../../widgets/label_with_help.dart';
+import '../../../widgets/common/common_editable_expandable_item.dart';
+import '../../../widgets/common/common_label_with_help.dart';
 
 class PersonaTab extends StatefulWidget {
   final List<Persona> personas;
@@ -84,7 +84,7 @@ class _PersonaTabState extends State<PersonaTab> {
         children: [
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 5),
-            child: LabelWithHelp(
+            child: CommonLabelWithHelp(
               label: '페르소나',
               helpMessage: '캐릭터의 페르소나 정보를 추가할 수 있습니다.',
             ),
@@ -120,7 +120,7 @@ class _PersonaTabState extends State<PersonaTab> {
   }
 
   Widget _buildPersonaItem(Persona persona) {
-    return EditableExpandableItem(
+    return CommonEditableExpandableItem(
       key: ValueKey(persona.id),
       icon: Icon(
         Icons.person_outline,

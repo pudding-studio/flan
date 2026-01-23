@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 
-class TagChip extends StatelessWidget {
+class CharacterTagChip extends StatelessWidget {
   final String label;
 
-  const TagChip({
+  const CharacterTagChip({
     super.key,
     required this.label,
   });

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../../widgets/common_settings_widgets.dart';
+import '../../widgets/common/common_appbar.dart';
 
 class LegalDocumentScreen extends StatelessWidget {
   final String title;

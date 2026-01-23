@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-class PromptListItem extends StatelessWidget {
+class SettingsPromptListItem extends StatelessWidget {
   final String title;
   final String description;
   final bool isSelected;
@@ -10,7 +10,7 @@ class PromptListItem extends StatelessWidget {
   final VoidCallback? onExport;
   final VoidCallback? onRadioTap;
 
-  const PromptListItem({
+  const SettingsPromptListItem({
     super.key,
     required this.title,
     required this.description,

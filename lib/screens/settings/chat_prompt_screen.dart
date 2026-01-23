@@ -7,9 +7,8 @@ import 'package:path_provider/path_provider.dart';
 import '../../database/database_helper.dart';
 import '../../models/prompt/chat_prompt.dart';
 import '../../utils/common_dialog.dart';
-import '../../widgets/common_settings_widgets.dart';
-import '../../widgets/common_app_bar_button.dart';
-import 'widgets/prompt_list_item.dart';
+import '../../widgets/common/common_appbar.dart';
+import '../../widgets/settings/settings_prompt_list_item.dart';
 import 'prompt_edit_screen.dart';
 
 class ChatPromptScreen extends StatefulWidget {
@@ -205,7 +204,7 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
       appBar: CommonAppBar(
         title: '채팅 프롬프트',
         actions: [
-          AppBarPopupMenuButton<String>(
+          CommonAppBarPopupMenuButton<String>(
             tooltip: '더보기',
             onSelected: (value) {
               if (value == 'import') {
@@ -280,7 +279,7 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
                     final prompt = _prompts[index];
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 16.0),
-                      child: PromptListItem(
+                      child: SettingsPromptListItem(
                         title: prompt.name,
                         description: prompt.description ?? '${prompt.items.length}개 항목',
                         isSelected: prompt.isSelected,

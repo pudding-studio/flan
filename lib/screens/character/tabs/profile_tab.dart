@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../../widgets/custom_text_field.dart';
+import '../../../widgets/common/common_custom_text_field.dart';
 import '../../../constants/ui_constants.dart';
 
 class ProfileTab extends StatelessWidget {
@@ -23,7 +23,7 @@ class ProfileTab extends StatelessWidget {
       child: ListView(
         padding: const EdgeInsets.all(UIConstants.spacing20),
         children: [
-          CustomTextField(
+          CommonCustomTextField(
             controller: nameController,
             label: '이름',
             helpText: '캐릭터의 고유한 이름을 입력해주세요.',
@@ -38,7 +38,7 @@ class ProfileTab extends StatelessWidget {
             },
           ),
           const SizedBox(height: UIConstants.spacing20),
-          CustomTextField(
+          CommonCustomTextField(
             controller: creatorNotesController,
             label: '한 줄 소개',
             helpText: '캐릭터를 간단히 설명하는 한 문장을 작성해주세요.',
@@ -47,7 +47,7 @@ class ProfileTab extends StatelessWidget {
             showCounter: true,
           ),
           const SizedBox(height: UIConstants.spacing20),
-          CustomTextField(
+          CommonCustomTextField(
             controller: keywordsController,
             label: '키워드',
             helpText: '캐릭터를 나타내는 키워드를 쉼표(,)로 구분하여 입력해주세요.',

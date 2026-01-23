@@ -18,10 +18,9 @@ import '../../utils/common_dialog.dart';
 import '../../utils/character_card_parser.dart';
 import 'character_edit_screen.dart';
 import 'character_view_screen.dart';
-import 'widgets/character_card.dart';
-import 'widgets/character_list_item.dart';
-import '../../widgets/common_app_bar_button.dart';
-import '../../widgets/common_settings_widgets.dart';
+import '../../widgets/character/character_card.dart';
+import '../../widgets/character/character_list_item.dart';
+import '../../widgets/common/common_appbar.dart';
 
 class CharacterScreen extends StatefulWidget {
   const CharacterScreen({super.key});
@@ -499,19 +498,19 @@ class _CharacterScreenState extends State<CharacterScreen> {
         onClosePressed: _toggleEditMode,
         actions: [
           if (!_isEditMode)
-            AppBarIconButton(
+            CommonAppBarIconButton(
               icon: Icons.edit_outlined,
               onPressed: _toggleEditMode,
               tooltip: '편집',
             ),
           if (_isEditMode)
-            AppBarIconButton(
+            CommonAppBarIconButton(
               icon: Icons.delete_outline,
               onPressed: _selectedCharacterIds.isEmpty ? null : _deleteSelectedCharacters,
               tooltip: '삭제',
             ),
           if (!_isEditMode)
-            AppBarPopupMenuButton<String>(
+            CommonAppBarPopupMenuButton<String>(
               tooltip: '더보기',
               onSelected: (value) {
                 if (value == 'import') {

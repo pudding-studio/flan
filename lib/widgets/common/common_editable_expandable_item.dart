@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import '../constants/ui_constants.dart';
+import '../../constants/ui_constants.dart';
 
 /// 이름 필드가 포함된 확장 가능한 리스트 아이템
 ///
 /// 사용처:
 /// - 로어북/페르소나/시작설정/프롬프트 항목
 /// - 로어북 폴더/표지 이미지 (인라인 편집 버전)
-class EditableExpandableItem extends StatelessWidget {
+class CommonEditableExpandableItem extends StatelessWidget {
   /// 아이템 아이콘
   final Widget icon;
 
@@ -47,7 +47,7 @@ class EditableExpandableItem extends StatelessWidget {
   /// 인라인 편집 저장 콜백
   final void Function(String)? onSaveEdit;
 
-  const EditableExpandableItem({
+  const CommonEditableExpandableItem({
     super.key,
     required this.icon,
     required this.name,

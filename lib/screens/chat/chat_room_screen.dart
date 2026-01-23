@@ -10,8 +10,7 @@ import '../../database/database_helper.dart';
 import '../../utils/prompt_builder.dart';
 import '../../utils/common_dialog.dart';
 import '../../services/gemini_service.dart';
-import '../../widgets/common_settings_widgets.dart';
-import '../../widgets/common_app_bar_button.dart';
+import '../../widgets/common/common_appbar.dart';
 
 class ChatRoomScreen extends StatefulWidget {
   final int chatRoomId;
@@ -519,7 +518,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           ],
         ),
         actions: [
-          AppBarIconButton(
+          CommonAppBarIconButton(
             icon: Icons.more_vert,
             onPressed: () {
               // TODO: 케밥 메뉴 구현

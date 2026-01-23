@@ -11,9 +11,8 @@ import '../../models/character/character_book_folder.dart';
 import '../../models/character/persona.dart';
 import '../../models/character/start_scenario.dart';
 import '../../utils/common_dialog.dart';
-import '../../widgets/custom_text_field.dart';
-import '../../widgets/common_settings_widgets.dart';
-import '../../widgets/common_app_bar_button.dart';
+import '../../widgets/common/common_custom_text_field.dart';
+import '../../widgets/common/common_appbar.dart';
 import 'tabs/cover_image_tab.dart';
 import 'tabs/character_book_tab.dart';
 import 'tabs/persona_tab.dart';
@@ -838,7 +837,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           appBar: CommonAppBar(
         title: _isEditMode ? '캐릭터 수정' : '캐릭터 만들기',
         actions: [
-          AppBarTextButton(
+          CommonAppBarTextButton(
             text: '저장',
             onPressed: _handleSave,
           ),
@@ -952,7 +951,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       child: ListView(
         padding: const EdgeInsets.all(UIConstants.spacing20),
         children: [
-          CustomTextField(
+          CommonCustomTextField(
             controller: _nameController,
             label: '이름',
             helpText: '캐릭터의 고유한 이름을 입력해주세요.',
@@ -967,7 +966,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
             },
           ),
           const SizedBox(height: UIConstants.spacing20),
-          CustomTextField(
+          CommonCustomTextField(
             controller: _creatorNotesController,
             label: '한 줄 소개',
             helpText: '캐릭터를 간단히 설명하는 한 문장을 작성해주세요.',
@@ -976,7 +975,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
             showCounter: true,
           ),
           const SizedBox(height: UIConstants.spacing20),
-          CustomTextField(
+          CommonCustomTextField(
             controller: _keywordsController,
             label: '키워드',
             helpText: '캐릭터를 나타내는 키워드를 쉼표(,)로 구분하여 입력해주세요.',
