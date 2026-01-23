@@ -336,11 +336,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   Widget _buildMessage(ChatMessage message, int index) {
     final isUser = message.role == MessageRole.user;
     final isEditing = _editingMessageId == message.id;
+    final isLastMessage = index == _messages.length - 1;
 
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -351,7 +352,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     border: OutlineInputBorder(),
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 12,
-                      vertical: 8,
+                      vertical: 0,
                     ),
                   ),
                   maxLines: null,
@@ -363,7 +364,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   message.content,
                   style: Theme.of(context).textTheme.bodyMedium,
                 ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 0),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
@@ -374,7 +375,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       onPressed: _cancelEditMessage,
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
-                      visualDensity: VisualDensity.compact,
+                      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
                     ),
                     const SizedBox(width: 0),
                     IconButton(
@@ -382,7 +383,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       onPressed: () => _saveEditMessage(message),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
-                      visualDensity: VisualDensity.compact,
+                      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
                     ),
                   ] else ...[
                     IconButton(
@@ -390,7 +391,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       onPressed: () => _startEditMessage(message),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
-                      visualDensity: VisualDensity.compact,
+                      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
                     ),
                     const SizedBox(width: 0),
                     IconButton(
@@ -398,16 +399,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       onPressed: () => _deleteMessage(message.id!),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
-                      visualDensity: VisualDensity.compact,
+                      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
                     ),
-                    if (!isUser) ...[
+                    if (isLastMessage) ...[
                       const SizedBox(width: 0),
                       IconButton(
                         icon: const Icon(Icons.refresh, size: 18),
                         onPressed: () => _regenerateMessage(message.id!),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
-                        visualDensity: VisualDensity.compact,
+                        visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
                       ),
                     ],
                   ],
@@ -416,10 +417,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             ],
           ),
         ),
-        Divider(
-          height: 1,
-          thickness: 1,
-          color: Theme.of(context).colorScheme.outlineVariant,
+        Padding(
+          padding: const EdgeInsets.only(top: 0, bottom: 8),
+          child: Divider(
+            height: 1,
+            thickness: 1,
+            color: Theme.of(context).colorScheme.outlineVariant,
+          ),
         ),
       ],
     );
@@ -499,6 +503,21 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                           hintText: _isSending ? '전송 중...' : '메시지를 입력하세요',
                           border: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(
+                              color: Theme.of(context).colorScheme.outlineVariant,
+                            ),
+                          ),
+                          enabledBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(
+                              color: Theme.of(context).colorScheme.outlineVariant,
+                            ),
+                          ),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(16),
+                            borderSide: BorderSide(
+                              color: Theme.of(context).colorScheme.outlineVariant,
+                            ),
                           ),
                           contentPadding: const EdgeInsets.symmetric(
                             horizontal: 16,
