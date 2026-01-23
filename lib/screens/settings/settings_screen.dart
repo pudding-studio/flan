@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../../providers/theme_provider.dart';
 import 'api_key_screen.dart';
 import 'chat_model_screen.dart';
@@ -15,6 +16,20 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
+  String _version = '...';
+
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    setState(() {
+      _version = packageInfo.version;
+    });
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -123,7 +138,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           _buildListTile(
             icon: Icons.info,
             title: '앱 정보',
-            subtitle: '버전 1.0.0',
+            subtitle: '버전 $_version',
             onTap: () {
               _showAboutDialog();
             },
@@ -200,7 +215,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
     showAboutDialog(
       context: context,
       applicationName: 'Flan',
-      applicationVersion: '1.0.0',
+      applicationVersion: _version,
       applicationIcon: const Icon(Icons.chat_bubble, size: 48),
       children: [
         const Text('AI 캐릭터와 대화할 수 있는 앱입니다.'),
