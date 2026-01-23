@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/common_dialog.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/common_settings_widgets.dart';
+import '../../widgets/common_app_bar_button.dart';
 
 enum ApiKeyType {
   googleAiStudio('Google AI Studio');
@@ -160,8 +161,8 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
         title: 'API 키 등록',
         actions: [
           if (_apiKeyController.text.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.delete_outline),
+            AppBarIconButton(
+              icon: Icons.delete_outline,
               onPressed: _isLoading ? null : _deleteApiKey,
             ),
         ],

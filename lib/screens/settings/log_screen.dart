@@ -5,6 +5,7 @@ import '../../models/chat/chat_log.dart';
 import '../../database/database_helper.dart';
 import '../../utils/common_dialog.dart';
 import '../../widgets/common_settings_widgets.dart';
+import '../../widgets/common_app_bar_button.dart';
 
 class LogScreen extends StatefulWidget {
   const LogScreen({super.key});
@@ -142,8 +143,8 @@ class _LogScreenState extends State<LogScreen> {
         title: 'API 로그',
         actions: [
           if (_logs.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.delete_sweep),
+            AppBarIconButton(
+              icon: Icons.delete_sweep,
               onPressed: _deleteAllLogs,
               tooltip: '전체 삭제',
             ),

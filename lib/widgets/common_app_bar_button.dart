@@ -20,8 +20,8 @@ class AppBarIconButton extends StatelessWidget {
   Widget build(BuildContext context) {
     // 편집 버튼은 30.0, 삭제 버튼은 16.0, 나머지는 20.0
     final double effectiveOffsetX = offsetX ??
-      (icon == Icons.edit_outlined ? 30.0 :
-       icon == Icons.delete_outline ? 16.0 : 20.0);
+      (icon == Icons.edit_outlined ? 14.0 :
+       icon == Icons.delete_outline ? 0.0 : 4.0);
 
     return Transform.translate(
       offset: Offset(effectiveOffsetX, 0),
@@ -32,6 +32,45 @@ class AppBarIconButton extends StatelessWidget {
         padding: EdgeInsets.zero,
         visualDensity: VisualDensity.compact,
         constraints: const BoxConstraints(),
+      ),
+    );
+  }
+}
+
+/// AppBar의 텍스트 버튼을 위한 공통 위젯
+class AppBarTextButton extends StatelessWidget {
+  final String text;
+  final VoidCallback? onPressed;
+  final double fontSize;
+  final FontWeight fontWeight;
+
+  const AppBarTextButton({
+    super.key,
+    required this.text,
+    this.onPressed,
+    this.fontSize = 6,
+    this.fontWeight = FontWeight.w600,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.translate(
+      offset: const Offset(4.0, 0),
+      child: TextButton(
+        onPressed: onPressed,
+        style: TextButton.styleFrom(
+          padding: EdgeInsets.zero,
+          visualDensity: VisualDensity.compact,
+          minimumSize: Size.zero,
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+        ),
+        child: Text(
+          text,
+          style: TextStyle(
+            fontSize: fontSize,
+            fontWeight: fontWeight,
+          ),
+        ),
       ),
     );
   }
@@ -50,7 +89,7 @@ class AppBarPopupMenuButton<T> extends StatelessWidget {
     super.key,
     this.icon = Icons.more_vert,
     this.tooltip,
-    this.offsetX = 20.0,
+    this.offsetX = 4.0,
     this.onSelected,
     required this.itemBuilder,
     this.shape,

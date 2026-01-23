@@ -8,6 +8,7 @@ import '../../models/prompt/prompt_parameters.dart';
 import '../../utils/common_dialog.dart';
 import '../../widgets/custom_text_field.dart';
 import '../../widgets/common_settings_widgets.dart';
+import '../../widgets/common_app_bar_button.dart';
 import 'tabs/prompt_items_tab.dart';
 
 class PromptEditScreen extends StatefulWidget {
@@ -241,19 +242,17 @@ class _PromptEditScreenState extends State<PromptEditScreen>
         title: _isEditing ? '프롬프트 수정' : '새 프롬프트',
         actions: [
           if (_isLoading)
-            const Center(
-              child: Padding(
-                padding: EdgeInsets.all(16.0),
-                child: SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(strokeWidth: 2),
-                ),
+            const Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: SizedBox(
+                width: 20,
+                height: 20,
+                child: CircularProgressIndicator(strokeWidth: 2),
               ),
             )
           else
-            IconButton(
-              icon: const Icon(Icons.check),
+            AppBarIconButton(
+              icon: Icons.check,
               onPressed: _savePrompt,
             ),
         ],

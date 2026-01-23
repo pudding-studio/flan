@@ -8,6 +8,7 @@ import '../../database/database_helper.dart';
 import '../../models/prompt/chat_prompt.dart';
 import '../../utils/common_dialog.dart';
 import '../../widgets/common_settings_widgets.dart';
+import '../../widgets/common_app_bar_button.dart';
 import 'widgets/prompt_list_item.dart';
 import 'prompt_edit_screen.dart';
 
@@ -204,12 +205,13 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
       appBar: CommonAppBar(
         title: '채팅 프롬프트',
         actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            offset: const Offset(0, 50),
+          AppBarPopupMenuButton<String>(
+            tooltip: '더보기',
+            onSelected: (value) {
+              if (value == 'import') {
+                _importPrompt();
+              }
+            },
             itemBuilder: (context) => [
               const PopupMenuItem<String>(
                 value: 'import',
@@ -222,11 +224,6 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
                 ),
               ),
             ],
-            onSelected: (value) {
-              if (value == 'import') {
-                _importPrompt();
-              }
-            },
           ),
         ],
       ),

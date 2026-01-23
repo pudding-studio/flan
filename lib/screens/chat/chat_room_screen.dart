@@ -11,6 +11,7 @@ import '../../utils/prompt_builder.dart';
 import '../../utils/common_dialog.dart';
 import '../../services/gemini_service.dart';
 import '../../widgets/common_settings_widgets.dart';
+import '../../widgets/common_app_bar_button.dart';
 
 class ChatRoomScreen extends StatefulWidget {
   final int chatRoomId;
@@ -455,8 +456,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.more_vert),
+          AppBarIconButton(
+            icon: Icons.more_vert,
             onPressed: () {
               // TODO: 케밥 메뉴 구현
             },
