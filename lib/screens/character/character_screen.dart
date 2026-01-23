@@ -20,6 +20,7 @@ import 'character_edit_screen.dart';
 import 'character_view_screen.dart';
 import 'widgets/character_card.dart';
 import 'widgets/character_list_item.dart';
+import '../../widgets/common_app_bar_button.dart';
 
 class CharacterScreen extends StatefulWidget {
   const CharacterScreen({super.key});
@@ -500,44 +501,29 @@ class _CharacterScreenState extends State<CharacterScreen> {
           : null,
         actions: [
           if (!_isEditMode)
-            Transform.translate(
-              offset: const Offset(8, 0),
-              child: IconButton(
-                icon: const Icon(Icons.edit_outlined),
-                onPressed: _toggleEditMode,
-                tooltip: '편집',
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                constraints: const BoxConstraints(),
-              ),
+            AppBarIconButton(
+              icon: Icons.edit_outlined,
+              onPressed: _toggleEditMode,
+              tooltip: '편집',
+              offsetX: 16,
             ),
           if (_isEditMode)
-            Transform.translate(
-              offset: const Offset(8, 0),
-              child: IconButton(
-                icon: const Icon(Icons.delete_outline),
-                onPressed: _selectedCharacterIds.isEmpty ? null : _deleteSelectedCharacters,
-                tooltip: '삭제',
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                constraints: const BoxConstraints(),
-              ),
+            AppBarIconButton(
+              icon: Icons.delete_outline,
+              onPressed: _selectedCharacterIds.isEmpty ? null : _deleteSelectedCharacters,
+              tooltip: '삭제',
+              offsetX: 4,
             ),
           if (!_isEditMode)
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert),
-            tooltip: '더보기',
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            onSelected: (value) {
-              if (value == 'import') {
-                _importCharacter();
-              }
-            },
-            itemBuilder: (BuildContext context) {
+            AppBarPopupMenuButton<String>(
+              tooltip: '더보기',
+              offsetX: 8,
+              onSelected: (value) {
+                if (value == 'import') {
+                  _importCharacter();
+                }
+              },
+              itemBuilder: (BuildContext context) {
               return [
                 const PopupMenuItem<String>(
                   value: 'import',
@@ -690,8 +676,8 @@ class _CharacterScreenState extends State<CharacterScreen> {
                   ),
                 ),
               ];
-            },
-          ),
+              },
+            ),
           const SizedBox(width: 16),
         ],
       ),

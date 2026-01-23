@@ -1,0 +1,71 @@
+import 'package:flutter/material.dart';
+
+/// AppBar의 액션 버튼들에 공통으로 적용되는 위젯
+/// Transform.translate를 사용하여 일관된 여백을 제공합니다.
+class AppBarIconButton extends StatelessWidget {
+  final IconData icon;
+  final VoidCallback? onPressed;
+  final String? tooltip;
+  final double offsetX;
+
+  const AppBarIconButton({
+    super.key,
+    required this.icon,
+    this.onPressed,
+    this.tooltip,
+    this.offsetX = 16.0,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.translate(
+      offset: Offset(offsetX, 0),
+      child: IconButton(
+        icon: Icon(icon),
+        onPressed: onPressed,
+        tooltip: tooltip,
+        padding: EdgeInsets.zero,
+        visualDensity: VisualDensity.compact,
+        constraints: const BoxConstraints(),
+      ),
+    );
+  }
+}
+
+/// AppBar의 PopupMenuButton을 위한 공통 위젯
+class AppBarPopupMenuButton<T> extends StatelessWidget {
+  final IconData icon;
+  final String? tooltip;
+  final double offsetX;
+  final void Function(T)? onSelected;
+  final List<PopupMenuEntry<T>> Function(BuildContext) itemBuilder;
+  final ShapeBorder? shape;
+
+  const AppBarPopupMenuButton({
+    super.key,
+    this.icon = Icons.more_vert,
+    this.tooltip,
+    this.offsetX = 8.0,
+    this.onSelected,
+    required this.itemBuilder,
+    this.shape,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.translate(
+      offset: Offset(offsetX, 0),
+      child: PopupMenuButton<T>(
+        icon: Icon(icon),
+        tooltip: tooltip,
+        padding: EdgeInsets.zero,
+        constraints: const BoxConstraints(),
+        shape: shape ?? RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        onSelected: onSelected,
+        itemBuilder: itemBuilder,
+      ),
+    );
+  }
+}

@@ -1,4 +1,4 @@
-package com.example.flan
+package com.flanapp.flan
 
 import android.content.ContentValues
 import android.os.Build
@@ -11,7 +11,7 @@ import java.io.File
 import java.io.FileOutputStream
 
 class MainActivity : FlutterActivity() {
-    private val CHANNEL = "com.example.flan/file_saver"
+    private val CHANNEL = "com.flanapp.flan/file_saver"
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)

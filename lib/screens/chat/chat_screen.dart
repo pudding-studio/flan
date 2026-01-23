@@ -7,6 +7,7 @@ import '../../models/character/cover_image.dart';
 import '../../database/database_helper.dart';
 import '../../utils/common_dialog.dart';
 import '../../utils/token_counter.dart';
+import '../../widgets/common_app_bar_button.dart';
 import 'chat_room_screen.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -271,38 +272,23 @@ class _ChatScreenState extends State<ChatScreen> {
           : null,
         actions: [
           if (!_isEditMode)
-            Transform.translate(
-              offset: const Offset(8, 0),
-              child: IconButton(
-                icon: const Icon(Icons.edit_outlined),
-                onPressed: _toggleEditMode,
-                tooltip: '편집',
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                constraints: const BoxConstraints(),
-              ),
+            AppBarIconButton(
+              icon: Icons.edit_outlined,
+              onPressed: _toggleEditMode,
+              tooltip: '편집',
+              offsetX: 16,
             ),
           if (_isEditMode)
-            Transform.translate(
-              offset: const Offset(8, 0),
-              child: IconButton(
-                icon: const Icon(Icons.delete_outline),
-                onPressed: _selectedChatRoomIds.isEmpty ? null : _deleteSelectedChatRooms,
-                tooltip: '삭제',
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                constraints: const BoxConstraints(),
-              ),
+            AppBarIconButton(
+              icon: Icons.delete_outline,
+              onPressed: _selectedChatRoomIds.isEmpty ? null : _deleteSelectedChatRooms,
+              tooltip: '삭제',
+              offsetX: 4,
             ),
           if (!_isEditMode)
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert),
+            AppBarPopupMenuButton<String>(
               tooltip: '더보기',
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
+              offsetX: 8,
               onSelected: (String value) {
                 if (value == 'date' || value == 'name' || value == 'message_count') {
                   setState(() {
@@ -372,7 +358,34 @@ class _ChatScreenState extends State<ChatScreen> {
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _chatRooms.isEmpty
-              ? const Center(child: Text('채팅방이 없습니다'))
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.chat_bubble_outline,
+                        size: 80,
+                        color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.3),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        '채팅방이 없습니다',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '캐릭터를 선택하여 새 채팅을 시작해보세요',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.4),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
               : ListView.separated(
                   padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16.0),
                   itemCount: _chatRooms.length,
