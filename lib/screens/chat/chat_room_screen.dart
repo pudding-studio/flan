@@ -260,6 +260,63 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
+  Future<void> _resendLastUserMessage() async {
+    if (_isSending || _messages.isEmpty) return;
+
+    final lastMessage = _messages.last;
+    if (lastMessage.role != MessageRole.user) return;
+
+    setState(() => _isSending = true);
+
+    try {
+      final systemPrompt = await _generateSystemPrompt();
+
+      ChatPrompt? chatPrompt;
+      if (_chatRoom!.selectedChatPromptId != null) {
+        chatPrompt = await _db.readChatPrompt(_chatRoom!.selectedChatPromptId!);
+      }
+
+      final aiResponse = await _geminiService.sendMessage(
+        systemPrompt: systemPrompt,
+        chatHistory: _messages.sublist(0, _messages.length - 1),
+        userMessage: lastMessage.content,
+        promptParameters: chatPrompt?.parameters,
+        chatRoomId: widget.chatRoomId,
+        characterId: _character?.id,
+      );
+
+      final assistantMessage = ChatMessage(
+        chatRoomId: widget.chatRoomId,
+        role: MessageRole.assistant,
+        content: aiResponse,
+      );
+
+      await _db.createChatMessage(assistantMessage);
+
+      setState(() {
+        _messages.add(assistantMessage);
+      });
+
+      final updatedChatRoom = _chatRoom!.copyWith(
+        updatedAt: DateTime.now(),
+      );
+      await _db.updateChatRoom(updatedChatRoom);
+
+      _scrollToBottom();
+
+    } catch (e) {
+      debugPrint('Error resending message: $e');
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('메시지 재전송 중 오류가 발생했습니다: $e')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _isSending = false);
+      }
+    }
+  }
+
   Future<void> _regenerateMessage(int messageId) async {
     if (_isSending) return;
 
@@ -405,7 +462,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       const SizedBox(width: 0),
                       IconButton(
                         icon: const Icon(Icons.refresh, size: 18),
-                        onPressed: () => _regenerateMessage(message.id!),
+                        onPressed: isUser
+                          ? _resendLastUserMessage
+                          : () => _regenerateMessage(message.id!),
                         padding: EdgeInsets.zero,
                         constraints: const BoxConstraints(),
                         visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
@@ -537,8 +596,18 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                               height: 24,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(Icons.send),
-                      onPressed: _isSending ? null : _sendMessage,
+                          : Icon(_messageController.text.trim().isEmpty &&
+                                 _messages.isNotEmpty &&
+                                 _messages.last.role == MessageRole.user
+                              ? Icons.refresh
+                              : Icons.send),
+                      onPressed: _isSending
+                        ? null
+                        : (_messageController.text.trim().isEmpty &&
+                           _messages.isNotEmpty &&
+                           _messages.last.role == MessageRole.user
+                            ? _resendLastUserMessage
+                            : _sendMessage),
                       style: IconButton.styleFrom(
                         backgroundColor: Theme.of(context).colorScheme.primary,
                         foregroundColor: Theme.of(context).colorScheme.onPrimary,
