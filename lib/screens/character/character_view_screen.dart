@@ -557,8 +557,8 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
-          child: Container(
-            color: Theme.of(context).colorScheme.surface,
+          child: Transform.translate(
+            offset: const Offset(0, -16),
             child: TabBar(
               controller: _tabController,
               tabs: const [
@@ -568,6 +568,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
               labelColor: Theme.of(context).colorScheme.primary,
               unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
               indicatorColor: Theme.of(context).colorScheme.primary,
+              indicatorSize: TabBarIndicatorSize.tab,
             ),
           ),
         ),
