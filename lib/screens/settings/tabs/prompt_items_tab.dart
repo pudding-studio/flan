@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../constants/ui_constants.dart';
 import '../../../models/prompt/prompt_item.dart';
 import '../../../widgets/common/common_editable_expandable_item.dart';
-import '../../../widgets/common/common_label_with_help.dart';
+import '../../../widgets/common/common_title_medium.dart';
 
 class PromptItemsTab extends StatefulWidget {
   final List<PromptItem> items;
@@ -36,7 +36,7 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
         children: [
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 5),
-            child: CommonLabelWithHelp(
+            child: CommonTitleMediumWithHelp(
               label: '프롬프트 항목',
               helpMessage: 'AI에게 전달될 프롬프트 항목들을 추가하세요. '
                   '순서대로 전달됩니다.\n\n'
