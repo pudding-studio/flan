@@ -9,6 +9,7 @@ import '../chat/chat_room_screen.dart';
 import 'character_edit_screen.dart';
 import '../../widgets/character/character_tag_chip.dart';
 import '../../widgets/common/common_title_medium.dart';
+import '../../widgets/common/common_appbar.dart';
 
 class CharacterViewScreen extends StatefulWidget {
   final int characterId;
@@ -244,17 +245,11 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 8),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Text(
-            persona.content!,
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
+        Text(
+          persona.content!,
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
         ),
       ],
     );
@@ -381,18 +376,15 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
         }
       },
       child: Scaffold(
-      appBar: AppBar(
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context, _hasChanges),
-        ),
+      appBar: CommonAppBar(
+        title: _character!.name,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
+          CommonAppBarIconButton(
+            icon: Icons.edit_outlined,
             onPressed: _navigateToEdit,
             tooltip: '편집',
+            offsetX: 0.0,
           ),
-          const SizedBox(width: 8),
         ],
       ),
       body: Column(
@@ -404,15 +396,6 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
                 // 표지 이미지
                 _buildCoverImage(),
                 const SizedBox(height: 24),
-
-                // 캐릭터 이름
-                Text(
-                  _character!.name,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                ),
-                const SizedBox(height: 20),
 
                 // 한 줄 소개
                 if (_character!.creatorNotes != null && _character!.creatorNotes!.isNotEmpty) ...[
