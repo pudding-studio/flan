@@ -225,7 +225,7 @@ class _LogDetailSheet extends StatefulWidget {
 
 class _LogDetailSheetState extends State<_LogDetailSheet> {
   bool _showFormattedRequest = true;
-  bool _showFormattedResponse = false;
+  bool _showFormattedResponse = true;
 
   String _formatJson(String jsonString) {
     try {

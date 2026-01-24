@@ -152,7 +152,7 @@ class GeminiService {
 
       await _saveChatLog(
         request: requestJson,
-        response: text,
+        response: response.body,
         timestamp: startTime,
         chatRoomId: chatRoomId,
         characterId: characterId,
