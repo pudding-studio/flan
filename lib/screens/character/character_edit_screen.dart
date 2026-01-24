@@ -839,8 +839,8 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           appBar: CommonAppBar(
         title: _isEditMode ? '캐릭터 수정' : '캐릭터 만들기',
         actions: [
-          CommonAppBarTextButton(
-            text: '저장',
+          CommonAppBarIconButton(
+            icon: Icons.check,
             onPressed: _handleSave,
           ),
         ],
