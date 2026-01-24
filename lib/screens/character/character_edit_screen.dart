@@ -13,6 +13,7 @@ import '../../models/character/start_scenario.dart';
 import '../../utils/common_dialog.dart';
 import '../../widgets/common/common_custom_text_field.dart';
 import '../../widgets/common/common_appbar.dart';
+import '../../widgets/common/common_title_medium.dart';
 import 'tabs/cover_image_tab.dart';
 import 'tabs/character_book_tab.dart';
 import 'tabs/persona_tab.dart';
@@ -999,12 +1000,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(
-                  '세계관 설정',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
+                const CommonTitleMedium(text: '세계관 설정'),
                 const SizedBox(width: 4),
                 GestureDetector(
                   onTap: () {

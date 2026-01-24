@@ -36,8 +36,8 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
         children: [
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 5),
-            child: CommonTitleMediumWithHelp(
-              label: '프롬프트 항목',
+            child: CommonTitleMedium(
+              text: '프롬프트 항목',
               helpMessage: 'AI에게 전달될 프롬프트 항목들을 추가하세요. '
                   '순서대로 전달됩니다.\n\n'
                   '길게 눌러 순서를 변경할 수 있습니다.',

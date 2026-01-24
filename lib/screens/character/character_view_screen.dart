@@ -8,6 +8,7 @@ import '../../models/chat/chat_room.dart';
 import '../chat/chat_room_screen.dart';
 import 'character_edit_screen.dart';
 import '../../widgets/character/character_tag_chip.dart';
+import '../../widgets/common/common_title_medium.dart';
 
 class CharacterViewScreen extends StatefulWidget {
   final int characterId;
@@ -304,12 +305,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
       children: [
         const SizedBox(height: 16),
         if (scenario.startSetting != null && scenario.startSetting!.isNotEmpty) ...[
-          Text(
-            '시작 상황',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
+          const CommonTitleMedium(text: '시작 상황'),
           const SizedBox(height: 8),
           Container(
             width: double.infinity,
@@ -326,12 +322,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
           const SizedBox(height: 16),
         ],
         if (scenario.startMessage != null && scenario.startMessage!.isNotEmpty) ...[
-          Text(
-            '시작 메시지',
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
+          const CommonTitleMedium(text: '시작 메시지'),
           const SizedBox(height: 8),
           Container(
             width: double.infinity,
@@ -425,12 +416,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
 
                 // 한 줄 소개
                 if (_character!.creatorNotes != null && _character!.creatorNotes!.isNotEmpty) ...[
-                  Text(
-                    '한 줄 소개',
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
+                  const CommonTitleMedium(text: '한 줄 소개'),
                   const SizedBox(height: 8),
                   Text(
                     _character!.creatorNotes!,
@@ -443,12 +429,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
 
                 // 키워드
                 if (keywords.isNotEmpty) ...[
-                  Text(
-                    '키워드',
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
+                  const CommonTitleMedium(text: '키워드'),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
@@ -460,12 +441,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
 
                 // 페르소나 섹션
                 if (_personas.isNotEmpty) ...[
-                  Text(
-                    '페르소나',
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
+                  const CommonTitleMedium(text: '페르소나'),
                   const SizedBox(height: 8),
                   _buildPersonaDropdown(),
                   _buildSelectedPersonaContent(),
@@ -474,12 +450,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> {
 
                 // 시작 설정 섹션
                 if (_startScenarios.isNotEmpty) ...[
-                  Text(
-                    '시작 설정',
-                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
+                  const CommonTitleMedium(text: '시작 설정'),
                   const SizedBox(height: 8),
                   _buildStartScenarioDropdown(),
                   _buildSelectedScenarioContent(),

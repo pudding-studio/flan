@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'common_title_medium.dart';
 
 class CommonCustomTextField extends StatefulWidget {
   // 스타일 상수
@@ -78,36 +79,10 @@ class _CommonCustomTextFieldState extends State<CommonCustomTextField> {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(
-                  widget.label!,
-                  style: textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                CommonTitleMedium(
+                  text: widget.label!,
+                  helpMessage: widget.helpText,
                 ),
-                if (widget.helpText != null) ...[
-                  const SizedBox(width: CommonCustomTextField.labelIconSpacing),
-                  GestureDetector(
-                    onTap: () {
-                      showDialog(
-                        context: context,
-                        builder: (context) => AlertDialog(
-                          content: Text(widget.helpText!),
-                          actions: [
-                            TextButton(
-                              onPressed: () => Navigator.pop(context),
-                              child: const Text('확인'),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                    child: Icon(
-                      Icons.help_outline,
-                      size: CommonCustomTextField.helpIconSize,
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                ],
                 const Spacer(),
                 if (widget.showCounter)
                   Text(

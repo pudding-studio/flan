@@ -8,6 +8,7 @@ import '../../models/prompt/prompt_parameters.dart';
 import '../../utils/common_dialog.dart';
 import '../../widgets/common/common_custom_text_field.dart';
 import '../../widgets/common/common_appbar.dart';
+import '../../widgets/common/common_title_medium.dart';
 import 'tabs/prompt_items_tab.dart';
 
 class PromptEditScreen extends StatefulWidget {
@@ -332,12 +333,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                 padding: const EdgeInsets.symmetric(horizontal: CommonCustomTextField.labelHorizontalPadding),
                 child: Row(
                   children: [
-                    Text(
-                      '설명',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
+                    const CommonTitleMedium(text: '설명'),
                     const SizedBox(width: 4),
                     Text(
                       '(선택)',
@@ -395,36 +391,10 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    Text(
-                      '지원 모델',
-                      style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
-                    const SizedBox(width: CommonCustomTextField.labelIconSpacing),
-                    GestureDetector(
-                      onTap: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            content: const Text(
-                              '이 프롬프트가 최적화된 AI 모델을 선택하세요.\n'
-                              'ALL을 선택하면 모든 모델에서 사용할 수 있습니다.',
-                            ),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context),
-                                child: const Text('확인'),
-                              ),
-                            ],
-                          ),
-                        );
-                      },
-                      child: Icon(
-                        Icons.help_outline,
-                        size: CommonCustomTextField.helpIconSize,
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
+                    const CommonTitleMedium(
+                      text: '지원 모델',
+                      helpMessage: '이 프롬프트가 최적화된 AI 모델을 선택하세요.\n'
+                          'ALL을 선택하면 모든 모델에서 사용할 수 있습니다.',
                     ),
                   ],
                 ),
@@ -658,33 +628,9 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              const SizedBox(width: CommonCustomTextField.labelIconSpacing),
-              GestureDetector(
-                onTap: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      content: Text(helpText),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('확인'),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-                child: Icon(
-                  Icons.help_outline,
-                  size: CommonCustomTextField.helpIconSize,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+              CommonTitleMedium(
+                text: label,
+                helpMessage: helpText,
               ),
             ],
           ),
@@ -788,33 +734,9 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                 ),
               ),
               const SizedBox(width: 8),
-              Text(
-                label,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              const SizedBox(width: CommonCustomTextField.labelIconSpacing),
-              GestureDetector(
-                onTap: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      content: Text(helpText),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('확인'),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-                child: Icon(
-                  Icons.help_outline,
-                  size: CommonCustomTextField.helpIconSize,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+              CommonTitleMedium(
+                text: label,
+                helpMessage: helpText,
               ),
               const Spacer(),
               Text(
@@ -859,33 +781,9 @@ class _PromptEditScreenState extends State<PromptEditScreen>
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Text(
-                label,
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
-              const SizedBox(width: CommonCustomTextField.labelIconSpacing),
-              GestureDetector(
-                onTap: () {
-                  showDialog(
-                    context: context,
-                    builder: (context) => AlertDialog(
-                      content: Text(helpText),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(context),
-                          child: const Text('확인'),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-                child: Icon(
-                  Icons.help_outline,
-                  size: CommonCustomTextField.helpIconSize,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+              CommonTitleMedium(
+                text: label,
+                helpMessage: helpText,
               ),
             ],
           ),
@@ -959,12 +857,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
         child: ExpansionTile(
           title: Row(
             children: [
-              Text(
-                '사고기능 구성',
-                style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
-              ),
+              const CommonTitleMedium(text: '사고기능 구성'),
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -1022,14 +915,9 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: CommonCustomTextField.labelHorizontalPadding),
-                        child: Text(
-                          '생각 수준',
-                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
-                        ),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(horizontal: CommonCustomTextField.labelHorizontalPadding),
+                        child: CommonTitleMedium(text: '생각 수준'),
                       ),
                       const SizedBox(height: CommonCustomTextField.labelBottomSpacing),
                       DropdownButtonFormField<ThinkingLevel>(

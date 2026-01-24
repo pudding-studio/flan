@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../models/chat/chat_model.dart';
 import '../../providers/chat_model_provider.dart';
 import '../../widgets/common/common_appbar.dart';
+import '../../widgets/common/common_title_medium.dart';
 
 class ChatModelScreen extends StatelessWidget {
   const ChatModelScreen({super.key});
@@ -75,13 +76,8 @@ class ChatModelScreen extends StatelessWidget {
   Widget _buildSectionHeader(BuildContext context, String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-      child: Text(
-        title,
-        style: TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w600,
-          color: Theme.of(context).colorScheme.primary,
-        ),
+      child: CommonTitleMedium(
+        text: title,
       ),
     );
   }

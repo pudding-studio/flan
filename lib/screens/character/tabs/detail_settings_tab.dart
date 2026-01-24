@@ -22,8 +22,8 @@ class DetailSettingsTab extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const CommonTitleMediumWithHelp(
-                  label: '세계관 설정',
+                const CommonTitleMedium(
+                  text: '세계관 설정',
                   helpMessage: '캐릭터가 속한 세계관이나 배경 설정을 자유롭게 작성해주세요.',
                 ),
                 const Spacer(),

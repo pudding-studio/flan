@@ -84,8 +84,8 @@ class _PersonaTabState extends State<PersonaTab> {
         children: [
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 5),
-            child: CommonTitleMediumWithHelp(
-              label: '페르소나',
+            child: CommonTitleMedium(
+              text: '페르소나',
               helpMessage: '캐릭터의 페르소나 정보를 추가할 수 있습니다.',
             ),
           ),

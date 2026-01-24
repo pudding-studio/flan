@@ -223,8 +223,8 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
         children: [
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 5),
-            child: CommonTitleMediumWithHelp(
-              label: '캐릭터북',
+            child: CommonTitleMedium(
+              text: '캐릭터북',
               helpMessage: '캐릭터의 세계관과 관련된 정보를 캐릭터북에 추가할 수 있습니다.',
             ),
           ),

@@ -3,6 +3,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/common_dialog.dart';
 import '../../widgets/common/common_custom_text_field.dart';
 import '../../widgets/common/common_appbar.dart';
+import '../../widgets/common/common_title_medium.dart';
 
 enum ApiKeyType {
   googleAiStudio('Google AI Studio');
@@ -189,12 +190,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
                                   color: Theme.of(context).colorScheme.primary,
                                 ),
                                 const SizedBox(width: 8),
-                                Text(
-                                  'API 키 정보',
-                                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                                const CommonTitleMedium(text: 'API 키 정보'),
                               ],
                             ),
                             const SizedBox(height: 12),

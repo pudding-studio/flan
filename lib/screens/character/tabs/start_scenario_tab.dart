@@ -84,8 +84,8 @@ class _StartScenarioTabState extends State<StartScenarioTab> {
         children: [
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 5),
-            child: CommonTitleMediumWithHelp(
-              label: '시작설정',
+            child: CommonTitleMedium(
+              text: '시작설정',
               helpMessage: '대화의 시작 설정 정보를 추가할 수 있습니다.',
             ),
           ),

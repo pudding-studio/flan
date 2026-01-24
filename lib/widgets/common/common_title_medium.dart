@@ -27,43 +27,34 @@ class _BaseTitleMediumText extends StatelessWidget {
 /// titleSmall 스타일의 제목 텍스트 위젯
 ///
 /// 라벨이나 섹션 제목으로 사용
+/// helpMessage가 제공되면 도움말 아이콘이 함께 표시됨
+/// 색상은 onSurface로 고정됨
 class CommonTitleMedium extends StatelessWidget {
   final String text;
+  final String? helpMessage;
+  final TextStyle? style;
 
   const CommonTitleMedium({
     super.key,
     required this.text,
+    this.helpMessage,
+    this.style,
   });
 
   @override
   Widget build(BuildContext context) {
-    return _BaseTitleMediumText(text: text);
-  }
-}
+    final effectiveStyle = style ?? Theme.of(context).textTheme.titleSmall?.copyWith(
+      fontWeight: FontWeight.w600,
+      color: Theme.of(context).colorScheme.onSurface,
+    );
 
-/// 도움말 아이콘이 있는 제목 텍스트 위젯
-///
-/// 제목 + 도움말 아이콘 조합
-class CommonTitleMediumWithHelp extends StatelessWidget {
-  final String label;
-  final String helpMessage;
-  final TextStyle? labelStyle;
+    if (helpMessage == null) {
+      return _BaseTitleMediumText(text: text, style: effectiveStyle);
+    }
 
-  const CommonTitleMediumWithHelp({
-    super.key,
-    required this.label,
-    required this.helpMessage,
-    this.labelStyle,
-  });
-
-  @override
-  Widget build(BuildContext context) {
     return Row(
       children: [
-        _BaseTitleMediumText(
-          text: label,
-          style: labelStyle,
-        ),
+        _BaseTitleMediumText(text: text, style: effectiveStyle),
         const SizedBox(width: UIConstants.spacing4),
         GestureDetector(
           onTap: () => _showHelpDialog(context),
@@ -78,10 +69,11 @@ class CommonTitleMediumWithHelp extends StatelessWidget {
   }
 
   void _showHelpDialog(BuildContext context) {
+    if (helpMessage == null) return;
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        content: Text(helpMessage),
+        content: Text(helpMessage!),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),

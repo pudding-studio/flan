@@ -146,8 +146,8 @@ class _CoverImageTabState extends State<CoverImageTab> {
         children: [
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 5),
-            child: CommonTitleMediumWithHelp(
-              label: '표지',
+            child: CommonTitleMedium(
+              text: '표지',
               helpMessage: '캐릭터의 표지 이미지를 추가할 수 있습니다.',
             ),
           ),
