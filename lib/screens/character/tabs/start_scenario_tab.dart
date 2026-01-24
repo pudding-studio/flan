@@ -4,6 +4,7 @@ import '../../../constants/ui_constants.dart';
 import '../../../models/character/start_scenario.dart';
 import '../../../utils/common_dialog.dart';
 import '../../../widgets/common/common_editable_expandable_item.dart';
+import '../../../widgets/common/common_edit_text.dart';
 import '../../../widgets/common/common_title_medium.dart';
 
 class StartScenarioTab extends StatefulWidget {
@@ -190,20 +191,10 @@ class _StartScenarioTabState extends State<StartScenarioTab> {
           ],
         ),
         const SizedBox(height: 2),
-        TextField(
+        CommonEditText(
           controller: controller,
-          decoration: InputDecoration(
-            hintText: '시작 설정 내용을 입력해주세요',
-            hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            isDense: true,
-          ),
-          style: Theme.of(context).textTheme.bodySmall,
+          hintText: '시작 설정 내용을 입력해주세요',
+          size: CommonEditTextSize.small,
           maxLines: null,
           minLines: 5,
           onChanged: (value) {
@@ -230,20 +221,10 @@ class _StartScenarioTabState extends State<StartScenarioTab> {
               ),
         ),
         const SizedBox(height: 2),
-        TextField(
+        CommonEditText(
           controller: controller,
-          decoration: InputDecoration(
-            hintText: '시작 메시지를 입력해주세요',
-            hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            isDense: true,
-          ),
-          style: Theme.of(context).textTheme.bodySmall,
+          hintText: '시작 메시지를 입력해주세요',
+          size: CommonEditTextSize.small,
           maxLines: null,
           minLines: 5,
           onChanged: (value) {

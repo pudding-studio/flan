@@ -8,6 +8,7 @@ import '../../models/prompt/prompt_parameters.dart';
 import '../../utils/common_dialog.dart';
 import '../../widgets/common/common_custom_text_field.dart';
 import '../../widgets/common/common_appbar.dart';
+import '../../widgets/common/common_edit_text.dart';
 import '../../widgets/common/common_title_medium.dart';
 import 'tabs/prompt_items_tab.dart';
 
@@ -345,38 +346,10 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                 ),
               ),
               const SizedBox(height: CommonCustomTextField.labelBottomSpacing),
-              TextField(
+              CommonEditText(
                 controller: _descriptionController,
-                style: Theme.of(context).textTheme.bodyMedium,
-                decoration: InputDecoration(
-                  hintText: '이 프롬프트에 대한 설명을 입력하세요',
-                  hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
-                    borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.outline.withValues(alpha: CommonCustomTextField.borderOpacity),
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
-                    borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.outline.withValues(alpha: CommonCustomTextField.borderOpacity),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
-                    borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: CommonCustomTextField.horizontalPadding,
-                    vertical: CommonCustomTextField.verticalPadding,
-                  ),
-                  isDense: true,
-                ),
+                hintText: '이 프롬프트에 대한 설명을 입력하세요',
+                size: CommonEditTextSize.medium,
                 maxLines: null,
                 minLines: 3,
               ),

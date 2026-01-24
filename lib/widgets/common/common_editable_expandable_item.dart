@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../constants/ui_constants.dart';
+import 'common_edit_text.dart';
 
 /// 이름 필드가 포함된 확장 가능한 리스트 아이템
 ///
@@ -176,20 +177,10 @@ class CommonEditableExpandableItem extends StatelessWidget {
                   ),
             ),
             const SizedBox(height: 6),
-            TextFormField(
-              initialValue: name,
-              decoration: InputDecoration(
-                hintText: nameHint ?? '이름',
-                hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(UIConstants.borderRadiusSmall),
-                ),
-                contentPadding: UIConstants.textFieldPaddingSmall,
-                isDense: true,
-              ),
-              style: Theme.of(context).textTheme.bodySmall,
+            CommonEditText(
+              hintText: nameHint ?? '이름',
+              size: CommonEditTextSize.small,
+              controller: TextEditingController(text: name),
               onChanged: (value) {
                 if (value.trim().isNotEmpty) {
                   onNameChanged!(value.trim());

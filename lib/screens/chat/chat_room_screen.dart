@@ -11,6 +11,7 @@ import '../../utils/prompt_builder.dart';
 import '../../utils/common_dialog.dart';
 import '../../services/gemini_service.dart';
 import '../../widgets/common/common_appbar.dart';
+import '../../widgets/common/common_edit_text.dart';
 
 class ChatRoomScreen extends StatefulWidget {
   final int chatRoomId;
@@ -402,18 +403,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               if (isEditing)
-                TextField(
+                CommonEditText(
                   controller: _editControllers[message.id],
-                  decoration: const InputDecoration(
-                    border: OutlineInputBorder(),
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 0,
-                    ),
-                  ),
+                  size: CommonEditTextSize.small,
                   maxLines: null,
-                  autofocus: true,
-                  style: Theme.of(context).textTheme.bodyMedium,
                 )
               else
                 Text(

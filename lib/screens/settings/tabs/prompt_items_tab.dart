@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../constants/ui_constants.dart';
 import '../../../models/prompt/prompt_item.dart';
 import '../../../widgets/common/common_editable_expandable_item.dart';
+import '../../../widgets/common/common_edit_text.dart';
 import '../../../widgets/common/common_title_medium.dart';
 
 class PromptItemsTab extends StatefulWidget {
@@ -236,20 +237,10 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
                       ),
                 ),
                 const SizedBox(height: 6),
-                TextField(
+                CommonEditText(
                   controller: widget.contentControllers[item.id],
-                  decoration: InputDecoration(
-                    hintText: 'AI의 역할과 응답 방식을 정의하세요',
-                    hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(UIConstants.borderRadiusSmall),
-                    ),
-                    contentPadding: UIConstants.textFieldPaddingSmall,
-                    isDense: true,
-                  ),
-                  style: Theme.of(context).textTheme.bodySmall,
+                  hintText: 'AI의 역할과 응답 방식을 정의하세요',
+                  size: CommonEditTextSize.small,
                   maxLines: null,
                   minLines: 5,
                 ),

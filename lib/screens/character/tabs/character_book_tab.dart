@@ -4,6 +4,7 @@ import '../../../constants/ui_constants.dart';
 import '../../../models/character/character_book_folder.dart';
 import '../../../utils/common_dialog.dart';
 import '../../../widgets/common/common_editable_expandable_item.dart';
+import '../../../widgets/common/common_edit_text.dart';
 import '../../../widgets/common/common_title_medium.dart';
 
 class CharacterBookTab extends StatefulWidget {
@@ -598,20 +599,10 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
               ),
         ),
         const SizedBox(height: 2),
-        TextField(
+        CommonEditText(
           controller: controller,
-          decoration: InputDecoration(
-            hintText: '쉼표로 구분하여 입력 (예: 마법, 전투)',
-            hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            isDense: true,
-          ),
-          style: Theme.of(context).textTheme.bodySmall,
+          hintText: '쉼표로 구분하여 입력 (예: 마법, 전투)',
+          size: CommonEditTextSize.small,
           onChanged: (value) {
             characterBook.keys = value
                 .split(',')
@@ -685,18 +676,11 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
               ),
         ),
         const SizedBox(height: 2),
-        TextField(
+        CommonEditText(
           controller: controller,
+          hintText: '0',
+          size: CommonEditTextSize.small,
           keyboardType: TextInputType.number,
-          decoration: InputDecoration(
-            hintText: '0',
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            isDense: true,
-          ),
-          style: Theme.of(context).textTheme.bodySmall,
           onChanged: (value) {
             final intValue = int.tryParse(value);
             if (intValue != null) {
@@ -724,20 +708,10 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
               ),
         ),
         const SizedBox(height: 2),
-        TextField(
+        CommonEditText(
           controller: controller,
-          decoration: InputDecoration(
-            hintText: '캐릭터북 내용을 입력해주세요',
-            hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            isDense: true,
-          ),
-          style: Theme.of(context).textTheme.bodySmall,
+          hintText: '캐릭터북 내용을 입력해주세요',
+          size: CommonEditTextSize.small,
           maxLines: null,
           minLines: 5,
           onChanged: (value) {

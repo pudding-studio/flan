@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../constants/ui_constants.dart';
+import '../../../widgets/common/common_edit_text.dart';
 import '../../../widgets/common/common_title_medium.dart';
 
 class DetailSettingsTab extends StatelessWidget {
@@ -43,40 +44,10 @@ class DetailSettingsTab extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Expanded(
-            child: TextFormField(
+            child: CommonEditText(
               controller: descriptionController,
-              style: Theme.of(context).textTheme.bodyMedium,
-              decoration: InputDecoration(
-                hintText: '세계관 설정을 입력해주세요.',
-                hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 10,
-                ),
-                counterText: '',
-                isDense: true,
-              ),
-              maxLines: null,
+              hintText: '세계관 설정을 입력해주세요.',
+              size: CommonEditTextSize.medium,
               expands: true,
               textAlignVertical: TextAlignVertical.top,
             ),

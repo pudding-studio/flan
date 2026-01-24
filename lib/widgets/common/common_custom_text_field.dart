@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'common_edit_text.dart';
 import 'common_title_medium.dart';
 
 class CommonCustomTextField extends StatefulWidget {
@@ -95,46 +96,17 @@ class _CommonCustomTextFieldState extends State<CommonCustomTextField> {
             ),
           ),
         if (widget.label != null) const SizedBox(height: CommonCustomTextField.labelBottomSpacing),
-        TextFormField(
+        CommonEditText(
           controller: widget.controller,
-          style: textTheme.bodyMedium,
+          hintText: widget.hintText,
+          size: CommonEditTextSize.medium,
           obscureText: _isObscured,
-          decoration: InputDecoration(
-            hintText: widget.hintText,
-            hintStyle: textTheme.bodyMedium?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
-              borderSide: BorderSide(
-                color: colorScheme.outline.withValues(alpha: CommonCustomTextField.borderOpacity),
-              ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
-              borderSide: BorderSide(
-                color: colorScheme.outline.withValues(alpha: CommonCustomTextField.borderOpacity),
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
-              borderSide: BorderSide(
-                color: colorScheme.primary,
-              ),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: CommonCustomTextField.horizontalPadding,
-              vertical: CommonCustomTextField.verticalPadding,
-            ),
-            suffixIcon: widget.enableObscureToggle
-                ? IconButton(
-                    icon: Icon(_isObscured ? Icons.visibility : Icons.visibility_off),
-                    onPressed: () => setState(() => _isObscured = !_isObscured),
-                  )
-                : null,
-            counterText: '',
-            isDense: true,
-          ),
+          suffixIcon: widget.enableObscureToggle
+              ? IconButton(
+                  icon: Icon(_isObscured ? Icons.visibility : Icons.visibility_off),
+                  onPressed: () => setState(() => _isObscured = !_isObscured),
+                )
+              : null,
           maxLength: widget.maxLength,
           maxLines: widget.maxLines,
           validator: widget.validator,

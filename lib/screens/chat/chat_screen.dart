@@ -8,6 +8,7 @@ import '../../database/database_helper.dart';
 import '../../utils/common_dialog.dart';
 import '../../utils/token_counter.dart';
 import '../../widgets/common/common_appbar.dart';
+import '../../widgets/common/common_edit_text.dart';
 import 'chat_room_screen.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -184,13 +185,10 @@ class _ChatScreenState extends State<ChatScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('채팅방 이름 수정'),
-        content: TextField(
+        content: CommonEditText(
           controller: controller,
-          decoration: const InputDecoration(
-            labelText: '채팅방 이름',
-            border: OutlineInputBorder(),
-          ),
-          autofocus: true,
+          hintText: '채팅방 이름',
+          size: CommonEditTextSize.medium,
         ),
         actions: [
           TextButton(
