@@ -555,68 +555,33 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             child: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _messageController,
-                        enabled: !_isSending,
-                        decoration: InputDecoration(
-                          hintText: _isSending ? '전송 중...' : '메시지를 입력하세요',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(
-                              color: Theme.of(context).colorScheme.outlineVariant,
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(
-                              color: Theme.of(context).colorScheme.outlineVariant,
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(16),
-                            borderSide: BorderSide(
-                              color: Theme.of(context).colorScheme.outlineVariant,
-                            ),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 5,
-                          ),
-                        ),
-                        maxLines: null,
-                        textInputAction: TextInputAction.send,
-                        onSubmitted: (_) => _sendMessage(),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      icon: _isSending
-                          ? const SizedBox(
-                              width: 24,
-                              height: 24,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Icon(_messageController.text.trim().isEmpty &&
-                                 _messages.isNotEmpty &&
-                                 _messages.last.role == MessageRole.user
-                              ? Icons.refresh
-                              : Icons.send),
-                      onPressed: _isSending
-                        ? null
-                        : (_messageController.text.trim().isEmpty &&
-                           _messages.isNotEmpty &&
-                           _messages.last.role == MessageRole.user
-                            ? _resendLastUserMessage
-                            : _sendMessage),
-                      style: IconButton.styleFrom(
-                        backgroundColor: Theme.of(context).colorScheme.primary,
-                        foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                      ),
-                    ),
-                  ],
+                child: CommonEditText(
+                  controller: _messageController,
+                  enabled: !_isSending,
+                  hintText: _isSending ? '전송 중...' : '메시지를 입력하세요',
+                  maxLines: null,
+                  textInputAction: TextInputAction.send,
+                  onFieldSubmitted: (_) => _sendMessage(),
+                  suffixIcon: IconButton(
+                    icon: _isSending
+                        ? const SizedBox(
+                            width: 24,
+                            height: 24,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : Icon(_messageController.text.trim().isEmpty &&
+                               _messages.isNotEmpty &&
+                               _messages.last.role == MessageRole.user
+                            ? Icons.refresh
+                            : Icons.send),
+                    onPressed: _isSending
+                      ? null
+                      : (_messageController.text.trim().isEmpty &&
+                         _messages.isNotEmpty &&
+                         _messages.last.role == MessageRole.user
+                          ? _resendLastUserMessage
+                          : _sendMessage),
+                  ),
                 ),
               ),
             ),

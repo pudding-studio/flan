@@ -33,6 +33,9 @@ class CommonEditText extends StatelessWidget {
   final int? maxLength;
   final bool obscureText;
   final Widget? suffixIcon;
+  final bool enabled;
+  final TextInputAction? textInputAction;
+  final ValueChanged<String>? onFieldSubmitted;
 
   static final Map<CommonEditTextSize, _EditTextConfig> _configs = {
     CommonEditTextSize.medium: _EditTextConfig(
@@ -64,6 +67,9 @@ class CommonEditText extends StatelessWidget {
     this.maxLength,
     this.obscureText = false,
     this.suffixIcon,
+    this.enabled = true,
+    this.textInputAction,
+    this.onFieldSubmitted,
   });
 
   @override
@@ -78,6 +84,9 @@ class CommonEditText extends StatelessWidget {
       controller: controller,
       style: textStyle,
       obscureText: obscureText,
+      enabled: enabled,
+      textInputAction: textInputAction,
+      onFieldSubmitted: onFieldSubmitted,
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: textStyle?.copyWith(
