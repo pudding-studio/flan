@@ -521,14 +521,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             ],
           ),
         ),
-        actions: [
-          CommonAppBarIconButton(
-            icon: Icons.more_vert,
-            onPressed: () {
-              // TODO: 케밥 메뉴 구현
-            },
-          ),
-        ],
       ),
       body: Column(
         children: [
