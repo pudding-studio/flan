@@ -4,6 +4,7 @@ import '../../../models/prompt/prompt_item.dart';
 import '../../../widgets/common/common_button.dart';
 import '../../../widgets/common/common_editable_expandable_item.dart';
 import '../../../widgets/common/common_edit_text.dart';
+import '../../../widgets/common/common_segmented_button.dart';
 import '../../../widgets/common/common_title_medium.dart';
 
 class PromptItemsTab extends StatefulWidget {
@@ -191,41 +192,18 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
                       ),
                 ),
                 const SizedBox(height: 6),
-                SizedBox(
-                  width: double.infinity,
-                  child: SegmentedButton<PromptRole>(
-                    showSelectedIcon: false,
-                    segments: PromptRole.values
-                        .map(
-                          (role) => ButtonSegment(
-                            value: role,
-                            label: Text(
-                              role.displayName,
-                              style: const TextStyle(fontSize: 13),
-                            ),
-                          ),
-                        )
-                        .toList(),
-                    selected: {item.role},
-                    onSelectionChanged: (Set<PromptRole> selected) {
-                      setState(() {
-                        final updatedItem = item.copyWith(role: selected.first);
-                        final index = widget.items.indexOf(item);
-                        widget.items[index] = updatedItem;
-                      });
-                      widget.onUpdate();
-                    },
-                    style: ButtonStyle(
-                      overlayColor: WidgetStateProperty.all(Colors.transparent),
-                      shape: WidgetStateProperty.all(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(UIConstants.borderRadiusSmall),
-                        ),
-                      ),
-                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      visualDensity: const VisualDensity(horizontal: 0, vertical: -2),
-                    ),
-                  ),
+                CommonSegmentedButton<PromptRole>(
+                  values: PromptRole.values,
+                  selected: item.role,
+                  onSelectionChanged: (selected) {
+                    setState(() {
+                      final updatedItem = item.copyWith(role: selected);
+                      final index = widget.items.indexOf(item);
+                      widget.items[index] = updatedItem;
+                    });
+                    widget.onUpdate();
+                  },
+                  labelBuilder: (role) => role.displayName,
                 ),
                 const SizedBox(height: UIConstants.spacing12),
                 Text(

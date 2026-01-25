@@ -6,6 +6,7 @@ import '../../../utils/common_dialog.dart';
 import '../../../widgets/common/common_button.dart';
 import '../../../widgets/common/common_editable_expandable_item.dart';
 import '../../../widgets/common/common_edit_text.dart';
+import '../../../widgets/common/common_segmented_button.dart';
 import '../../../widgets/common/common_title_medium.dart';
 
 class CharacterBookTab extends StatefulWidget {
@@ -27,7 +28,6 @@ class CharacterBookTab extends StatefulWidget {
 class _CharacterBookTabState extends State<CharacterBookTab> {
   static const double _characterBookItemHorizontalPadding = 10.0;
   static const double _characterBookItemVerticalPadding = 10.0;
-  static const double _segmentedButtonBorderRadius = 8.0;
 
   int? _editingFolderId;
   final Map<int, TextEditingController> _editControllers = {};
@@ -543,34 +543,16 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
               ),
         ),
         const SizedBox(height: 2),
-        SizedBox(
-          width: double.infinity,
-          child: SegmentedButton<CharacterBookActivationCondition>(
-            showSelectedIcon: false,
-            segments: CharacterBookActivationCondition.values
-                .map((condition) => ButtonSegment(
-                      value: condition,
-                      label: Text(condition.displayName, style: const TextStyle(fontSize: 13)),
-                    ))
-                .toList(),
-            selected: {characterBook.enabled},
-            onSelectionChanged: (Set<CharacterBookActivationCondition> selected) {
-              setState(() {
-                characterBook.enabled = selected.first;
-              });
-              _notifyUpdate();
-            },
-            style: ButtonStyle(
-              overlayColor: WidgetStateProperty.all(Colors.transparent),
-              shape: WidgetStateProperty.all(
-                RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(_segmentedButtonBorderRadius),
-                ),
-              ),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              visualDensity: const VisualDensity(horizontal: 0, vertical: -2),
-            ),
-          ),
+        CommonSegmentedButton<CharacterBookActivationCondition>(
+          values: CharacterBookActivationCondition.values,
+          selected: characterBook.enabled,
+          onSelectionChanged: (selected) {
+            setState(() {
+              characterBook.enabled = selected;
+            });
+            _notifyUpdate();
+          },
+          labelBuilder: (condition) => condition.displayName,
         ),
         const SizedBox(height: 12),
       ],
@@ -620,34 +602,16 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
               ),
         ),
         const SizedBox(height: 2),
-        SizedBox(
-          width: double.infinity,
-          child: SegmentedButton<CharacterBookKeyCondition>(
-            showSelectedIcon: false,
-            segments: CharacterBookKeyCondition.values
-                .map((condition) => ButtonSegment(
-                      value: condition,
-                      label: Text(condition.displayName, style: const TextStyle(fontSize: 13)),
-                    ))
-                .toList(),
-            selected: {characterBook.keyCondition},
-            onSelectionChanged: (Set<CharacterBookKeyCondition> selected) {
-              setState(() {
-                characterBook.keyCondition = selected.first;
-              });
-              _notifyUpdate();
-            },
-            style: ButtonStyle(
-              overlayColor: WidgetStateProperty.all(Colors.transparent),
-              shape: WidgetStateProperty.all(
-                RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(_segmentedButtonBorderRadius),
-                ),
-              ),
-              tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              visualDensity: const VisualDensity(horizontal: 0, vertical: -2),
-            ),
-          ),
+        CommonSegmentedButton<CharacterBookKeyCondition>(
+          values: CharacterBookKeyCondition.values,
+          selected: characterBook.keyCondition,
+          onSelectionChanged: (selected) {
+            setState(() {
+              characterBook.keyCondition = selected;
+            });
+            _notifyUpdate();
+          },
+          labelBuilder: (condition) => condition.displayName,
         ),
         const SizedBox(height: 12),
       ],
