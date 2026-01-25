@@ -12,6 +12,7 @@ import '../../utils/common_dialog.dart';
 import '../../services/gemini_service.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../../widgets/common/common_edit_text.dart';
+import '../character/character_view_screen.dart';
 
 class ChatRoomScreen extends StatefulWidget {
   final int chatRoomId;
@@ -503,12 +504,22 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     return Scaffold(
       appBar: CommonAppBar(
         title: _character!.name,
-        titleWidget: Row(
-          children: [
-            _buildCharacterAvatar(),
-            const SizedBox(width: 12),
-            Text(_character!.name),
-          ],
+        titleWidget: GestureDetector(
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => CharacterViewScreen(characterId: _character!.id!),
+              ),
+            );
+          },
+          child: Row(
+            children: [
+              _buildCharacterAvatar(),
+              const SizedBox(width: 12),
+              Text(_character!.name),
+            ],
+          ),
         ),
         actions: [
           CommonAppBarIconButton(
