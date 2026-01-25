@@ -9,6 +9,7 @@ import '../../models/chat/chat_message.dart';
 import '../chat/chat_room_screen.dart';
 import 'character_edit_screen.dart';
 import '../../widgets/character/character_tag_chip.dart';
+import '../../widgets/common/common_button.dart';
 import '../../widgets/common/common_title_medium.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../../widgets/chat/chat_room_card.dart';
@@ -647,13 +648,10 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
             padding: const EdgeInsets.all(16),
             child: SizedBox(
               width: double.infinity,
-              child: FilledButton.icon(
+              child: CommonButton.filled(
                 onPressed: _createNewChat,
-                icon: const Icon(Icons.chat_bubble_outline),
-                label: const Text('새 채팅'),
-                style: FilledButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 12),
-                ),
+                icon: Icons.chat_bubble_outline,
+                label: '새 채팅',
               ),
             ),
           ),
@@ -788,13 +786,10 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
           padding: const EdgeInsets.all(16),
           child: SizedBox(
             width: double.infinity,
-            child: FilledButton.icon(
+            child: CommonButton.filled(
               onPressed: _createNewChat,
-              icon: const Icon(Icons.chat_bubble_outline),
-              label: const Text('새 채팅'),
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
+              icon: Icons.chat_bubble_outline,
+              label: '새 채팅',
             ),
           ),
         ),

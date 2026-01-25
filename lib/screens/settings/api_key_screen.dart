@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/common_dialog.dart';
+import '../../widgets/common/common_button.dart';
 import '../../widgets/common/common_custom_text_field.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../../widgets/common/common_title_medium.dart';
@@ -224,10 +225,10 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
                       },
                     ),
                     const SizedBox(height: 24),
-                    FilledButton.icon(
+                    CommonButton.filled(
                       onPressed: _isLoading ? null : _saveApiKey,
-                      icon: const Icon(Icons.save),
-                      label: const Text('저장'),
+                      icon: Icons.save,
+                      label: '저장',
                     ),
                   ],
                 ),

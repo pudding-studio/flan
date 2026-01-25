@@ -7,6 +7,7 @@ import '../../../constants/ui_constants.dart';
 import '../../../models/character/cover_image.dart';
 import '../../../utils/common_dialog.dart';
 import '../../../utils/image_processor.dart';
+import '../../../widgets/common/common_button.dart';
 import '../../../widgets/common/common_title_medium.dart';
 
 class CoverImageTab extends StatefulWidget {
@@ -167,13 +168,10 @@ class _CoverImageTabState extends State<CoverImageTab> {
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            child: FilledButton.icon(
+            child: CommonButton.filled(
               onPressed: _addCoverImage,
-              icon: const Icon(Icons.add),
-              label: const Text('표지 이미지 추가'),
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
+              icon: Icons.add,
+              label: '표지 이미지 추가',
             ),
           ),
         ],

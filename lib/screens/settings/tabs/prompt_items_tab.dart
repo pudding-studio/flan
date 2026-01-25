@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../constants/ui_constants.dart';
 import '../../../models/prompt/prompt_item.dart';
+import '../../../widgets/common/common_button.dart';
 import '../../../widgets/common/common_editable_expandable_item.dart';
 import '../../../widgets/common/common_edit_text.dart';
 import '../../../widgets/common/common_title_medium.dart';
@@ -84,13 +85,10 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            child: FilledButton.icon(
+            child: CommonButton.filled(
               onPressed: widget.onAdd,
-              icon: const Icon(Icons.add),
-              label: const Text('항목 추가'),
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
+              icon: Icons.add,
+              label: '항목 추가',
             ),
           ),
         ],

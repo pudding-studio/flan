@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../constants/ui_constants.dart';
 import '../../../models/character/character_book_folder.dart';
 import '../../../utils/common_dialog.dart';
+import '../../../widgets/common/common_button.dart';
 import '../../../widgets/common/common_editable_expandable_item.dart';
 import '../../../widgets/common/common_edit_text.dart';
 import '../../../widgets/common/common_title_medium.dart';
@@ -280,24 +281,18 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
           Row(
             children: [
               Expanded(
-                child: OutlinedButton.icon(
+                child: CommonButton.outlined(
                   onPressed: _addFolder,
-                  icon: const Icon(Icons.folder_outlined),
-                  label: const Text('폴더 추가'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
+                  icon: Icons.folder_outlined,
+                  label: '폴더 추가',
                 ),
               ),
               const SizedBox(width: 12),
               Expanded(
-                child: FilledButton.icon(
+                child: CommonButton.filled(
                   onPressed: () => _addCharacterBook(null),
-                  icon: const Icon(Icons.add),
-                  label: const Text('캐릭터북 추가'),
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 12),
-                  ),
+                  icon: Icons.add,
+                  label: '캐릭터북 추가',
                 ),
               ),
             ],
@@ -411,14 +406,11 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
                   padding: const EdgeInsets.all(8.0),
                   child: SizedBox(
                     width: double.infinity,
-                    child: OutlinedButton.icon(
+                    child: CommonButton.outlined(
                       onPressed: () => _addCharacterBook(folder),
-                      icon: const Icon(Icons.add, size: 16),
-                      label: const Text('캐릭터북 추가', style: TextStyle(fontSize: 13)),
-                      style: OutlinedButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 8),
-                        overlayColor: Colors.transparent,
-                      ),
+                      icon: Icons.add,
+                      iconSize: 16,
+                      label: '캐릭터북 추가',
                     ),
                   ),
                 ),

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../../constants/ui_constants.dart';
 import '../../../models/character/persona.dart';
 import '../../../utils/common_dialog.dart';
+import '../../../widgets/common/common_button.dart';
 import '../../../widgets/common/common_editable_expandable_item.dart';
 import '../../../widgets/common/common_edit_text.dart';
 import '../../../widgets/common/common_title_medium.dart';
@@ -106,13 +107,10 @@ class _PersonaTabState extends State<PersonaTab> {
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            child: FilledButton.icon(
+            child: CommonButton.filled(
               onPressed: _addPersona,
-              icon: const Icon(Icons.add),
-              label: const Text('페르소나 추가'),
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
+              icon: Icons.add,
+              label: '페르소나 추가',
             ),
           ),
         ],
