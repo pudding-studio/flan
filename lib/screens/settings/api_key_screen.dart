@@ -4,6 +4,7 @@ import '../../utils/common_dialog.dart';
 import '../../widgets/common/common_button.dart';
 import '../../widgets/common/common_custom_text_field.dart';
 import '../../widgets/common/common_appbar.dart';
+import '../../widgets/common/common_filter_chip.dart';
 import '../../widgets/common/common_title_medium.dart';
 
 enum ApiKeyType {
@@ -125,26 +126,13 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
   }
 
   Widget _buildApiKeyTypeSelector(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
-
     return Wrap(
       spacing: 8,
       runSpacing: 8,
       children: ApiKeyType.values.map((type) {
-        final isSelected = _selectedApiKeyType == type;
-        return FilterChip(
-          selected: isSelected,
-          label: Text(type.displayName),
-          labelStyle: textTheme.bodyMedium?.copyWith(
-            color: isSelected ? colorScheme.onSecondaryContainer : colorScheme.onSurface,
-          ),
-          backgroundColor: colorScheme.surface,
-          selectedColor: colorScheme.secondaryContainer,
-          checkmarkColor: colorScheme.onSecondaryContainer,
-          side: BorderSide(
-            color: isSelected ? colorScheme.secondary : colorScheme.outline.withValues(alpha: 0.3),
-          ),
+        return CommonFilterChip(
+          label: type.displayName,
+          selected: _selectedApiKeyType == type,
           onSelected: (selected) {
             if (selected) {
               setState(() => _selectedApiKeyType = type);
