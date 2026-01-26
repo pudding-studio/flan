@@ -15,6 +15,7 @@ import '../../widgets/common/common_appbar.dart';
 import '../../widgets/chat/chat_room_card.dart';
 import '../../utils/common_dialog.dart';
 import '../../utils/token_counter.dart';
+import '../../widgets/common/common_dropdown_button.dart';
 import '../../widgets/common/common_edit_text.dart';
 
 class CharacterViewScreen extends StatefulWidget {
@@ -370,35 +371,16 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
   }
 
   Widget _buildPersonaDropdown() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-        ),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: DropdownButton<int>(
-        value: _selectedPersonaIndex,
-        isExpanded: true,
-        underline: const SizedBox(),
-        isDense: true,
-        items: List.generate(
-          _personas.length,
-          (index) => DropdownMenuItem<int>(
-            value: index,
-            child: Text(
-              _personas[index].name,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ),
-        ),
-        onChanged: (int? newValue) {
-          setState(() {
-            _selectedPersonaIndex = newValue;
-          });
-        },
-      ),
+    return CommonDropdownButton<int>(
+      value: _selectedPersonaIndex,
+      items: List.generate(_personas.length, (index) => index),
+      onChanged: (int? newValue) {
+        setState(() {
+          _selectedPersonaIndex = newValue;
+        });
+      },
+      labelBuilder: (index) => _personas[index].name,
+      size: CommonDropdownButtonSize.small,
     );
   }
 
@@ -428,35 +410,16 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
   }
 
   Widget _buildStartScenarioDropdown() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      decoration: BoxDecoration(
-        border: Border.all(
-          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-        ),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: DropdownButton<int>(
-        value: _selectedScenarioIndex,
-        isExpanded: true,
-        underline: const SizedBox(),
-        isDense: true,
-        items: List.generate(
-          _startScenarios.length,
-          (index) => DropdownMenuItem<int>(
-            value: index,
-            child: Text(
-              _startScenarios[index].name,
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-          ),
-        ),
-        onChanged: (int? newValue) {
-          setState(() {
-            _selectedScenarioIndex = newValue;
-          });
-        },
-      ),
+    return CommonDropdownButton<int>(
+      value: _selectedScenarioIndex,
+      items: List.generate(_startScenarios.length, (index) => index),
+      onChanged: (int? newValue) {
+        setState(() {
+          _selectedScenarioIndex = newValue;
+        });
+      },
+      labelBuilder: (index) => _startScenarios[index].name,
+      size: CommonDropdownButtonSize.small,
     );
   }
 

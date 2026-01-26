@@ -8,6 +8,7 @@ import '../../models/prompt/prompt_parameters.dart';
 import '../../utils/common_dialog.dart';
 import '../../widgets/common/common_custom_text_field.dart';
 import '../../widgets/common/common_appbar.dart';
+import '../../widgets/common/common_dropdown_button.dart';
 import '../../widgets/common/common_edit_text.dart';
 import '../../widgets/common/common_title_medium.dart';
 import 'tabs/prompt_items_tab.dart';
@@ -373,45 +374,15 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                 ),
               ),
               const SizedBox(height: CommonCustomTextField.labelBottomSpacing),
-              DropdownButtonFormField<String>(
+              CommonDropdownButton<String>(
                 value: _selectedModel,
-                style: Theme.of(context).textTheme.bodyMedium,
-                decoration: InputDecoration(
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
-                    borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.outline.withValues(alpha: CommonCustomTextField.borderOpacity),
-                    ),
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
-                    borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.outline.withValues(alpha: CommonCustomTextField.borderOpacity),
-                    ),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
-                    borderSide: BorderSide(
-                      color: Theme.of(context).colorScheme.primary,
-                    ),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: CommonCustomTextField.horizontalPadding,
-                    vertical: CommonCustomTextField.verticalPadding,
-                  ),
-                  isDense: true,
-                ),
-                items: AIModelConstants.supportedModels.map((model) {
-                  return DropdownMenuItem(
-                    value: model,
-                    child: Text(AIModelConstants.getDisplayName(model)),
-                  );
-                }).toList(),
+                items: AIModelConstants.supportedModels,
                 onChanged: (value) {
                   if (value != null) {
                     setState(() => _selectedModel = value);
                   }
                 },
+                labelBuilder: (model) => AIModelConstants.getDisplayName(model),
               ),
             ],
           ),
@@ -893,40 +864,9 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                         child: CommonTitleMedium(text: '생각 수준'),
                       ),
                       const SizedBox(height: CommonCustomTextField.labelBottomSpacing),
-                      DropdownButtonFormField<ThinkingLevel>(
+                      CommonDropdownButton<ThinkingLevel>(
                         value: _parameters.thinkingLevel ?? ThinkingLevel.unspecified,
-                        style: Theme.of(context).textTheme.bodyMedium,
-                        decoration: InputDecoration(
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
-                            borderSide: BorderSide(
-                              color: Theme.of(context).colorScheme.outline.withValues(alpha: CommonCustomTextField.borderOpacity),
-                            ),
-                          ),
-                          enabledBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
-                            borderSide: BorderSide(
-                              color: Theme.of(context).colorScheme.outline.withValues(alpha: CommonCustomTextField.borderOpacity),
-                            ),
-                          ),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
-                            borderSide: BorderSide(
-                              color: Theme.of(context).colorScheme.primary,
-                            ),
-                          ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: CommonCustomTextField.horizontalPadding,
-                            vertical: CommonCustomTextField.verticalPadding,
-                          ),
-                          isDense: true,
-                        ),
-                        items: ThinkingLevel.values.map((level) {
-                          return DropdownMenuItem(
-                            value: level,
-                            child: Text(level.displayName),
-                          );
-                        }).toList(),
+                        items: ThinkingLevel.values,
                         onChanged: (value) {
                           if (value != null) {
                             setState(() {
@@ -934,6 +874,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                             });
                           }
                         },
+                        labelBuilder: (level) => level.displayName,
                       ),
                     ],
                   ),
