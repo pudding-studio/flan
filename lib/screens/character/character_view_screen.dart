@@ -380,7 +380,6 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
         });
       },
       labelBuilder: (index) => _personas[index].name,
-      size: CommonDropdownButtonSize.small,
     );
   }
 
@@ -419,7 +418,6 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
         });
       },
       labelBuilder: (index) => _startScenarios[index].name,
-      size: CommonDropdownButtonSize.small,
     );
   }
 

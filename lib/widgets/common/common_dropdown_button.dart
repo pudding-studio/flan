@@ -1,3 +1,4 @@
+import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:flutter/material.dart';
 
 enum CommonDropdownButtonSize {
@@ -8,16 +9,16 @@ enum CommonDropdownButtonSize {
 class _DropdownConfig {
   final double borderRadius;
   final EdgeInsets contentPadding;
-  final bool isDense;
   final TextStyle? Function(BuildContext) getTextStyle;
   final double menuMaxHeight;
+  final double itemHeight;
 
   const _DropdownConfig({
     required this.borderRadius,
     required this.contentPadding,
-    required this.isDense,
     required this.getTextStyle,
     required this.menuMaxHeight,
+    required this.itemHeight,
   });
 }
 
@@ -30,22 +31,20 @@ class CommonDropdownButton<T> extends StatelessWidget {
   final CommonDropdownButtonSize size;
   final bool isExpanded;
 
-  
-
   static final Map<CommonDropdownButtonSize, _DropdownConfig> _configs = {
     CommonDropdownButtonSize.medium: _DropdownConfig(
       borderRadius: 10.0,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 18.0, vertical: 6.0),
-      isDense: true,
+      contentPadding: const EdgeInsets.only(right: 8, top: 10, bottom: 10),
       getTextStyle: (context) => Theme.of(context).textTheme.bodyMedium,
       menuMaxHeight: 300.0,
+      itemHeight: 32.0,
     ),
     CommonDropdownButtonSize.small: _DropdownConfig(
       borderRadius: 8.0,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 4.0),
-      isDense: true,
+      contentPadding: const EdgeInsets.only(right: 8, top: 8, bottom: 8),
       getTextStyle: (context) => Theme.of(context).textTheme.bodySmall,
       menuMaxHeight: 250.0,
+      itemHeight: 32.0,
     ),
   };
 
@@ -66,22 +65,22 @@ class CommonDropdownButton<T> extends StatelessWidget {
     final borderRadius = config.borderRadius;
     final contentPadding = config.contentPadding;
     final textStyle = config.getTextStyle(context);
-    final isDense = config.isDense;
     final menuMaxHeight = config.menuMaxHeight;
+    final itemHeight = config.itemHeight;
 
-    return DropdownButtonFormField<T>(
+    return DropdownButtonFormField2<T>(
       value: value,
-      itemHeight: null,
       isExpanded: isExpanded,
-      isDense: isDense,
       style: textStyle,
-      menuMaxHeight: menuMaxHeight,
-      borderRadius: BorderRadius.circular(borderRadius),
+      hint: hintText != null
+          ? Text(
+              hintText!,
+              style: textStyle?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            )
+          : null,
       decoration: InputDecoration(
-        hintText: hintText,
-        hintStyle: textStyle?.copyWith(
-          color: Theme.of(context).colorScheme.onSurfaceVariant,
-        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(borderRadius),
           borderSide: BorderSide(
@@ -101,18 +100,25 @@ class CommonDropdownButton<T> extends StatelessWidget {
           ),
         ),
         contentPadding: contentPadding,
-        isDense: isDense,
+        isDense: true,
+      ),
+      dropdownStyleData: DropdownStyleData(
+        maxHeight: menuMaxHeight,
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(borderRadius),
+          color: Theme.of(context).colorScheme.surface,
+        ),
+      ),
+      menuItemStyleData: MenuItemStyleData(
+        height: itemHeight,
+        padding: const EdgeInsets.symmetric(horizontal: 16.0),
       ),
       items: items.map((item) {
         return DropdownMenuItem<T>(
           value: item,
-          child: Container(
-            height: 40.0, // 48보다 작은 원하는 높이 설정
-            alignment: Alignment.centerLeft,
-            child: Text(
-              labelBuilder(item),
-              style: textStyle,
-            ),
+          child: Text(
+            labelBuilder(item),
+            style: textStyle,
           ),
         );
       }).toList(),
