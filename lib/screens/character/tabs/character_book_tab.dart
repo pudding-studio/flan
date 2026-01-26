@@ -54,9 +54,11 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
     return _fieldControllers[key]!;
   }
 
-  void _notifyUpdate() {
+  void _notifyUpdate({bool rebuildUI = true}) {
     widget.onUpdate();
-    setState(() {});
+    if (rebuildUI) {
+      setState(() {});
+    }
   }
 
   void _addFolder() {
@@ -577,13 +579,13 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
           controller: controller,
           hintText: '쉼표로 구분하여 입력 (예: 마법, 전투)',
           size: CommonEditTextSize.small,
-          onChanged: (value) {
+          onFocusLost: (value) {
             characterBook.keys = value
                 .split(',')
                 .map((e) => e.trim())
                 .where((e) => e.isNotEmpty)
                 .toList();
-            _notifyUpdate();
+            _notifyUpdate(rebuildUI: false);
           },
         ),
         const SizedBox(height: 12),
@@ -637,11 +639,11 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
           hintText: '0',
           size: CommonEditTextSize.small,
           keyboardType: TextInputType.number,
-          onChanged: (value) {
+          onFocusLost: (value) {
             final intValue = int.tryParse(value);
             if (intValue != null) {
               characterBook.insertionOrder = intValue;
-              _notifyUpdate();
+              _notifyUpdate(rebuildUI: false);
             }
           },
         ),
@@ -670,9 +672,9 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
           size: CommonEditTextSize.small,
           maxLines: null,
           minLines: 5,
-          onChanged: (value) {
+          onFocusLost: (value) {
             characterBook.content = value;
-            _notifyUpdate();
+            _notifyUpdate(rebuildUI: false);
           },
         ),
       ],

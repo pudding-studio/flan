@@ -43,9 +43,11 @@ class _StartScenarioTabState extends State<StartScenarioTab> {
     return _fieldControllers[key]!;
   }
 
-  void _notifyUpdate() {
+  void _notifyUpdate({bool rebuildUI = true}) {
     widget.onUpdate();
-    setState(() {});
+    if (rebuildUI) {
+      setState(() {});
+    }
   }
 
   void _addStartScenario() {
@@ -195,9 +197,9 @@ class _StartScenarioTabState extends State<StartScenarioTab> {
           size: CommonEditTextSize.small,
           maxLines: null,
           minLines: 5,
-          onChanged: (value) {
+          onFocusLost: (value) {
             scenario.startSetting = value;
-            _notifyUpdate();
+            _notifyUpdate(rebuildUI: false);
           },
         ),
         const SizedBox(height: 12),
@@ -225,9 +227,9 @@ class _StartScenarioTabState extends State<StartScenarioTab> {
           size: CommonEditTextSize.small,
           maxLines: null,
           minLines: 5,
-          onChanged: (value) {
+          onFocusLost: (value) {
             scenario.startMessage = value;
-            _notifyUpdate();
+            _notifyUpdate(rebuildUI: false);
           },
         ),
       ],

@@ -43,9 +43,11 @@ class _PersonaTabState extends State<PersonaTab> {
     return _fieldControllers[key]!;
   }
 
-  void _notifyUpdate() {
+  void _notifyUpdate({bool rebuildUI = true}) {
     widget.onUpdate();
-    setState(() {});
+    if (rebuildUI) {
+      setState(() {});
+    }
   }
 
   void _addPersona() {
@@ -163,9 +165,9 @@ class _PersonaTabState extends State<PersonaTab> {
           size: CommonEditTextSize.small,
           maxLines: null,
           minLines: 5,
-          onChanged: (value) {
+          onFocusLost: (value) {
             persona.content = value;
-            _notifyUpdate();
+            _notifyUpdate(rebuildUI: false);
           },
         ),
       ],

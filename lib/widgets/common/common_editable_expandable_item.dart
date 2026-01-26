@@ -7,7 +7,7 @@ import 'common_edit_text.dart';
 /// 사용처:
 /// - 로어북/페르소나/시작설정/프롬프트 항목
 /// - 로어북 폴더/표지 이미지 (인라인 편집 버전)
-class CommonEditableExpandableItem extends StatelessWidget {
+class CommonEditableExpandableItem extends StatefulWidget {
   /// 아이템 아이콘
   final Widget icon;
 
@@ -66,6 +66,36 @@ class CommonEditableExpandableItem extends StatelessWidget {
   });
 
   @override
+  State<CommonEditableExpandableItem> createState() => _CommonEditableExpandableItemState();
+}
+
+class _CommonEditableExpandableItemState extends State<CommonEditableExpandableItem> {
+  TextEditingController? _nameController;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.showNameField && widget.onNameChanged != null) {
+      _nameController = TextEditingController(text: widget.name);
+    }
+  }
+
+  @override
+  void didUpdateWidget(CommonEditableExpandableItem oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // 외부에서 name이 변경되었고, 현재 컨트롤러 값과 다른 경우에만 업데이트
+    if (_nameController != null && widget.name != oldWidget.name && widget.name != _nameController!.text) {
+      _nameController!.text = widget.name;
+    }
+  }
+
+  @override
+  void dispose() {
+    _nameController?.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
@@ -85,7 +115,7 @@ class CommonEditableExpandableItem extends StatelessWidget {
       child: Column(
         children: [
           _buildHeader(context),
-          if (isExpanded) ...[
+          if (widget.isExpanded) ...[
             const Divider(height: 1),
             _buildExpandedContent(context),
           ],
@@ -96,30 +126,30 @@ class CommonEditableExpandableItem extends StatelessWidget {
 
   Widget _buildHeader(BuildContext context) {
     return InkWell(
-      onTap: onToggleExpanded,
+      onTap: widget.onToggleExpanded,
       overlayColor: WidgetStateProperty.all(Colors.transparent),
       borderRadius: BorderRadius.circular(UIConstants.borderRadiusMedium),
       child: Container(
         padding: UIConstants.containerPadding,
         child: Row(
           children: [
-            icon,
+            widget.icon,
             const SizedBox(width: UIConstants.spacing12),
             Expanded(
               child: _buildTitle(context),
             ),
-            if (!showNameField && onToggleEdit != null)
+            if (!widget.showNameField && widget.onToggleEdit != null)
               GestureDetector(
-                onTap: onToggleEdit,
+                onTap: widget.onToggleEdit,
                 child: Icon(
-                  isEditing ? Icons.check : Icons.edit_outlined,
+                  widget.isEditing ? Icons.check : Icons.edit_outlined,
                   size: UIConstants.iconSizeMedium,
                 ),
               ),
-            if (!showNameField && onToggleEdit != null)
+            if (!widget.showNameField && widget.onToggleEdit != null)
               const SizedBox(width: UIConstants.spacing12),
             GestureDetector(
-              onTap: onDelete,
+              onTap: widget.onDelete,
               child: const Icon(
                 Icons.delete_outline,
                 size: UIConstants.iconSizeMedium,
@@ -127,7 +157,7 @@ class CommonEditableExpandableItem extends StatelessWidget {
             ),
             const SizedBox(width: UIConstants.spacing12),
             Icon(
-              isExpanded ? Icons.expand_less : Icons.expand_more,
+              widget.isExpanded ? Icons.expand_less : Icons.expand_more,
               size: UIConstants.iconSizeLarge,
             ),
           ],
@@ -138,9 +168,9 @@ class CommonEditableExpandableItem extends StatelessWidget {
 
   Widget _buildTitle(BuildContext context) {
     // 인라인 편집 모드
-    if (!showNameField && isEditing && editController != null && onSaveEdit != null) {
+    if (!widget.showNameField && widget.isEditing && widget.editController != null && widget.onSaveEdit != null) {
       return TextField(
-        controller: editController,
+        controller: widget.editController,
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               fontWeight: FontWeight.w600,
             ),
@@ -150,15 +180,15 @@ class CommonEditableExpandableItem extends StatelessWidget {
           contentPadding: EdgeInsets.zero,
         ),
         autofocus: true,
-        onSubmitted: onSaveEdit,
+        onSubmitted: widget.onSaveEdit,
       );
     }
 
     // 일반 텍스트
     return Text(
-      name,
+      widget.name,
       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontWeight: showNameField ? null : FontWeight.w600,
+            fontWeight: widget.showNameField ? null : FontWeight.w600,
           ),
     );
   }
@@ -169,7 +199,7 @@ class CommonEditableExpandableItem extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (showNameField && onNameChanged != null) ...[
+          if (widget.showNameField && widget.onNameChanged != null && _nameController != null) ...[
             Text(
               '이름',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -178,18 +208,18 @@ class CommonEditableExpandableItem extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             CommonEditText(
-              hintText: nameHint ?? '이름',
+              hintText: widget.nameHint ?? '이름',
               size: CommonEditTextSize.small,
-              controller: TextEditingController(text: name),
-              onChanged: (value) {
+              controller: _nameController,
+              onFocusLost: (value) {
                 if (value.trim().isNotEmpty) {
-                  onNameChanged!(value.trim());
+                  widget.onNameChanged!(value.trim());
                 }
               },
             ),
             const SizedBox(height: UIConstants.spacing12),
           ],
-          content,
+          widget.content,
         ],
       ),
     );

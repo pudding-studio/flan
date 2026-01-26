@@ -19,13 +19,16 @@ class _EditTextConfig {
   });
 }
 
-class CommonEditText extends StatelessWidget {
+class CommonEditText extends StatefulWidget {
   final TextEditingController? controller;
   final String? hintText;
   final int? maxLines;
   final int? minLines;
   final CommonEditTextSize size;
+  /// 실시간으로 값이 변경될 때마다 호출 (입력 중에도 호출됨)
   final ValueChanged<String>? onChanged;
+  /// 포커스를 잃었을 때 호출 (자동저장에 사용)
+  final ValueChanged<String>? onFocusLost;
   final TextInputType? keyboardType;
   final bool expands;
   final TextAlignVertical? textAlignVertical;
@@ -60,6 +63,7 @@ class CommonEditText extends StatelessWidget {
     this.minLines,
     this.size = CommonEditTextSize.medium,
     this.onChanged,
+    this.onFocusLost,
     this.keyboardType,
     this.expands = false,
     this.textAlignVertical,
@@ -73,22 +77,50 @@ class CommonEditText extends StatelessWidget {
   });
 
   @override
+  State<CommonEditText> createState() => _CommonEditTextState();
+}
+
+class _CommonEditTextState extends State<CommonEditText> {
+  late FocusNode _focusNode;
+
+  @override
+  void initState() {
+    super.initState();
+    _focusNode = FocusNode();
+    _focusNode.addListener(_onFocusChange);
+  }
+
+  @override
+  void dispose() {
+    _focusNode.removeListener(_onFocusChange);
+    _focusNode.dispose();
+    super.dispose();
+  }
+
+  void _onFocusChange() {
+    if (!_focusNode.hasFocus && widget.onFocusLost != null && widget.controller != null) {
+      widget.onFocusLost!(widget.controller!.text);
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final config = _configs[size]!;
+    final config = CommonEditText._configs[widget.size]!;
     final borderRadius = config.borderRadius;
     final contentPadding = config.contentPadding;
     final textStyle = config.getTextStyle(context);
     final isDense = config.isDense;
 
     return TextFormField(
-      controller: controller,
+      controller: widget.controller,
+      focusNode: _focusNode,
       style: textStyle,
-      obscureText: obscureText,
-      enabled: enabled,
-      textInputAction: textInputAction,
-      onFieldSubmitted: onFieldSubmitted,
+      obscureText: widget.obscureText,
+      enabled: widget.enabled,
+      textInputAction: widget.textInputAction,
+      onFieldSubmitted: widget.onFieldSubmitted,
       decoration: InputDecoration(
-        hintText: hintText,
+        hintText: widget.hintText,
         hintStyle: textStyle?.copyWith(
           color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
@@ -111,18 +143,18 @@ class CommonEditText extends StatelessWidget {
           ),
         ),
         contentPadding: contentPadding,
-        suffixIcon: suffixIcon,
+        suffixIcon: widget.suffixIcon,
         counterText: '',
         isDense: isDense,
       ),
-      maxLength: maxLength,
-      maxLines: maxLines,
-      minLines: minLines,
-      expands: expands,
-      textAlignVertical: textAlignVertical,
-      keyboardType: keyboardType,
-      validator: validator,
-      onChanged: onChanged,
+      maxLength: widget.maxLength,
+      maxLines: widget.maxLines,
+      minLines: widget.minLines,
+      expands: widget.expands,
+      textAlignVertical: widget.textAlignVertical,
+      keyboardType: widget.keyboardType,
+      validator: widget.validator,
+      onChanged: widget.onChanged,
     );
   }
 }
