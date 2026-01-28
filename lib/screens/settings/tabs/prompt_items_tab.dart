@@ -14,7 +14,7 @@ class PromptItemsTab extends StatefulWidget {
   final Map<int, TextEditingController> contentControllers;
   final VoidCallback onUpdate;
   final void Function(PromptItem) onDelete;
-  final void Function(PromptItem dragged, PromptItem target) onMove;
+  final void Function(PromptItem dragged, int targetIndex) onMove;
   final VoidCallback onAdd;
 
   const PromptItemsTab({
@@ -36,9 +36,12 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
   final GlobalKey _listKey = GlobalKey();
   Timer? _autoScrollTimer;
   double _currentScrollDelta = 0;
+  bool _isDragging = false;
+  int? _hoveredSlotIndex;
 
   static const double _edgeThreshold = 80.0;
   static const double _scrollSpeed = 8.0;
+  static const double _dropSlotHeight = 24.0;
 
   @override
   void dispose() {
@@ -140,9 +143,13 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
                 : ListView.builder(
                     key: _listKey,
                     controller: _scrollController,
-                    itemCount: widget.items.length,
+                    itemCount: widget.items.length * 2 + 1,
                     itemBuilder: (context, index) {
-                      return _buildItemCard(widget.items[index], index);
+                      if (index.isEven) {
+                        return _buildDropSlot(index ~/ 2);
+                      } else {
+                        return _buildItemCard(widget.items[index ~/ 2], index ~/ 2);
+                      }
                     },
                   ),
           ),
@@ -160,11 +167,76 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
     );
   }
 
+  Widget _buildDropSlot(int slotIndex) {
+    final isHovered = _hoveredSlotIndex == slotIndex;
+
+    return DragTarget<PromptItem>(
+      onWillAcceptWithDetails: (details) {
+        final draggedIndex = widget.items.indexOf(details.data);
+        if (draggedIndex == slotIndex || draggedIndex == slotIndex - 1) {
+          return false;
+        }
+        return true;
+      },
+      onAcceptWithDetails: (details) {
+        setState(() {
+          _hoveredSlotIndex = null;
+        });
+        widget.onMove(details.data, slotIndex);
+      },
+      onMove: (details) {
+        final draggedIndex = widget.items.indexOf(details.data);
+        if (draggedIndex != slotIndex && draggedIndex != slotIndex - 1) {
+          setState(() {
+            _hoveredSlotIndex = slotIndex;
+          });
+        }
+      },
+      onLeave: (_) {
+        setState(() {
+          _hoveredSlotIndex = null;
+        });
+      },
+      builder: (context, candidateData, rejectedData) {
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          height: _isDragging ? _dropSlotHeight : 0,
+          margin: EdgeInsets.symmetric(
+            vertical: _isDragging ? 2 : 0,
+          ),
+          child: isHovered
+              ? Center(
+                  child: Container(
+                    height: 3,
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.primary,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                )
+              : null,
+        );
+      },
+    );
+  }
+
   Widget _buildItemCard(PromptItem item, int index) {
     return LongPressDraggable<PromptItem>(
       data: item,
+      onDragStarted: () {
+        setState(() {
+          _isDragging = true;
+        });
+      },
       onDragUpdate: _handleDragUpdate,
-      onDragEnd: (_) => _stopAutoScroll(),
+      onDragEnd: (_) {
+        _stopAutoScroll();
+        setState(() {
+          _isDragging = false;
+          _hoveredSlotIndex = null;
+        });
+      },
       feedback: Material(
         elevation: 4,
         borderRadius: BorderRadius.circular(10),
@@ -205,91 +277,69 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
   }
 
   Widget _buildItemContent(PromptItem item) {
-    return DragTarget<PromptItem>(
-      onWillAcceptWithDetails: (details) => details.data != item,
-      onAcceptWithDetails: (details) => widget.onMove(details.data, item),
-      builder: (context, candidateData, rejectedData) {
-        return Container(
-          key: ValueKey(item.id),
-          margin: const EdgeInsets.only(bottom: 8),
-          decoration: BoxDecoration(
-            color: Theme.of(context)
-                .colorScheme
-                .surfaceContainerHighest
-                .withValues(alpha: UIConstants.opacityMedium),
-            borderRadius: BorderRadius.circular(UIConstants.borderRadiusMedium),
-            border: Border.all(
-              color: candidateData.isNotEmpty
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.outline.withValues(alpha: UIConstants.opacityLow),
-              width: candidateData.isNotEmpty ? 2 : 1,
+    return CommonEditableExpandableItem(
+      key: ValueKey(item.id),
+        icon: Icon(
+          _getRoleIcon(item.role),
+          size: UIConstants.iconSizeMedium,
+          color: Theme.of(context).colorScheme.secondary,
+        ),
+        name: item.name ?? item.role.displayName,
+        isExpanded: item.isExpanded,
+        onToggleExpanded: () {
+          setState(() {
+            item.isExpanded = !item.isExpanded;
+          });
+          widget.onUpdate();
+        },
+        onDelete: () => widget.onDelete(item),
+        nameHint: '항목 이름 (예: 시스템 설정, 캐릭터 성격)',
+        onNameChanged: (value) {
+          final updatedItem = item.copyWith(name: value.isEmpty ? null : value);
+          final index = widget.items.indexOf(item);
+          widget.items[index] = updatedItem;
+          widget.onUpdate();
+        },
+        content: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              '역할',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
-          ),
-          child: CommonEditableExpandableItem(
-            icon: Icon(
-              _getRoleIcon(item.role),
-              size: UIConstants.iconSizeMedium,
-              color: Theme.of(context).colorScheme.secondary,
+            const SizedBox(height: 6),
+            CommonSegmentedButton<PromptRole>(
+              values: PromptRole.values,
+              selected: item.role,
+              onSelectionChanged: (selected) {
+                setState(() {
+                  final updatedItem = item.copyWith(role: selected);
+                  final index = widget.items.indexOf(item);
+                  widget.items[index] = updatedItem;
+                });
+                widget.onUpdate();
+              },
+              labelBuilder: (role) => role.displayName,
             ),
-            name: item.name ?? item.role.displayName,
-            isExpanded: item.isExpanded,
-            onToggleExpanded: () {
-              setState(() {
-                item.isExpanded = !item.isExpanded;
-              });
-              widget.onUpdate();
-            },
-            onDelete: () => widget.onDelete(item),
-            nameHint: '항목 이름 (예: 시스템 설정, 캐릭터 성격)',
-            onNameChanged: (value) {
-              final updatedItem = item.copyWith(name: value.isEmpty ? null : value);
-              final index = widget.items.indexOf(item);
-              widget.items[index] = updatedItem;
-              widget.onUpdate();
-            },
-            content: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '역할',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(height: 6),
-                CommonSegmentedButton<PromptRole>(
-                  values: PromptRole.values,
-                  selected: item.role,
-                  onSelectionChanged: (selected) {
-                    setState(() {
-                      final updatedItem = item.copyWith(role: selected);
-                      final index = widget.items.indexOf(item);
-                      widget.items[index] = updatedItem;
-                    });
-                    widget.onUpdate();
-                  },
-                  labelBuilder: (role) => role.displayName,
-                ),
-                const SizedBox(height: UIConstants.spacing12),
-                Text(
-                  '프롬프트',
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-                const SizedBox(height: 6),
-                CommonEditText(
-                  controller: widget.contentControllers[item.id],
-                  hintText: 'AI의 역할과 응답 방식을 정의하세요',
-                  size: CommonEditTextSize.small,
-                  maxLines: null,
-                  minLines: 5,
-                ),
-              ],
+            const SizedBox(height: UIConstants.spacing12),
+            Text(
+              '프롬프트',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
-          ),
-        );
-      },
+            const SizedBox(height: 6),
+            CommonEditText(
+              controller: widget.contentControllers[item.id],
+              hintText: 'AI의 역할과 응답 방식을 정의하세요',
+              size: CommonEditTextSize.small,
+              maxLines: null,
+              minLines: 5,
+            ),
+          ],
+        ),
     );
   }
 

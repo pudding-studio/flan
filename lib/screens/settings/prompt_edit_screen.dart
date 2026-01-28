@@ -221,14 +221,14 @@ class _PromptEditScreenState extends State<PromptEditScreen>
     }
   }
 
-  void _moveItem(PromptItem draggedItem, PromptItem targetItem) {
+  void _moveItem(PromptItem draggedItem, int targetIndex) {
     setState(() {
       final draggedIndex = _items.indexOf(draggedItem);
-      final targetIndex = _items.indexOf(targetItem);
 
-      if (draggedIndex != -1 && targetIndex != -1) {
+      if (draggedIndex != -1) {
         _items.removeAt(draggedIndex);
-        _items.insert(targetIndex, draggedItem);
+        final insertIndex = draggedIndex < targetIndex ? targetIndex - 1 : targetIndex;
+        _items.insert(insertIndex, draggedItem);
 
         for (int i = 0; i < _items.length; i++) {
           _items[i] = _items[i].copyWith(order: i);
