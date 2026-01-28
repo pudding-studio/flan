@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import '../../../constants/ui_constants.dart';
 import '../../../models/prompt/prompt_item.dart';
@@ -30,6 +32,65 @@ class PromptItemsTab extends StatefulWidget {
 }
 
 class _PromptItemsTabState extends State<PromptItemsTab> {
+  final ScrollController _scrollController = ScrollController();
+  final GlobalKey _listKey = GlobalKey();
+  Timer? _autoScrollTimer;
+  double _currentScrollDelta = 0;
+
+  static const double _edgeThreshold = 80.0;
+  static const double _scrollSpeed = 8.0;
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    _autoScrollTimer?.cancel();
+    super.dispose();
+  }
+
+  void _handleDragUpdate(DragUpdateDetails details) {
+    final listBox = _listKey.currentContext?.findRenderObject() as RenderBox?;
+    if (listBox == null) return;
+
+    final localPosition = listBox.globalToLocal(details.globalPosition);
+    final listHeight = listBox.size.height;
+
+    if (localPosition.dy < _edgeThreshold) {
+      _currentScrollDelta = -_scrollSpeed;
+      _startAutoScroll();
+    } else if (localPosition.dy > listHeight - _edgeThreshold) {
+      _currentScrollDelta = _scrollSpeed;
+      _startAutoScroll();
+    } else {
+      _stopAutoScroll();
+    }
+  }
+
+  void _startAutoScroll() {
+    if (_autoScrollTimer != null) return;
+
+    _autoScrollTimer = Timer.periodic(const Duration(milliseconds: 16), (_) {
+      if (!_scrollController.hasClients) return;
+
+      final currentOffset = _scrollController.offset;
+      final maxScroll = _scrollController.position.maxScrollExtent;
+      final minScroll = _scrollController.position.minScrollExtent;
+
+      if ((_currentScrollDelta < 0 && currentOffset <= minScroll) ||
+          (_currentScrollDelta > 0 && currentOffset >= maxScroll)) {
+        return;
+      }
+
+      final newOffset = (currentOffset + _currentScrollDelta).clamp(minScroll, maxScroll);
+      _scrollController.jumpTo(newOffset);
+    });
+  }
+
+  void _stopAutoScroll() {
+    _autoScrollTimer?.cancel();
+    _autoScrollTimer = null;
+    _currentScrollDelta = 0;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -77,6 +138,8 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
                     ),
                   )
                 : ListView.builder(
+                    key: _listKey,
+                    controller: _scrollController,
                     itemCount: widget.items.length,
                     itemBuilder: (context, index) {
                       return _buildItemCard(widget.items[index], index);
@@ -100,6 +163,8 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
   Widget _buildItemCard(PromptItem item, int index) {
     return LongPressDraggable<PromptItem>(
       data: item,
+      onDragUpdate: _handleDragUpdate,
+      onDragEnd: (_) => _stopAutoScroll(),
       feedback: Material(
         elevation: 4,
         borderRadius: BorderRadius.circular(10),
