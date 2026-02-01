@@ -127,18 +127,34 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   Future<void> _sendMessage() async {
     final text = _messageController.text.trim();
-    if (text.isEmpty || _chatRoom == null || _isSending) return;
+    if (_chatRoom == null || _isSending) return;
 
     setState(() => _isSending = true);
 
     try {
-      final userMessage = ChatMessage(
-        chatRoomId: widget.chatRoomId,
-        role: MessageRole.user,
-        content: text,
-      );
+      String combinedUserMessage;
 
-      await _db.createChatMessage(userMessage);
+      if (_messages.isNotEmpty && _messages.last.role == MessageRole.user) {
+        final lastUserMessage = _messages.last;
+        combinedUserMessage = text.isEmpty
+            ? lastUserMessage.content
+            : '${lastUserMessage.content}\n$text';
+
+        final updatedUserMessage = lastUserMessage.copyWith(
+          content: combinedUserMessage,
+          editedAt: DateTime.now(),
+        );
+        await _db.updateChatMessage(updatedUserMessage);
+      } else {
+        combinedUserMessage = text;
+        final userMessage = ChatMessage(
+          chatRoomId: widget.chatRoomId,
+          role: MessageRole.user,
+          content: text,
+        );
+        await _db.createChatMessage(userMessage);
+      }
+
       _messageController.clear();
 
       final systemPrompt = await _generateSystemPrompt();
@@ -150,8 +166,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       final aiResponse = await _geminiService.sendMessage(
         systemPrompt: systemPrompt,
-        chatHistory: _messages,
-        userMessage: text,
+        chatHistory: _messages.where((m) => m.id != _messages.last.id || _messages.last.role != MessageRole.user).toList(),
+        userMessage: combinedUserMessage,
         promptParameters: chatPrompt?.parameters,
         chatRoomId: widget.chatRoomId,
         characterId: _character?.id,
@@ -561,18 +577,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                             height: 24,
                             child: CircularProgressIndicator(strokeWidth: 2),
                           )
-                        : Icon(_messageController.text.trim().isEmpty &&
-                               _messages.isNotEmpty &&
-                               _messages.last.role == MessageRole.user
-                            ? Icons.refresh
-                            : Icons.send),
-                    onPressed: _isSending
-                      ? null
-                      : (_messageController.text.trim().isEmpty &&
-                         _messages.isNotEmpty &&
-                         _messages.last.role == MessageRole.user
-                          ? _resendLastUserMessage
-                          : _sendMessage),
+                        : const Icon(Icons.send),
+                    onPressed: _isSending ? null : _sendMessage,
                   ),
                 ),
               ),
