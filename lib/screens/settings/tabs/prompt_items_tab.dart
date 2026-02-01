@@ -1,30 +1,40 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import '../../../constants/ui_constants.dart';
 import '../../../models/prompt/prompt_item.dart';
-import '../../../widgets/common/common_button.dart';
+import '../../../models/prompt/prompt_item_folder.dart';
+import '../../../widgets/common/common_draggable_folder_list.dart';
 import '../../../widgets/common/common_editable_expandable_item.dart';
 import '../../../widgets/common/common_edit_text.dart';
+import '../../../widgets/common/common_empty_state.dart';
 import '../../../widgets/common/common_segmented_button.dart';
 import '../../../widgets/common/common_title_medium.dart';
 
 class PromptItemsTab extends StatefulWidget {
-  final List<PromptItem> items;
+  final List<PromptItemFolder> folders;
+  final List<PromptItem> standaloneItems;
   final Map<int, TextEditingController> contentControllers;
   final VoidCallback onUpdate;
-  final void Function(PromptItem) onDelete;
-  final void Function(PromptItem dragged, int targetIndex) onMove;
-  final VoidCallback onAdd;
+  final void Function(PromptItem) onDeleteItem;
+  final void Function(PromptItemFolder) onDeleteFolder;
+  final void Function(PromptItemFolder? folder) onAddItem;
+  final VoidCallback onAddFolder;
+  final void Function(PromptItem item, PromptItemFolder? fromFolder, PromptItemFolder toFolder) onMoveItemToFolder;
+  final void Function(PromptItem item, PromptItemFolder fromFolder) onMoveItemOutOfFolder;
+  final void Function(PromptItem item, int targetIndex, PromptItemFolder? folder) onReorderItem;
 
   const PromptItemsTab({
     super.key,
-    required this.items,
+    required this.folders,
+    required this.standaloneItems,
     required this.contentControllers,
     required this.onUpdate,
-    required this.onDelete,
-    required this.onMove,
-    required this.onAdd,
+    required this.onDeleteItem,
+    required this.onDeleteFolder,
+    required this.onAddItem,
+    required this.onAddFolder,
+    required this.onMoveItemToFolder,
+    required this.onMoveItemOutOfFolder,
+    required this.onReorderItem,
   });
 
   @override
@@ -32,68 +42,6 @@ class PromptItemsTab extends StatefulWidget {
 }
 
 class _PromptItemsTabState extends State<PromptItemsTab> {
-  final ScrollController _scrollController = ScrollController();
-  final GlobalKey _listKey = GlobalKey();
-  Timer? _autoScrollTimer;
-  double _currentScrollDelta = 0;
-  bool _isDragging = false;
-  int? _hoveredSlotIndex;
-
-  static const double _edgeThreshold = 80.0;
-  static const double _scrollSpeed = 8.0;
-  static const double _dropSlotHeight = 24.0;
-
-  @override
-  void dispose() {
-    _scrollController.dispose();
-    _autoScrollTimer?.cancel();
-    super.dispose();
-  }
-
-  void _handleDragUpdate(DragUpdateDetails details) {
-    final listBox = _listKey.currentContext?.findRenderObject() as RenderBox?;
-    if (listBox == null) return;
-
-    final localPosition = listBox.globalToLocal(details.globalPosition);
-    final listHeight = listBox.size.height;
-
-    if (localPosition.dy < _edgeThreshold) {
-      _currentScrollDelta = -_scrollSpeed;
-      _startAutoScroll();
-    } else if (localPosition.dy > listHeight - _edgeThreshold) {
-      _currentScrollDelta = _scrollSpeed;
-      _startAutoScroll();
-    } else {
-      _stopAutoScroll();
-    }
-  }
-
-  void _startAutoScroll() {
-    if (_autoScrollTimer != null) return;
-
-    _autoScrollTimer = Timer.periodic(const Duration(milliseconds: 16), (_) {
-      if (!_scrollController.hasClients) return;
-
-      final currentOffset = _scrollController.offset;
-      final maxScroll = _scrollController.position.maxScrollExtent;
-      final minScroll = _scrollController.position.minScrollExtent;
-
-      if ((_currentScrollDelta < 0 && currentOffset <= minScroll) ||
-          (_currentScrollDelta > 0 && currentOffset >= maxScroll)) {
-        return;
-      }
-
-      final newOffset = (currentOffset + _currentScrollDelta).clamp(minScroll, maxScroll);
-      _scrollController.jumpTo(newOffset);
-    });
-  }
-
-  void _stopAutoScroll() {
-    _autoScrollTimer?.cancel();
-    _autoScrollTimer = null;
-    _currentScrollDelta = 0;
-  }
-
   @override
   Widget build(BuildContext context) {
     return Padding(
@@ -112,54 +60,39 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
           ),
           const SizedBox(height: 8),
           Expanded(
-            child: widget.items.isEmpty
-                ? Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.chat_bubble_outline,
-                          size: 64,
-                          color: Theme.of(context)
-                              .textTheme
-                              .bodySmall
-                              ?.color
-                              ?.withValues(alpha: 0.3),
-                        ),
-                        const SizedBox(height: 16),
-                        Text(
-                          '프롬프트 항목이 없습니다',
-                          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.color
-                                    ?.withValues(alpha: 0.5),
-                              ),
-                        ),
-                      ],
-                    ),
-                  )
-                : ListView.builder(
-                    key: _listKey,
-                    controller: _scrollController,
-                    itemCount: widget.items.length * 2 + 1,
-                    itemBuilder: (context, index) {
-                      if (index.isEven) {
-                        return _buildDropSlot(index ~/ 2);
-                      } else {
-                        return _buildItemCard(widget.items[index ~/ 2], index ~/ 2);
-                      }
-                    },
-                  ),
-          ),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: CommonButton.filled(
-              onPressed: widget.onAdd,
-              icon: Icons.add,
-              label: '항목 추가',
+            child: CommonDraggableFolderList<PromptItemFolder, PromptItem>(
+              folders: widget.folders,
+              standaloneItems: widget.standaloneItems,
+              getFolderId: (folder) => folder.id,
+              getFolderName: (folder) => folder.name,
+              getFolderExpanded: (folder) => folder.isExpanded,
+              getFolderItems: (folder) => folder.items,
+              getItemId: (item) => item.id,
+              itemContentBuilder: _buildItemCard,
+              getItemIcon: (item) => _getRoleIcon(item.role),
+              getItemName: (item) => item.name ?? item.role.displayName,
+              onReorderItem: widget.onReorderItem,
+              onMoveItemToFolder: widget.onMoveItemToFolder,
+              onMoveItemOutOfFolder: widget.onMoveItemOutOfFolder,
+              onFolderNameChanged: (folder, newName) {
+                folder.name = newName;
+                widget.onUpdate();
+              },
+              onFolderExpandedChanged: (folder, isExpanded) {
+                setState(() {
+                  folder.isExpanded = isExpanded;
+                });
+              },
+              onDeleteFolder: widget.onDeleteFolder,
+              onAddItem: widget.onAddItem,
+              onAddFolder: widget.onAddFolder,
+              itemTypeKey: 'promptItem',
+              addItemLabel: '항목 추가',
+              addFolderLabel: '폴더 추가',
+              emptyWidget: const CommonEmptyState(
+                icon: Icons.chat_bubble_outline,
+                message: '프롬프트 항목이 없습니다',
+              ),
             ),
           ),
         ],
@@ -167,179 +100,86 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
     );
   }
 
-  Widget _buildDropSlot(int slotIndex) {
-    final isHovered = _hoveredSlotIndex == slotIndex;
-
-    return DragTarget<PromptItem>(
-      onWillAcceptWithDetails: (details) {
-        final draggedIndex = widget.items.indexOf(details.data);
-        if (draggedIndex == slotIndex || draggedIndex == slotIndex - 1) {
-          return false;
-        }
-        return true;
-      },
-      onAcceptWithDetails: (details) {
-        setState(() {
-          _hoveredSlotIndex = null;
-        });
-        widget.onMove(details.data, slotIndex);
-      },
-      onMove: (details) {
-        final draggedIndex = widget.items.indexOf(details.data);
-        if (draggedIndex != slotIndex && draggedIndex != slotIndex - 1) {
-          setState(() {
-            _hoveredSlotIndex = slotIndex;
-          });
-        }
-      },
-      onLeave: (_) {
-        setState(() {
-          _hoveredSlotIndex = null;
-        });
-      },
-      builder: (context, candidateData, rejectedData) {
-        return AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
-          height: _isDragging ? _dropSlotHeight : 0,
-          margin: EdgeInsets.symmetric(
-            vertical: _isDragging ? 2 : 0,
-          ),
-          child: isHovered
-              ? Center(
-                  child: Container(
-                    height: 3,
-                    margin: const EdgeInsets.symmetric(horizontal: 8),
-                    decoration: BoxDecoration(
-                      color: Theme.of(context).colorScheme.primary,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                )
-              : null,
-        );
-      },
-    );
-  }
-
-  Widget _buildItemCard(PromptItem item, int index) {
-    return LongPressDraggable<PromptItem>(
-      data: item,
-      onDragStarted: () {
-        setState(() {
-          _isDragging = true;
-        });
-      },
-      onDragUpdate: _handleDragUpdate,
-      onDragEnd: (_) {
-        _stopAutoScroll();
-        setState(() {
-          _isDragging = false;
-          _hoveredSlotIndex = null;
-        });
-      },
-      feedback: Material(
-        elevation: 4,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          width: 300,
-          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                _getRoleIcon(item.role),
-                size: 18,
-                color: Theme.of(context).colorScheme.secondary,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  item.name ?? item.role.displayName,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      childWhenDragging: Opacity(
-        opacity: 0.3,
-        child: _buildItemContent(item),
-      ),
-      child: _buildItemContent(item),
-    );
-  }
-
-  Widget _buildItemContent(PromptItem item) {
+  Widget _buildItemCard(BuildContext context, PromptItem item, PromptItemFolder? folder) {
     return CommonEditableExpandableItem(
       key: ValueKey(item.id),
-        icon: Icon(
-          _getRoleIcon(item.role),
-          size: UIConstants.iconSizeMedium,
-          color: Theme.of(context).colorScheme.secondary,
-        ),
-        name: item.name ?? item.role.displayName,
-        isExpanded: item.isExpanded,
-        onToggleExpanded: () {
-          setState(() {
-            item.isExpanded = !item.isExpanded;
-          });
-          widget.onUpdate();
-        },
-        onDelete: () => widget.onDelete(item),
-        nameHint: '항목 이름 (예: 시스템 설정, 캐릭터 성격)',
-        onNameChanged: (value) {
-          final updatedItem = item.copyWith(name: value.isEmpty ? null : value);
-          final index = widget.items.indexOf(item);
-          widget.items[index] = updatedItem;
-          widget.onUpdate();
-        },
-        content: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              '역할',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-            const SizedBox(height: 6),
-            CommonSegmentedButton<PromptRole>(
-              values: PromptRole.values,
-              selected: item.role,
-              onSelectionChanged: (selected) {
-                setState(() {
-                  final updatedItem = item.copyWith(role: selected);
-                  final index = widget.items.indexOf(item);
-                  widget.items[index] = updatedItem;
-                });
-                widget.onUpdate();
-              },
-              labelBuilder: (role) => role.displayName,
-            ),
-            const SizedBox(height: UIConstants.spacing12),
-            Text(
-              '프롬프트',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-            ),
-            const SizedBox(height: 6),
-            CommonEditText(
-              controller: widget.contentControllers[item.id],
-              hintText: 'AI의 역할과 응답 방식을 정의하세요',
-              size: CommonEditTextSize.small,
-              maxLines: null,
-              minLines: 5,
-            ),
-          ],
-        ),
+      icon: Icon(
+        _getRoleIcon(item.role),
+        size: UIConstants.iconSizeMedium,
+        color: Theme.of(context).colorScheme.secondary,
+      ),
+      name: item.name ?? item.role.displayName,
+      isExpanded: item.isExpanded,
+      onToggleExpanded: () {
+        setState(() {
+          item.isExpanded = !item.isExpanded;
+        });
+        widget.onUpdate();
+      },
+      onDelete: () => widget.onDeleteItem(item),
+      nameHint: '항목 이름 (예: 시스템 설정, 캐릭터 성격)',
+      onNameChanged: (value) {
+        if (folder != null) {
+          final index = folder.items.indexOf(item);
+          if (index != -1) {
+            folder.items[index] = item.copyWith(name: value.isEmpty ? null : value);
+          }
+        } else {
+          final index = widget.standaloneItems.indexOf(item);
+          if (index != -1) {
+            widget.standaloneItems[index] = item.copyWith(name: value.isEmpty ? null : value);
+          }
+        }
+        widget.onUpdate();
+      },
+      content: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            '역할',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 6),
+          CommonSegmentedButton<PromptRole>(
+            values: PromptRole.values,
+            selected: item.role,
+            onSelectionChanged: (selected) {
+              setState(() {
+                if (folder != null) {
+                  final index = folder.items.indexOf(item);
+                  if (index != -1) {
+                    folder.items[index] = item.copyWith(role: selected);
+                  }
+                } else {
+                  final index = widget.standaloneItems.indexOf(item);
+                  if (index != -1) {
+                    widget.standaloneItems[index] = item.copyWith(role: selected);
+                  }
+                }
+              });
+              widget.onUpdate();
+            },
+            labelBuilder: (role) => role.displayName,
+          ),
+          const SizedBox(height: UIConstants.spacing12),
+          Text(
+            '프롬프트',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 6),
+          CommonEditText(
+            controller: widget.contentControllers[item.id],
+            hintText: 'AI의 역할과 응답 방식을 정의하세요',
+            size: CommonEditTextSize.small,
+            maxLines: null,
+            minLines: 5,
+          ),
+        ],
+      ),
     );
   }
 

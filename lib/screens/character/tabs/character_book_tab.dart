@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import '../../../constants/ui_constants.dart';
 import '../../../models/character/character_book_folder.dart';
 import '../../../utils/common_dialog.dart';
-import '../../../widgets/common/common_button.dart';
+import '../../../widgets/common/common_draggable_folder_list.dart';
 import '../../../widgets/common/common_editable_expandable_item.dart';
 import '../../../widgets/common/common_edit_text.dart';
+import '../../../widgets/common/common_empty_state.dart';
+import '../../../widgets/common/common_field_section.dart';
 import '../../../widgets/common/common_segmented_button.dart';
 import '../../../widgets/common/common_title_medium.dart';
 
@@ -26,11 +28,6 @@ class CharacterBookTab extends StatefulWidget {
 }
 
 class _CharacterBookTabState extends State<CharacterBookTab> {
-  static const double _characterBookItemHorizontalPadding = 10.0;
-  static const double _characterBookItemVerticalPadding = 10.0;
-
-  int? _editingFolderId;
-  final Map<int, TextEditingController> _editControllers = {};
   final Map<String, TextEditingController> _fieldControllers = {};
 
   int _nextTempId = -1;
@@ -38,9 +35,6 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
 
   @override
   void dispose() {
-    for (var controller in _editControllers.values) {
-      controller.dispose();
-    }
     for (var controller in _fieldControllers.values) {
       controller.dispose();
     }
@@ -65,7 +59,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
     setState(() {
       final newFolder = CharacterBookFolder(
         id: _getNextTempId(),
-        characterId: -1, // Will be set when saving
+        characterId: -1,
         name: '새 폴더',
         order: widget.folders.length,
       );
@@ -78,7 +72,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
     setState(() {
       final newCharacterBook = CharacterBook(
         id: _getNextTempId(),
-        characterId: -1, // Will be set when saving
+        characterId: -1,
         folderId: folder?.id,
         name: '새 캐릭터북',
         order: folder != null ? folder.characterBooks.length : widget.standaloneCharacterBooks.length,
@@ -151,69 +145,21 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
     _notifyUpdate();
   }
 
-  void _reorderCharacterBookInFolder(CharacterBook draggedCharacterBook, CharacterBook targetCharacterBook, CharacterBookFolder? folder) {
+  void _reorderCharacterBook(CharacterBook draggedCharacterBook, int targetIndex, CharacterBookFolder? folder) {
     setState(() {
-      if (folder != null) {
-        // 폴더 내에서 순서 변경
-        final characterBooks = folder.characterBooks;
-        final draggedIndex = characterBooks.indexOf(draggedCharacterBook);
-        final targetIndex = characterBooks.indexOf(targetCharacterBook);
+      final characterBooks = folder != null ? folder.characterBooks : widget.standaloneCharacterBooks;
+      final draggedIndex = characterBooks.indexOf(draggedCharacterBook);
 
-        if (draggedIndex != -1 && targetIndex != -1) {
-          characterBooks.removeAt(draggedIndex);
-          final newIndex = characterBooks.indexOf(targetCharacterBook);
-          characterBooks.insert(newIndex, draggedCharacterBook);
+      if (draggedIndex == -1) return;
 
-          // order 업데이트
-          for (var i = 0; i < characterBooks.length; i++) {
-            characterBooks[i].order = i;
-          }
-        }
-      } else {
-        // standalone 캐릭터북 순서 변경
-        final characterBooks = widget.standaloneCharacterBooks;
-        final draggedIndex = characterBooks.indexOf(draggedCharacterBook);
-        final targetIndex = characterBooks.indexOf(targetCharacterBook);
+      characterBooks.removeAt(draggedIndex);
 
-        if (draggedIndex != -1 && targetIndex != -1) {
-          characterBooks.removeAt(draggedIndex);
-          final newIndex = characterBooks.indexOf(targetCharacterBook);
-          characterBooks.insert(newIndex, draggedCharacterBook);
+      final insertIndex = targetIndex > draggedIndex ? targetIndex - 1 : targetIndex;
+      characterBooks.insert(insertIndex.clamp(0, characterBooks.length), draggedCharacterBook);
 
-          // order 업데이트
-          for (var i = 0; i < characterBooks.length; i++) {
-            characterBooks[i].order = i;
-          }
-        }
+      for (var i = 0; i < characterBooks.length; i++) {
+        characterBooks[i].order = i;
       }
-    });
-    _notifyUpdate();
-  }
-
-  void _toggleFolderEdit(CharacterBookFolder folder) {
-    setState(() {
-      if (_editingFolderId == folder.id) {
-        final controller = _editControllers[folder.id!];
-        if (controller != null && controller.text.isNotEmpty) {
-          folder.name = controller.text;
-        }
-        _editingFolderId = null;
-        _editControllers.remove(folder.id!)?.dispose();
-        _notifyUpdate();
-      } else {
-        _editingFolderId = folder.id;
-        _editControllers[folder.id!] = TextEditingController(text: folder.name);
-      }
-    });
-  }
-
-  void _saveFolderName(CharacterBookFolder folder, String value) {
-    setState(() {
-      if (value.isNotEmpty) {
-        folder.name = value;
-      }
-      _editingFolderId = null;
-      _editControllers.remove(folder.id!)?.dispose();
     });
     _notifyUpdate();
   }
@@ -229,276 +175,52 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
             padding: EdgeInsets.symmetric(horizontal: 5),
             child: CommonTitleMedium(
               text: '캐릭터북',
-              helpMessage: '캐릭터의 세계관과 관련된 정보를 캐릭터북에 추가할 수 있습니다.',
+              helpMessage: '캐릭터의 세계관과 관련된 정보를 캐릭터북에 추가할 수 있습니다.\n\n'
+                  '길게 눌러 순서를 변경할 수 있습니다.',
             ),
           ),
           const SizedBox(height: 8),
           Expanded(
-            child: widget.folders.isEmpty && widget.standaloneCharacterBooks.isEmpty
-                ? const Center(
-                    child: Text('캐릭터북 항목이 없습니다'),
-                  )
-                : DragTarget<Map<String, dynamic>>(
-                    onWillAcceptWithDetails: (details) {
-                      final data = details.data;
-                      return data['type'] == 'characterBook' && data['fromFolder'] != null;
-                    },
-                    onAcceptWithDetails: (details) {
-                      final data = details.data;
-                      final characterBook = data['characterBook'] as CharacterBook;
-                      final fromFolder = data['fromFolder'] as CharacterBookFolder?;
-                      if (fromFolder != null) {
-                        _moveCharacterBookOutOfFolder(characterBook, fromFolder);
-                      }
-                    },
-                    builder: (context, candidateData, rejectedData) {
-                      return Container(
-                        decoration: candidateData.isNotEmpty
-                            ? BoxDecoration(
-                                border: Border.all(
-                                  color: Theme.of(context).colorScheme.primary,
-                                  width: 2,
-                                ),
-                                borderRadius: BorderRadius.circular(10),
-                              )
-                            : null,
-                        child: ListView.builder(
-                          itemCount: widget.folders.length + widget.standaloneCharacterBooks.length,
-                          itemBuilder: (context, index) {
-                            if (index < widget.folders.length) {
-                              return _buildFolderItem(widget.folders[index]);
-                            } else {
-                              return _buildCharacterBookItem(
-                                widget.standaloneCharacterBooks[index - widget.folders.length],
-                                null,
-                              );
-                            }
-                          },
-                        ),
-                      );
-                    },
-                  ),
-          ),
-          const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: CommonButton.outlined(
-                  onPressed: _addFolder,
-                  icon: Icons.folder_outlined,
-                  label: '폴더 추가',
-                ),
+            child: CommonDraggableFolderList<CharacterBookFolder, CharacterBook>(
+              folders: widget.folders,
+              standaloneItems: widget.standaloneCharacterBooks,
+              getFolderId: (folder) => folder.id,
+              getFolderName: (folder) => folder.name,
+              getFolderExpanded: (folder) => folder.isExpanded,
+              getFolderItems: (folder) => folder.characterBooks,
+              getItemId: (item) => item.id,
+              itemContentBuilder: _buildCharacterBookCard,
+              getItemIcon: (item) => Icons.description_outlined,
+              getItemName: (item) => item.name,
+              onReorderItem: _reorderCharacterBook,
+              onMoveItemToFolder: _moveCharacterBookToFolder,
+              onMoveItemOutOfFolder: _moveCharacterBookOutOfFolder,
+              onFolderNameChanged: (folder, newName) {
+                folder.name = newName;
+                _notifyUpdate();
+              },
+              onFolderExpandedChanged: (folder, isExpanded) {
+                setState(() {
+                  folder.isExpanded = isExpanded;
+                });
+              },
+              onDeleteFolder: _deleteFolder,
+              onAddItem: _addCharacterBook,
+              onAddFolder: _addFolder,
+              itemTypeKey: 'characterBook',
+              addItemLabel: '캐릭터북 추가',
+              addFolderLabel: '폴더 추가',
+              emptyWidget: const CommonEmptyState(
+                message: '캐릭터북 항목이 없습니다',
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: CommonButton.filled(
-                  onPressed: () => _addCharacterBook(null),
-                  icon: Icons.add,
-                  label: '캐릭터북 추가',
-                ),
-              ),
-            ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildFolderItem(CharacterBookFolder folder) {
-    return DragTarget<Map<String, dynamic>>(
-      onWillAcceptWithDetails: (details) {
-        final data = details.data;
-        return data['type'] == 'characterBook' && data['fromFolder'] != folder;
-      },
-      onAcceptWithDetails: (details) {
-        final data = details.data;
-        final characterBook = data['characterBook'] as CharacterBook;
-        final fromFolder = data['fromFolder'] as CharacterBookFolder?;
-        _moveCharacterBookToFolder(characterBook, fromFolder, folder);
-      },
-      builder: (context, candidateData, rejectedData) {
-        return Container(
-          key: ValueKey(folder.id),
-          margin: const EdgeInsets.only(bottom: 8),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(UIConstants.borderRadiusMedium),
-            border: Border.all(
-              color: candidateData.isNotEmpty
-                  ? Theme.of(context).colorScheme.primary
-                  : Theme.of(context).colorScheme.outline.withValues(alpha: UIConstants.opacityMedium),
-              width: candidateData.isNotEmpty ? 2 : 1,
-            ),
-          ),
-          child: Column(
-            children: [
-              InkWell(
-                onTap: () {
-                  setState(() {
-                    folder.isExpanded = !folder.isExpanded;
-                  });
-                },
-                overlayColor: WidgetStateProperty.all(Colors.transparent),
-                borderRadius: BorderRadius.circular(UIConstants.borderRadiusMedium),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: _characterBookItemHorizontalPadding,
-                    vertical: _characterBookItemVerticalPadding,
-                  ),
-                  child: Row(
-                    children: [
-                      Icon(
-                        Icons.folder_outlined,
-                        size: UIConstants.iconSizeLarge,
-                        color: Theme.of(context).colorScheme.primary,
-                      ),
-                      const SizedBox(width: UIConstants.spacing12),
-                      Expanded(
-                        child: _editingFolderId == folder.id
-                            ? TextField(
-                                controller: _editControllers[folder.id!],
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                                decoration: const InputDecoration(
-                                  border: InputBorder.none,
-                                  isDense: true,
-                                  contentPadding: EdgeInsets.zero,
-                                ),
-                                autofocus: true,
-                                onSubmitted: (value) => _saveFolderName(folder, value),
-                              )
-                            : Text(
-                                folder.name,
-                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                      fontWeight: FontWeight.w600,
-                                    ),
-                              ),
-                      ),
-                      GestureDetector(
-                        onTap: () => _toggleFolderEdit(folder),
-                        child: Icon(
-                          _editingFolderId == folder.id ? Icons.check : Icons.edit_outlined,
-                          size: UIConstants.iconSizeMedium,
-                        ),
-                      ),
-                      const SizedBox(width: UIConstants.spacing12),
-                      GestureDetector(
-                        onTap: () => _deleteFolder(folder),
-                        child: const Icon(Icons.delete_outline, size: UIConstants.iconSizeMedium),
-                      ),
-                      const SizedBox(width: UIConstants.spacing12),
-                      Icon(
-                        folder.isExpanded ? Icons.expand_less : Icons.expand_more,
-                        size: UIConstants.iconSizeLarge,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              if (folder.isExpanded) ...[
-                const Divider(height: 8),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0),
-                  child: Column(
-                    children: folder.characterBooks.map((characterBook) => _buildCharacterBookItem(characterBook, folder)).toList(),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: CommonButton.outlined(
-                      onPressed: () => _addCharacterBook(folder),
-                      icon: Icons.add,
-                      iconSize: 16,
-                      label: '캐릭터북 추가',
-                    ),
-                  ),
-                ),
-              ],
-            ],
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildCharacterBookItem(CharacterBook characterBook, CharacterBookFolder? folder) {
-    return LongPressDraggable<Map<String, dynamic>>(
-      data: {
-        'type': 'characterBook',
-        'characterBook': characterBook,
-        'fromFolder': folder,
-      },
-      feedback: Material(
-        elevation: 4,
-        borderRadius: BorderRadius.circular(10),
-        child: Container(
-          width: 300,
-          padding: const EdgeInsets.symmetric(
-            horizontal: _characterBookItemHorizontalPadding,
-            vertical: _characterBookItemVerticalPadding,
-          ),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surface,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.description_outlined,
-                size: 18,
-                color: Theme.of(context).colorScheme.secondary,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  characterBook.name,
-                  style: Theme.of(context).textTheme.bodyMedium,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-      childWhenDragging: Opacity(
-        opacity: 0.3,
-        child: _buildCharacterBookCard(characterBook, folder),
-      ),
-      child: DragTarget<Map<String, dynamic>>(
-        onWillAcceptWithDetails: (details) {
-          final data = details.data;
-          // 같은 폴더 내에서만 순서 변경 허용
-          return data['type'] == 'characterBook' &&
-                 data['characterBook'] != characterBook &&
-                 data['fromFolder'] == folder;
-        },
-        onAcceptWithDetails: (details) {
-          final data = details.data;
-          final draggedCharacterBook = data['characterBook'] as CharacterBook;
-          _reorderCharacterBookInFolder(draggedCharacterBook, characterBook, folder);
-        },
-        builder: (context, candidateData, rejectedData) {
-          return Container(
-            decoration: candidateData.isNotEmpty
-                ? BoxDecoration(
-                    border: Border.all(
-                      color: Theme.of(context).colorScheme.primary,
-                      width: 2,
-                    ),
-                    borderRadius: BorderRadius.circular(UIConstants.borderRadiusMedium),
-                  )
-                : null,
-            child: _buildCharacterBookCard(characterBook, folder),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildCharacterBookCard(CharacterBook characterBook, CharacterBookFolder? folder) {
+  Widget _buildCharacterBookCard(BuildContext context, CharacterBook characterBook, CharacterBookFolder? folder) {
     return CommonEditableExpandableItem(
       key: ValueKey(characterBook.id),
       icon: Icon(
@@ -535,29 +257,19 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
   }
 
   Widget _buildActivationConditionField(CharacterBook characterBook) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '활성화 조건',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-        ),
-        const SizedBox(height: 2),
-        CommonSegmentedButton<CharacterBookActivationCondition>(
-          values: CharacterBookActivationCondition.values,
-          selected: characterBook.enabled,
-          onSelectionChanged: (selected) {
-            setState(() {
-              characterBook.enabled = selected;
-            });
-            _notifyUpdate();
-          },
-          labelBuilder: (condition) => condition.displayName,
-        ),
-        const SizedBox(height: 12),
-      ],
+    return CommonFieldSection(
+      label: '활성화 조건',
+      child: CommonSegmentedButton<CharacterBookActivationCondition>(
+        values: CharacterBookActivationCondition.values,
+        selected: characterBook.enabled,
+        onSelectionChanged: (selected) {
+          setState(() {
+            characterBook.enabled = selected;
+          });
+          _notifyUpdate();
+        },
+        labelBuilder: (condition) => condition.displayName,
+      ),
     );
   }
 
@@ -565,58 +277,38 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
     final key = 'characterBook_${characterBook.id}_keys';
     final controller = _getFieldController(key, characterBook.keys.join(', '));
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '활성화 키',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-        ),
-        const SizedBox(height: 2),
-        CommonEditText(
-          controller: controller,
-          hintText: '쉼표로 구분하여 입력 (예: 마법, 전투)',
-          size: CommonEditTextSize.small,
-          onFocusLost: (value) {
-            characterBook.keys = value
-                .split(',')
-                .map((e) => e.trim())
-                .where((e) => e.isNotEmpty)
-                .toList();
-            _notifyUpdate(rebuildUI: false);
-          },
-        ),
-        const SizedBox(height: 12),
-      ],
+    return CommonFieldSection(
+      label: '활성화 키',
+      child: CommonEditText(
+        controller: controller,
+        hintText: '쉼표로 구분하여 입력 (예: 마법, 전투)',
+        size: CommonEditTextSize.small,
+        onFocusLost: (value) {
+          characterBook.keys = value
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList();
+          _notifyUpdate(rebuildUI: false);
+        },
+      ),
     );
   }
 
   Widget _buildKeyConditionField(CharacterBook characterBook) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '키 사용 조건',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-        ),
-        const SizedBox(height: 2),
-        CommonSegmentedButton<CharacterBookKeyCondition>(
-          values: CharacterBookKeyCondition.values,
-          selected: characterBook.keyCondition,
-          onSelectionChanged: (selected) {
-            setState(() {
-              characterBook.keyCondition = selected;
-            });
-            _notifyUpdate();
-          },
-          labelBuilder: (condition) => condition.displayName,
-        ),
-        const SizedBox(height: 12),
-      ],
+    return CommonFieldSection(
+      label: '키 사용 조건',
+      child: CommonSegmentedButton<CharacterBookKeyCondition>(
+        values: CharacterBookKeyCondition.values,
+        selected: characterBook.keyCondition,
+        onSelectionChanged: (selected) {
+          setState(() {
+            characterBook.keyCondition = selected;
+          });
+          _notifyUpdate();
+        },
+        labelBuilder: (condition) => condition.displayName,
+      ),
     );
   }
 
@@ -624,31 +316,21 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
     final key = 'characterBook_${characterBook.id}_insertionOrder';
     final controller = _getFieldController(key, characterBook.insertionOrder.toString());
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '배치 순서',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-        ),
-        const SizedBox(height: 2),
-        CommonEditText(
-          controller: controller,
-          hintText: '0',
-          size: CommonEditTextSize.small,
-          keyboardType: TextInputType.number,
-          onFocusLost: (value) {
-            final intValue = int.tryParse(value);
-            if (intValue != null) {
-              characterBook.insertionOrder = intValue;
-              _notifyUpdate(rebuildUI: false);
-            }
-          },
-        ),
-        const SizedBox(height: 12),
-      ],
+    return CommonFieldSection(
+      label: '배치 순서',
+      child: CommonEditText(
+        controller: controller,
+        hintText: '0',
+        size: CommonEditTextSize.small,
+        keyboardType: TextInputType.number,
+        onFocusLost: (value) {
+          final intValue = int.tryParse(value);
+          if (intValue != null) {
+            characterBook.insertionOrder = intValue;
+            _notifyUpdate(rebuildUI: false);
+          }
+        },
+      ),
     );
   }
 
@@ -656,28 +338,20 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
     final key = 'characterBook_${characterBook.id}_content';
     final controller = _getFieldController(key, characterBook.content ?? '');
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          '내용',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
-        ),
-        const SizedBox(height: 2),
-        CommonEditText(
-          controller: controller,
-          hintText: '캐릭터북 내용을 입력해주세요',
-          size: CommonEditTextSize.small,
-          maxLines: null,
-          minLines: 5,
-          onFocusLost: (value) {
-            characterBook.content = value;
-            _notifyUpdate(rebuildUI: false);
-          },
-        ),
-      ],
+    return CommonFieldSection(
+      label: '내용',
+      bottomSpacing: 0,
+      child: CommonEditText(
+        controller: controller,
+        hintText: '캐릭터북 내용을 입력해주세요',
+        size: CommonEditTextSize.small,
+        maxLines: null,
+        minLines: 5,
+        onFocusLost: (value) {
+          characterBook.content = value;
+          _notifyUpdate(rebuildUI: false);
+        },
+      ),
     );
   }
 }

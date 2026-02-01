@@ -4,12 +4,15 @@ import '../../constants/ai_model_constants.dart';
 import '../../database/database_helper.dart';
 import '../../models/prompt/chat_prompt.dart';
 import '../../models/prompt/prompt_item.dart';
+import '../../models/prompt/prompt_item_folder.dart';
 import '../../models/prompt/prompt_parameters.dart';
 import '../../utils/common_dialog.dart';
 import '../../widgets/common/common_custom_text_field.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../../widgets/common/common_dropdown_button.dart';
 import '../../widgets/common/common_edit_text.dart';
+import '../../widgets/common/common_info_box.dart';
+import '../../widgets/common/common_parameter_field.dart';
 import '../../widgets/common/common_title_medium.dart';
 import 'tabs/prompt_items_tab.dart';
 
@@ -35,10 +38,13 @@ class _PromptEditScreenState extends State<PromptEditScreen>
 
   PromptParameters _parameters = const PromptParameters();
 
-  final List<PromptItem> _items = [];
+  final List<PromptItemFolder> _folders = [];
+  final List<PromptItem> _standaloneItems = [];
   final Map<int, TextEditingController> _contentControllers = {};
   int _nextTempId = -1;
   int _getNextTempId() => _nextTempId--;
+  int _nextFolderTempId = -1;
+  int _getNextFolderTempId() => _nextFolderTempId--;
 
   // Parameter controllers
   final _maxInputTokensController = TextEditingController();
@@ -58,7 +64,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
     }
   }
 
-  void _loadPromptData() {
+  void _loadPromptData() async {
     final prompt = widget.prompt!;
     _nameController.text = prompt.name;
     _descriptionController.text = prompt.description ?? '';
@@ -71,9 +77,26 @@ class _PromptEditScreenState extends State<PromptEditScreen>
     _thinkingTokensController.text = _parameters.thinkingTokens?.toString() ?? '';
     _thinkingMaxTokensController.text = _parameters.thinkingMaxTokens?.toString() ?? '';
 
-    _items.addAll(prompt.items);
-    for (var item in _items) {
+    // Load folders and their items
+    final folders = await _db.readPromptItemFolders(prompt.id!);
+    for (var folder in folders) {
+      final folderItems = await _db.readPromptItemsByFolder(folder.id!);
+      folder.items.addAll(folderItems);
+      for (var item in folderItems) {
+        _contentControllers[item.id!] = TextEditingController(text: item.content);
+      }
+    }
+    _folders.addAll(folders);
+
+    // Load standalone items (items without folder)
+    final standaloneItems = await _db.readStandalonePromptItems(prompt.id!);
+    _standaloneItems.addAll(standaloneItems);
+    for (var item in standaloneItems) {
       _contentControllers[item.id!] = TextEditingController(text: item.content);
+    }
+
+    if (mounted) {
+      setState(() {});
     }
   }
 
@@ -158,14 +181,49 @@ class _PromptEditScreenState extends State<PromptEditScreen>
         promptId = await _db.createChatPrompt(prompt);
       }
 
-      for (int i = 0; i < _items.length; i++) {
-        final item = _items[i];
+      // Delete existing folders
+      final existingFolders = await _db.readPromptItemFolders(promptId);
+      for (var folder in existingFolders) {
+        await _db.deletePromptItemFolder(folder.id!);
+      }
+
+      // Save folders and their items
+      for (int i = 0; i < _folders.length; i++) {
+        final folder = _folders[i];
+        final folderId = await _db.createPromptItemFolder(
+          folder.copyWith(
+            id: null,
+            chatPromptId: promptId,
+            order: i,
+          ),
+        );
+
+        for (int j = 0; j < folder.items.length; j++) {
+          final item = folder.items[j];
+          final controller = _contentControllers[item.id]!;
+
+          await _db.createPromptItem(
+            item.copyWithNullableFolderId(
+              id: null,
+              chatPromptId: promptId,
+              folderId: folderId,
+              content: controller.text.trim(),
+              order: j,
+            ),
+          );
+        }
+      }
+
+      // Save standalone items
+      for (int i = 0; i < _standaloneItems.length; i++) {
+        final item = _standaloneItems[i];
         final controller = _contentControllers[item.id]!;
 
         await _db.createPromptItem(
-          item.copyWith(
+          item.copyWithNullableFolderId(
             id: null,
             chatPromptId: promptId,
+            folderId: null,
             content: controller.text.trim(),
             order: i,
           ),
@@ -193,17 +251,37 @@ class _PromptEditScreenState extends State<PromptEditScreen>
     }
   }
 
-  void _addItem() {
+  void _addItem(PromptItemFolder? folder) {
     setState(() {
       final newItem = PromptItem(
         id: _getNextTempId(),
         role: PromptRole.system,
         content: '',
-        order: _items.length,
+        order: folder != null ? folder.items.length : _standaloneItems.length,
         isExpanded: true,
       );
-      _items.add(newItem);
       _contentControllers[newItem.id!] = TextEditingController();
+
+      if (folder != null) {
+        final folderIndex = _folders.indexOf(folder);
+        if (folderIndex != -1) {
+          _folders[folderIndex].items.add(newItem);
+        }
+      } else {
+        _standaloneItems.add(newItem);
+      }
+    });
+  }
+
+  void _addFolder() {
+    setState(() {
+      final newFolder = PromptItemFolder(
+        id: _getNextFolderTempId(),
+        name: '새 폴더',
+        order: _folders.length,
+        isExpanded: true,
+      );
+      _folders.add(newFolder);
     });
   }
 
@@ -215,24 +293,77 @@ class _PromptEditScreenState extends State<PromptEditScreen>
 
     if (confirmed) {
       setState(() {
-        _items.remove(item);
-        _contentControllers.remove(item.id)?.dispose();
+        // Check in standalone items
+        if (_standaloneItems.remove(item)) {
+          _contentControllers.remove(item.id)?.dispose();
+          return;
+        }
+
+        // Check in folders
+        for (var folder in _folders) {
+          if (folder.items.remove(item)) {
+            _contentControllers.remove(item.id)?.dispose();
+            return;
+          }
+        }
       });
     }
   }
 
-  void _moveItem(PromptItem draggedItem, int targetIndex) {
-    setState(() {
-      final draggedIndex = _items.indexOf(draggedItem);
+  Future<void> _deleteFolder(PromptItemFolder folder) async {
+    final confirmed = await CommonDialog.showDeleteConfirmation(
+      context: context,
+      itemName: folder.name,
+    );
 
-      if (draggedIndex != -1) {
-        _items.removeAt(draggedIndex);
-        final insertIndex = draggedIndex < targetIndex ? targetIndex - 1 : targetIndex;
-        _items.insert(insertIndex, draggedItem);
-
-        for (int i = 0; i < _items.length; i++) {
-          _items[i] = _items[i].copyWith(order: i);
+    if (confirmed) {
+      setState(() {
+        // Move items to standalone
+        for (var item in folder.items) {
+          _standaloneItems.add(item.copyWithNullableFolderId(folderId: null));
         }
+        _folders.remove(folder);
+      });
+    }
+  }
+
+  void _moveItemToFolder(PromptItem item, PromptItemFolder? fromFolder, PromptItemFolder toFolder) {
+    setState(() {
+      // Remove from source
+      if (fromFolder != null) {
+        fromFolder.items.remove(item);
+      } else {
+        _standaloneItems.remove(item);
+      }
+
+      // Add to target folder
+      final updatedItem = item.copyWithNullableFolderId(folderId: toFolder.id);
+      toFolder.items.add(updatedItem);
+    });
+  }
+
+  void _moveItemOutOfFolder(PromptItem item, PromptItemFolder fromFolder) {
+    setState(() {
+      fromFolder.items.remove(item);
+      final updatedItem = item.copyWithNullableFolderId(folderId: null);
+      _standaloneItems.add(updatedItem);
+    });
+  }
+
+  void _reorderItem(PromptItem item, int targetIndex, PromptItemFolder? folder) {
+    setState(() {
+      List<PromptItem> list;
+      if (folder != null) {
+        list = folder.items;
+      } else {
+        list = _standaloneItems;
+      }
+
+      final fromIndex = list.indexOf(item);
+      if (fromIndex != -1) {
+        list.removeAt(fromIndex);
+        final insertIndex = fromIndex < targetIndex ? targetIndex - 1 : targetIndex;
+        list.insert(insertIndex, item);
       }
     });
   }
@@ -297,12 +428,17 @@ class _PromptEditScreenState extends State<PromptEditScreen>
             _buildBasicInfoTab(),
             _buildParametersTab(),
             PromptItemsTab(
-              items: _items,
+              folders: _folders,
+              standaloneItems: _standaloneItems,
               contentControllers: _contentControllers,
               onUpdate: () => setState(() {}),
-              onDelete: _deleteItem,
-              onMove: _moveItem,
-              onAdd: _addItem,
+              onDeleteItem: _deleteItem,
+              onDeleteFolder: _deleteFolder,
+              onAddItem: _addItem,
+              onAddFolder: _addFolder,
+              onMoveItemToFolder: _moveItemToFolder,
+              onMoveItemOutOfFolder: _moveItemOutOfFolder,
+              onReorderItem: _reorderItem,
             ),
           ],
         ),
@@ -394,39 +530,12 @@ class _PromptEditScreenState extends State<PromptEditScreen>
     return ListView(
       padding: const EdgeInsets.all(UIConstants.spacing20),
       children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Theme.of(context)
-                .colorScheme
-                .surfaceContainerHighest
-                .withValues(alpha: 0.3),
-            borderRadius: BorderRadius.circular(10),
-            border: Border.all(
-              color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
-            ),
-          ),
-          child: Row(
-            children: [
-              Icon(
-                Icons.info_outline,
-                size: 20,
-                color: Theme.of(context).colorScheme.primary,
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'AI 모델의 생성 파라미터를 설정합니다. 모델에 따라 지원되는 파라미터가 다를 수 있습니다.',
-                  style: Theme.of(context).textTheme.bodySmall,
-                ),
-              ),
-            ],
-          ),
+        const CommonInfoBox(
+          message: 'AI 모델의 생성 파라미터를 설정합니다. 모델에 따라 지원되는 파라미터가 다를 수 있습니다.',
         ),
         const SizedBox(height: 24),
-        _buildSimpleTextFieldParameter(
+        CommonParameterTextField(
           label: '최대 입력 크기',
-          value: _parameters.maxInputTokens,
           helpText: '입력할 수 있는 최대 토큰 수입니다.',
           controller: _maxInputTokensController,
           onChanged: (value) {
@@ -436,9 +545,8 @@ class _PromptEditScreenState extends State<PromptEditScreen>
           },
         ),
         const SizedBox(height: UIConstants.spacing20),
-        _buildSimpleTextFieldParameter(
+        CommonParameterTextField(
           label: '최대 응답 크기',
-          value: _parameters.maxOutputTokens,
           helpText: '생성할 수 있는 최대 토큰 수입니다.',
           controller: _maxOutputTokensController,
           onChanged: (value) {
@@ -448,11 +556,17 @@ class _PromptEditScreenState extends State<PromptEditScreen>
           },
         ),
         const SizedBox(height: UIConstants.spacing20),
-        _buildCheckableTextFieldParameter(
+        CommonParameterTextField(
           label: '사고토큰',
-          value: _parameters.thinkingTokens,
           helpText: '사고에 사용할 토큰 수입니다.',
           controller: _thinkingTokensController,
+          showCheckbox: true,
+          isChecked: _parameters.thinkingTokens != null,
+          onCheckboxChanged: (checked) {
+            setState(() {
+              _parameters = _parameters.copyWith(thinkingTokens: checked ? 0 : null);
+            });
+          },
           onChanged: (value) {
             setState(() {
               _parameters = _parameters.copyWith(thinkingTokens: value);
@@ -460,7 +574,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
           },
         ),
         const SizedBox(height: UIConstants.spacing20),
-        _buildCheckableSliderParameter(
+        CommonParameterSlider(
           label: '온도',
           value: _parameters.temperature,
           defaultValue: 1.0,
@@ -475,7 +589,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
           },
         ),
         const SizedBox(height: UIConstants.spacing20),
-        _buildCheckableSliderParameter(
+        CommonParameterSlider(
           label: 'Top P',
           value: _parameters.topP,
           defaultValue: 0.95,
@@ -490,13 +604,14 @@ class _PromptEditScreenState extends State<PromptEditScreen>
           },
         ),
         const SizedBox(height: UIConstants.spacing20),
-        _buildCheckableSliderParameter(
+        CommonParameterSlider(
           label: 'Top K',
           value: _parameters.topK?.toDouble(),
           defaultValue: 40.0,
           min: 1.0,
           max: 100.0,
           divisions: 99,
+          decimalPlaces: 0,
           helpText: '고려할 상위 토큰의 수입니다.',
           onChanged: (value) {
             setState(() {
@@ -505,7 +620,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
           },
         ),
         const SizedBox(height: UIConstants.spacing20),
-        _buildCheckableSliderParameter(
+        CommonParameterSlider(
           label: '프리센스 패널티',
           value: _parameters.presencePenalty,
           defaultValue: 0.0,
@@ -520,7 +635,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
           },
         ),
         const SizedBox(height: UIConstants.spacing20),
-        _buildCheckableSliderParameter(
+        CommonParameterSlider(
           label: '빈도 패널티',
           value: _parameters.frequencyPenalty,
           defaultValue: 0.0,
@@ -536,254 +651,6 @@ class _PromptEditScreenState extends State<PromptEditScreen>
         ),
         const SizedBox(height: 24),
         _buildThinkingSection(),
-      ],
-    );
-  }
-
-  Widget _buildCheckableTextFieldParameter({
-    required String label,
-    required int? value,
-    required String helpText,
-    required ValueChanged<int?> onChanged,
-    TextEditingController? controller,
-  }) {
-    final isEnabled = value != null;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: CommonCustomTextField.labelHorizontalPadding),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              SizedBox(
-                width: 24,
-                height: 24,
-                child: Checkbox(
-                  value: isEnabled,
-                  onChanged: (checked) {
-                    if (checked == true) {
-                      onChanged(0);
-                    } else {
-                      onChanged(null);
-                    }
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              CommonTitleMedium(
-                text: label,
-                helpMessage: helpText,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: CommonCustomTextField.labelBottomSpacing),
-        TextFormField(
-          controller: controller,
-          initialValue: controller == null ? (value?.toString() ?? '') : null,
-          enabled: isEnabled,
-          keyboardType: TextInputType.number,
-          style: Theme.of(context).textTheme.bodyMedium,
-          decoration: InputDecoration(
-            hintText: '숫자 입력',
-            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withValues(alpha: CommonCustomTextField.borderOpacity),
-              ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withValues(alpha: CommonCustomTextField.borderOpacity),
-              ),
-            ),
-            disabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.1),
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: CommonCustomTextField.horizontalPadding,
-              vertical: CommonCustomTextField.verticalPadding,
-            ),
-            isDense: true,
-          ),
-          onTapOutside: (event) {
-            FocusScope.of(context).unfocus();
-          },
-          onFieldSubmitted: (text) {
-            if (text.isEmpty) {
-              onChanged(0);
-            } else {
-              final newValue = int.tryParse(text);
-              if (newValue != null) {
-                onChanged(newValue);
-              }
-            }
-          },
-          onEditingComplete: () {
-            FocusScope.of(context).unfocus();
-          },
-        ),
-      ],
-    );
-  }
-
-  Widget _buildCheckableSliderParameter({
-    required String label,
-    required double? value,
-    required double defaultValue,
-    required double min,
-    required double max,
-    required int divisions,
-    required String helpText,
-    required ValueChanged<double?> onChanged,
-  }) {
-    final isEnabled = value != null;
-    final displayValue = value ?? defaultValue;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: CommonCustomTextField.labelHorizontalPadding),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              SizedBox(
-                width: 24,
-                height: 24,
-                child: Checkbox(
-                  value: isEnabled,
-                  onChanged: (checked) {
-                    if (checked == true) {
-                      onChanged(defaultValue);
-                    } else {
-                      onChanged(null);
-                    }
-                  },
-                ),
-              ),
-              const SizedBox(width: 8),
-              CommonTitleMedium(
-                text: label,
-                helpMessage: helpText,
-              ),
-              const Spacer(),
-              Text(
-                displayValue.toStringAsFixed(2),
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                      color: isEnabled
-                          ? Theme.of(context).colorScheme.primary
-                          : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
-                    ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: CommonCustomTextField.labelBottomSpacing),
-        Slider(
-          value: displayValue,
-          min: min,
-          max: max,
-          divisions: divisions,
-          label: displayValue.toStringAsFixed(2),
-          onChanged: isEnabled
-              ? (newValue) => onChanged(newValue)
-              : null,
-        ),
-      ],
-    );
-  }
-
-  Widget _buildSimpleTextFieldParameter({
-    required String label,
-    required int? value,
-    required String helpText,
-    required ValueChanged<int?> onChanged,
-    TextEditingController? controller,
-  }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.symmetric(horizontal: CommonCustomTextField.labelHorizontalPadding),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              CommonTitleMedium(
-                text: label,
-                helpMessage: helpText,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: CommonCustomTextField.labelBottomSpacing),
-        TextFormField(
-          controller: controller,
-          initialValue: controller == null ? (value?.toString() ?? '') : null,
-          keyboardType: TextInputType.number,
-          style: Theme.of(context).textTheme.bodyMedium,
-          decoration: InputDecoration(
-            hintText: '숫자 입력',
-            hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withValues(alpha: CommonCustomTextField.borderOpacity),
-              ),
-            ),
-            enabledBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.outline.withValues(alpha: CommonCustomTextField.borderOpacity),
-              ),
-            ),
-            focusedBorder: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(CommonCustomTextField.borderRadius),
-              borderSide: BorderSide(
-                color: Theme.of(context).colorScheme.primary,
-              ),
-            ),
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: CommonCustomTextField.horizontalPadding,
-              vertical: CommonCustomTextField.verticalPadding,
-            ),
-            isDense: true,
-          ),
-          onTapOutside: (event) {
-            FocusScope.of(context).unfocus();
-          },
-          onFieldSubmitted: (text) {
-            if (text.isEmpty) {
-              onChanged(null);
-            } else {
-              final newValue = int.tryParse(text);
-              if (newValue != null) {
-                onChanged(newValue);
-              }
-            }
-          },
-          onEditingComplete: () {
-            FocusScope.of(context).unfocus();
-          },
-        ),
       ],
     );
   }
@@ -844,9 +711,8 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                     ],
                   ),
                   const SizedBox(height: 16),
-                  _buildSimpleTextFieldParameter(
+                  CommonParameterTextField(
                     label: '생각토큰 수',
-                    value: _parameters.thinkingMaxTokens,
                     helpText: '생각에 사용할 최대 토큰 수입니다.',
                     controller: _thinkingMaxTokensController,
                     onChanged: (value) {

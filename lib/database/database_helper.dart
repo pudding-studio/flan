@@ -7,6 +7,7 @@ import '../models/character/start_scenario.dart';
 import '../models/character/cover_image.dart';
 import '../models/prompt/chat_prompt.dart';
 import '../models/prompt/prompt_item.dart';
+import '../models/prompt/prompt_item_folder.dart';
 import '../models/chat/chat_room.dart';
 import '../models/chat/chat_message.dart';
 import '../models/chat/chat_log.dart';
@@ -29,7 +30,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 16,
+      version: 17,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -169,17 +170,48 @@ class DatabaseHelper {
       )
     ''');
 
+    // 프롬프트 아이템 폴더 테이블
+    await db.execute('''
+      CREATE TABLE prompt_item_folders (
+        id $idType,
+        chat_prompt_id $intType,
+        name $textType,
+        `order` $intType DEFAULT 0,
+        is_expanded $boolType DEFAULT 1,
+        FOREIGN KEY (chat_prompt_id) REFERENCES chat_prompts (id) ON DELETE CASCADE
+      )
+    ''');
+
     // 프롬프트 항목 테이블
     await db.execute('''
       CREATE TABLE prompt_items (
         id $idType,
         chat_prompt_id $intType,
+        folder_id INTEGER,
         role $textType DEFAULT 'system',
         content $textTypeNullable,
         name $textTypeNullable,
         `order` $intType DEFAULT 0,
-        FOREIGN KEY (chat_prompt_id) REFERENCES chat_prompts (id) ON DELETE CASCADE
+        FOREIGN KEY (chat_prompt_id) REFERENCES chat_prompts (id) ON DELETE CASCADE,
+        FOREIGN KEY (folder_id) REFERENCES prompt_item_folders (id) ON DELETE CASCADE
       )
+    ''');
+
+    // 프롬프트 아이템 폴더 인덱스
+    await db.execute('''
+      CREATE INDEX idx_chat_prompt_id_prompt_item_folders
+      ON prompt_item_folders (chat_prompt_id)
+    ''');
+
+    // 프롬프트 아이템 인덱스
+    await db.execute('''
+      CREATE INDEX idx_chat_prompt_id_prompt_items
+      ON prompt_items (chat_prompt_id)
+    ''');
+
+    await db.execute('''
+      CREATE INDEX idx_folder_id_prompt_items
+      ON prompt_items (folder_id)
     ''');
 
     // 채팅방 테이블
@@ -502,6 +534,41 @@ class DatabaseHelper {
       await db.execute('''
         CREATE INDEX idx_folder_id_character_books
         ON character_books (folder_id)
+      ''');
+    }
+
+    if (oldVersion < 17) {
+      // 프롬프트 아이템 폴더 테이블 생성
+      await db.execute('''
+        CREATE TABLE prompt_item_folders (
+          id $idType,
+          chat_prompt_id $intType,
+          name $textType,
+          `order` $intType DEFAULT 0,
+          is_expanded $boolType DEFAULT 1,
+          FOREIGN KEY (chat_prompt_id) REFERENCES chat_prompts (id) ON DELETE CASCADE
+        )
+      ''');
+
+      // prompt_items 테이블에 folder_id 컬럼 추가
+      await db.execute('''
+        ALTER TABLE prompt_items ADD COLUMN folder_id INTEGER REFERENCES prompt_item_folders (id) ON DELETE CASCADE
+      ''');
+
+      // 인덱스 생성
+      await db.execute('''
+        CREATE INDEX idx_chat_prompt_id_prompt_item_folders
+        ON prompt_item_folders (chat_prompt_id)
+      ''');
+
+      await db.execute('''
+        CREATE INDEX idx_chat_prompt_id_prompt_items
+        ON prompt_items (chat_prompt_id)
+      ''');
+
+      await db.execute('''
+        CREATE INDEX idx_folder_id_prompt_items
+        ON prompt_items (folder_id)
       ''');
     }
   }
@@ -871,6 +938,45 @@ class DatabaseHelper {
     });
   }
 
+  // ==================== 프롬프트 아이템 폴더 CRUD ====================
+
+  Future<int> createPromptItemFolder(PromptItemFolder folder) async {
+    final db = await database;
+    final map = folder.toMap();
+    map.remove('id');
+    return await db.insert('prompt_item_folders', map);
+  }
+
+  Future<List<PromptItemFolder>> readPromptItemFolders(int chatPromptId) async {
+    final db = await database;
+    final result = await db.query(
+      'prompt_item_folders',
+      where: 'chat_prompt_id = ?',
+      whereArgs: [chatPromptId],
+      orderBy: '`order` ASC',
+    );
+    return result.map((map) => PromptItemFolder.fromMap(map)).toList();
+  }
+
+  Future<int> updatePromptItemFolder(PromptItemFolder folder) async {
+    final db = await database;
+    return await db.update(
+      'prompt_item_folders',
+      folder.toMap(),
+      where: 'id = ?',
+      whereArgs: [folder.id],
+    );
+  }
+
+  Future<int> deletePromptItemFolder(int id) async {
+    final db = await database;
+    return await db.delete(
+      'prompt_item_folders',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
   // ==================== 프롬프트 항목 CRUD ====================
 
   Future<int> createPromptItem(PromptItem item) async {
@@ -902,6 +1008,28 @@ class DatabaseHelper {
       where: 'chat_prompt_id = ?',
       whereArgs: [chatPromptId],
       orderBy: orderBy,
+    );
+    return result.map((map) => PromptItem.fromMap(map)).toList();
+  }
+
+  Future<List<PromptItem>> readPromptItemsByFolder(int folderId) async {
+    final db = await database;
+    final result = await db.query(
+      'prompt_items',
+      where: 'folder_id = ?',
+      whereArgs: [folderId],
+      orderBy: '`order` ASC',
+    );
+    return result.map((map) => PromptItem.fromMap(map)).toList();
+  }
+
+  Future<List<PromptItem>> readStandalonePromptItems(int chatPromptId) async {
+    final db = await database;
+    final result = await db.query(
+      'prompt_items',
+      where: 'chat_prompt_id = ? AND folder_id IS NULL',
+      whereArgs: [chatPromptId],
+      orderBy: '`order` ASC',
     );
     return result.map((map) => PromptItem.fromMap(map)).toList();
   }
