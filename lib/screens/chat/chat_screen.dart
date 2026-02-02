@@ -6,7 +6,6 @@ import '../../models/character/character.dart';
 import '../../models/character/cover_image.dart';
 import '../../database/database_helper.dart';
 import '../../utils/common_dialog.dart';
-import '../../utils/token_counter.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../../widgets/common/common_edit_text.dart';
 import 'chat_room_screen.dart';
@@ -57,12 +56,10 @@ class _ChatScreenState extends State<ChatScreen> {
         final lastMessage = messages.isNotEmpty ? messages.last : null;
 
         int assistantMessageCount = 0;
-        int totalTokens = 0;
         for (final message in messages) {
           if (message.role == MessageRole.assistant) {
             assistantMessageCount++;
           }
-          totalTokens += TokenCounter.estimateTokenCount(message.content);
         }
 
         chatRoomDataList.add(_ChatRoomData(
@@ -71,7 +68,7 @@ class _ChatScreenState extends State<ChatScreen> {
           coverImage: selectedCover,
           lastMessage: lastMessage,
           messageCount: assistantMessageCount,
-          tokenCount: totalTokens,
+          tokenCount: chatRoom.totalTokenCount,
         ));
       }
 

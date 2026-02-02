@@ -5,6 +5,7 @@ class ChatRoom {
   final int? selectedChatPromptId;
   final int? selectedPersonaId;
   final int? selectedStartScenarioId;
+  final int totalTokenCount;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -15,6 +16,7 @@ class ChatRoom {
     this.selectedChatPromptId,
     this.selectedPersonaId,
     this.selectedStartScenarioId,
+    this.totalTokenCount = 0,
     DateTime? createdAt,
     DateTime? updatedAt,
   })  : createdAt = createdAt ?? DateTime.now(),
@@ -28,6 +30,7 @@ class ChatRoom {
       selectedChatPromptId: map['selected_chat_prompt_id'] as int?,
       selectedPersonaId: map['selected_persona_id'] as int?,
       selectedStartScenarioId: map['selected_start_scenario_id'] as int?,
+      totalTokenCount: map['total_token_count'] as int? ?? 0,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
     );
@@ -41,6 +44,7 @@ class ChatRoom {
       'selected_chat_prompt_id': selectedChatPromptId,
       'selected_persona_id': selectedPersonaId,
       'selected_start_scenario_id': selectedStartScenarioId,
+      'total_token_count': totalTokenCount,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -53,6 +57,7 @@ class ChatRoom {
     int? selectedChatPromptId,
     int? selectedPersonaId,
     int? selectedStartScenarioId,
+    int? totalTokenCount,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -63,6 +68,7 @@ class ChatRoom {
       selectedChatPromptId: selectedChatPromptId ?? this.selectedChatPromptId,
       selectedPersonaId: selectedPersonaId ?? this.selectedPersonaId,
       selectedStartScenarioId: selectedStartScenarioId ?? this.selectedStartScenarioId,
+      totalTokenCount: totalTokenCount ?? this.totalTokenCount,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

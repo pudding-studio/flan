@@ -6,6 +6,7 @@ import '../../widgets/common/common_appbar.dart';
 import 'api_key_screen.dart';
 import 'chat_model_screen.dart';
 import 'chat_prompt_screen.dart';
+import 'tokenizer_screen.dart';
 import 'log_screen.dart';
 import 'legal_document_screen.dart';
 
@@ -109,6 +110,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const ChatModelScreen()),
+              );
+            },
+          ),
+          _buildListTile(
+            icon: Icons.token,
+            title: '토크나이저',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const TokenizerScreen()),
               );
             },
           ),

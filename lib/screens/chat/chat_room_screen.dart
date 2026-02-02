@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../models/chat/chat_room.dart';
 import '../../models/chat/chat_message.dart';
 import '../../models/character/character.dart';
@@ -7,8 +8,10 @@ import '../../models/character/persona.dart';
 import '../../models/character/character_book_folder.dart';
 import '../../models/prompt/chat_prompt.dart';
 import '../../database/database_helper.dart';
+import '../../providers/tokenizer_provider.dart';
 import '../../utils/prompt_builder.dart';
 import '../../utils/common_dialog.dart';
+import '../../utils/token_counter.dart';
 import '../../services/gemini_service.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../../widgets/common/common_edit_text.dart';
@@ -132,6 +135,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     setState(() => _isSending = true);
 
     try {
+      final tokenizerProvider = context.read<TokenizerProvider>();
+      final tokenizer = tokenizerProvider.selectedTokenizer;
       String combinedUserMessage;
 
       if (_messages.isNotEmpty && _messages.last.role == MessageRole.user) {
@@ -140,17 +145,21 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             ? lastUserMessage.content
             : '${lastUserMessage.content}\n$text';
 
+        final tokenCount = TokenCounter.estimateTokenCount(combinedUserMessage, tokenizer: tokenizer);
         final updatedUserMessage = lastUserMessage.copyWith(
           content: combinedUserMessage,
+          tokenCount: tokenCount,
           editedAt: DateTime.now(),
         );
         await _db.updateChatMessage(updatedUserMessage);
       } else {
         combinedUserMessage = text;
+        final tokenCount = TokenCounter.estimateTokenCount(text, tokenizer: tokenizer);
         final userMessage = ChatMessage(
           chatRoomId: widget.chatRoomId,
           role: MessageRole.user,
           content: text,
+          tokenCount: tokenCount,
         );
         await _db.createChatMessage(userMessage);
       }
@@ -173,13 +182,18 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         characterId: _character?.id,
       );
 
+      final assistantTokenCount = TokenCounter.estimateTokenCount(aiResponse, tokenizer: tokenizer);
       final assistantMessage = ChatMessage(
         chatRoomId: widget.chatRoomId,
         role: MessageRole.assistant,
         content: aiResponse,
+        tokenCount: assistantTokenCount,
       );
 
       await _db.createChatMessage(assistantMessage);
+
+      // 채팅방 토큰 합산 업데이트
+      await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
 
       final updatedChatRoom = _chatRoom!.copyWith(
         updatedAt: DateTime.now(),
@@ -210,6 +224,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
     try {
       await _db.deleteChatMessage(messageId);
+      // 채팅방 토큰 합산 업데이트
+      await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
       await _loadChatData();
       if (!mounted) return;
       CommonDialog.showSnackBar(
@@ -254,12 +270,19 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
 
     try {
+      final tokenizerProvider = context.read<TokenizerProvider>();
+      final tokenizer = tokenizerProvider.selectedTokenizer;
+      final tokenCount = TokenCounter.estimateTokenCount(newContent, tokenizer: tokenizer);
+
       final updatedMessage = message.copyWith(
         content: newContent,
+        tokenCount: tokenCount,
         editedAt: DateTime.now(),
       );
 
       await _db.updateChatMessage(updatedMessage);
+      // 채팅방 토큰 합산 업데이트
+      await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
       _cancelEditMessage();
       await _loadChatData();
       if (!mounted) return;
@@ -286,6 +309,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     setState(() => _isSending = true);
 
     try {
+      final tokenizerProvider = context.read<TokenizerProvider>();
+      final tokenizer = tokenizerProvider.selectedTokenizer;
       final systemPrompt = await _generateSystemPrompt();
 
       ChatPrompt? chatPrompt;
@@ -302,13 +327,18 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         characterId: _character?.id,
       );
 
+      final tokenCount = TokenCounter.estimateTokenCount(aiResponse, tokenizer: tokenizer);
       final assistantMessage = ChatMessage(
         chatRoomId: widget.chatRoomId,
         role: MessageRole.assistant,
         content: aiResponse,
+        tokenCount: tokenCount,
       );
 
       await _db.createChatMessage(assistantMessage);
+
+      // 채팅방 토큰 합산 업데이트
+      await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
 
       setState(() {
         _messages.add(assistantMessage);
@@ -340,6 +370,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     setState(() => _isSending = true);
 
     try {
+      final tokenizerProvider = context.read<TokenizerProvider>();
+      final tokenizer = tokenizerProvider.selectedTokenizer;
       final message = await _db.readChatMessage(messageId);
       if (message == null) return;
 
@@ -366,12 +398,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         characterId: _character?.id,
       );
 
+      final tokenCount = TokenCounter.estimateTokenCount(aiResponse, tokenizer: tokenizer);
       final updatedMessage = message.copyWith(
         content: aiResponse,
+        tokenCount: tokenCount,
         editedAt: DateTime.now(),
       );
 
       await _db.updateChatMessage(updatedMessage);
+      // 채팅방 토큰 합산 업데이트
+      await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
       await _loadChatData();
     } catch (e) {
       debugPrint('Error regenerating message: $e');
@@ -486,7 +522,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           ),
         ),
         Padding(
-          padding: const EdgeInsets.only(top: 0, bottom: 8),
+          padding: const EdgeInsets.only(left: 16, right: 16, top: 0, bottom: 8),
           child: Divider(
             height: 1,
             thickness: 1,

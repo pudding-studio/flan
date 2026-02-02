@@ -14,7 +14,6 @@ import '../../widgets/common/common_title_medium.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../../widgets/chat/chat_room_card.dart';
 import '../../utils/common_dialog.dart';
-import '../../utils/token_counter.dart';
 import '../../widgets/common/common_dropdown_button.dart';
 import '../../widgets/common/common_edit_text.dart';
 
@@ -110,12 +109,10 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
         final lastMessage = messages.isNotEmpty ? messages.last : null;
 
         int assistantMessageCount = 0;
-        int totalTokens = 0;
         for (final message in messages) {
           if (message.role == MessageRole.assistant) {
             assistantMessageCount++;
           }
-          totalTokens += TokenCounter.estimateTokenCount(message.content);
         }
 
         chatRoomDataList.add(_ChatRoomData(
@@ -123,7 +120,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
           coverImage: selectedCover,
           lastMessage: lastMessage,
           messageCount: assistantMessageCount,
-          tokenCount: totalTokens,
+          tokenCount: chatRoom.totalTokenCount,
         ));
       }
 

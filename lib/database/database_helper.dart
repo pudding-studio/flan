@@ -30,7 +30,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 17,
+      version: 18,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -223,6 +223,7 @@ class DatabaseHelper {
         selected_chat_prompt_id INTEGER,
         selected_persona_id INTEGER,
         selected_start_scenario_id INTEGER,
+        total_token_count INTEGER NOT NULL DEFAULT 0,
         created_at $textType,
         updated_at $textType,
         FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE,
@@ -239,6 +240,7 @@ class DatabaseHelper {
         chat_room_id $intType,
         role $textType,
         content $textType,
+        token_count INTEGER NOT NULL DEFAULT 0,
         created_at $textType,
         edited_at $textTypeNullable,
         FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE
@@ -569,6 +571,18 @@ class DatabaseHelper {
       await db.execute('''
         CREATE INDEX idx_folder_id_prompt_items
         ON prompt_items (folder_id)
+      ''');
+    }
+
+    if (oldVersion < 18) {
+      // chat_messages 테이블에 token_count 컬럼 추가
+      await db.execute('''
+        ALTER TABLE chat_messages ADD COLUMN token_count INTEGER NOT NULL DEFAULT 0
+      ''');
+
+      // chat_rooms 테이블에 total_token_count 컬럼 추가
+      await db.execute('''
+        ALTER TABLE chat_rooms ADD COLUMN total_token_count INTEGER NOT NULL DEFAULT 0
       ''');
     }
   }
@@ -1171,6 +1185,26 @@ class DatabaseHelper {
       'chat_messages',
       where: 'id = ?',
       whereArgs: [id],
+    );
+  }
+
+  /// 채팅방의 총 토큰 수를 다시 계산하여 업데이트
+  Future<void> updateChatRoomTotalTokenCount(int chatRoomId) async {
+    final db = await database;
+
+    // 해당 채팅방의 모든 메시지 토큰 합산
+    final result = await db.rawQuery(
+      'SELECT COALESCE(SUM(token_count), 0) as total FROM chat_messages WHERE chat_room_id = ?',
+      [chatRoomId],
+    );
+
+    final totalTokenCount = result.first['total'] as int? ?? 0;
+
+    await db.update(
+      'chat_rooms',
+      {'total_token_count': totalTokenCount},
+      where: 'id = ?',
+      whereArgs: [chatRoomId],
     );
   }
 
