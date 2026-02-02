@@ -99,15 +99,15 @@ enum CharacterBookActivationCondition {
 }
 
 enum CharacterBookKeyCondition {
-  and,
-  or;
+  or,
+  and;
 
   String get displayName {
     switch (this) {
-      case CharacterBookKeyCondition.and:
-        return 'AND';
       case CharacterBookKeyCondition.or:
         return 'OR';
+      case CharacterBookKeyCondition.and:
+        return 'AND';
     }
   }
 }
@@ -134,7 +134,7 @@ class CharacterBook {
     this.isExpanded = false,
     this.enabled = CharacterBookActivationCondition.disabled,
     List<String>? keys,
-    this.keyCondition = CharacterBookKeyCondition.and,
+    this.keyCondition = CharacterBookKeyCondition.or,
     this.insertionOrder = 0,
     this.content,
   }) : keys = keys ?? [];
@@ -155,7 +155,7 @@ class CharacterBook {
       keys: (map['keys'] as String?)?.split(',') ?? [],
       keyCondition: CharacterBookKeyCondition.values.firstWhere(
         (e) => e.name == (map['key_condition'] as String),
-        orElse: () => CharacterBookKeyCondition.and,
+        orElse: () => CharacterBookKeyCondition.or,
       ),
       insertionOrder: map['insertion_order'] as int? ?? 0,
       content: map['content'] as String?,
@@ -241,7 +241,7 @@ class CharacterBook {
           [],
       keyCondition: CharacterBookKeyCondition.values.firstWhere(
         (e) => e.name == json['keyCondition'],
-        orElse: () => CharacterBookKeyCondition.and,
+        orElse: () => CharacterBookKeyCondition.or,
       ),
       insertionOrder: json['insertionOrder'] as int? ?? 0,
       content: json['content'] as String?,

@@ -42,6 +42,11 @@ class CommonSegmentedButton<T extends Object> extends StatelessWidget {
               borderRadius: BorderRadius.circular(UIConstants.borderRadiusSmall),
             ),
           ),
+          side: WidgetStateProperty.all(
+            BorderSide(
+              color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
+            ),
+          ),
           tapTargetSize: MaterialTapTargetSize.shrinkWrap,
           visualDensity: const VisualDensity(horizontal: 0, vertical: -2),
         ),
