@@ -18,6 +18,37 @@ enum PromptRole {
   }
 }
 
+enum ChatSettingMode {
+  basic,
+  advanced;
+
+  String get displayName {
+    switch (this) {
+      case ChatSettingMode.basic:
+        return '기본';
+      case ChatSettingMode.advanced:
+        return '고급';
+    }
+  }
+}
+
+enum ChatRangeType {
+  recent,
+  middle,
+  old;
+
+  String get displayName {
+    switch (this) {
+      case ChatRangeType.recent:
+        return '최근';
+      case ChatRangeType.middle:
+        return '중간';
+      case ChatRangeType.old:
+        return '오래된';
+    }
+  }
+}
+
 class PromptItem {
   final int? id;
   final int? chatPromptId;
@@ -28,6 +59,14 @@ class PromptItem {
   final int order;
   bool isExpanded;
 
+  // chat role settings
+  final ChatSettingMode chatSettingMode;
+  final int? includeStartPosition;
+  final ChatRangeType chatRangeType;
+  final int? recentChatCount;
+  final int? chatStartPosition;
+  final int? chatEndPosition;
+
   PromptItem({
     this.id,
     this.chatPromptId,
@@ -37,6 +76,12 @@ class PromptItem {
     this.name,
     this.order = 0,
     this.isExpanded = false,
+    this.chatSettingMode = ChatSettingMode.basic,
+    this.includeStartPosition,
+    this.chatRangeType = ChatRangeType.recent,
+    this.recentChatCount,
+    this.chatStartPosition,
+    this.chatEndPosition,
   });
 
   factory PromptItem.fromMap(Map<String, dynamic> map) {
@@ -51,6 +96,18 @@ class PromptItem {
       content: map['content'] as String? ?? '',
       name: map['name'] as String?,
       order: map['order'] as int? ?? 0,
+      chatSettingMode: ChatSettingMode.values.firstWhere(
+        (m) => m.name == (map['chat_setting_mode'] as String?),
+        orElse: () => ChatSettingMode.basic,
+      ),
+      includeStartPosition: map['include_start_position'] as int?,
+      chatRangeType: ChatRangeType.values.firstWhere(
+        (t) => t.name == (map['chat_range_type'] as String?),
+        orElse: () => ChatRangeType.recent,
+      ),
+      recentChatCount: map['recent_chat_count'] as int?,
+      chatStartPosition: map['chat_start_position'] as int?,
+      chatEndPosition: map['chat_end_position'] as int?,
     );
   }
 
@@ -63,6 +120,12 @@ class PromptItem {
       'content': content,
       'name': name,
       'order': order,
+      'chat_setting_mode': chatSettingMode.name,
+      'include_start_position': includeStartPosition,
+      'chat_range_type': chatRangeType.name,
+      'recent_chat_count': recentChatCount,
+      'chat_start_position': chatStartPosition,
+      'chat_end_position': chatEndPosition,
     };
   }
 
@@ -76,6 +139,12 @@ class PromptItem {
       'name': name,
       'order': order,
       'isExpanded': isExpanded,
+      'chatSettingMode': chatSettingMode.name,
+      'includeStartPosition': includeStartPosition,
+      'chatRangeType': chatRangeType.name,
+      'recentChatCount': recentChatCount,
+      'chatStartPosition': chatStartPosition,
+      'chatEndPosition': chatEndPosition,
     };
   }
 
@@ -92,6 +161,18 @@ class PromptItem {
       name: json['name'] as String?,
       order: json['order'] as int? ?? 0,
       isExpanded: json['isExpanded'] as bool? ?? false,
+      chatSettingMode: ChatSettingMode.values.firstWhere(
+        (m) => m.name == (json['chatSettingMode'] as String?),
+        orElse: () => ChatSettingMode.basic,
+      ),
+      includeStartPosition: json['includeStartPosition'] as int?,
+      chatRangeType: ChatRangeType.values.firstWhere(
+        (t) => t.name == (json['chatRangeType'] as String?),
+        orElse: () => ChatRangeType.recent,
+      ),
+      recentChatCount: json['recentChatCount'] as int?,
+      chatStartPosition: json['chatStartPosition'] as int?,
+      chatEndPosition: json['chatEndPosition'] as int?,
     );
   }
 
@@ -104,6 +185,12 @@ class PromptItem {
     String? name,
     int? order,
     bool? isExpanded,
+    ChatSettingMode? chatSettingMode,
+    int? includeStartPosition,
+    ChatRangeType? chatRangeType,
+    int? recentChatCount,
+    int? chatStartPosition,
+    int? chatEndPosition,
   }) {
     return PromptItem(
       id: id ?? this.id,
@@ -114,6 +201,12 @@ class PromptItem {
       name: name ?? this.name,
       order: order ?? this.order,
       isExpanded: isExpanded ?? this.isExpanded,
+      chatSettingMode: chatSettingMode ?? this.chatSettingMode,
+      includeStartPosition: includeStartPosition ?? this.includeStartPosition,
+      chatRangeType: chatRangeType ?? this.chatRangeType,
+      recentChatCount: recentChatCount ?? this.recentChatCount,
+      chatStartPosition: chatStartPosition ?? this.chatStartPosition,
+      chatEndPosition: chatEndPosition ?? this.chatEndPosition,
     );
   }
 
@@ -126,6 +219,12 @@ class PromptItem {
     String? name,
     int? order,
     bool? isExpanded,
+    ChatSettingMode? chatSettingMode,
+    int? includeStartPosition,
+    ChatRangeType? chatRangeType,
+    int? recentChatCount,
+    int? chatStartPosition,
+    int? chatEndPosition,
   }) {
     return PromptItem(
       id: id ?? this.id,
@@ -136,6 +235,12 @@ class PromptItem {
       name: name ?? this.name,
       order: order ?? this.order,
       isExpanded: isExpanded ?? this.isExpanded,
+      chatSettingMode: chatSettingMode ?? this.chatSettingMode,
+      includeStartPosition: includeStartPosition ?? this.includeStartPosition,
+      chatRangeType: chatRangeType ?? this.chatRangeType,
+      recentChatCount: recentChatCount ?? this.recentChatCount,
+      chatStartPosition: chatStartPosition ?? this.chatStartPosition,
+      chatEndPosition: chatEndPosition ?? this.chatEndPosition,
     );
   }
 }

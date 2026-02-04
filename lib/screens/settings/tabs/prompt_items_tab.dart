@@ -166,22 +166,121 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
             labelBuilder: (role) => role.displayName,
           ),
           const SizedBox(height: UIConstants.spacing12),
-          Text(
-            '프롬프트',
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                ),
-          ),
-          const SizedBox(height: 6),
-          CommonEditText(
-            controller: widget.contentControllers[item.id],
-            hintText: 'AI의 역할과 응답 방식을 정의하세요',
-            size: CommonEditTextSize.small,
-            maxLines: null,
-            minLines: 5,
-          ),
+          if (item.role == PromptRole.chat)
+            _buildChatSettings(item, folder)
+          else ...[
+            Text(
+              '프롬프트',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    fontWeight: FontWeight.w600,
+                  ),
+            ),
+            const SizedBox(height: 6),
+            CommonEditText(
+              controller: widget.contentControllers[item.id],
+              hintText: 'AI의 역할과 응답 방식을 정의하세요',
+              size: CommonEditTextSize.small,
+              maxLines: null,
+              minLines: 5,
+            ),
+          ],
         ],
       ),
+    );
+  }
+
+  void _updateItem(PromptItem item, PromptItemFolder? folder, PromptItem updated) {
+    setState(() {
+      if (folder != null) {
+        final index = folder.items.indexOf(item);
+        if (index != -1) folder.items[index] = updated;
+      } else {
+        final index = widget.standaloneItems.indexOf(item);
+        if (index != -1) widget.standaloneItems[index] = updated;
+      }
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.onUpdate();
+    });
+  }
+
+  Widget _buildChatSettings(PromptItem item, PromptItemFolder? folder) {
+    final labelStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
+          fontWeight: FontWeight.w600,
+        );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('설정', style: labelStyle),
+        const SizedBox(height: 6),
+        CommonSegmentedButton<ChatSettingMode>(
+          values: ChatSettingMode.values,
+          selected: item.chatSettingMode,
+          onSelectionChanged: (selected) {
+            _updateItem(item, folder, item.copyWith(chatSettingMode: selected));
+          },
+          labelBuilder: (mode) => mode.displayName,
+        ),
+        if (item.chatSettingMode == ChatSettingMode.advanced) ...[
+          const SizedBox(height: UIConstants.spacing12),
+          CommonSegmentedButton<ChatRangeType>(
+            values: ChatRangeType.values,
+            selected: item.chatRangeType,
+            onSelectionChanged: (selected) {
+              _updateItem(item, folder, item.copyWith(chatRangeType: selected));
+            },
+            labelBuilder: (type) => type.displayName,
+          ),
+          const SizedBox(height: UIConstants.spacing12),
+          if (item.chatRangeType == ChatRangeType.recent) ...[
+            Text('최근 채팅 포함 개수', style: labelStyle),
+            const SizedBox(height: 6),
+            CommonEditText(
+              hintText: '개수',
+              size: CommonEditTextSize.small,
+              initialValue: item.recentChatCount?.toString(),
+              keyboardType: TextInputType.number,
+              onFocusLost: (value) {
+                _updateItem(item, folder, item.copyWith(
+                  recentChatCount: int.tryParse(value),
+                ));
+              },
+            ),
+          ],
+          if (item.chatRangeType == ChatRangeType.middle || item.chatRangeType == ChatRangeType.old) ...[
+            Text('이전 채팅 시작 위치', style: labelStyle),
+            const SizedBox(height: 6),
+            CommonEditText(
+              hintText: '시작 위치',
+              size: CommonEditTextSize.small,
+              initialValue: item.chatStartPosition?.toString(),
+              keyboardType: TextInputType.number,
+              onFocusLost: (value) {
+                _updateItem(item, folder, item.copyWith(
+                  chatStartPosition: int.tryParse(value),
+                ));
+              },
+            ),
+          ],
+          if (item.chatRangeType == ChatRangeType.middle) ...[
+            const SizedBox(height: UIConstants.spacing12),
+            Text('이전 채팅 마지막 위치', style: labelStyle),
+            const SizedBox(height: 6),
+            CommonEditText(
+              hintText: '마지막 위치',
+              size: CommonEditTextSize.small,
+              initialValue: item.chatEndPosition?.toString(),
+              keyboardType: TextInputType.number,
+              onFocusLost: (value) {
+                _updateItem(item, folder, item.copyWith(
+                  chatEndPosition: int.tryParse(value),
+                ));
+              },
+            ),
+          ],
+        ],
+      ],
     );
   }
 

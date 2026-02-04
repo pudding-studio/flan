@@ -55,6 +55,8 @@ class CommonEditText extends StatefulWidget {
     ),
   };
 
+  final String? initialValue;
+
   const CommonEditText({
     super.key,
     this.controller,
@@ -74,6 +76,7 @@ class CommonEditText extends StatefulWidget {
     this.enabled = true,
     this.textInputAction,
     this.onFieldSubmitted,
+    this.initialValue,
   });
 
   @override
@@ -82,24 +85,32 @@ class CommonEditText extends StatefulWidget {
 
 class _CommonEditTextState extends State<CommonEditText> {
   late FocusNode _focusNode;
+  TextEditingController? _internalController;
+
+  TextEditingController get _effectiveController =>
+      widget.controller ?? _internalController!;
 
   @override
   void initState() {
     super.initState();
     _focusNode = FocusNode();
     _focusNode.addListener(_onFocusChange);
+    if (widget.controller == null) {
+      _internalController = TextEditingController(text: widget.initialValue);
+    }
   }
 
   @override
   void dispose() {
     _focusNode.removeListener(_onFocusChange);
     _focusNode.dispose();
+    _internalController?.dispose();
     super.dispose();
   }
 
   void _onFocusChange() {
-    if (!_focusNode.hasFocus && widget.onFocusLost != null && widget.controller != null) {
-      widget.onFocusLost!(widget.controller!.text);
+    if (!_focusNode.hasFocus && widget.onFocusLost != null) {
+      widget.onFocusLost!(_effectiveController.text);
     }
   }
 
@@ -112,7 +123,7 @@ class _CommonEditTextState extends State<CommonEditText> {
     final isDense = config.isDense;
 
     return TextFormField(
-      controller: widget.controller,
+      controller: _effectiveController,
       focusNode: _focusNode,
       style: textStyle,
       obscureText: widget.obscureText,
