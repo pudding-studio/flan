@@ -1,9 +1,12 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../constants/ui_constants.dart';
+import '../../providers/tokenizer_provider.dart';
+import '../../utils/token_counter.dart';
 import '../../database/database_helper.dart';
 import '../../models/character/character.dart';
 import '../../models/character/cover_image.dart';
@@ -1028,8 +1031,10 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
                 ValueListenableBuilder<TextEditingValue>(
                   valueListenable: _descriptionController,
                   builder: (context, value, child) {
+                    final tokenizer = context.watch<TokenizerProvider>().selectedTokenizer;
+                    final tokenCount = TokenCounter.estimateTokenCount(value.text, tokenizer: tokenizer);
                     return Text(
-                      '${value.text.length}',
+                      '$tokenCount token',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),

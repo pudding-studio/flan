@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../providers/tokenizer_provider.dart';
+import '../../utils/token_counter.dart';
 import 'common_edit_text.dart';
 import 'common_title_medium.dart';
 
@@ -43,25 +46,27 @@ class CommonCustomTextField extends StatefulWidget {
 }
 
 class _CommonCustomTextFieldState extends State<CommonCustomTextField> {
-  int _currentLength = 0;
+  int _currentTokenCount = 0;
   late bool _isObscured;
 
   @override
   void initState() {
     super.initState();
     _isObscured = widget.obscureText;
-    widget.controller?.addListener(_updateLength);
+    widget.controller?.addListener(_updateTokenCount);
   }
 
   @override
   void dispose() {
-    widget.controller?.removeListener(_updateLength);
+    widget.controller?.removeListener(_updateTokenCount);
     super.dispose();
   }
 
-  void _updateLength() {
+  void _updateTokenCount() {
     setState(() {
-      _currentLength = widget.controller?.text.length ?? 0;
+      final text = widget.controller?.text ?? '';
+      final tokenizer = context.read<TokenizerProvider>().selectedTokenizer;
+      _currentTokenCount = TokenCounter.estimateTokenCount(text, tokenizer: tokenizer);
     });
   }
 
@@ -87,7 +92,7 @@ class _CommonCustomTextFieldState extends State<CommonCustomTextField> {
                 const Spacer(),
                 if (widget.showCounter)
                   Text(
-                    '$_currentLength',
+                    '$_currentTokenCount token',
                     style: textTheme.bodySmall?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
