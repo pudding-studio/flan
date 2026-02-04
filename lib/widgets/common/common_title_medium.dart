@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../constants/ui_constants.dart';
+import '../../utils/common_dialog.dart';
 
 /// titleSmall 스타일의 기본 텍스트 위젯
 ///
@@ -70,17 +71,9 @@ class CommonTitleMedium extends StatelessWidget {
 
   void _showHelpDialog(BuildContext context) {
     if (helpMessage == null) return;
-    showDialog(
+    CommonDialog.showInfo(
       context: context,
-      builder: (context) => AlertDialog(
-        content: Text(helpMessage!),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('확인'),
-          ),
-        ],
-      ),
+      content: helpMessage!,
     );
   }
 }
