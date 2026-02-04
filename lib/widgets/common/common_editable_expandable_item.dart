@@ -83,9 +83,12 @@ class _CommonEditableExpandableItemState extends State<CommonEditableExpandableI
   @override
   void didUpdateWidget(CommonEditableExpandableItem oldWidget) {
     super.didUpdateWidget(oldWidget);
-    // 외부에서 name이 변경되었고, 현재 컨트롤러 값과 다른 경우에만 업데이트
     if (_nameController != null && widget.name != oldWidget.name && widget.name != _nameController!.text) {
-      _nameController!.text = widget.name;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _nameController!.text = widget.name;
+        }
+      });
     }
   }
 

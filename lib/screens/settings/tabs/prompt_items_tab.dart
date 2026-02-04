@@ -159,7 +159,9 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
                   }
                 }
               });
-              widget.onUpdate();
+              WidgetsBinding.instance.addPostFrameCallback((_) {
+                widget.onUpdate();
+              });
             },
             labelBuilder: (role) => role.displayName,
           ),
@@ -191,6 +193,8 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
         return Icons.person_outline;
       case PromptRole.assistant:
         return Icons.smart_toy_outlined;
+      case PromptRole.chat:
+        return Icons.chat_outlined;
     }
   }
 }

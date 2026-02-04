@@ -1,7 +1,8 @@
 enum PromptRole {
   system,
   user,
-  assistant;
+  assistant,
+  chat;
 
   String get displayName {
     switch (this) {
@@ -11,6 +12,8 @@ enum PromptRole {
         return '사용자';
       case PromptRole.assistant:
         return '캐릭터';
+      case PromptRole.chat:
+        return '채팅';
     }
   }
 }
