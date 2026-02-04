@@ -82,8 +82,8 @@ class SettingsPromptListItem extends StatelessWidget {
             ),
           ),
           Positioned(
-            top: 8,
-            right: 0,
+            top: -8,
+            right: -8,
             child: PopupMenuButton<String>(
               icon: Container(
                 width: 24,
