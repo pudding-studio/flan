@@ -6,7 +6,9 @@ import '../../models/character/character.dart';
 import '../../models/character/cover_image.dart';
 import '../../models/character/persona.dart';
 import '../../models/character/character_book_folder.dart';
+import '../../models/character/start_scenario.dart';
 import '../../models/prompt/chat_prompt.dart';
+import '../../models/prompt/prompt_item.dart';
 import '../../database/database_helper.dart';
 import '../../providers/tokenizer_provider.dart';
 import '../../utils/prompt_builder.dart';
@@ -115,6 +117,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       persona = await _db.readPersona(_chatRoom!.selectedPersonaId!);
     }
 
+    StartScenario? startScenario;
+    if (_chatRoom!.selectedStartScenarioId != null) {
+      startScenario = await _db.readStartScenario(_chatRoom!.selectedStartScenarioId!);
+    }
+
     final allCharacterBooks = await _db.readCharacterBooks(_character!.id!);
     final activeCharacterBooks = allCharacterBooks.where((characterBook) {
       return characterBook.enabled == CharacterBookActivationCondition.enabled;
@@ -124,8 +131,34 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       chatPrompt: chatPrompt,
       character: _character!,
       persona: persona,
+      startScenario: startScenario,
       activeCharacterBooks: activeCharacterBooks,
     );
+  }
+
+  Future<List<ChatMessage>> _loadFilteredChatHistory(ChatPrompt? chatPrompt) async {
+    final chatItem = chatPrompt?.items
+        .where((item) => item.role == PromptRole.chat)
+        .firstOrNull;
+
+    if (chatItem == null || chatItem.chatSettingMode == ChatSettingMode.basic) {
+      return await _db.readChatMessagesByChatRoom(widget.chatRoomId);
+    }
+
+    switch (chatItem.chatRangeType) {
+      case ChatRangeType.recent:
+        final count = chatItem.recentChatCount ?? 0;
+        if (count <= 0) return await _db.readChatMessagesByChatRoom(widget.chatRoomId);
+        return await _db.readChatMessagesRecent(widget.chatRoomId, count);
+      case ChatRangeType.middle:
+        final start = chatItem.chatStartPosition ?? 1;
+        final end = chatItem.chatEndPosition ?? start;
+        return await _db.readChatMessagesMiddle(widget.chatRoomId, start, end);
+      case ChatRangeType.old:
+        final recentExclude = chatItem.chatStartPosition ?? 0;
+        if (recentExclude <= 0) return await _db.readChatMessagesByChatRoom(widget.chatRoomId);
+        return await _db.readChatMessagesOld(widget.chatRoomId, recentExclude);
+    }
   }
 
   Future<void> _sendMessage() async {
@@ -173,9 +206,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         chatPrompt = await _db.readChatPrompt(_chatRoom!.selectedChatPromptId!);
       }
 
+      final filteredHistory = await _loadFilteredChatHistory(chatPrompt);
+      final chatHistory = filteredHistory.where((m) => m.id != _messages.last.id || _messages.last.role != MessageRole.user).toList();
+
       final aiResponse = await _geminiService.sendMessage(
         systemPrompt: systemPrompt,
-        chatHistory: _messages.where((m) => m.id != _messages.last.id || _messages.last.role != MessageRole.user).toList(),
+        chatHistory: chatHistory,
         userMessage: combinedUserMessage,
         promptParameters: chatPrompt?.parameters,
         chatRoomId: widget.chatRoomId,
@@ -318,9 +354,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         chatPrompt = await _db.readChatPrompt(_chatRoom!.selectedChatPromptId!);
       }
 
+      final filteredHistory = await _loadFilteredChatHistory(chatPrompt);
+      final chatHistory = filteredHistory.where((m) => m.id != lastMessage.id).toList();
+
       final aiResponse = await _geminiService.sendMessage(
         systemPrompt: systemPrompt,
-        chatHistory: _messages.sublist(0, _messages.length - 1),
+        chatHistory: chatHistory,
         userMessage: lastMessage.content,
         promptParameters: chatPrompt?.parameters,
         chatRoomId: widget.chatRoomId,
@@ -382,16 +421,21 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       if (previousMessage.role != MessageRole.user) return;
 
       final systemPrompt = await _generateSystemPrompt();
-      final historyBeforeMessage = _messages.sublist(0, messageIndex - 1);
 
       ChatPrompt? chatPrompt;
       if (_chatRoom!.selectedChatPromptId != null) {
         chatPrompt = await _db.readChatPrompt(_chatRoom!.selectedChatPromptId!);
       }
 
+      final filteredHistory = await _loadFilteredChatHistory(chatPrompt);
+      final chatHistory = filteredHistory.where((m) {
+        final idx = _messages.indexWhere((msg) => msg.id == m.id);
+        return idx < messageIndex - 1;
+      }).toList();
+
       final aiResponse = await _geminiService.sendMessage(
         systemPrompt: systemPrompt,
-        chatHistory: historyBeforeMessage,
+        chatHistory: chatHistory,
         userMessage: previousMessage.content,
         promptParameters: chatPrompt?.parameters,
         chatRoomId: widget.chatRoomId,

@@ -30,7 +30,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 18,
+      version: 19,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -192,6 +192,12 @@ class DatabaseHelper {
         content $textTypeNullable,
         name $textTypeNullable,
         `order` $intType DEFAULT 0,
+        chat_setting_mode $textType DEFAULT 'basic',
+        include_start_position INTEGER,
+        chat_range_type $textType DEFAULT 'recent',
+        recent_chat_count INTEGER,
+        chat_start_position INTEGER,
+        chat_end_position INTEGER,
         FOREIGN KEY (chat_prompt_id) REFERENCES chat_prompts (id) ON DELETE CASCADE,
         FOREIGN KEY (folder_id) REFERENCES prompt_item_folders (id) ON DELETE CASCADE
       )
@@ -585,6 +591,29 @@ class DatabaseHelper {
         ALTER TABLE chat_rooms ADD COLUMN total_token_count INTEGER NOT NULL DEFAULT 0
       ''');
     }
+
+    if (oldVersion < 19) {
+      final textType = 'TEXT NOT NULL';
+
+      await db.execute('''
+        ALTER TABLE prompt_items ADD COLUMN chat_setting_mode $textType DEFAULT 'basic'
+      ''');
+      await db.execute('''
+        ALTER TABLE prompt_items ADD COLUMN include_start_position INTEGER
+      ''');
+      await db.execute('''
+        ALTER TABLE prompt_items ADD COLUMN chat_range_type $textType DEFAULT 'recent'
+      ''');
+      await db.execute('''
+        ALTER TABLE prompt_items ADD COLUMN recent_chat_count INTEGER
+      ''');
+      await db.execute('''
+        ALTER TABLE prompt_items ADD COLUMN chat_start_position INTEGER
+      ''');
+      await db.execute('''
+        ALTER TABLE prompt_items ADD COLUMN chat_end_position INTEGER
+      ''');
+    }
   }
 
   // ==================== 캐릭터 CRUD ====================
@@ -818,6 +847,17 @@ class DatabaseHelper {
       orderBy: '`order` ASC',
     );
     return result.map((map) => StartScenario.fromMap(map)).toList();
+  }
+
+  Future<StartScenario?> readStartScenario(int id) async {
+    final db = await database;
+    final result = await db.query(
+      'start_scenarios',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    if (result.isEmpty) return null;
+    return StartScenario.fromMap(result.first);
   }
 
   Future<int> updateStartScenario(StartScenario scenario) async {
@@ -1165,6 +1205,49 @@ class DatabaseHelper {
       where: 'chat_room_id = ?',
       whereArgs: [chatRoomId],
       orderBy: 'created_at ASC',
+    );
+    return result.map((map) => ChatMessage.fromMap(map)).toList();
+  }
+
+  Future<List<ChatMessage>> readChatMessagesRecent(int chatRoomId, int count) async {
+    final db = await database;
+    final limit = count * 2;
+    final result = await db.query(
+      'chat_messages',
+      where: 'chat_room_id = ?',
+      whereArgs: [chatRoomId],
+      orderBy: 'created_at DESC',
+      limit: limit,
+    );
+    return result.reversed.map((map) => ChatMessage.fromMap(map)).toList();
+  }
+
+  Future<List<ChatMessage>> readChatMessagesMiddle(int chatRoomId, int start, int end) async {
+    final db = await database;
+    final offset = (start - 1) * 2;
+    final limit = (end - start + 1) * 2;
+    final result = await db.rawQuery(
+      'SELECT * FROM chat_messages WHERE chat_room_id = ? ORDER BY created_at DESC LIMIT ? OFFSET ?',
+      [chatRoomId, limit, offset],
+    );
+    return result.reversed.map((map) => ChatMessage.fromMap(map)).toList();
+  }
+
+  Future<List<ChatMessage>> readChatMessagesOld(int chatRoomId, int recentExcludeCount) async {
+    final db = await database;
+    final excludeCount = recentExcludeCount * 2;
+    final total = Sqflite.firstIntValue(await db.rawQuery(
+      'SELECT COUNT(*) FROM chat_messages WHERE chat_room_id = ?',
+      [chatRoomId],
+    )) ?? 0;
+    final take = total - excludeCount;
+    if (take <= 0) return [];
+    final result = await db.query(
+      'chat_messages',
+      where: 'chat_room_id = ?',
+      whereArgs: [chatRoomId],
+      orderBy: 'created_at ASC',
+      limit: take,
     );
     return result.map((map) => ChatMessage.fromMap(map)).toList();
   }
