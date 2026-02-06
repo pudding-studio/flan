@@ -296,7 +296,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
 
       // 파일 저장
       if (Platform.isAndroid) {
-        const platform = MethodChannel('com.example.flan/file_saver');
+        const platform = MethodChannel('com.flanapp.flan/file_saver');
         final result = await platform.invokeMethod('saveToDownloads', {
           'fileName': fileName,
           'content': jsonString,

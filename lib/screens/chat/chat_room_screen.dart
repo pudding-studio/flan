@@ -447,6 +447,100 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
+  Future<String> _generateBranchName() async {
+    final currentName = _chatRoom!.name;
+
+    // 기존 이름에서 베이스 이름 추출 (예: "채팅방(2)" -> "채팅방")
+    final branchPattern = RegExp(r'^(.+)\((\d+)\)$');
+    final match = branchPattern.firstMatch(currentName);
+    final baseName = match != null ? match.group(1)! : currentName;
+
+    // 같은 캐릭터의 모든 채팅방 조회
+    final allChatRooms = await _db.readChatRoomsByCharacter(_chatRoom!.characterId);
+
+    // 같은 베이스 이름을 가진 채팅방들의 숫자 추출
+    int maxNumber = 0;
+    final namePattern = RegExp('^${RegExp.escape(baseName)}\\((\\d+)\\)\$');
+
+    for (final room in allChatRooms) {
+      final roomMatch = namePattern.firstMatch(room.name);
+      if (roomMatch != null) {
+        final number = int.parse(roomMatch.group(1)!);
+        if (number > maxNumber) {
+          maxNumber = number;
+        }
+      }
+    }
+
+    return '$baseName(${maxNumber + 1})';
+  }
+
+  Future<void> _createBranch(int messageIndex) async {
+    final confirmed = await CommonDialog.showConfirmation(
+      context: context,
+      title: '분기 생성',
+      content: '이 메시지까지의 내용으로 새 분기점을 생성하시겠습니까?',
+      confirmText: '생성',
+    );
+
+    if (confirmed != true) return;
+
+    try {
+      if (_chatRoom == null || _character == null) return;
+
+      // 새 채팅방 생성
+      final branchName = await _generateBranchName();
+      final newChatRoom = ChatRoom(
+        characterId: _chatRoom!.characterId,
+        name: branchName,
+        selectedChatPromptId: _chatRoom!.selectedChatPromptId,
+        selectedPersonaId: _chatRoom!.selectedPersonaId,
+        selectedStartScenarioId: _chatRoom!.selectedStartScenarioId,
+      );
+
+      final newChatRoomId = await _db.createChatRoom(newChatRoom);
+
+      // 분기점까지의 메시지 복사
+      for (int i = 0; i <= messageIndex; i++) {
+        final msg = _messages[i];
+        final newMessage = ChatMessage(
+          chatRoomId: newChatRoomId,
+          role: msg.role,
+          content: msg.content,
+          tokenCount: msg.tokenCount,
+          createdAt: msg.createdAt,
+          usageMetadata: msg.usageMetadata,
+        );
+        await _db.createChatMessage(newMessage);
+      }
+
+      // 새 채팅방 토큰 합산 업데이트
+      await _db.updateChatRoomTotalTokenCount(newChatRoomId);
+
+      if (!mounted) return;
+
+      CommonDialog.showSnackBar(
+        context: context,
+        message: '분기가 생성되었습니다',
+      );
+
+      // 새 채팅방으로 이동
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ChatRoomScreen(chatRoomId: newChatRoomId),
+        ),
+      );
+    } catch (e) {
+      debugPrint('Error creating branch: $e');
+      if (!mounted) return;
+      CommonDialog.showSnackBar(
+        context: context,
+        message: '분기 생성 중 오류가 발생했습니다',
+      );
+    }
+  }
+
   Future<void> _regenerateMessage(int messageId) async {
     if (_isSending) return;
 
@@ -754,6 +848,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     IconButton(
                       icon: const Icon(Icons.edit_outlined, size: 18),
                       onPressed: () => _startEditMessage(message),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+                    ),
+                    const SizedBox(width: 0),
+                    IconButton(
+                      icon: const Icon(Icons.call_split, size: 18),
+                      onPressed: () => _createBranch(index),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                       visualDensity: const VisualDensity(horizontal: -4, vertical: -4),

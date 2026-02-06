@@ -30,6 +30,12 @@ class ChatRoomCard extends StatelessWidget {
     );
   }
 
+  String _getLastLine(String text) {
+    final lines = text.split('\n').where((line) => line.trim().isNotEmpty).toList();
+    if (lines.isEmpty) return text;
+    return lines.last;
+  }
+
   @override
   Widget build(BuildContext context) {
     const double imageSize = 60.0;
@@ -139,7 +145,7 @@ class ChatRoomCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    lastMessage,
+                    _getLastLine(lastMessage),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.7),
                         ),

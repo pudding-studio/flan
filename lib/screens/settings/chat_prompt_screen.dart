@@ -113,7 +113,7 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
       final fileName = '${prompt.name}.json';
 
       if (Platform.isAndroid) {
-        const platform = MethodChannel('com.example.flan/file_saver');
+        const platform = MethodChannel('com.flanapp.flan/file_saver');
         final result = await platform.invokeMethod('saveToDownloads', {
           'fileName': fileName,
           'content': jsonString,
