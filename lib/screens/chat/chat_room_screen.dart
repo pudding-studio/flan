@@ -40,6 +40,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   ChatRoom? _chatRoom;
   Character? _character;
+  StartScenario? _startScenario;
   List<ChatMessage> _messages = [];
   List<CoverImage> _coverImages = [];
   bool _isLoading = true;
@@ -76,32 +77,26 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       final messages = await _db.readChatMessagesByChatRoom(widget.chatRoomId);
       final coverImages = await _db.readCoverImages(chatRoom.characterId);
 
+      StartScenario? startScenario;
+      if (chatRoom.selectedStartScenarioId != null) {
+        startScenario = await _db.readStartScenario(chatRoom.selectedStartScenarioId!);
+      }
+
       setState(() {
         _chatRoom = chatRoom;
         _character = character;
+        _startScenario = startScenario;
         _messages = messages;
         _coverImages = coverImages;
         _isLoading = false;
       });
 
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _scrollToBottom();
-      });
     } catch (e) {
       debugPrint('Error loading chat data: $e');
       setState(() => _isLoading = false);
     }
   }
 
-  void _scrollToBottom() {
-    if (_scrollController.hasClients) {
-      _scrollController.animateTo(
-        _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
-        curve: Curves.easeOut,
-      );
-    }
-  }
 
   Future<({String systemPrompt, List<Map<String, dynamic>> contents, PromptParameters? parameters})> _buildApiData({
     required String userMessage,
@@ -429,8 +424,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       );
       await _db.updateChatRoom(updatedChatRoom);
 
-      _scrollToBottom();
-
     } catch (e) {
       debugPrint('Error resending message: $e');
       if (!mounted) return;
@@ -516,6 +509,120 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     return CircleAvatar(
       radius: 16,
       backgroundImage: MemoryImage(selectedCover.imageData!),
+    );
+  }
+
+  Widget _buildChatHeader() {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          _buildWarningCard(),
+          if (_startScenario?.startSetting != null &&
+              _startScenario!.startSetting!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _buildStartSettingCard(),
+          ],
+          if (_startScenario?.startMessage != null &&
+              _startScenario!.startMessage!.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _buildStartMessageBubble(),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildWarningCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.warning_amber_rounded,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '주의',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              '모든 AI 응답은 자동 생성되며, 편향적이거나 부정확할 수 있습니다.',
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStartSettingCard() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.settings_outlined,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '시작 설정',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _startScenario!.startSetting!,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStartMessageBubble() {
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Container(
+        constraints: BoxConstraints(
+          maxWidth: MediaQuery.of(context).size.width * 0.75,
+        ),
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Text(
+          _startScenario!.startMessage!,
+          style: Theme.of(context).textTheme.bodyLarge,
+        ),
+      ),
     );
   }
 
@@ -655,9 +762,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
-              itemCount: _messages.length,
+              reverse: true,
+              itemCount: _messages.length + 1,
               itemBuilder: (context, index) {
-                return _buildMessage(_messages[index], index);
+                if (index == _messages.length) {
+                  return _buildChatHeader();
+                }
+                final messageIndex = _messages.length - 1 - index;
+                return _buildMessage(_messages[messageIndex], messageIndex);
               },
             ),
           ),
@@ -679,9 +791,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   controller: _messageController,
                   enabled: !_isSending,
                   hintText: _isSending ? '전송 중...' : '메시지를 입력하세요',
-                  maxLines: null,
-                  textInputAction: TextInputAction.send,
-                  onFieldSubmitted: (_) => _sendMessage(),
+                  minLines: 1,
+                  maxLines: 5,
+                  textInputAction: TextInputAction.newline,
                   suffixIcon: IconButton(
                     icon: _isSending
                         ? const SizedBox(
