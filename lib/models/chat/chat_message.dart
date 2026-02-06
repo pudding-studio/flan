@@ -55,8 +55,10 @@ class UsageMetadata {
   }
 
   double get thoughtsRatio {
-    if (candidatesTokenCount == 0) return 0;
-    return (thoughtsTokenCount ?? 0) / candidatesTokenCount;
+    final thoughts = thoughtsTokenCount ?? 0;
+    final total = candidatesTokenCount + thoughts;
+    if (total == 0) return 0;
+    return thoughts / total;
   }
 }
 
