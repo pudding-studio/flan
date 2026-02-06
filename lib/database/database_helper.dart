@@ -30,7 +30,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 19,
+      version: 20,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -249,6 +249,7 @@ class DatabaseHelper {
         token_count INTEGER NOT NULL DEFAULT 0,
         created_at $textType,
         edited_at $textTypeNullable,
+        usage_metadata $textTypeNullable,
         FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE
       )
     ''');
@@ -628,6 +629,13 @@ class DatabaseHelper {
           ALTER TABLE prompt_items ADD COLUMN chat_end_position INTEGER
         ''');
       }
+    }
+
+    if (oldVersion < 20) {
+      // chat_messages 테이블에 usage_metadata 컬럼 추가
+      await db.execute('''
+        ALTER TABLE chat_messages ADD COLUMN usage_metadata TEXT
+      ''');
     }
   }
 

@@ -257,7 +257,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         excludeMessageIds: [excludeId],
       );
 
-      final aiResponse = await _geminiService.sendMessage(
+      final geminiResponse = await _geminiService.sendMessage(
         systemPrompt: apiData.systemPrompt,
         contents: apiData.contents,
         promptParameters: apiData.parameters,
@@ -265,12 +265,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         characterId: _character?.id,
       );
 
-      final assistantTokenCount = TokenCounter.estimateTokenCount(aiResponse, tokenizer: tokenizer);
+      final assistantTokenCount = geminiResponse.usageMetadata?.candidatesTokenCount ??
+          TokenCounter.estimateTokenCount(geminiResponse.text, tokenizer: tokenizer);
       final assistantMessage = ChatMessage(
         chatRoomId: widget.chatRoomId,
         role: MessageRole.assistant,
-        content: aiResponse,
+        content: geminiResponse.text,
         tokenCount: assistantTokenCount,
+        usageMetadata: geminiResponse.usageMetadata,
       );
 
       await _db.createChatMessage(assistantMessage);
@@ -400,7 +402,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         excludeMessageIds: [lastMessage.id!],
       );
 
-      final aiResponse = await _geminiService.sendMessage(
+      final geminiResponse = await _geminiService.sendMessage(
         systemPrompt: apiData.systemPrompt,
         contents: apiData.contents,
         promptParameters: apiData.parameters,
@@ -408,12 +410,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         characterId: _character?.id,
       );
 
-      final tokenCount = TokenCounter.estimateTokenCount(aiResponse, tokenizer: tokenizer);
+      final tokenCount = geminiResponse.usageMetadata?.candidatesTokenCount ??
+          TokenCounter.estimateTokenCount(geminiResponse.text, tokenizer: tokenizer);
       final assistantMessage = ChatMessage(
         chatRoomId: widget.chatRoomId,
         role: MessageRole.assistant,
-        content: aiResponse,
+        content: geminiResponse.text,
         tokenCount: tokenCount,
+        usageMetadata: geminiResponse.usageMetadata,
       );
 
       await _db.createChatMessage(assistantMessage);
@@ -465,7 +469,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         beforeMessageIndex: messageIndex - 1,
       );
 
-      final aiResponse = await _geminiService.sendMessage(
+      final geminiResponse = await _geminiService.sendMessage(
         systemPrompt: apiData.systemPrompt,
         contents: apiData.contents,
         promptParameters: apiData.parameters,
@@ -473,11 +477,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         characterId: _character?.id,
       );
 
-      final tokenCount = TokenCounter.estimateTokenCount(aiResponse, tokenizer: tokenizer);
+      final tokenCount = geminiResponse.usageMetadata?.candidatesTokenCount ??
+          TokenCounter.estimateTokenCount(geminiResponse.text, tokenizer: tokenizer);
       final updatedMessage = message.copyWith(
-        content: aiResponse,
+        content: geminiResponse.text,
         tokenCount: tokenCount,
         editedAt: DateTime.now(),
+        usageMetadata: geminiResponse.usageMetadata,
       );
 
       await _db.updateChatMessage(updatedMessage);
@@ -632,10 +638,69 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     );
   }
 
+  void _showUsageMetadataDialog(ChatMessage message) {
+    final metadata = message.usageMetadata;
+    if (metadata == null) {
+      CommonDialog.showSnackBar(
+        context: context,
+        message: '통계 정보가 없습니다',
+      );
+      return;
+    }
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('응답 통계'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildStatRow('입력 토큰', '${metadata.promptTokenCount}'),
+            if (metadata.cachedContentTokenCount != null) ...[
+              _buildStatRow('캐시 토큰', '${metadata.cachedContentTokenCount}'),
+              _buildStatRow('캐시 비율', '${(metadata.cacheRatio * 100).toStringAsFixed(1)}%'),
+            ],
+            const Divider(),
+            _buildStatRow('출력 토큰', '${metadata.candidatesTokenCount}'),
+            if (metadata.thoughtsTokenCount != null) ...[
+              _buildStatRow('생각 토큰', '${metadata.thoughtsTokenCount}'),
+              _buildStatRow('생각 비율', '${(metadata.thoughtsRatio * 100).toStringAsFixed(1)}%'),
+            ],
+            const Divider(),
+            _buildStatRow('총 토큰', '${metadata.totalTokenCount}'),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('닫기'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatRow(String label, String value) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Text(label, style: Theme.of(context).textTheme.bodyMedium),
+          Text(value, style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+            fontWeight: FontWeight.bold,
+          )),
+        ],
+      ),
+    );
+  }
+
   Widget _buildMessage(ChatMessage message, int index) {
     final isUser = message.role == MessageRole.user;
     final isEditing = _editingMessageId == message.id;
     final isLastMessage = index == _messages.length - 1;
+    final hasUsageMetadata = !isUser && message.usageMetadata != null;
 
     return Column(
       children: [
@@ -659,6 +724,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
+                  if (hasUsageMetadata) ...[
+                    IconButton(
+                      icon: const Icon(Icons.bar_chart, size: 18),
+                      onPressed: () => _showUsageMetadataDialog(message),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+                    ),
+                  ],
                   const Spacer(),
                   if (isEditing) ...[
                     IconButton(

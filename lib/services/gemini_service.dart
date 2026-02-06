@@ -2,8 +2,19 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/chat/chat_log.dart';
+import '../models/chat/chat_message.dart';
 import '../models/prompt/prompt_parameters.dart';
 import '../database/database_helper.dart';
+
+class GeminiResponse {
+  final String text;
+  final UsageMetadata? usageMetadata;
+
+  const GeminiResponse({
+    required this.text,
+    this.usageMetadata,
+  });
+}
 
 class GeminiService {
   static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
@@ -98,7 +109,7 @@ class GeminiService {
     return config.isEmpty ? null : config;
   }
 
-  Future<String> sendMessage({
+  Future<GeminiResponse> sendMessage({
     required String systemPrompt,
     required List<Map<String, dynamic>> contents,
     PromptParameters? promptParameters,
@@ -138,6 +149,7 @@ class GeminiService {
 
       final responseData = jsonDecode(response.body);
       final text = _extractTextFromResponse(responseData);
+      final usageMetadata = _extractUsageMetadata(responseData);
 
       if (text.isEmpty) {
         throw Exception('AI 응답을 받지 못했습니다');
@@ -151,7 +163,7 @@ class GeminiService {
         characterId: characterId,
       );
 
-      return text;
+      return GeminiResponse(text: text, usageMetadata: usageMetadata);
     } catch (e) {
       await _saveChatLog(
         request: requestJson,
@@ -180,6 +192,18 @@ class GeminiService {
       return parts[0]['text'] as String? ?? '';
     } catch (e) {
       return '';
+    }
+  }
+
+  UsageMetadata? _extractUsageMetadata(Map<String, dynamic> response) {
+    try {
+      final usageMetadata = response['usageMetadata'] as Map<String, dynamic>?;
+      if (usageMetadata == null) {
+        return null;
+      }
+      return UsageMetadata.fromJson(usageMetadata);
+    } catch (e) {
+      return null;
     }
   }
 
