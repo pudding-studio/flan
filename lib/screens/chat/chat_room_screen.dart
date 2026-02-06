@@ -9,6 +9,7 @@ import '../../models/character/character_book_folder.dart';
 import '../../models/character/start_scenario.dart';
 import '../../models/prompt/chat_prompt.dart';
 import '../../models/prompt/prompt_item.dart';
+import '../../models/prompt/prompt_parameters.dart';
 import '../../database/database_helper.dart';
 import '../../providers/tokenizer_provider.dart';
 import '../../utils/prompt_builder.dart';
@@ -102,9 +103,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
-  Future<String> _generateSystemPrompt() async {
+  Future<({String systemPrompt, List<Map<String, dynamic>> contents, PromptParameters? parameters})> _buildApiData({
+    required String userMessage,
+    List<int>? excludeMessageIds,
+    int? beforeMessageIndex,
+  }) async {
     if (_chatRoom == null || _character == null) {
-      return '시스템 프롬프트를 생성할 수 없습니다.';
+      return (systemPrompt: '', contents: <Map<String, dynamic>>[], parameters: null);
     }
 
     ChatPrompt? chatPrompt;
@@ -127,21 +132,66 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       return characterBook.enabled == CharacterBookActivationCondition.enabled;
     }).toList();
 
-    return PromptBuilder.buildSystemPrompt(
+    final systemPrompt = PromptBuilder.buildSystemPrompt(
       chatPrompt: chatPrompt,
       character: _character!,
       persona: persona,
       startScenario: startScenario,
       activeCharacterBooks: activeCharacterBooks,
     );
+
+    final chatHistoryMap = await _buildChatHistoryMap(
+      chatPrompt: chatPrompt,
+      excludeMessageIds: excludeMessageIds,
+      beforeMessageIndex: beforeMessageIndex,
+    );
+
+    final contents = PromptBuilder.buildContents(
+      chatPrompt: chatPrompt,
+      character: _character!,
+      userMessage: userMessage,
+      chatHistoryMap: chatHistoryMap,
+      persona: persona,
+      startScenario: startScenario,
+      activeCharacterBooks: activeCharacterBooks,
+    );
+
+    return (systemPrompt: systemPrompt, contents: contents, parameters: chatPrompt?.parameters);
   }
 
-  Future<List<ChatMessage>> _loadFilteredChatHistory(ChatPrompt? chatPrompt) async {
-    final chatItem = chatPrompt?.items
-        .where((item) => item.role == PromptRole.chat)
-        .firstOrNull;
+  Future<Map<PromptItem, List<ChatMessage>>> _buildChatHistoryMap({
+    required ChatPrompt? chatPrompt,
+    List<int>? excludeMessageIds,
+    int? beforeMessageIndex,
+  }) async {
+    final map = <PromptItem, List<ChatMessage>>{};
+    if (chatPrompt == null) return map;
 
-    if (chatItem == null || chatItem.chatSettingMode == ChatSettingMode.basic) {
+    final chatItems = chatPrompt.items.where((item) => item.role == PromptRole.chat).toList();
+    if (chatItems.isEmpty) return map;
+
+    for (final chatItem in chatItems) {
+      var messages = await _loadChatItemMessages(chatItem);
+
+      if (excludeMessageIds != null && excludeMessageIds.isNotEmpty) {
+        messages = messages.where((m) => !excludeMessageIds.contains(m.id)).toList();
+      }
+
+      if (beforeMessageIndex != null) {
+        messages = messages.where((m) {
+          final idx = _messages.indexWhere((msg) => msg.id == m.id);
+          return idx >= 0 && idx < beforeMessageIndex;
+        }).toList();
+      }
+
+      map[chatItem] = messages;
+    }
+
+    return map;
+  }
+
+  Future<List<ChatMessage>> _loadChatItemMessages(PromptItem chatItem) async {
+    if (chatItem.chatSettingMode == ChatSettingMode.basic) {
       return await _db.readChatMessagesByChatRoom(widget.chatRoomId);
     }
 
@@ -171,6 +221,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       final tokenizerProvider = context.read<TokenizerProvider>();
       final tokenizer = tokenizerProvider.selectedTokenizer;
       String combinedUserMessage;
+      int excludeId;
 
       if (_messages.isNotEmpty && _messages.last.role == MessageRole.user) {
         final lastUserMessage = _messages.last;
@@ -185,6 +236,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           editedAt: DateTime.now(),
         );
         await _db.updateChatMessage(updatedUserMessage);
+        excludeId = lastUserMessage.id!;
       } else {
         combinedUserMessage = text;
         final tokenCount = TokenCounter.estimateTokenCount(text, tokenizer: tokenizer);
@@ -194,26 +246,20 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           content: text,
           tokenCount: tokenCount,
         );
-        await _db.createChatMessage(userMessage);
+        excludeId = await _db.createChatMessage(userMessage);
       }
 
       _messageController.clear();
 
-      final systemPrompt = await _generateSystemPrompt();
-
-      ChatPrompt? chatPrompt;
-      if (_chatRoom!.selectedChatPromptId != null) {
-        chatPrompt = await _db.readChatPrompt(_chatRoom!.selectedChatPromptId!);
-      }
-
-      final filteredHistory = await _loadFilteredChatHistory(chatPrompt);
-      final chatHistory = filteredHistory.where((m) => m.id != _messages.last.id || _messages.last.role != MessageRole.user).toList();
+      final apiData = await _buildApiData(
+        userMessage: combinedUserMessage,
+        excludeMessageIds: [excludeId],
+      );
 
       final aiResponse = await _geminiService.sendMessage(
-        systemPrompt: systemPrompt,
-        chatHistory: chatHistory,
-        userMessage: combinedUserMessage,
-        promptParameters: chatPrompt?.parameters,
+        systemPrompt: apiData.systemPrompt,
+        contents: apiData.contents,
+        promptParameters: apiData.parameters,
         chatRoomId: widget.chatRoomId,
         characterId: _character?.id,
       );
@@ -347,21 +393,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     try {
       final tokenizerProvider = context.read<TokenizerProvider>();
       final tokenizer = tokenizerProvider.selectedTokenizer;
-      final systemPrompt = await _generateSystemPrompt();
 
-      ChatPrompt? chatPrompt;
-      if (_chatRoom!.selectedChatPromptId != null) {
-        chatPrompt = await _db.readChatPrompt(_chatRoom!.selectedChatPromptId!);
-      }
-
-      final filteredHistory = await _loadFilteredChatHistory(chatPrompt);
-      final chatHistory = filteredHistory.where((m) => m.id != lastMessage.id).toList();
+      final apiData = await _buildApiData(
+        userMessage: lastMessage.content,
+        excludeMessageIds: [lastMessage.id!],
+      );
 
       final aiResponse = await _geminiService.sendMessage(
-        systemPrompt: systemPrompt,
-        chatHistory: chatHistory,
-        userMessage: lastMessage.content,
-        promptParameters: chatPrompt?.parameters,
+        systemPrompt: apiData.systemPrompt,
+        contents: apiData.contents,
+        promptParameters: apiData.parameters,
         chatRoomId: widget.chatRoomId,
         characterId: _character?.id,
       );
@@ -420,24 +461,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       final previousMessage = _messages[messageIndex - 1];
       if (previousMessage.role != MessageRole.user) return;
 
-      final systemPrompt = await _generateSystemPrompt();
-
-      ChatPrompt? chatPrompt;
-      if (_chatRoom!.selectedChatPromptId != null) {
-        chatPrompt = await _db.readChatPrompt(_chatRoom!.selectedChatPromptId!);
-      }
-
-      final filteredHistory = await _loadFilteredChatHistory(chatPrompt);
-      final chatHistory = filteredHistory.where((m) {
-        final idx = _messages.indexWhere((msg) => msg.id == m.id);
-        return idx < messageIndex - 1;
-      }).toList();
+      final apiData = await _buildApiData(
+        userMessage: previousMessage.content,
+        beforeMessageIndex: messageIndex - 1,
+      );
 
       final aiResponse = await _geminiService.sendMessage(
-        systemPrompt: systemPrompt,
-        chatHistory: chatHistory,
-        userMessage: previousMessage.content,
-        promptParameters: chatPrompt?.parameters,
+        systemPrompt: apiData.systemPrompt,
+        contents: apiData.contents,
+        promptParameters: apiData.parameters,
         chatRoomId: widget.chatRoomId,
         characterId: _character?.id,
       );

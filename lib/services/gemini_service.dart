@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/chat/chat_message.dart';
 import '../models/chat/chat_log.dart';
 import '../models/prompt/prompt_parameters.dart';
 import '../database/database_helper.dart';
@@ -101,8 +100,7 @@ class GeminiService {
 
   Future<String> sendMessage({
     required String systemPrompt,
-    required List<ChatMessage> chatHistory,
-    required String userMessage,
+    required List<Map<String, dynamic>> contents,
     PromptParameters? promptParameters,
     int? chatRoomId,
     int? characterId,
@@ -110,11 +108,6 @@ class GeminiService {
     final modelId = await _getSelectedModelId();
     final apiKey = await _getApiKey();
     final generationConfig = _buildGenerationConfig(promptParameters);
-
-    final contents = _buildContents(
-      chatHistory: chatHistory,
-      userMessage: userMessage,
-    );
 
     final requestBody = {
       'model': modelId,
@@ -192,18 +185,12 @@ class GeminiService {
 
   Stream<String> sendMessageStream({
     required String systemPrompt,
-    required List<ChatMessage> chatHistory,
-    required String userMessage,
+    required List<Map<String, dynamic>> contents,
     PromptParameters? promptParameters,
   }) async* {
     final modelId = await _getSelectedModelId();
     final apiKey = await _getApiKey();
     final generationConfig = _buildGenerationConfig(promptParameters);
-
-    final contents = _buildContents(
-      chatHistory: chatHistory,
-      userMessage: userMessage,
-    );
 
     final requestBody = {
       'model': modelId,
@@ -247,40 +234,6 @@ class GeminiService {
         }
       }
     }
-  }
-
-  List<Map<String, dynamic>> _buildContents({
-    required List<ChatMessage> chatHistory,
-    required String userMessage,
-  }) {
-    final contents = <Map<String, dynamic>>[];
-
-    for (final message in chatHistory) {
-      if (message.role == MessageRole.user) {
-        contents.add({
-          'role': 'user',
-          'parts': [
-            {'text': message.content}
-          ]
-        });
-      } else if (message.role == MessageRole.assistant) {
-        contents.add({
-          'role': 'model',
-          'parts': [
-            {'text': message.content}
-          ]
-        });
-      }
-    }
-
-    contents.add({
-      'role': 'user',
-      'parts': [
-        {'text': userMessage}
-      ]
-    });
-
-    return contents;
   }
 
   Future<void> _saveChatLog({

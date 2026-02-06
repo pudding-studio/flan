@@ -593,26 +593,41 @@ class DatabaseHelper {
     }
 
     if (oldVersion < 19) {
+      final columns = await db.rawQuery('PRAGMA table_info(prompt_items)');
+      final columnNames = columns.map((c) => c['name'] as String).toSet();
+
       final textType = 'TEXT NOT NULL';
 
-      await db.execute('''
-        ALTER TABLE prompt_items ADD COLUMN chat_setting_mode $textType DEFAULT 'basic'
-      ''');
-      await db.execute('''
-        ALTER TABLE prompt_items ADD COLUMN include_start_position INTEGER
-      ''');
-      await db.execute('''
-        ALTER TABLE prompt_items ADD COLUMN chat_range_type $textType DEFAULT 'recent'
-      ''');
-      await db.execute('''
-        ALTER TABLE prompt_items ADD COLUMN recent_chat_count INTEGER
-      ''');
-      await db.execute('''
-        ALTER TABLE prompt_items ADD COLUMN chat_start_position INTEGER
-      ''');
-      await db.execute('''
-        ALTER TABLE prompt_items ADD COLUMN chat_end_position INTEGER
-      ''');
+      if (!columnNames.contains('chat_setting_mode')) {
+        await db.execute('''
+          ALTER TABLE prompt_items ADD COLUMN chat_setting_mode $textType DEFAULT 'basic'
+        ''');
+      }
+      if (!columnNames.contains('include_start_position')) {
+        await db.execute('''
+          ALTER TABLE prompt_items ADD COLUMN include_start_position INTEGER
+        ''');
+      }
+      if (!columnNames.contains('chat_range_type')) {
+        await db.execute('''
+          ALTER TABLE prompt_items ADD COLUMN chat_range_type $textType DEFAULT 'recent'
+        ''');
+      }
+      if (!columnNames.contains('recent_chat_count')) {
+        await db.execute('''
+          ALTER TABLE prompt_items ADD COLUMN recent_chat_count INTEGER
+        ''');
+      }
+      if (!columnNames.contains('chat_start_position')) {
+        await db.execute('''
+          ALTER TABLE prompt_items ADD COLUMN chat_start_position INTEGER
+        ''');
+      }
+      if (!columnNames.contains('chat_end_position')) {
+        await db.execute('''
+          ALTER TABLE prompt_items ADD COLUMN chat_end_position INTEGER
+        ''');
+      }
     }
   }
 
