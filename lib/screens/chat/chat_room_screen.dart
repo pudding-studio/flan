@@ -141,14 +141,20 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       beforeMessageIndex: beforeMessageIndex,
     );
 
+    final tokenizerProvider = context.read<TokenizerProvider>();
+    final tokenizer = tokenizerProvider.selectedTokenizer;
+
     final contents = PromptBuilder.buildContents(
       chatPrompt: chatPrompt,
       character: _character!,
       userMessage: userMessage,
       chatHistoryMap: chatHistoryMap,
+      systemPrompt: systemPrompt,
       persona: persona,
       startScenario: startScenario,
       activeCharacterBooks: activeCharacterBooks,
+      maxInputTokens: chatPrompt?.parameters?.maxInputTokens,
+      tokenizer: tokenizer,
     );
 
     return (systemPrompt: systemPrompt, contents: contents, parameters: chatPrompt?.parameters);
