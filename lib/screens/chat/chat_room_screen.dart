@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../widgets/common/markdown_text.dart';
 import '../../models/chat/chat_room.dart';
 import '../../models/chat/chat_message.dart';
 import '../../models/character/character.dart';
@@ -810,9 +811,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   maxLines: null,
                 )
               else
-                Text(
-                  message.content,
-                  style: Theme.of(context).textTheme.bodyMedium,
+                MarkdownText(
+                  text: message.content,
+                  baseStyle: Theme.of(context).textTheme.bodyMedium,
                 ),
               const SizedBox(height: 0),
               Row(
