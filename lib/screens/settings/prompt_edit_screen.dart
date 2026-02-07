@@ -492,36 +492,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
               ),
             ],
           ),
-          const SizedBox(height: UIConstants.spacing20),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: CommonCustomTextField.labelHorizontalPadding),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const CommonTitleMedium(
-                      text: '지원 모델',
-                      helpMessage: '이 프롬프트가 최적화된 AI 모델을 선택하세요.\n'
-                          'ALL을 선택하면 모든 모델에서 사용할 수 있습니다.',
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: CommonCustomTextField.labelBottomSpacing),
-              CommonDropdownButton<String>(
-                value: _selectedModel,
-                items: AIModelConstants.supportedModels,
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() => _selectedModel = value);
-                  }
-                },
-                labelBuilder: (model) => AIModelConstants.getDisplayName(model),
-              ),
-            ],
-          ),
+          // TODO: 지원 모델 기능 구현 후 숨김 해제
         ],
     );
   }
@@ -692,25 +663,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Checkbox(
-                        value: _parameters.includeThoughts ?? false,
-                        onChanged: (value) {
-                          setState(() {
-                            _parameters = _parameters.copyWith(
-                              includeThoughts: value == true ? true : null,
-                            );
-                          });
-                        },
-                      ),
-                      Text(
-                        '생각 포함',
-                        style: Theme.of(context).textTheme.bodyMedium,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 16),
+                  // TODO: 생각 포함 토글 기능 수정 후 숨김 해제
                   CommonParameterTextField(
                     label: '생각토큰 수',
                     helpText: '생각에 사용할 최대 토큰 수입니다.',
