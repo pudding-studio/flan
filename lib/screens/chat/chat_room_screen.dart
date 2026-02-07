@@ -17,6 +17,8 @@ import '../../utils/prompt_builder.dart';
 import '../../utils/common_dialog.dart';
 import '../../utils/token_counter.dart';
 import '../../services/gemini_service.dart';
+import '../../models/chat/chat_message_metadata.dart';
+import '../../utils/metadata_parser.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../../widgets/common/common_edit_text.dart';
 import '../character/character_view_screen.dart';
@@ -48,6 +50,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   bool _isSending = false;
   int? _editingMessageId;
   final Map<int, TextEditingController> _editControllers = {};
+  Map<int, ChatMessageMetadata> _metadataMap = {};
 
   @override
   void initState() {
@@ -77,6 +80,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       final character = await _db.readCharacter(chatRoom.characterId);
       final messages = await _db.readChatMessagesByChatRoom(widget.chatRoomId);
       final coverImages = await _db.readCoverImages(chatRoom.characterId);
+      final metadataList = await _db.readChatMessageMetadataByChatRoom(widget.chatRoomId);
+      final metadataMap = <int, ChatMessageMetadata>{};
+      for (final m in metadataList) {
+        metadataMap[m.chatMessageId] = m;
+      }
 
       StartScenario? startScenario;
       if (chatRoom.selectedStartScenarioId != null) {
@@ -89,6 +97,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         _startScenario = startScenario;
         _messages = messages;
         _coverImages = coverImages;
+        _metadataMap = metadataMap;
         _isLoading = false;
       });
 
@@ -276,7 +285,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         usageMetadata: geminiResponse.usageMetadata,
       );
 
-      await _db.createChatMessage(assistantMessage);
+      final assistantMessageId = await _db.createChatMessage(assistantMessage);
+
+      await _saveMessageMetadata(assistantMessageId, geminiResponse.text);
 
       // 채팅방 토큰 합산 업데이트
       await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
@@ -328,10 +339,25 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
+  String _buildEditableContent(ChatMessage message) {
+    final metadata = message.id != null ? _metadataMap[message.id!] : null;
+    if (metadata == null) return message.content;
+
+    final tags = <String>[];
+    if (metadata.location != null) tags.add('[📍|${metadata.location}]');
+    if (metadata.date != null) tags.add('[📅|${metadata.date}]');
+    if (metadata.time != null) tags.add('[🕰|${metadata.time}]');
+
+    if (tags.isEmpty) return message.content;
+    return '${tags.join('\n')}\n${message.content}';
+  }
+
   void _startEditMessage(ChatMessage message) {
     setState(() {
       _editingMessageId = message.id;
-      _editControllers[message.id!] = TextEditingController(text: message.content);
+      _editControllers[message.id!] = TextEditingController(
+        text: _buildEditableContent(message),
+      );
     });
   }
 
@@ -349,25 +375,50 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final controller = _editControllers[message.id];
     if (controller == null) return;
 
-    final newContent = controller.text.trim();
-    if (newContent.isEmpty || newContent == message.content) {
+    final rawContent = controller.text.trim();
+    if (rawContent.isEmpty) {
       _cancelEditMessage();
       return;
     }
 
     try {
+      final cleanedContent = MetadataParser.removeMetadataTags(rawContent);
+
+      if (message.role == MessageRole.assistant && message.id != null) {
+        final parsed = MetadataParser.parse(rawContent);
+        final existingMetadata = _metadataMap[message.id!];
+
+        if (parsed.location != null || parsed.date != null || parsed.time != null) {
+          final newMetadata = ChatMessageMetadata(
+            chatMessageId: message.id!,
+            chatRoomId: widget.chatRoomId,
+            location: parsed.location,
+            date: parsed.date,
+            time: parsed.time,
+          );
+          if (existingMetadata != null) {
+            await _db.updateChatMessageMetadata(
+              newMetadata.copyWith(id: existingMetadata.id),
+            );
+          } else {
+            await _db.createChatMessageMetadata(newMetadata);
+          }
+        } else if (existingMetadata != null) {
+          await _db.deleteChatMessageMetadata(existingMetadata.id!);
+        }
+      }
+
       final tokenizerProvider = context.read<TokenizerProvider>();
       final tokenizer = tokenizerProvider.selectedTokenizer;
-      final tokenCount = TokenCounter.estimateTokenCount(newContent, tokenizer: tokenizer);
+      final tokenCount = TokenCounter.estimateTokenCount(cleanedContent, tokenizer: tokenizer);
 
       final updatedMessage = message.copyWith(
-        content: newContent,
+        content: cleanedContent,
         tokenCount: tokenCount,
         editedAt: DateTime.now(),
       );
 
       await _db.updateChatMessage(updatedMessage);
-      // 채팅방 토큰 합산 업데이트
       await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
       _cancelEditMessage();
       await _loadChatData();
@@ -383,6 +434,25 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         context: context,
         message: '메시지 수정 중 오류가 발생했습니다',
       );
+    }
+  }
+
+  Future<void> _saveMessageMetadata(int messageId, String content) async {
+    final previous = await _db.readLatestChatMessageMetadata(widget.chatRoomId);
+    final metadata = MetadataParser.buildMetadata(
+      chatMessageId: messageId,
+      chatRoomId: widget.chatRoomId,
+      content: content,
+      previous: previous,
+    );
+    await _db.createChatMessageMetadata(metadata);
+
+    if (MetadataParser.hasMetadataPattern(content)) {
+      final cleaned = MetadataParser.removeMetadataTags(content);
+      final message = await _db.readChatMessage(messageId);
+      if (message != null) {
+        await _db.updateChatMessage(message.copyWith(content: cleaned));
+      }
     }
   }
 
@@ -421,7 +491,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         usageMetadata: geminiResponse.usageMetadata,
       );
 
-      await _db.createChatMessage(assistantMessage);
+      final assistantMessageId = await _db.createChatMessage(assistantMessage);
+
+      await _saveMessageMetadata(assistantMessageId, geminiResponse.text);
 
       // 채팅방 토큰 합산 업데이트
       await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
@@ -582,6 +654,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       );
 
       await _db.updateChatMessage(updatedMessage);
+
+      await _db.deleteChatMessageMetadataByMessage(messageId);
+      await _saveMessageMetadata(messageId, geminiResponse.text);
+
       // 채팅방 토큰 합산 업데이트
       await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
       await _loadChatData();
@@ -791,11 +867,52 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     );
   }
 
+  static const _dayNames = ['월', '화', '수', '목', '금', '토', '일'];
+
+  String _formatMetadataDateTime(String? date, String? time) {
+    final parts = <String>[];
+    if (date != null) {
+      final segments = date.split('.');
+      if (segments.length == 3) {
+        final year = int.tryParse(segments[0]);
+        final month = int.tryParse(segments[1]);
+        final day = int.tryParse(segments[2]);
+        if (year != null && month != null && day != null) {
+          final dt = DateTime(year, month, day);
+          final dayName = _dayNames[dt.weekday - 1];
+          parts.add('$date($dayName)');
+        } else {
+          parts.add(date);
+        }
+      } else {
+        parts.add(date);
+      }
+    }
+    if (time != null) {
+      final timeParts = time.split(':');
+      if (timeParts.length == 2) {
+        final hour = int.tryParse(timeParts[0]);
+        if (hour != null) {
+          final period = (hour >= 6 && hour < 18) ? '낮' : '밤';
+          parts.add('$time($period)');
+        } else {
+          parts.add(time);
+        }
+      } else {
+        parts.add(time);
+      }
+    }
+    return parts.join(' ');
+  }
+
   Widget _buildMessage(ChatMessage message, int index) {
     final isUser = message.role == MessageRole.user;
     final isEditing = _editingMessageId == message.id;
     final isLastMessage = index == _messages.length - 1;
     final hasUsageMetadata = !isUser && message.usageMetadata != null;
+    final metadata = message.id != null ? _metadataMap[message.id!] : null;
+    final hasMetadata = !isUser && metadata != null &&
+        (metadata.date != null || metadata.time != null || metadata.location != null);
 
     return Column(
       children: [
@@ -804,6 +921,31 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              if (hasMetadata)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 4),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      if (metadata.date != null || metadata.time != null)
+                        Text(
+                          _formatMetadataDateTime(metadata.date, metadata.time),
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        )
+                      else
+                        const SizedBox.shrink(),
+                      if (metadata.location != null)
+                        Text(
+                          metadata.location!,
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
               if (isEditing)
                 CommonEditText(
                   controller: _editControllers[message.id],

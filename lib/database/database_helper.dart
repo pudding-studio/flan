@@ -11,6 +11,7 @@ import '../models/prompt/prompt_item_folder.dart';
 import '../models/chat/chat_room.dart';
 import '../models/chat/chat_message.dart';
 import '../models/chat/chat_log.dart';
+import '../models/chat/chat_message_metadata.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -30,7 +31,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 20,
+      version: 21,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -283,6 +284,30 @@ class DatabaseHelper {
     await db.execute('''
       CREATE INDEX idx_timestamp_chat_logs
       ON chat_logs (timestamp DESC)
+    ''');
+
+    // 채팅 메시지 메타데이터 테이블
+    await db.execute('''
+      CREATE TABLE chat_message_metadata (
+        id $idType,
+        chat_message_id $intType,
+        chat_room_id $intType,
+        location $textTypeNullable,
+        date $textTypeNullable,
+        time $textTypeNullable,
+        created_at $textType,
+        FOREIGN KEY (chat_message_id) REFERENCES chat_messages (id) ON DELETE CASCADE,
+        FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute('''
+      CREATE INDEX idx_chat_message_id_metadata
+      ON chat_message_metadata (chat_message_id)
+    ''');
+    await db.execute('''
+      CREATE INDEX idx_chat_room_id_metadata
+      ON chat_message_metadata (chat_room_id)
     ''');
   }
 
@@ -635,6 +660,31 @@ class DatabaseHelper {
       // chat_messages 테이블에 usage_metadata 컬럼 추가
       await db.execute('''
         ALTER TABLE chat_messages ADD COLUMN usage_metadata TEXT
+      ''');
+    }
+
+    if (oldVersion < 21) {
+      await db.execute('''
+        CREATE TABLE chat_message_metadata (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          chat_message_id INTEGER NOT NULL,
+          chat_room_id INTEGER NOT NULL,
+          location TEXT,
+          date TEXT,
+          time TEXT,
+          created_at TEXT NOT NULL,
+          FOREIGN KEY (chat_message_id) REFERENCES chat_messages (id) ON DELETE CASCADE,
+          FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE
+        )
+      ''');
+
+      await db.execute('''
+        CREATE INDEX idx_chat_message_id_metadata
+        ON chat_message_metadata (chat_message_id)
+      ''');
+      await db.execute('''
+        CREATE INDEX idx_chat_room_id_metadata
+        ON chat_message_metadata (chat_room_id)
       ''');
     }
   }
@@ -1366,6 +1416,85 @@ class DatabaseHelper {
   Future<int> deleteAllChatLogs() async {
     final db = await database;
     return await db.delete('chat_logs');
+  }
+
+  // ==================== 채팅 메시지 메타데이터 CRUD ====================
+
+  Future<int> createChatMessageMetadata(ChatMessageMetadata metadata) async {
+    final db = await database;
+    final map = metadata.toMap();
+    map.remove('id');
+    return await db.insert('chat_message_metadata', map);
+  }
+
+  Future<ChatMessageMetadata?> readChatMessageMetadataByMessage(int chatMessageId) async {
+    final db = await database;
+    final maps = await db.query(
+      'chat_message_metadata',
+      where: 'chat_message_id = ?',
+      whereArgs: [chatMessageId],
+      limit: 1,
+    );
+
+    if (maps.isNotEmpty) {
+      return ChatMessageMetadata.fromMap(maps.first);
+    }
+    return null;
+  }
+
+  Future<List<ChatMessageMetadata>> readChatMessageMetadataByChatRoom(int chatRoomId) async {
+    final db = await database;
+    final result = await db.query(
+      'chat_message_metadata',
+      where: 'chat_room_id = ?',
+      whereArgs: [chatRoomId],
+      orderBy: 'created_at ASC',
+    );
+    return result.map((map) => ChatMessageMetadata.fromMap(map)).toList();
+  }
+
+  Future<ChatMessageMetadata?> readLatestChatMessageMetadata(int chatRoomId) async {
+    final db = await database;
+    final maps = await db.query(
+      'chat_message_metadata',
+      where: 'chat_room_id = ?',
+      whereArgs: [chatRoomId],
+      orderBy: 'created_at DESC',
+      limit: 1,
+    );
+
+    if (maps.isNotEmpty) {
+      return ChatMessageMetadata.fromMap(maps.first);
+    }
+    return null;
+  }
+
+  Future<int> updateChatMessageMetadata(ChatMessageMetadata metadata) async {
+    final db = await database;
+    return await db.update(
+      'chat_message_metadata',
+      metadata.toMap(),
+      where: 'id = ?',
+      whereArgs: [metadata.id],
+    );
+  }
+
+  Future<int> deleteChatMessageMetadata(int id) async {
+    final db = await database;
+    return await db.delete(
+      'chat_message_metadata',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> deleteChatMessageMetadataByMessage(int chatMessageId) async {
+    final db = await database;
+    return await db.delete(
+      'chat_message_metadata',
+      where: 'chat_message_id = ?',
+      whereArgs: [chatMessageId],
+    );
   }
 
   // ==================== 유틸리티 ====================
