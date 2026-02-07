@@ -3,6 +3,7 @@ import '../models/character/persona.dart';
 import '../models/character/character_book_folder.dart';
 import '../models/character/start_scenario.dart';
 import '../models/chat/chat_message.dart';
+import '../models/chat/chat_message_metadata.dart';
 import '../models/prompt/chat_prompt.dart';
 import '../models/prompt/prompt_item.dart';
 import '../providers/tokenizer_provider.dart';
@@ -50,6 +51,7 @@ class PromptBuilder {
     List<CharacterBook>? activeCharacterBooks,
     int? maxInputTokens,
     TokenizerType? tokenizer,
+    ChatMessageMetadata? lastMetadata,
   }) {
     final keywords = _buildKeywordMap(
       character: character,
@@ -69,6 +71,18 @@ class PromptBuilder {
       tokenizer: tokenizer,
     );
 
+    // 마지막 assistant 메시지 ID를 찾기 위해 전체 chat 메시지를 수집
+    ChatMessage? lastAssistantMessage;
+    if (lastMetadata != null) {
+      for (final messages in adjustedChatHistoryMap.values) {
+        for (final msg in messages) {
+          if (msg.role == MessageRole.assistant) {
+            lastAssistantMessage = msg;
+          }
+        }
+      }
+    }
+
     final contents = <Map<String, dynamic>>[];
 
     if (chatPrompt != null && chatPrompt.items.isNotEmpty) {
@@ -78,7 +92,11 @@ class PromptBuilder {
         if (item.role == PromptRole.chat) {
           final messages = adjustedChatHistoryMap[item] ?? [];
           for (final msg in messages) {
-            _addContent(contents, _chatMessageRole(msg), msg.content);
+            var content = msg.content;
+            if (lastAssistantMessage != null && msg.id == lastAssistantMessage.id) {
+              content = '$content\n${_buildMetadataTags(lastMetadata!)}';
+            }
+            _addContent(contents, _chatMessageRole(msg), content);
           }
         } else {
           final role = item.role == PromptRole.user ? 'user' : 'model';
@@ -196,6 +214,14 @@ class PromptBuilder {
 
   static String _chatMessageRole(ChatMessage msg) {
     return msg.role == MessageRole.user ? 'user' : 'model';
+  }
+
+  static String _buildMetadataTags(ChatMessageMetadata metadata) {
+    final tags = <String>[];
+    if (metadata.location != null) tags.add('[📍|${metadata.location}]');
+    if (metadata.date != null) tags.add('[📅|${metadata.date}]');
+    if (metadata.time != null) tags.add('[🕰|${metadata.time}]');
+    return tags.join('\n');
   }
 
   static Map<String, String> _buildKeywordMap({

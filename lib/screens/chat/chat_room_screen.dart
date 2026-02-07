@@ -18,6 +18,7 @@ import '../../utils/common_dialog.dart';
 import '../../utils/token_counter.dart';
 import '../../services/gemini_service.dart';
 import '../../models/chat/chat_message_metadata.dart';
+import '../../models/chat/chat_model.dart';
 import '../../utils/metadata_parser.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../../widgets/common/common_edit_text.dart';
@@ -154,6 +155,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final tokenizerProvider = context.read<TokenizerProvider>();
     final tokenizer = tokenizerProvider.selectedTokenizer;
 
+    final lastMetadata = await _db.readLatestChatMessageMetadata(widget.chatRoomId);
+
     final contents = PromptBuilder.buildContents(
       chatPrompt: chatPrompt,
       character: _character!,
@@ -165,6 +168,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       activeCharacterBooks: activeCharacterBooks,
       maxInputTokens: chatPrompt?.parameters?.maxInputTokens,
       tokenizer: tokenizer,
+      lastMetadata: lastMetadata,
     );
 
     return (systemPrompt: systemPrompt, contents: contents, parameters: chatPrompt?.parameters);
@@ -283,6 +287,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         content: geminiResponse.text,
         tokenCount: assistantTokenCount,
         usageMetadata: geminiResponse.usageMetadata,
+        modelId: geminiResponse.modelId,
       );
 
       final assistantMessageId = await _db.createChatMessage(assistantMessage);
@@ -489,6 +494,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         content: geminiResponse.text,
         tokenCount: tokenCount,
         usageMetadata: geminiResponse.usageMetadata,
+        modelId: geminiResponse.modelId,
       );
 
       final assistantMessageId = await _db.createChatMessage(assistantMessage);
@@ -583,6 +589,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           tokenCount: msg.tokenCount,
           createdAt: msg.createdAt,
           usageMetadata: msg.usageMetadata,
+          modelId: msg.modelId,
         );
         await _db.createChatMessage(newMessage);
       }
@@ -651,6 +658,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         tokenCount: tokenCount,
         editedAt: DateTime.now(),
         usageMetadata: geminiResponse.usageMetadata,
+        modelId: geminiResponse.modelId,
       );
 
       await _db.updateChatMessage(updatedMessage);
@@ -819,6 +827,18 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       return;
     }
 
+    final model = message.modelId != null ? ChatModel.fromModelId(message.modelId!) : null;
+
+    double? cost;
+    if (model != null) {
+      cost = model.pricing.calculateCost(
+        promptTokens: metadata.promptTokenCount,
+        cachedTokens: metadata.cachedContentTokenCount ?? 0,
+        outputTokens: metadata.candidatesTokenCount,
+        thinkingTokens: metadata.thoughtsTokenCount ?? 0,
+      );
+    }
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -827,6 +847,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            if (model != null)
+              _buildStatRow('모델', model.displayName),
+            if (model != null) const Divider(),
             _buildStatRow('입력 토큰', '${metadata.promptTokenCount}'),
             if (metadata.cachedContentTokenCount != null) ...[
               _buildStatRow('캐시 토큰', '${metadata.cachedContentTokenCount}'),
@@ -840,6 +863,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             ],
             const Divider(),
             _buildStatRow('총 토큰', '${metadata.totalTokenCount}'),
+            if (cost != null) ...[
+              const Divider(),
+              _buildStatRow('예상 비용', '\$${cost.toStringAsFixed(6)}'),
+            ],
           ],
         ),
         actions: [

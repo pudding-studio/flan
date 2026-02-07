@@ -31,7 +31,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 21,
+      version: 22,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -251,6 +251,7 @@ class DatabaseHelper {
         created_at $textType,
         edited_at $textTypeNullable,
         usage_metadata $textTypeNullable,
+        model_id $textTypeNullable,
         FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE
       )
     ''');
@@ -685,6 +686,12 @@ class DatabaseHelper {
       await db.execute('''
         CREATE INDEX idx_chat_room_id_metadata
         ON chat_message_metadata (chat_room_id)
+      ''');
+    }
+
+    if (oldVersion < 22) {
+      await db.execute('''
+        ALTER TABLE chat_messages ADD COLUMN model_id TEXT
       ''');
     }
   }

@@ -9,10 +9,12 @@ import '../database/database_helper.dart';
 class GeminiResponse {
   final String text;
   final UsageMetadata? usageMetadata;
+  final String? modelId;
 
   const GeminiResponse({
     required this.text,
     this.usageMetadata,
+    this.modelId,
   });
 }
 
@@ -163,7 +165,7 @@ class GeminiService {
         characterId: characterId,
       );
 
-      return GeminiResponse(text: text, usageMetadata: usageMetadata);
+      return GeminiResponse(text: text, usageMetadata: usageMetadata, modelId: modelId);
     } catch (e) {
       await _saveChatLog(
         request: requestJson,

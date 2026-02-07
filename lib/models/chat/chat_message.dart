@@ -71,6 +71,7 @@ class ChatMessage {
   final DateTime createdAt;
   final DateTime? editedAt;
   final UsageMetadata? usageMetadata;
+  final String? modelId;
 
   ChatMessage({
     this.id,
@@ -81,6 +82,7 @@ class ChatMessage {
     DateTime? createdAt,
     this.editedAt,
     this.usageMetadata,
+    this.modelId,
   }) : createdAt = createdAt ?? DateTime.now();
 
   factory ChatMessage.fromMap(Map<String, dynamic> map) {
@@ -104,6 +106,7 @@ class ChatMessage {
           ? DateTime.parse(map['edited_at'] as String)
           : null,
       usageMetadata: usageMetadata,
+      modelId: map['model_id'] as String?,
     );
   }
 
@@ -117,6 +120,7 @@ class ChatMessage {
       'created_at': createdAt.toIso8601String(),
       'edited_at': editedAt?.toIso8601String(),
       'usage_metadata': usageMetadata != null ? jsonEncode(usageMetadata!.toJson()) : null,
+      'model_id': modelId,
     };
   }
 
@@ -129,6 +133,7 @@ class ChatMessage {
     DateTime? createdAt,
     DateTime? editedAt,
     UsageMetadata? usageMetadata,
+    String? modelId,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -139,6 +144,7 @@ class ChatMessage {
       createdAt: createdAt ?? this.createdAt,
       editedAt: editedAt ?? this.editedAt,
       usageMetadata: usageMetadata ?? this.usageMetadata,
+      modelId: modelId ?? this.modelId,
     );
   }
 }
