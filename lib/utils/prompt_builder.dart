@@ -94,7 +94,7 @@ class PromptBuilder {
           for (final msg in messages) {
             var content = msg.content;
             if (lastAssistantMessage != null && msg.id == lastAssistantMessage.id) {
-              content = '$content\n${_buildMetadataTags(lastMetadata!)}';
+              content = '$content\n${lastMetadata!.toTagString()}';
             }
             _addContent(contents, _chatMessageRole(msg), content);
           }
@@ -214,14 +214,6 @@ class PromptBuilder {
 
   static String _chatMessageRole(ChatMessage msg) {
     return msg.role == MessageRole.user ? 'user' : 'model';
-  }
-
-  static String _buildMetadataTags(ChatMessageMetadata metadata) {
-    final tags = <String>[];
-    if (metadata.location != null) tags.add('[📍|${metadata.location}]');
-    if (metadata.date != null) tags.add('[📅|${metadata.date}]');
-    if (metadata.time != null) tags.add('[🕰|${metadata.time}]');
-    return tags.join('\n');
   }
 
   static Map<String, String> _buildKeywordMap({

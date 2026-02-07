@@ -348,13 +348,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final metadata = message.id != null ? _metadataMap[message.id!] : null;
     if (metadata == null) return message.content;
 
-    final tags = <String>[];
-    if (metadata.location != null) tags.add('[📍|${metadata.location}]');
-    if (metadata.date != null) tags.add('[📅|${metadata.date}]');
-    if (metadata.time != null) tags.add('[🕰|${metadata.time}]');
-
-    if (tags.isEmpty) return message.content;
-    return '${tags.join('\n')}\n${message.content}';
+    final tagString = metadata.toTagString();
+    if (tagString.isEmpty) return message.content;
+    return '$tagString\n${message.content}';
   }
 
   void _startEditMessage(ChatMessage message) {
@@ -504,10 +500,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       // 채팅방 토큰 합산 업데이트
       await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
 
-      setState(() {
-        _messages.add(assistantMessage);
-      });
-
       final updatedChatRoom = _chatRoom!.copyWith(
         updatedAt: DateTime.now(),
       );
@@ -520,6 +512,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         SnackBar(content: Text('메시지 재전송 중 오류가 발생했습니다: $e')),
       );
     } finally {
+      await _loadChatData();
       if (mounted) {
         setState(() => _isSending = false);
       }
