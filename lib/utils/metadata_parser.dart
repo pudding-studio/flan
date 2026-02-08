@@ -59,6 +59,40 @@ class MetadataParser {
     );
   }
 
+  static int _timeToMinutes(String time) {
+    final parts = time.split(':');
+    if (parts.length != 2) return -1;
+    final hour = int.tryParse(parts[0]);
+    final minute = int.tryParse(parts[1]);
+    if (hour == null || minute == null) return -1;
+    return hour * 60 + minute;
+  }
+
+  static bool shouldAutoPin(ChatMessageMetadata current, ChatMessageMetadata? previous) {
+    if (previous == null) return false;
+
+    if (current.location != null && previous.location != null &&
+        current.location != previous.location) {
+      return true;
+    }
+
+    if (current.date != null && previous.date != null &&
+        current.date != previous.date) {
+      return true;
+    }
+
+    if (current.time != null && previous.time != null) {
+      final currentMinutes = _timeToMinutes(current.time!);
+      final previousMinutes = _timeToMinutes(previous.time!);
+      if (currentMinutes >= 0 && previousMinutes >= 0) {
+        final diff = (currentMinutes - previousMinutes).abs();
+        if (diff >= 180) return true;
+      }
+    }
+
+    return false;
+  }
+
   static bool hasMetadataPattern(String content) {
     return _locationPattern.hasMatch(content) ||
         _datePattern.hasMatch(content) ||

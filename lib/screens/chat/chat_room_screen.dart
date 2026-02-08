@@ -446,7 +446,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       content: content,
       previous: previous,
     );
-    await _db.createChatMessageMetadata(metadata);
+
+    final shouldPin = MetadataParser.shouldAutoPin(metadata, previous);
+    final finalMetadata = shouldPin ? metadata.copyWith(isPinned: true) : metadata;
+
+    final metadataId = await _db.createChatMessageMetadata(finalMetadata);
+    setState(() {
+      _metadataMap[messageId] = finalMetadata.copyWith(id: metadataId);
+    });
 
     if (MetadataParser.hasMetadataPattern(content)) {
       final cleaned = MetadataParser.removeMetadataTags(content);
@@ -455,6 +462,17 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         await _db.updateChatMessage(message.copyWith(content: cleaned));
       }
     }
+  }
+
+  Future<void> _togglePin(int messageId) async {
+    final metadata = _metadataMap[messageId];
+    if (metadata == null || metadata.id == null) return;
+
+    final updated = metadata.copyWith(isPinned: !metadata.isPinned);
+    await _db.updateChatMessageMetadata(updated);
+    setState(() {
+      _metadataMap[messageId] = updated;
+    });
   }
 
   Future<void> _resendLastUserMessage() async {
@@ -985,6 +1003,21 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     IconButton(
                       icon: const Icon(Icons.bar_chart, size: 18),
                       onPressed: () => _showUsageMetadataDialog(message),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+                    ),
+                  ],
+                  if (hasMetadata) ...[
+                    IconButton(
+                      icon: Icon(
+                        metadata.isPinned ? Icons.push_pin : Icons.push_pin_outlined,
+                        size: 18,
+                        color: metadata.isPinned
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
+                      ),
+                      onPressed: () => _togglePin(message.id!),
                       padding: EdgeInsets.zero,
                       constraints: const BoxConstraints(),
                       visualDensity: const VisualDensity(horizontal: -4, vertical: -4),

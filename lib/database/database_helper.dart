@@ -31,7 +31,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 22,
+      version: 23,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -296,6 +296,7 @@ class DatabaseHelper {
         location $textTypeNullable,
         date $textTypeNullable,
         time $textTypeNullable,
+        is_pinned $boolType,
         created_at $textType,
         FOREIGN KEY (chat_message_id) REFERENCES chat_messages (id) ON DELETE CASCADE,
         FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE
@@ -692,6 +693,12 @@ class DatabaseHelper {
     if (oldVersion < 22) {
       await db.execute('''
         ALTER TABLE chat_messages ADD COLUMN model_id TEXT
+      ''');
+    }
+
+    if (oldVersion < 23) {
+      await db.execute('''
+        ALTER TABLE chat_message_metadata ADD COLUMN is_pinned INTEGER NOT NULL DEFAULT 0
       ''');
     }
   }

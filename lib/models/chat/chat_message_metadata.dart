@@ -5,6 +5,7 @@ class ChatMessageMetadata {
   final String? location;
   final String? date;
   final String? time;
+  final bool isPinned;
   final DateTime createdAt;
 
   ChatMessageMetadata({
@@ -14,6 +15,7 @@ class ChatMessageMetadata {
     this.location,
     this.date,
     this.time,
+    this.isPinned = false,
     DateTime? createdAt,
   }) : createdAt = createdAt ?? DateTime.now();
 
@@ -25,6 +27,7 @@ class ChatMessageMetadata {
       location: map['location'] as String?,
       date: map['date'] as String?,
       time: map['time'] as String?,
+      isPinned: (map['is_pinned'] as int?) == 1,
       createdAt: DateTime.parse(map['created_at'] as String),
     );
   }
@@ -37,6 +40,7 @@ class ChatMessageMetadata {
       'location': location,
       'date': date,
       'time': time,
+      'is_pinned': isPinned ? 1 : 0,
       'created_at': createdAt.toIso8601String(),
     };
   }
@@ -56,6 +60,7 @@ class ChatMessageMetadata {
     String? location,
     String? date,
     String? time,
+    bool? isPinned,
     DateTime? createdAt,
   }) {
     return ChatMessageMetadata(
@@ -65,6 +70,7 @@ class ChatMessageMetadata {
       location: location ?? this.location,
       date: date ?? this.date,
       time: time ?? this.time,
+      isPinned: isPinned ?? this.isPinned,
       createdAt: createdAt ?? this.createdAt,
     );
   }
