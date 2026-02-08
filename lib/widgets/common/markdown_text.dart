@@ -3,11 +3,15 @@ import 'package:flutter/material.dart';
 class MarkdownText extends StatelessWidget {
   final String text;
   final TextStyle? baseStyle;
+  final TextAlign textAlign;
+  final double paragraphSpacing;
 
   const MarkdownText({
     super.key,
     required this.text,
     this.baseStyle,
+    this.textAlign = TextAlign.left,
+    this.paragraphSpacing = 0,
   });
 
   @override
@@ -15,8 +19,32 @@ class MarkdownText extends StatelessWidget {
     final style = baseStyle ?? Theme.of(context).textTheme.bodyMedium ?? const TextStyle();
     final primaryColor = Theme.of(context).colorScheme.primary;
     final tertiaryColor = Theme.of(context).colorScheme.tertiary;
-    final spans = _parse(text, style, primaryColor, tertiaryColor);
-    return RichText(text: TextSpan(children: spans));
+
+    if (paragraphSpacing <= 0) {
+      final spans = _parse(text, style, primaryColor, tertiaryColor);
+      return RichText(
+        textAlign: textAlign,
+        text: TextSpan(children: spans),
+      );
+    }
+
+    final paragraphs = text.split('\n');
+    return Column(
+      crossAxisAlignment: textAlign == TextAlign.left
+          ? CrossAxisAlignment.start
+          : CrossAxisAlignment.stretch,
+      children: [
+        for (int i = 0; i < paragraphs.length; i++) ...[
+          if (i > 0) SizedBox(height: paragraphSpacing),
+          RichText(
+            textAlign: textAlign,
+            text: TextSpan(
+              children: _parse(paragraphs[i], style, primaryColor, tertiaryColor),
+            ),
+          ),
+        ],
+      ],
+    );
   }
 
   static List<InlineSpan> _parse(

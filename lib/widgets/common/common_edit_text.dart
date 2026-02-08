@@ -39,6 +39,7 @@ class CommonEditText extends StatefulWidget {
   final bool enabled;
   final TextInputAction? textInputAction;
   final ValueChanged<String>? onFieldSubmitted;
+  final FocusNode? focusNode;
 
   static final Map<CommonEditTextSize, _EditTextConfig> _configs = {
     CommonEditTextSize.medium: _EditTextConfig(
@@ -76,6 +77,7 @@ class CommonEditText extends StatefulWidget {
     this.enabled = true,
     this.textInputAction,
     this.onFieldSubmitted,
+    this.focusNode,
     this.initialValue,
   });
 
@@ -84,17 +86,20 @@ class CommonEditText extends StatefulWidget {
 }
 
 class _CommonEditTextState extends State<CommonEditText> {
-  late FocusNode _focusNode;
+  FocusNode? _internalFocusNode;
   TextEditingController? _internalController;
 
+  FocusNode get _effectiveFocusNode => widget.focusNode ?? _internalFocusNode!;
   TextEditingController get _effectiveController =>
       widget.controller ?? _internalController!;
 
   @override
   void initState() {
     super.initState();
-    _focusNode = FocusNode();
-    _focusNode.addListener(_onFocusChange);
+    if (widget.focusNode == null) {
+      _internalFocusNode = FocusNode();
+    }
+    _effectiveFocusNode.addListener(_onFocusChange);
     if (widget.controller == null) {
       _internalController = TextEditingController(text: widget.initialValue);
     }
@@ -102,14 +107,14 @@ class _CommonEditTextState extends State<CommonEditText> {
 
   @override
   void dispose() {
-    _focusNode.removeListener(_onFocusChange);
-    _focusNode.dispose();
+    _effectiveFocusNode.removeListener(_onFocusChange);
+    _internalFocusNode?.dispose();
     _internalController?.dispose();
     super.dispose();
   }
 
   void _onFocusChange() {
-    if (!_focusNode.hasFocus && widget.onFocusLost != null) {
+    if (!_effectiveFocusNode.hasFocus && widget.onFocusLost != null) {
       widget.onFocusLost!(_effectiveController.text);
     }
   }
@@ -124,7 +129,7 @@ class _CommonEditTextState extends State<CommonEditText> {
 
     return TextFormField(
       controller: _effectiveController,
-      focusNode: _focusNode,
+      focusNode: _effectiveFocusNode,
       style: textStyle,
       obscureText: widget.obscureText,
       enabled: widget.enabled,

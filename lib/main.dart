@@ -13,6 +13,7 @@ import 'screens/settings/settings_screen.dart';
 import 'providers/theme_provider.dart';
 import 'providers/chat_model_provider.dart';
 import 'providers/tokenizer_provider.dart';
+import 'providers/viewer_settings_provider.dart';
 
 void main() async {
   runZonedGuarded<Future<void>>(() async {
@@ -31,6 +32,7 @@ void main() async {
           ChangeNotifierProvider(create: (_) => ThemeProvider()),
           ChangeNotifierProvider(create: (_) => ChatModelSettingsProvider()),
           ChangeNotifierProvider(create: (_) => TokenizerProvider()),
+          ChangeNotifierProvider(create: (_) => ViewerSettingsProvider()),
         ],
         child: const MyApp(),
       ),

@@ -22,6 +22,9 @@ import '../../models/chat/chat_model.dart';
 import '../../utils/metadata_parser.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../../widgets/common/common_edit_text.dart';
+import '../../providers/chat_model_provider.dart';
+import '../../providers/viewer_settings_provider.dart';
+import 'widgets/chat_bottom_panel.dart';
 import '../character/character_view_screen.dart';
 
 class ChatRoomScreen extends StatefulWidget {
@@ -52,15 +55,28 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   int? _editingMessageId;
   final Map<int, TextEditingController> _editControllers = {};
   Map<int, ChatMessageMetadata> _metadataMap = {};
+  bool _showBottomPanel = false;
+  List<ChatPrompt> _chatPrompts = [];
+  List<Persona> _personas = [];
+  final FocusNode _messageFocusNode = FocusNode();
 
   @override
   void initState() {
     super.initState();
+    _messageFocusNode.addListener(_onMessageFocusChanged);
     _loadChatData();
+  }
+
+  void _onMessageFocusChanged() {
+    if (_messageFocusNode.hasFocus && _showBottomPanel) {
+      setState(() => _showBottomPanel = false);
+    }
   }
 
   @override
   void dispose() {
+    _messageFocusNode.removeListener(_onMessageFocusChanged);
+    _messageFocusNode.dispose();
     _messageController.dispose();
     _scrollController.dispose();
     for (var controller in _editControllers.values) {
@@ -92,6 +108,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         startScenario = await _db.readStartScenario(chatRoom.selectedStartScenarioId!);
       }
 
+      final chatPrompts = await _db.readAllChatPrompts();
+      final personas = character != null
+          ? await _db.readPersonas(character.id!)
+          : <Persona>[];
+
       setState(() {
         _chatRoom = chatRoom;
         _character = character;
@@ -99,6 +120,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         _messages = messages;
         _coverImages = coverImages;
         _metadataMap = metadataMap;
+        _chatPrompts = chatPrompts;
+        _personas = personas;
         _isLoading = false;
       });
 
@@ -473,6 +496,54 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     setState(() {
       _metadataMap[messageId] = updated;
     });
+  }
+
+  void _toggleBottomPanel() {
+    if (_showBottomPanel) {
+      setState(() => _showBottomPanel = false);
+    } else {
+      FocusScope.of(context).unfocus();
+      setState(() => _showBottomPanel = true);
+    }
+  }
+
+  Future<void> _onModelChanged(ChatModel model) async {
+    final provider = context.read<ChatModelSettingsProvider>();
+    await provider.setModel(model);
+  }
+
+  Future<void> _onPromptChanged(int? promptId) async {
+    if (_chatRoom == null) return;
+    final updated = ChatRoom(
+      id: _chatRoom!.id,
+      characterId: _chatRoom!.characterId,
+      name: _chatRoom!.name,
+      selectedChatPromptId: promptId,
+      selectedPersonaId: _chatRoom!.selectedPersonaId,
+      selectedStartScenarioId: _chatRoom!.selectedStartScenarioId,
+      totalTokenCount: _chatRoom!.totalTokenCount,
+      createdAt: _chatRoom!.createdAt,
+      updatedAt: DateTime.now(),
+    );
+    await _db.updateChatRoom(updated);
+    setState(() => _chatRoom = updated);
+  }
+
+  Future<void> _onPersonaChanged(int? personaId) async {
+    if (_chatRoom == null) return;
+    final updated = ChatRoom(
+      id: _chatRoom!.id,
+      characterId: _chatRoom!.characterId,
+      name: _chatRoom!.name,
+      selectedChatPromptId: _chatRoom!.selectedChatPromptId,
+      selectedPersonaId: personaId,
+      selectedStartScenarioId: _chatRoom!.selectedStartScenarioId,
+      totalTokenCount: _chatRoom!.totalTokenCount,
+      createdAt: _chatRoom!.createdAt,
+      updatedAt: DateTime.now(),
+    );
+    await _db.updateChatRoom(updated);
+    setState(() => _chatRoom = updated);
   }
 
   Future<void> _resendLastUserMessage() async {
@@ -951,11 +1022,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final metadata = message.id != null ? _metadataMap[message.id!] : null;
     final hasMetadata = !isUser && metadata != null &&
         (metadata.date != null || metadata.time != null || metadata.location != null);
+    final viewer = context.watch<ViewerSettingsProvider>();
 
     return Column(
       children: [
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+          padding: EdgeInsets.symmetric(
+            horizontal: 16 + viewer.paragraphWidth,
+            vertical: 0,
+          ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -993,7 +1068,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               else
                 MarkdownText(
                   text: message.content,
-                  baseStyle: Theme.of(context).textTheme.bodyMedium,
+                  baseStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    fontSize: viewer.fontSize,
+                    height: viewer.lineHeight,
+                  ),
+                  textAlign: viewer.textAlign,
+                  paragraphSpacing: viewer.paragraphSpacing,
                 ),
               const SizedBox(height: 0),
               Row(
@@ -1138,17 +1218,24 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       body: Column(
         children: [
           Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              reverse: true,
-              itemCount: _messages.length + 1,
-              itemBuilder: (context, index) {
-                if (index == _messages.length) {
-                  return _buildChatHeader();
+            child: GestureDetector(
+              onTap: () {
+                if (_showBottomPanel) {
+                  setState(() => _showBottomPanel = false);
                 }
-                final messageIndex = _messages.length - 1 - index;
-                return _buildMessage(_messages[messageIndex], messageIndex);
               },
+              child: ListView.builder(
+                controller: _scrollController,
+                reverse: true,
+                itemCount: _messages.length + 1,
+                itemBuilder: (context, index) {
+                  if (index == _messages.length) {
+                    return _buildChatHeader();
+                  }
+                  final messageIndex = _messages.length - 1 - index;
+                  return _buildMessage(_messages[messageIndex], messageIndex);
+                },
+              ),
             ),
           ),
           Container(
@@ -1167,25 +1254,54 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 padding: const EdgeInsets.all(8.0),
                 child: CommonEditText(
                   controller: _messageController,
+                  focusNode: _messageFocusNode,
                   enabled: !_isSending,
                   hintText: _isSending ? '전송 중...' : '메시지를 입력하세요',
                   minLines: 1,
                   maxLines: 5,
                   textInputAction: TextInputAction.newline,
-                  suffixIcon: IconButton(
-                    icon: _isSending
-                        ? const SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.send),
-                    onPressed: _isSending ? null : _sendMessage,
+                  suffixIcon: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      Transform.translate(
+                        offset: const Offset(8, 0),
+                        child: IconButton(
+                          icon: _isSending
+                              ? const SizedBox(
+                                  width: 24,
+                                  height: 24,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.send),
+                          onPressed: _isSending ? null : _sendMessage,
+                        ),
+                      ),
+                      IconButton(
+                        icon: Icon(
+                          Icons.more_vert,
+                          color: _showBottomPanel
+                              ? Theme.of(context).colorScheme.primary
+                              : null,
+                        ),
+                        onPressed: _toggleBottomPanel,
+                        padding: const EdgeInsets.only(left: 0, top: 8, right: 8, bottom: 8),
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
           ),
+          if (_showBottomPanel)
+            ChatBottomPanel(
+              chatRoom: _chatRoom!,
+              chatPrompts: _chatPrompts,
+              personas: _personas,
+              onModelChanged: _onModelChanged,
+              onPromptChanged: _onPromptChanged,
+              onPersonaChanged: _onPersonaChanged,
+            ),
         ],
       ),
     );
