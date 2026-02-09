@@ -1014,6 +1014,50 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     return parts.join(' ');
   }
 
+  Widget _buildMetadataHeader(ChatMessageMetadata metadata) {
+    final metaStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
+      color: Theme.of(context).colorScheme.onSurfaceVariant,
+    );
+
+    final hasDateTime = metadata.date != null || metadata.time != null;
+    final location = metadata.location;
+
+    // 장소를 쉼표 기준으로 분리
+    String? locationMain;
+    String? locationSub;
+    if (location != null) {
+      final commaIndex = location.indexOf(',');
+      if (commaIndex != -1) {
+        locationMain = location.substring(0, commaIndex).trim();
+        locationSub = location.substring(commaIndex + 1).trim();
+      } else {
+        locationMain = location;
+      }
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.end,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            if (hasDateTime)
+              Text(
+                _formatMetadataDateTime(metadata.date, metadata.time),
+                style: metaStyle,
+              )
+            else
+              const SizedBox.shrink(),
+            if (locationMain != null)
+              Text(locationMain, style: metaStyle),
+          ],
+        ),
+        if (locationSub != null)
+          Text(locationSub, style: metaStyle),
+      ],
+    );
+  }
+
   Widget _buildMessage(ChatMessage message, int index) {
     final isUser = message.role == MessageRole.user;
     final isEditing = _editingMessageId == message.id;
@@ -1037,27 +1081,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               if (hasMetadata)
                 Padding(
                   padding: const EdgeInsets.only(bottom: 4),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      if (metadata.date != null || metadata.time != null)
-                        Text(
-                          _formatMetadataDateTime(metadata.date, metadata.time),
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                        )
-                      else
-                        const SizedBox.shrink(),
-                      if (metadata.location != null)
-                        Text(
-                          metadata.location!,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                    ],
-                  ),
+                  child: _buildMetadataHeader(metadata),
                 ),
               if (isEditing)
                 CommonEditText(
