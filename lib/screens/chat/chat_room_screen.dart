@@ -348,6 +348,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     if (!confirmed) return;
 
     try {
+      await _db.deleteChatMessageMetadataByMessage(messageId);
       await _db.deleteChatMessage(messageId);
       // 채팅방 토큰 합산 업데이트
       await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
