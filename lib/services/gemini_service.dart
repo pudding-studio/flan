@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/chat/chat_log.dart';
@@ -21,6 +22,14 @@ class GeminiResponse {
 class GeminiService {
   static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
   final DatabaseHelper _db = DatabaseHelper.instance;
+
+  static const List<Map<String, String>> _defaultSafetySettings = [
+    {'category': 'HARM_CATEGORY_HARASSMENT', 'threshold': 'BLOCK_NONE'},
+    {'category': 'HARM_CATEGORY_HATE_SPEECH', 'threshold': 'BLOCK_NONE'},
+    {'category': 'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'threshold': 'BLOCK_NONE'},
+    {'category': 'HARM_CATEGORY_DANGEROUS_CONTENT', 'threshold': 'BLOCK_NONE'},
+    {'category': 'HARM_CATEGORY_CIVIC_INTEGRITY', 'threshold': 'BLOCK_NONE'},
+  ];
 
   Future<String> _getApiKey() async {
     final prefs = await SharedPreferences.getInstance();
@@ -131,6 +140,7 @@ class GeminiService {
           ]
         },
       if (generationConfig != null) 'generationConfig': generationConfig,
+      'safetySettings': _defaultSafetySettings,
       'contents': contents,
     };
 
@@ -154,6 +164,18 @@ class GeminiService {
       final usageMetadata = _extractUsageMetadata(responseData);
 
       if (text.isEmpty) {
+        debugPrint('Empty AI response - status: ${response.statusCode}, body: ${response.body}');
+        await _saveChatLog(
+          request: requestJson,
+          response: response.body,
+          timestamp: startTime,
+          chatRoomId: chatRoomId,
+          characterId: characterId,
+        );
+        final blockReason = responseData['promptFeedback']?['blockReason'] as String?;
+        if (blockReason != null) {
+          throw Exception('AI 응답이 차단되었습니다 (사유: $blockReason)');
+        }
         throw Exception('AI 응답을 받지 못했습니다');
       }
 
@@ -227,6 +249,7 @@ class GeminiService {
           ]
         },
       if (generationConfig != null) 'generationConfig': generationConfig,
+      'safetySettings': _defaultSafetySettings,
       'contents': contents,
     };
 
