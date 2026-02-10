@@ -139,6 +139,9 @@ class _PromptEditScreenState extends State<PromptEditScreen>
   }
 
   Future<void> _savePrompt() async {
+    FocusScope.of(context).unfocus();
+    await Future.delayed(Duration.zero);
+
     if (!_formKey.currentState!.validate()) {
       _tabController.animateTo(0);
       return;

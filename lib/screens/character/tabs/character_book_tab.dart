@@ -231,6 +231,9 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
       name: characterBook.name,
       isExpanded: characterBook.isExpanded,
       onToggleExpanded: () {
+        if (characterBook.isExpanded) {
+          FocusScope.of(context).unfocus();
+        }
         setState(() {
           characterBook.isExpanded = !characterBook.isExpanded;
         });

@@ -111,6 +111,9 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
       name: item.name ?? item.role.displayName,
       isExpanded: item.isExpanded,
       onToggleExpanded: () {
+        if (item.isExpanded) {
+          FocusScope.of(context).unfocus();
+        }
         setState(() {
           item.isExpanded = !item.isExpanded;
         });

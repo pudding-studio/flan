@@ -131,6 +131,9 @@ class _StartScenarioTabState extends State<StartScenarioTab> {
       name: scenario.name,
       isExpanded: scenario.isExpanded,
       onToggleExpanded: () {
+        if (scenario.isExpanded) {
+          FocusScope.of(context).unfocus();
+        }
         setState(() {
           scenario.isExpanded = !scenario.isExpanded;
         });

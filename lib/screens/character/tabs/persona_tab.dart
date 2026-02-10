@@ -131,6 +131,9 @@ class _PersonaTabState extends State<PersonaTab> {
       name: persona.name,
       isExpanded: persona.isExpanded,
       onToggleExpanded: () {
+        if (persona.isExpanded) {
+          FocusScope.of(context).unfocus();
+        }
         setState(() {
           persona.isExpanded = !persona.isExpanded;
         });

@@ -523,6 +523,10 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   }
 
   Future<void> _handleSave() async {
+    // 현재 포커스된 EditText의 값을 커밋하기 위해 포커스 해제
+    FocusScope.of(context).unfocus();
+    await Future.delayed(Duration.zero);
+
     // 이름만 필수로 체크
     if (_nameController.text.isEmpty) {
       CommonDialog.showSnackBar(
