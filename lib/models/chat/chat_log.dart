@@ -34,8 +34,8 @@ class ChatLog {
       id: map['id'] as int?,
       timestamp: DateTime.parse(map['timestamp'] as String),
       type: map['type'] as String,
-      request: map['request'] as String,
-      response: map['response'] as String,
+      request: (map['request'] as String?) ?? '',
+      response: (map['response'] as String?) ?? '',
       chatRoomId: map['chat_room_id'] as int?,
       characterId: map['character_id'] as int?,
     );

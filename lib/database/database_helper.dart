@@ -1387,19 +1387,36 @@ class DatabaseHelper {
     return await db.insert('chat_logs', map);
   }
 
+  static const _chatLogListColumns = [
+    'id', 'timestamp', 'type', 'chat_room_id', 'character_id',
+  ];
+
   Future<List<ChatLog>> readAllChatLogs() async {
     final db = await database;
     final result = await db.query(
       'chat_logs',
+      columns: _chatLogListColumns,
       orderBy: 'timestamp DESC',
     );
     return result.map((map) => ChatLog.fromMap(map)).toList();
+  }
+
+  Future<ChatLog?> readChatLog(int id) async {
+    final db = await database;
+    final result = await db.query(
+      'chat_logs',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    if (result.isEmpty) return null;
+    return ChatLog.fromMap(result.first);
   }
 
   Future<List<ChatLog>> readChatLogsByChatRoom(int chatRoomId) async {
     final db = await database;
     final result = await db.query(
       'chat_logs',
+      columns: _chatLogListColumns,
       where: 'chat_room_id = ?',
       whereArgs: [chatRoomId],
       orderBy: 'timestamp DESC',
@@ -1411,6 +1428,7 @@ class DatabaseHelper {
     final db = await database;
     final result = await db.query(
       'chat_logs',
+      columns: _chatLogListColumns,
       where: 'character_id = ?',
       whereArgs: [characterId],
       orderBy: 'timestamp DESC',

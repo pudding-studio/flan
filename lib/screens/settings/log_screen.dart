@@ -103,31 +103,15 @@ class _LogScreenState extends State<LogScreen> {
     }
   }
 
-  void _showLogDetail(ChatLog log) {
+  Future<void> _showLogDetail(ChatLog log) async {
+    if (log.id == null) return;
+    final fullLog = await _db.readChatLog(log.id!);
+    if (fullLog == null || !mounted) return;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => _LogDetailSheet(log: log),
+      builder: (context) => _LogDetailSheet(log: fullLog),
     );
-  }
-
-  String _extractUserMessage(String request) {
-    try {
-      final data = jsonDecode(request);
-      final contents = data['contents'] as List<dynamic>?;
-      if (contents == null || contents.isEmpty) return '';
-
-      final lastContent = contents.last as Map<String, dynamic>;
-      if (lastContent['role'] != 'user') return '';
-
-      final parts = lastContent['parts'] as List<dynamic>?;
-      if (parts == null || parts.isEmpty) return '';
-
-      final text = parts[0]['text'] as String? ?? '';
-      return text.length > 50 ? '${text.substring(0, 50)}...' : text;
-    } catch (e) {
-      return '';
-    }
   }
 
   String _formatTimestamp(DateTime timestamp) {
@@ -176,7 +160,6 @@ class _LogScreenState extends State<LogScreen> {
                   separatorBuilder: (context, index) => const Divider(height: 1),
                   itemBuilder: (context, index) {
                     final log = _logs[index];
-                    final userMessage = _extractUserMessage(log.request);
                     return ListTile(
                       title: Text(
                         _formatTimestamp(log.timestamp),
@@ -184,23 +167,9 @@ class _LogScreenState extends State<LogScreen> {
                               fontWeight: FontWeight.w500,
                             ),
                       ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Type: ${log.type}',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          if (userMessage.isNotEmpty)
-                            Text(
-                              userMessage,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                  ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                        ],
+                      subtitle: Text(
+                        'Type: ${log.type}',
+                        style: Theme.of(context).textTheme.bodySmall,
                       ),
                       trailing: IconButton(
                         icon: const Icon(Icons.delete_outline),
