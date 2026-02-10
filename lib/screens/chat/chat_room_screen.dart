@@ -25,6 +25,7 @@ import '../../widgets/common/common_edit_text.dart';
 import '../../providers/chat_model_provider.dart';
 import '../../providers/viewer_settings_provider.dart';
 import 'widgets/chat_bottom_panel.dart';
+import 'widgets/chat_room_drawer.dart';
 import '../character/character_view_screen.dart';
 
 class ChatRoomScreen extends StatefulWidget {
@@ -40,6 +41,7 @@ class ChatRoomScreen extends StatefulWidget {
 }
 
 class _ChatRoomScreenState extends State<ChatRoomScreen> {
+  final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   final DatabaseHelper _db = DatabaseHelper.instance;
   final GeminiService _geminiService = GeminiService();
   final TextEditingController _messageController = TextEditingController();
@@ -1220,6 +1222,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
 
     return Scaffold(
+      key: _scaffoldKey,
+      endDrawerEnableOpenDragGesture: false,
+      endDrawer: ChatRoomDrawer(
+        chatRoom: _chatRoom!,
+        character: _character!,
+        selectedPersonaId: _chatRoom!.selectedPersonaId,
+        onChatRoomUpdated: _loadChatData,
+      ),
       appBar: CommonAppBar(
         title: _character!.name,
         titleWidget: GestureDetector(
