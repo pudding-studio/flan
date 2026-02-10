@@ -55,13 +55,24 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
     }
   }
 
+  int _getNextMixedOrder() {
+    int maxOrder = -1;
+    for (final folder in widget.folders) {
+      if (folder.order > maxOrder) maxOrder = folder.order;
+    }
+    for (final item in widget.standaloneCharacterBooks) {
+      if (item.order > maxOrder) maxOrder = item.order;
+    }
+    return maxOrder + 1;
+  }
+
   void _addFolder() {
     setState(() {
       final newFolder = CharacterBookFolder(
         id: _getNextTempId(),
         characterId: -1,
         name: '새 폴더',
-        order: widget.folders.length,
+        order: _getNextMixedOrder(),
       );
       widget.folders.add(newFolder);
     });
@@ -75,7 +86,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
         characterId: -1,
         folderId: folder?.id,
         name: '새 캐릭터북',
-        order: folder != null ? folder.characterBooks.length : widget.standaloneCharacterBooks.length,
+        order: folder != null ? folder.characterBooks.length : _getNextMixedOrder(),
         isExpanded: true,
       );
 
@@ -139,29 +150,64 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
   void _moveCharacterBookOutOfFolder(CharacterBook characterBook, CharacterBookFolder fromFolder) {
     setState(() {
       fromFolder.characterBooks.remove(characterBook);
+      characterBook.order = _getNextMixedOrder();
       widget.standaloneCharacterBooks.add(characterBook);
-      characterBook.order = widget.standaloneCharacterBooks.length - 1;
     });
     _notifyUpdate();
   }
 
   void _reorderCharacterBook(CharacterBook draggedCharacterBook, int targetIndex, CharacterBookFolder? folder) {
     setState(() {
-      final characterBooks = folder != null ? folder.characterBooks : widget.standaloneCharacterBooks;
-      final draggedIndex = characterBooks.indexOf(draggedCharacterBook);
-
-      if (draggedIndex == -1) return;
-
-      characterBooks.removeAt(draggedIndex);
-
-      final insertIndex = targetIndex > draggedIndex ? targetIndex - 1 : targetIndex;
-      characterBooks.insert(insertIndex.clamp(0, characterBooks.length), draggedCharacterBook);
-
-      for (var i = 0; i < characterBooks.length; i++) {
-        characterBooks[i].order = i;
+      if (folder != null) {
+        final characterBooks = folder.characterBooks;
+        final draggedIndex = characterBooks.indexOf(draggedCharacterBook);
+        if (draggedIndex == -1) return;
+        characterBooks.removeAt(draggedIndex);
+        final insertIndex = targetIndex > draggedIndex ? targetIndex - 1 : targetIndex;
+        characterBooks.insert(insertIndex.clamp(0, characterBooks.length), draggedCharacterBook);
+        for (var i = 0; i < characterBooks.length; i++) {
+          characterBooks[i].order = i;
+        }
+      } else {
+        _reassignMixedOrder(movedItem: draggedCharacterBook, targetMixedIndex: targetIndex);
       }
     });
     _notifyUpdate();
+  }
+
+  void _reorderFolder(CharacterBookFolder folder, int targetMixedIndex) {
+    setState(() {
+      _reassignMixedOrder(movedFolder: folder, targetMixedIndex: targetMixedIndex);
+    });
+    _notifyUpdate();
+  }
+
+  void _reassignMixedOrder({CharacterBook? movedItem, CharacterBookFolder? movedFolder, required int targetMixedIndex}) {
+    final entries = <Object>[];
+    for (final f in widget.folders) entries.add(f);
+    for (final i in widget.standaloneCharacterBooks) entries.add(i);
+    entries.sort((a, b) {
+      final orderA = a is CharacterBookFolder ? a.order : (a as CharacterBook).order;
+      final orderB = b is CharacterBookFolder ? b.order : (b as CharacterBook).order;
+      return orderA.compareTo(orderB);
+    });
+
+    final moved = movedItem ?? movedFolder!;
+    final fromIndex = entries.indexOf(moved);
+    if (fromIndex != -1) {
+      entries.removeAt(fromIndex);
+      final insertIndex = fromIndex < targetMixedIndex ? targetMixedIndex - 1 : targetMixedIndex;
+      entries.insert(insertIndex.clamp(0, entries.length), moved);
+    }
+
+    for (int i = 0; i < entries.length; i++) {
+      final entry = entries[i];
+      if (entry is CharacterBookFolder) {
+        entry.order = i;
+      } else if (entry is CharacterBook) {
+        entry.order = i;
+      }
+    }
   }
 
   @override
@@ -188,13 +234,16 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
               getFolderName: (folder) => folder.name,
               getFolderExpanded: (folder) => folder.isExpanded,
               getFolderItems: (folder) => folder.characterBooks,
+              getFolderOrder: (folder) => folder.order,
               getItemId: (item) => item.id,
+              getItemOrder: (item) => item.order,
               itemContentBuilder: _buildCharacterBookCard,
               getItemIcon: (item) => Icons.description_outlined,
               getItemName: (item) => item.name,
               onReorderItem: _reorderCharacterBook,
               onMoveItemToFolder: _moveCharacterBookToFolder,
               onMoveItemOutOfFolder: _moveCharacterBookOutOfFolder,
+              onReorderFolder: _reorderFolder,
               onFolderNameChanged: (folder, newName) {
                 folder.name = newName;
                 _notifyUpdate();

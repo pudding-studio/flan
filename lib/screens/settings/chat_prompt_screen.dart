@@ -101,15 +101,15 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
 
   Future<void> _exportPrompt(ChatPrompt prompt) async {
     try {
-      final promptWithItems = ChatPrompt(
-        name: prompt.name,
-        description: prompt.description,
-        supportedModel: prompt.supportedModel,
-        parameters: prompt.parameters,
-        items: await _db.readPromptItemsByChatPrompt(prompt.id!),
-      );
+      final folders = await _db.readPromptItemFolders(prompt.id!);
+      for (final folder in folders) {
+        folder.items.addAll(await _db.readPromptItemsByFolder(folder.id!));
+      }
+      final standaloneItems = await _db.readStandalonePromptItems(prompt.id!);
 
-      final jsonString = const JsonEncoder.withIndent('  ').convert(promptWithItems.toJson());
+      final jsonString = const JsonEncoder.withIndent('  ').convert(
+        prompt.toJson(folders: folders, standaloneItems: standaloneItems),
+      );
       final fileName = '${prompt.name}.json';
 
       if (Platform.isAndroid) {
@@ -166,15 +166,44 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
       final prompt = ChatPrompt.fromJson(jsonData);
       final promptId = await _db.createChatPrompt(prompt);
 
-      for (int i = 0; i < prompt.items.length; i++) {
-        final item = prompt.items[i];
-        await _db.createPromptItem(
-          item.copyWith(
-            id: null,
-            chatPromptId: promptId,
-            order: i,
-          ),
-        );
+      if (jsonData.containsKey('folders')) {
+        final folders = prompt.foldersFromJson(jsonData);
+        for (final folder in folders) {
+          final folderId = await _db.createPromptItemFolder(
+            folder.copyWith(id: null, chatPromptId: promptId),
+          );
+          for (int i = 0; i < folder.items.length; i++) {
+            await _db.createPromptItem(
+              folder.items[i].copyWithNullableFolderId(
+                id: null,
+                chatPromptId: promptId,
+                folderId: folderId,
+                order: i,
+              ),
+            );
+          }
+        }
+        final standaloneItems = prompt.standaloneItemsFromJson(jsonData);
+        for (int i = 0; i < standaloneItems.length; i++) {
+          await _db.createPromptItem(
+            standaloneItems[i].copyWithNullableFolderId(
+              id: null,
+              chatPromptId: promptId,
+              folderId: null,
+              order: i,
+            ),
+          );
+        }
+      } else {
+        for (int i = 0; i < prompt.items.length; i++) {
+          await _db.createPromptItem(
+            prompt.items[i].copyWith(
+              id: null,
+              chatPromptId: promptId,
+              order: i,
+            ),
+          );
+        }
       }
 
       await _loadPrompts();

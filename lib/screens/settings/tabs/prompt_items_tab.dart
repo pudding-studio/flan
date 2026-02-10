@@ -21,6 +21,7 @@ class PromptItemsTab extends StatefulWidget {
   final void Function(PromptItem item, PromptItemFolder? fromFolder, PromptItemFolder toFolder) onMoveItemToFolder;
   final void Function(PromptItem item, PromptItemFolder fromFolder) onMoveItemOutOfFolder;
   final void Function(PromptItem item, int targetIndex, PromptItemFolder? folder) onReorderItem;
+  final void Function(PromptItemFolder folder, int targetIndex) onReorderFolder;
 
   const PromptItemsTab({
     super.key,
@@ -35,6 +36,7 @@ class PromptItemsTab extends StatefulWidget {
     required this.onMoveItemToFolder,
     required this.onMoveItemOutOfFolder,
     required this.onReorderItem,
+    required this.onReorderFolder,
   });
 
   @override
@@ -67,13 +69,16 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
               getFolderName: (folder) => folder.name,
               getFolderExpanded: (folder) => folder.isExpanded,
               getFolderItems: (folder) => folder.items,
+              getFolderOrder: (folder) => folder.order,
               getItemId: (item) => item.id,
+              getItemOrder: (item) => item.order,
               itemContentBuilder: _buildItemCard,
               getItemIcon: (item) => _getRoleIcon(item.role),
               getItemName: (item) => item.name ?? item.role.displayName,
               onReorderItem: widget.onReorderItem,
               onMoveItemToFolder: widget.onMoveItemToFolder,
               onMoveItemOutOfFolder: widget.onMoveItemOutOfFolder,
+              onReorderFolder: widget.onReorderFolder,
               onFolderNameChanged: (folder, newName) {
                 folder.name = newName;
                 widget.onUpdate();

@@ -191,13 +191,11 @@ class _PromptEditScreenState extends State<PromptEditScreen>
       }
 
       // Save folders and their items
-      for (int i = 0; i < _folders.length; i++) {
-        final folder = _folders[i];
+      for (final folder in _folders) {
         final folderId = await _db.createPromptItemFolder(
           folder.copyWith(
             id: null,
             chatPromptId: promptId,
-            order: i,
           ),
         );
 
@@ -218,8 +216,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
       }
 
       // Save standalone items
-      for (int i = 0; i < _standaloneItems.length; i++) {
-        final item = _standaloneItems[i];
+      for (final item in _standaloneItems) {
         final controller = _contentControllers[item.id]!;
 
         await _db.createPromptItem(
@@ -228,7 +225,6 @@ class _PromptEditScreenState extends State<PromptEditScreen>
             chatPromptId: promptId,
             folderId: null,
             content: controller.text.trim(),
-            order: i,
           ),
         );
       }
@@ -254,13 +250,24 @@ class _PromptEditScreenState extends State<PromptEditScreen>
     }
   }
 
+  int _getNextMixedOrder() {
+    int maxOrder = -1;
+    for (final folder in _folders) {
+      if (folder.order > maxOrder) maxOrder = folder.order;
+    }
+    for (final item in _standaloneItems) {
+      if (item.order > maxOrder) maxOrder = item.order;
+    }
+    return maxOrder + 1;
+  }
+
   void _addItem(PromptItemFolder? folder) {
     setState(() {
       final newItem = PromptItem(
         id: _getNextTempId(),
         role: PromptRole.system,
         content: '',
-        order: folder != null ? folder.items.length : _standaloneItems.length,
+        order: folder != null ? folder.items.length : _getNextMixedOrder(),
         isExpanded: true,
       );
       _contentControllers[newItem.id!] = TextEditingController();
@@ -281,7 +288,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
       final newFolder = PromptItemFolder(
         id: _getNextFolderTempId(),
         name: '새 폴더',
-        order: _folders.length,
+        order: _getNextMixedOrder(),
         isExpanded: true,
       );
       _folders.add(newFolder);
@@ -321,9 +328,9 @@ class _PromptEditScreenState extends State<PromptEditScreen>
 
     if (confirmed) {
       setState(() {
-        // Move items to standalone
+        int nextOrder = _getNextMixedOrder();
         for (var item in folder.items) {
-          _standaloneItems.add(item.copyWithNullableFolderId(folderId: null));
+          _standaloneItems.add(item.copyWithNullableFolderId(folderId: null, order: nextOrder++));
         }
         _folders.remove(folder);
       });
@@ -348,27 +355,65 @@ class _PromptEditScreenState extends State<PromptEditScreen>
   void _moveItemOutOfFolder(PromptItem item, PromptItemFolder fromFolder) {
     setState(() {
       fromFolder.items.remove(item);
-      final updatedItem = item.copyWithNullableFolderId(folderId: null);
+      final updatedItem = item.copyWithNullableFolderId(
+        folderId: null,
+        order: _getNextMixedOrder(),
+      );
       _standaloneItems.add(updatedItem);
     });
   }
 
   void _reorderItem(PromptItem item, int targetIndex, PromptItemFolder? folder) {
     setState(() {
-      List<PromptItem> list;
       if (folder != null) {
-        list = folder.items;
+        final list = folder.items;
+        final fromIndex = list.indexOf(item);
+        if (fromIndex != -1) {
+          list.removeAt(fromIndex);
+          final insertIndex = fromIndex < targetIndex ? targetIndex - 1 : targetIndex;
+          list.insert(insertIndex, item);
+        }
       } else {
-        list = _standaloneItems;
-      }
-
-      final fromIndex = list.indexOf(item);
-      if (fromIndex != -1) {
-        list.removeAt(fromIndex);
-        final insertIndex = fromIndex < targetIndex ? targetIndex - 1 : targetIndex;
-        list.insert(insertIndex, item);
+        _reassignMixedOrder(movedItem: item, targetMixedIndex: targetIndex);
       }
     });
+  }
+
+  void _reorderFolder(PromptItemFolder folder, int targetMixedIndex) {
+    setState(() {
+      _reassignMixedOrder(movedFolder: folder, targetMixedIndex: targetMixedIndex);
+    });
+  }
+
+  void _reassignMixedOrder({PromptItem? movedItem, PromptItemFolder? movedFolder, required int targetMixedIndex}) {
+    final entries = <Object>[];
+    for (final f in _folders) entries.add(f);
+    for (final i in _standaloneItems) entries.add(i);
+    entries.sort((a, b) {
+      final orderA = a is PromptItemFolder ? a.order : (a as PromptItem).order;
+      final orderB = b is PromptItemFolder ? b.order : (b as PromptItem).order;
+      return orderA.compareTo(orderB);
+    });
+
+    final moved = movedItem ?? movedFolder!;
+    final fromIndex = entries.indexOf(moved);
+    if (fromIndex != -1) {
+      entries.removeAt(fromIndex);
+      final insertIndex = fromIndex < targetMixedIndex ? targetMixedIndex - 1 : targetMixedIndex;
+      entries.insert(insertIndex.clamp(0, entries.length), moved);
+    }
+
+    for (int i = 0; i < entries.length; i++) {
+      final entry = entries[i];
+      if (entry is PromptItemFolder) {
+        entry.order = i;
+      } else if (entry is PromptItem) {
+        final idx = _standaloneItems.indexOf(entry);
+        if (idx != -1) {
+          _standaloneItems[idx] = entry.copyWith(order: i);
+        }
+      }
+    }
   }
 
   @override
@@ -442,6 +487,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
               onMoveItemToFolder: _moveItemToFolder,
               onMoveItemOutOfFolder: _moveItemOutOfFolder,
               onReorderItem: _reorderItem,
+              onReorderFolder: _reorderFolder,
             ),
           ],
         ),

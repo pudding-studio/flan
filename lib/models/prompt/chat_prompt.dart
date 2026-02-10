@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'prompt_item.dart';
+import 'prompt_item_folder.dart';
 import 'prompt_parameters.dart';
 
 class ChatPrompt {
@@ -87,13 +88,17 @@ class ChatPrompt {
     );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toJson({
+    List<PromptItemFolder>? folders,
+    List<PromptItem>? standaloneItems,
+  }) {
     return {
       'name': name,
       'description': description,
       'supportedModel': supportedModel,
       'parameters': parameters?.toJson(),
-      'items': items.map((item) => item.toJson()).toList(),
+      'folders': folders?.map((f) => f.toJson()).toList(),
+      'standaloneItems': standaloneItems?.map((item) => item.toJson()).toList(),
     };
   }
 
@@ -106,8 +111,22 @@ class ChatPrompt {
           ? PromptParameters.fromJson(json['parameters'] as Map<String, dynamic>)
           : null,
       items: (json['items'] as List<dynamic>?)
-          ?.map((item) => PromptItem.fromMap(item as Map<String, dynamic>))
+          ?.map((item) => PromptItem.fromJson(item as Map<String, dynamic>))
           .toList(),
     );
+  }
+
+  List<PromptItemFolder> foldersFromJson(Map<String, dynamic> json) {
+    return (json['folders'] as List<dynamic>?)
+            ?.map((f) => PromptItemFolder.fromJson(f as Map<String, dynamic>))
+            .toList() ??
+        [];
+  }
+
+  List<PromptItem> standaloneItemsFromJson(Map<String, dynamic> json) {
+    return (json['standaloneItems'] as List<dynamic>?)
+            ?.map((item) => PromptItem.fromJson(item as Map<String, dynamic>))
+            .toList() ??
+        [];
   }
 }
