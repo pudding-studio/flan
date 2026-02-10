@@ -42,6 +42,7 @@ class ChatRoomScreen extends StatefulWidget {
 
 class _ChatRoomScreenState extends State<ChatRoomScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  DrawerTab _drawerTab = DrawerTab.info;
   final DatabaseHelper _db = DatabaseHelper.instance;
   final GeminiService _geminiService = GeminiService();
   final TextEditingController _messageController = TextEditingController();
@@ -1228,6 +1229,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         chatRoom: _chatRoom!,
         character: _character!,
         selectedPersonaId: _chatRoom!.selectedPersonaId,
+        initialTab: _drawerTab,
+        onTabChanged: (tab) => _drawerTab = tab,
         onChatRoomUpdated: _loadChatData,
       ),
       appBar: CommonAppBar(

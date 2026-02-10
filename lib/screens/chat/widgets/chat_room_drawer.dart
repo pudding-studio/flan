@@ -12,7 +12,7 @@ import '../../../widgets/common/common_editable_expandable_item.dart';
 import '../../../widgets/common/common_field_section.dart';
 import '../../../widgets/common/common_segmented_button.dart';
 
-enum _DrawerTab {
+enum DrawerTab {
   info,
   persona,
   character,
@@ -24,6 +24,8 @@ class ChatRoomDrawer extends StatefulWidget {
   final ChatRoom chatRoom;
   final Character character;
   final int? selectedPersonaId;
+  final DrawerTab initialTab;
+  final ValueChanged<DrawerTab> onTabChanged;
   final VoidCallback onChatRoomUpdated;
 
   const ChatRoomDrawer({
@@ -31,6 +33,8 @@ class ChatRoomDrawer extends StatefulWidget {
     required this.chatRoom,
     required this.character,
     this.selectedPersonaId,
+    this.initialTab = DrawerTab.info,
+    required this.onTabChanged,
     required this.onChatRoomUpdated,
   });
 
@@ -41,7 +45,7 @@ class ChatRoomDrawer extends StatefulWidget {
 class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
   final DatabaseHelper _db = DatabaseHelper.instance;
 
-  _DrawerTab _selectedTab = _DrawerTab.info;
+  late DrawerTab _selectedTab;
   bool _memoExpanded = true;
 
   late TextEditingController _memoController;
@@ -61,6 +65,7 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
   @override
   void initState() {
     super.initState();
+    _selectedTab = widget.initialTab;
     _memoController = TextEditingController(text: widget.chatRoom.memo);
     _descriptionController = TextEditingController(text: widget.character.description ?? '');
     _summaryController = TextEditingController(text: widget.chatRoom.summary);
@@ -269,31 +274,31 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
             _buildChip(
               icon: Icons.chat_outlined,
               label: '기본 정보',
-              tab: _DrawerTab.info,
+              tab: DrawerTab.info,
             ),
             const SizedBox(width: 8),
             _buildChip(
               icon: Icons.face_outlined,
               label: '페르소나',
-              tab: _DrawerTab.persona,
+              tab: DrawerTab.persona,
             ),
             const SizedBox(width: 8),
             _buildChip(
               icon: Icons.person_outlined,
               label: '캐릭터 정보',
-              tab: _DrawerTab.character,
+              tab: DrawerTab.character,
             ),
             const SizedBox(width: 8),
             _buildChip(
               icon: Icons.description_outlined,
               label: '로어북',
-              tab: _DrawerTab.lorebook,
+              tab: DrawerTab.lorebook,
             ),
             const SizedBox(width: 8),
             _buildChip(
               icon: Icons.history,
               label: '요약',
-              tab: _DrawerTab.summary,
+              tab: DrawerTab.summary,
             ),
           ],
         ),
@@ -304,29 +309,32 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
   Widget _buildChip({
     required IconData icon,
     required String label,
-    required _DrawerTab tab,
+    required DrawerTab tab,
   }) {
     final selected = _selectedTab == tab;
     return FilterChip(
       avatar: Icon(icon, size: 18),
       label: Text(label),
       selected: selected,
-      onSelected: (_) => setState(() => _selectedTab = tab),
+      onSelected: (_) {
+        setState(() => _selectedTab = tab);
+        widget.onTabChanged(tab);
+      },
       showCheckmark: false,
     );
   }
 
   Widget _buildTabContent() {
     switch (_selectedTab) {
-      case _DrawerTab.info:
+      case DrawerTab.info:
         return _buildInfoTab();
-      case _DrawerTab.persona:
+      case DrawerTab.persona:
         return _buildPersonaTab();
-      case _DrawerTab.character:
+      case DrawerTab.character:
         return _buildCharacterTab();
-      case _DrawerTab.lorebook:
+      case DrawerTab.lorebook:
         return _buildLorebookTab();
-      case _DrawerTab.summary:
+      case DrawerTab.summary:
         return _buildSummaryTab();
     }
   }
@@ -437,7 +445,7 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
             padding: const EdgeInsets.all(16),
             children: [
               Text(
-                '캐릭터 설정',
+                '캐릭터',
                 style: Theme.of(context).textTheme.titleSmall,
               ),
               const SizedBox(height: 8),
