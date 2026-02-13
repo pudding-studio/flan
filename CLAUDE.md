@@ -3,8 +3,9 @@
 ## Git Workflow
 
 - 기본 브랜치: `mvp`
-- 커밋 및 push는 항상 `mvp` 브랜치에 직접 수행
-- 별도 feature 브랜치나 PR 없이 `mvp`로 바로 push
+- 커밋만 수행하고, push는 사용자가 요청할 때만 실행
+- push 시 항상 `mvp` 브랜치에 직접 push
+- 별도 feature 브랜치나 PR 사용하지 않음
 
 ## Project Overview
 
