@@ -28,6 +28,8 @@ import 'widgets/chat_bottom_panel.dart';
 import 'widgets/chat_room_drawer.dart';
 import '../character/character_view_screen.dart';
 
+enum SendingPhase { none, preparing, waiting }
+
 class ChatRoomScreen extends StatefulWidget {
   final int chatRoomId;
 
@@ -54,7 +56,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   List<ChatMessage> _messages = [];
   List<CoverImage> _coverImages = [];
   bool _isLoading = true;
-  bool _isSending = false;
+  SendingPhase _sendingPhase = SendingPhase.none;
+  bool get _isSending => _sendingPhase != SendingPhase.none;
   int? _editingMessageId;
   final Map<int, TextEditingController> _editControllers = {};
   Map<int, ChatMessageMetadata> _metadataMap = {};
@@ -256,7 +259,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final text = _messageController.text.trim();
     if (_chatRoom == null || _isSending) return;
 
-    setState(() => _isSending = true);
+    setState(() => _sendingPhase = SendingPhase.preparing);
 
     try {
       final tokenizerProvider = context.read<TokenizerProvider>();
@@ -296,6 +299,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         userMessage: combinedUserMessage,
         excludeMessageIds: [excludeId],
       );
+
+      if (mounted) setState(() => _sendingPhase = SendingPhase.waiting);
 
       final geminiResponse = await _geminiService.sendMessage(
         systemPrompt: apiData.systemPrompt,
@@ -337,7 +342,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     } finally {
       await _loadChatData();
       if (mounted) {
-        setState(() => _isSending = false);
+        setState(() => _sendingPhase = SendingPhase.none);
       }
     }
   }
@@ -607,7 +612,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final lastMessage = _messages.last;
     if (lastMessage.role != MessageRole.user) return;
 
-    setState(() => _isSending = true);
+    setState(() => _sendingPhase = SendingPhase.preparing);
 
     try {
       final tokenizerProvider = context.read<TokenizerProvider>();
@@ -617,6 +622,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         userMessage: lastMessage.content,
         excludeMessageIds: [lastMessage.id!],
       );
+
+      if (mounted) setState(() => _sendingPhase = SendingPhase.waiting);
 
       final geminiResponse = await _geminiService.sendMessage(
         systemPrompt: apiData.systemPrompt,
@@ -658,7 +665,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     } finally {
       await _loadChatData();
       if (mounted) {
-        setState(() => _isSending = false);
+        setState(() => _sendingPhase = SendingPhase.none);
       }
     }
   }
@@ -761,7 +768,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   Future<void> _regenerateMessage(int messageId) async {
     if (_isSending) return;
 
-    setState(() => _isSending = true);
+    setState(() => _sendingPhase = SendingPhase.preparing);
 
     try {
       final tokenizerProvider = context.read<TokenizerProvider>();
@@ -779,6 +786,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         userMessage: previousMessage.content,
         beforeMessageIndex: messageIndex - 1,
       );
+
+      if (mounted) setState(() => _sendingPhase = SendingPhase.waiting);
 
       final geminiResponse = await _geminiService.sendMessage(
         systemPrompt: apiData.systemPrompt,
@@ -814,7 +823,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       );
     } finally {
       if (mounted) {
-        setState(() => _isSending = false);
+        setState(() => _sendingPhase = SendingPhase.none);
       }
     }
   }
@@ -1345,7 +1354,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   controller: _messageController,
                   focusNode: _messageFocusNode,
                   enabled: !_isSending,
-                  hintText: _isSending ? '전송 중...' : '메시지를 입력하세요',
+                  hintText: _sendingPhase == SendingPhase.preparing
+                      ? '메시지 생성 중...'
+                      : _sendingPhase == SendingPhase.waiting
+                          ? '응답 대기 중...'
+                          : '메시지를 입력하세요',
                   minLines: 1,
                   maxLines: 5,
                   textInputAction: TextInputAction.newline,
@@ -1357,10 +1370,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                         offset: const Offset(8, 0),
                         child: IconButton(
                           icon: _isSending
-                              ? const SizedBox(
+                              ? SizedBox(
                                   width: 24,
                                   height: 24,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: _sendingPhase == SendingPhase.preparing
+                                        ? Theme.of(context).colorScheme.primary
+                                        : null,
+                                  ),
                                 )
                               : const Icon(Icons.send),
                           onPressed: _isSending ? null : _sendMessage,
