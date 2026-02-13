@@ -92,7 +92,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   Future<void> _loadChatData() async {
-    setState(() => _isLoading = true);
+    if (mounted) setState(() => _isLoading = true);
 
     try {
       final chatRoom = await _db.readChatRoom(widget.chatRoomId);
@@ -119,6 +119,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           ? await _db.readPersonas(character.id!)
           : <Persona>[];
 
+      if (!mounted) return;
       setState(() {
         _chatRoom = chatRoom;
         _character = character;
@@ -133,6 +134,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
     } catch (e) {
       debugPrint('Error loading chat data: $e');
+      if (!mounted) return;
       setState(() => _isLoading = false);
     }
   }
