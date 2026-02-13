@@ -1540,6 +1540,31 @@ class DatabaseHelper {
     );
   }
 
+  Future<int> countPinnedMetadataByChatRoom(int chatRoomId) async {
+    final db = await database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as cnt FROM chat_message_metadata WHERE chat_room_id = ? AND is_pinned = 1',
+      [chatRoomId],
+    );
+    return result.first['cnt'] as int;
+  }
+
+  Future<ChatMessageMetadata?> readPinnedMetadataForScene(int chatRoomId, int sceneIndex) async {
+    final db = await database;
+    final result = await db.query(
+      'chat_message_metadata',
+      where: 'chat_room_id = ? AND is_pinned = 1',
+      whereArgs: [chatRoomId],
+      orderBy: 'created_at ASC',
+      limit: 1,
+      offset: sceneIndex,
+    );
+    if (result.isNotEmpty) {
+      return ChatMessageMetadata.fromMap(result.first);
+    }
+    return null;
+  }
+
   // ==================== 유틸리티 ====================
 
   Future<void> close() async {

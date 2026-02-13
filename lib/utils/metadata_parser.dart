@@ -114,4 +114,69 @@ class MetadataParser {
     result = result.replaceAll(RegExp(r'^\n+'), '');
     return result.trim();
   }
+
+  static const _dayNamesEn = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+
+  static String _formatDateForScene(String date) {
+    final segments = date.split('.');
+    if (segments.length != 3) return date;
+    final year = int.tryParse(segments[0]);
+    final month = int.tryParse(segments[1]);
+    final day = int.tryParse(segments[2]);
+    if (year == null || month == null || day == null) return date;
+    final dt = DateTime(year, month, day);
+    final dayName = _dayNamesEn[dt.weekday - 1];
+    return '${segments[0]}-${segments[1].padLeft(2, '0')}-${segments[2].padLeft(2, '0')}($dayName)';
+  }
+
+  static String _formatTimeForScene(String time) {
+    final parts = time.split(':');
+    if (parts.length != 2) return time;
+    final hour = int.tryParse(parts[0]);
+    if (hour == null) return time;
+    final period = (hour >= 6 && hour < 18) ? 'Day' : 'Night';
+    return '$time($period)';
+  }
+
+  static String buildSceneOpenTag({
+    required int sceneNumber,
+    required ChatMessageMetadata metadata,
+  }) {
+    final infoParts = <String>[];
+    if (metadata.location != null) infoParts.add(metadata.location!);
+    if (metadata.date != null) {
+      infoParts.add('Date=${_formatDateForScene(metadata.date!)}');
+    }
+    if (metadata.time != null) {
+      infoParts.add('Time=${_formatTimeForScene(metadata.time!)}');
+    }
+    final infoStr = infoParts.join('|');
+    return '<$sceneNumber>\n<Info>$infoStr</Info>';
+  }
+
+  static String buildSceneCloseTag(int sceneNumber) {
+    return '</$sceneNumber>';
+  }
+
+  /// 종료된 씬의 열기 태그 (시작~종료 시간 포함)
+  static String buildSceneOpenTagWithEndTime({
+    required int sceneNumber,
+    required ChatMessageMetadata startMetadata,
+    required ChatMessageMetadata endMetadata,
+  }) {
+    final infoParts = <String>[];
+    if (startMetadata.location != null) infoParts.add(startMetadata.location!);
+    if (startMetadata.date != null) {
+      infoParts.add('Date=${_formatDateForScene(startMetadata.date!)}');
+    }
+    if (startMetadata.time != null && endMetadata.time != null) {
+      infoParts.add(
+        'Time=${_formatTimeForScene(startMetadata.time!)}~${_formatTimeForScene(endMetadata.time!)}',
+      );
+    } else if (startMetadata.time != null) {
+      infoParts.add('Time=${_formatTimeForScene(startMetadata.time!)}');
+    }
+    final infoStr = infoParts.join('|');
+    return '<$sceneNumber>\n<Info>$infoStr</Info>';
+  }
 }

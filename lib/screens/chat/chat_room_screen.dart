@@ -482,12 +482,63 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       _metadataMap[messageId] = finalMetadata.copyWith(id: metadataId);
     });
 
+    String messageContent = content;
     if (MetadataParser.hasMetadataPattern(content)) {
-      final cleaned = MetadataParser.removeMetadataTags(content);
-      final message = await _db.readChatMessage(messageId);
-      if (message != null) {
-        await _db.updateChatMessage(message.copyWith(content: cleaned));
+      messageContent = MetadataParser.removeMetadataTags(content);
+    }
+
+    if (shouldPin) {
+      final pinnedCount = await _db.countPinnedMetadataByChatRoom(widget.chatRoomId);
+      final newSceneNumber = pinnedCount; // 현재 핀 포함된 카운트 = 새 씬 번호
+      final prevSceneNumber = newSceneNumber - 1;
+
+      if (prevSceneNumber >= 1 && previous != null) {
+        // 이전 씬의 시작 핀 metadata 조회 (종료된 씬의 시작~종료 시간 표기용)
+        final prevScenePinMetadata = await _db.readPinnedMetadataForScene(
+          widget.chatRoomId,
+          prevSceneNumber - 1, // 0-indexed offset
+        );
+
+        // 이전 씬의 열기 태그가 있는 메시지를 찾아 시간 범위로 업데이트
+        if (prevScenePinMetadata != null) {
+          final pinMessage = await _db.readChatMessage(prevScenePinMetadata.chatMessageId);
+          if (pinMessage != null) {
+            final oldOpenTag = MetadataParser.buildSceneOpenTag(
+              sceneNumber: prevSceneNumber,
+              metadata: prevScenePinMetadata,
+            );
+            final newOpenTag = MetadataParser.buildSceneOpenTagWithEndTime(
+              sceneNumber: prevSceneNumber,
+              startMetadata: prevScenePinMetadata,
+              endMetadata: previous,
+            );
+            final updatedPinContent = pinMessage.content.replaceFirst(oldOpenTag, newOpenTag);
+            if (updatedPinContent != pinMessage.content) {
+              await _db.updateChatMessage(pinMessage.copyWith(content: updatedPinContent));
+            }
+          }
+        }
+
+        // 이전 assistant 메시지에 씬 닫기 태그 추가
+        final prevMessage = await _db.readChatMessage(previous.chatMessageId);
+        if (prevMessage != null) {
+          final closeTag = MetadataParser.buildSceneCloseTag(prevSceneNumber);
+          final updatedContent = '${prevMessage.content}\n\n$closeTag';
+          await _db.updateChatMessage(prevMessage.copyWith(content: updatedContent));
+        }
       }
+
+      // 현재 메시지에 씬 열기 태그 추가
+      final openTag = MetadataParser.buildSceneOpenTag(
+        sceneNumber: newSceneNumber,
+        metadata: finalMetadata,
+      );
+      messageContent = '$openTag\n\n$messageContent';
+    }
+
+    final message = await _db.readChatMessage(messageId);
+    if (message != null && messageContent != content) {
+      await _db.updateChatMessage(message.copyWith(content: messageContent));
     }
   }
 
