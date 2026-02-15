@@ -16,6 +16,9 @@ class ChatBottomPanel extends StatefulWidget {
   final ValueChanged<int?> onPromptChanged;
   final ValueChanged<int?> onPersonaChanged;
   final ValueChanged<String> onPinModeChanged;
+  final ValueChanged<bool> onAutoPinByDateChanged;
+  final ValueChanged<bool> onAutoPinByLocationChanged;
+  final ValueChanged<bool> onAutoPinByAiChanged;
 
   const ChatBottomPanel({
     super.key,
@@ -26,6 +29,9 @@ class ChatBottomPanel extends StatefulWidget {
     required this.onPromptChanged,
     required this.onPersonaChanged,
     required this.onPinModeChanged,
+    required this.onAutoPinByDateChanged,
+    required this.onAutoPinByLocationChanged,
+    required this.onAutoPinByAiChanged,
   });
 
   @override
@@ -77,7 +83,7 @@ class _ChatBottomPanelState extends State<ChatBottomPanel> with SingleTickerProv
               unselectedLabelStyle: Theme.of(context).textTheme.bodySmall,
             ),
             SizedBox(
-              height: 220,
+              height: widget.chatRoom.pinMode == 'auto' ? 300 : 220,
               child: TabBarView(
                 controller: _tabController,
                 children: [
@@ -161,6 +167,24 @@ class _ChatBottomPanelState extends State<ChatBottomPanel> with SingleTickerProv
               ),
             ),
           ),
+          if (widget.chatRoom.pinMode == 'auto') ...[
+            const SizedBox(height: 4),
+            _buildToggleRow(
+              label: '날짜 기준',
+              value: widget.chatRoom.autoPinByDate,
+              onChanged: widget.onAutoPinByDateChanged,
+            ),
+            _buildToggleRow(
+              label: '장소 기준',
+              value: widget.chatRoom.autoPinByLocation,
+              onChanged: widget.onAutoPinByLocationChanged,
+            ),
+            _buildToggleRow(
+              label: 'AI 자동',
+              value: widget.chatRoom.autoPinByAi,
+              onChanged: widget.onAutoPinByAiChanged,
+            ),
+          ],
         ],
       ),
     );
@@ -198,6 +222,36 @@ class _ChatBottomPanelState extends State<ChatBottomPanel> with SingleTickerProv
             onPlus: () => viewer.adjustParagraphWidth(4),
           ),
           _buildAlignRow(viewer),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildToggleRow({
+    required String label,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 0),
+      child: Row(
+        children: [
+          const SizedBox(width: 16),
+          SizedBox(
+            width: 64,
+            child: Text(label, style: Theme.of(context).textTheme.bodySmall),
+          ),
+          const Spacer(),
+          SizedBox(
+            height: 28,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Switch(
+                value: value,
+                onChanged: onChanged,
+              ),
+            ),
+          ),
         ],
       ),
     );

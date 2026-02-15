@@ -9,6 +9,9 @@ class ChatRoom {
   final String memo;
   final String summary;
   final String pinMode; // 'auto' or 'manual'
+  final bool autoPinByDate;
+  final bool autoPinByLocation;
+  final bool autoPinByAi;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -23,6 +26,9 @@ class ChatRoom {
     this.memo = '',
     this.summary = '',
     this.pinMode = 'auto',
+    this.autoPinByDate = true,
+    this.autoPinByLocation = true,
+    this.autoPinByAi = false,
     DateTime? createdAt,
     DateTime? updatedAt,
   })  : createdAt = createdAt ?? DateTime.now(),
@@ -40,6 +46,9 @@ class ChatRoom {
       memo: map['memo'] as String? ?? '',
       summary: map['summary'] as String? ?? '',
       pinMode: map['pin_mode'] as String? ?? 'auto',
+      autoPinByDate: (map['auto_pin_by_date'] as int? ?? 1) == 1,
+      autoPinByLocation: (map['auto_pin_by_location'] as int? ?? 1) == 1,
+      autoPinByAi: (map['auto_pin_by_ai'] as int? ?? 0) == 1,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
     );
@@ -57,6 +66,9 @@ class ChatRoom {
       'memo': memo,
       'summary': summary,
       'pin_mode': pinMode,
+      'auto_pin_by_date': autoPinByDate ? 1 : 0,
+      'auto_pin_by_location': autoPinByLocation ? 1 : 0,
+      'auto_pin_by_ai': autoPinByAi ? 1 : 0,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -73,6 +85,9 @@ class ChatRoom {
     String? memo,
     String? summary,
     String? pinMode,
+    bool? autoPinByDate,
+    bool? autoPinByLocation,
+    bool? autoPinByAi,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -87,6 +102,9 @@ class ChatRoom {
       memo: memo ?? this.memo,
       summary: summary ?? this.summary,
       pinMode: pinMode ?? this.pinMode,
+      autoPinByDate: autoPinByDate ?? this.autoPinByDate,
+      autoPinByLocation: autoPinByLocation ?? this.autoPinByLocation,
+      autoPinByAi: autoPinByAi ?? this.autoPinByAi,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

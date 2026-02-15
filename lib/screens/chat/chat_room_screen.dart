@@ -482,7 +482,21 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     );
 
     final isAutoMode = _chatRoom?.pinMode != 'manual';
-    final shouldPin = isAutoMode && MetadataParser.shouldAutoPin(metadata, previous);
+    bool shouldPin = false;
+    if (isAutoMode && _chatRoom != null) {
+      // 기계적 장면 구별 (날짜/장소 기준)
+      shouldPin = MetadataParser.shouldAutoPinWithOptions(
+        metadata,
+        previous,
+        byDate: _chatRoom!.autoPinByDate,
+        byLocation: _chatRoom!.autoPinByLocation,
+      );
+      // AI 자동 핀: [📌|ON] 태그 감지
+      if (!shouldPin && _chatRoom!.autoPinByAi) {
+        final aiPin = MetadataParser.parseAiPinTag(content);
+        if (aiPin == true) shouldPin = true;
+      }
+    }
     final finalMetadata = shouldPin ? metadata.copyWith(isPinned: true) : metadata;
 
     final metadataId = await _db.createChatMessageMetadata(finalMetadata);
@@ -619,6 +633,22 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     setState(() => _chatRoom = updated);
   }
 
+  Future<void> _onAutoPinOptionChanged({
+    bool? byDate,
+    bool? byLocation,
+    bool? byAi,
+  }) async {
+    if (_chatRoom == null) return;
+    final updated = _chatRoom!.copyWith(
+      autoPinByDate: byDate,
+      autoPinByLocation: byLocation,
+      autoPinByAi: byAi,
+      updatedAt: DateTime.now(),
+    );
+    await _db.updateChatRoom(updated);
+    setState(() => _chatRoom = updated);
+  }
+
   Future<void> _resendLastUserMessage() async {
     if (_isSending || _messages.isEmpty) return;
 
@@ -724,7 +754,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     try {
       if (_chatRoom == null || _character == null) return;
 
-      // 새 채팅방 생성
+      // 새 채팅방 생성 (memo, summary, pinMode 포함)
       final branchName = await _generateBranchName();
       final newChatRoom = ChatRoom(
         characterId: _chatRoom!.characterId,
@@ -732,11 +762,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         selectedChatPromptId: _chatRoom!.selectedChatPromptId,
         selectedPersonaId: _chatRoom!.selectedPersonaId,
         selectedStartScenarioId: _chatRoom!.selectedStartScenarioId,
+        memo: _chatRoom!.memo,
+        summary: _chatRoom!.summary,
+        pinMode: _chatRoom!.pinMode,
       );
 
       final newChatRoomId = await _db.createChatRoom(newChatRoom);
 
-      // 분기점까지의 메시지 복사
+      // 분기점까지의 메시지 및 메타데이터 복사
       for (int i = 0; i <= messageIndex; i++) {
         final msg = _messages[i];
         final newMessage = ChatMessage(
@@ -745,10 +778,28 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           content: msg.content,
           tokenCount: msg.tokenCount,
           createdAt: msg.createdAt,
+          editedAt: msg.editedAt,
           usageMetadata: msg.usageMetadata,
           modelId: msg.modelId,
         );
-        await _db.createChatMessage(newMessage);
+        final newMessageId = await _db.createChatMessage(newMessage);
+
+        // 메타데이터 복사 (날짜, 시간, 장소, 핀 상태)
+        if (msg.id != null) {
+          final metadata = _metadataMap[msg.id!];
+          if (metadata != null) {
+            final newMetadata = ChatMessageMetadata(
+              chatMessageId: newMessageId,
+              chatRoomId: newChatRoomId,
+              location: metadata.location,
+              date: metadata.date,
+              time: metadata.time,
+              isPinned: metadata.isPinned,
+              createdAt: metadata.createdAt,
+            );
+            await _db.createChatMessageMetadata(newMetadata);
+          }
+        }
       }
 
       // 새 채팅방 토큰 합산 업데이트
@@ -1422,6 +1473,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               onPromptChanged: _onPromptChanged,
               onPersonaChanged: _onPersonaChanged,
               onPinModeChanged: _onPinModeChanged,
+              onAutoPinByDateChanged: (v) => _onAutoPinOptionChanged(byDate: v),
+              onAutoPinByLocationChanged: (v) => _onAutoPinOptionChanged(byLocation: v),
+              onAutoPinByAiChanged: (v) => _onAutoPinOptionChanged(byAi: v),
             ),
         ],
       ),

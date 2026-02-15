@@ -4,6 +4,7 @@ class MetadataParser {
   static final _locationPattern = RegExp(r'\[📍\|([^\]]*)\]');
   static final _datePattern = RegExp(r'\[📅\|([^\]]*)\]');
   static final _timePattern = RegExp(r'\[🕰\|([^\]]*)\]');
+  static final _pinPattern = RegExp(r'\[📌\|([^\]]*)\]', caseSensitive: false);
 
   static ({String? location, String? date, String? time}) parse(String content) {
     final locationMatch = _locationPattern.firstMatch(content);
@@ -93,24 +94,65 @@ class MetadataParser {
     return false;
   }
 
+  /// 📌 태그에서 AI 자동 핀 ON/OFF 파싱
+  /// [📌|ON] → true, [📌|OFF] → false, 없으면 null
+  static bool? parseAiPinTag(String content) {
+    final match = _pinPattern.firstMatch(content);
+    if (match == null) return null;
+    final value = match.group(1)?.trim().toUpperCase();
+    if (value == 'ON') return true;
+    if (value == 'OFF') return false;
+    return null;
+  }
+
+  /// 옵션별 자동 핀 판정
+  static bool shouldAutoPinWithOptions(
+    ChatMessageMetadata current,
+    ChatMessageMetadata? previous, {
+    required bool byDate,
+    required bool byLocation,
+  }) {
+    if (previous == null) return false;
+
+    // 장소 기준
+    if (byLocation &&
+        current.location != null && previous.location != null &&
+        current.location != previous.location) {
+      return true;
+    }
+
+    // 날짜 기준
+    if (byDate &&
+        current.date != null && previous.date != null &&
+        current.date != previous.date) {
+      return true;
+    }
+
+    return false;
+  }
+
   static bool hasMetadataPattern(String content) {
     return _locationPattern.hasMatch(content) ||
         _datePattern.hasMatch(content) ||
-        _timePattern.hasMatch(content);
+        _timePattern.hasMatch(content) ||
+        _pinPattern.hasMatch(content);
   }
 
   static final _locationLinePattern = RegExp(r'^\[📍\|[^\]]*\]\s*\n?', multiLine: true);
   static final _dateLinePattern = RegExp(r'^\[📅\|[^\]]*\]\s*\n?', multiLine: true);
   static final _timeLinePattern = RegExp(r'^\[🕰\|[^\]]*\]\s*\n?', multiLine: true);
+  static final _pinLinePattern = RegExp(r'^\[📌\|[^\]]*\]\s*\n?', multiLine: true, caseSensitive: false);
 
   static String removeMetadataTags(String content) {
     var result = content
         .replaceAll(_locationLinePattern, '')
         .replaceAll(_dateLinePattern, '')
         .replaceAll(_timeLinePattern, '')
+        .replaceAll(_pinLinePattern, '')
         .replaceAll(_locationPattern, '')
         .replaceAll(_datePattern, '')
-        .replaceAll(_timePattern, '');
+        .replaceAll(_timePattern, '')
+        .replaceAll(_pinPattern, '');
     result = result.replaceAll(RegExp(r'^\n+'), '');
     return result.trim();
   }
