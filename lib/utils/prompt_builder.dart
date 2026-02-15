@@ -4,6 +4,8 @@ import '../models/character/character_book_folder.dart';
 import '../models/character/start_scenario.dart';
 import '../models/chat/chat_message.dart';
 import '../models/chat/chat_message_metadata.dart';
+import '../models/chat/chat_room.dart';
+import '../models/chat/chat_summary.dart';
 import '../models/prompt/chat_prompt.dart';
 import '../models/prompt/prompt_item.dart';
 import '../providers/tokenizer_provider.dart';
@@ -16,12 +18,16 @@ class PromptBuilder {
     Persona? persona,
     StartScenario? startScenario,
     List<CharacterBook>? activeCharacterBooks,
+    ChatRoom? chatRoom,
+    List<ChatSummary>? summaries,
   }) {
     final keywords = _buildKeywordMap(
       character: character,
       persona: persona,
       startScenario: startScenario,
       activeCharacterBooks: activeCharacterBooks,
+      chatRoom: chatRoom,
+      summaries: summaries,
     );
 
     final buffer = StringBuffer();
@@ -52,12 +58,16 @@ class PromptBuilder {
     int? maxInputTokens,
     TokenizerType? tokenizer,
     ChatMessageMetadata? lastMetadata,
+    ChatRoom? chatRoom,
+    List<ChatSummary>? summaries,
   }) {
     final keywords = _buildKeywordMap(
       character: character,
       persona: persona,
       startScenario: startScenario,
       activeCharacterBooks: activeCharacterBooks,
+      chatRoom: chatRoom,
+      summaries: summaries,
     );
 
     // 토큰 제한이 있으면 채팅 히스토리 조정
@@ -221,6 +231,8 @@ class PromptBuilder {
     Persona? persona,
     StartScenario? startScenario,
     List<CharacterBook>? activeCharacterBooks,
+    ChatRoom? chatRoom,
+    List<ChatSummary>? summaries,
   }) {
     return {
       'char': character.name,
@@ -230,7 +242,24 @@ class PromptBuilder {
       'character_book': _buildCharacterBookText(activeCharacterBooks),
       'start_setting': startScenario?.startSetting ?? '',
       'start_message': startScenario?.startMessage ?? '',
+      'chat_memo': chatRoom?.memo ?? '',
+      'chat_historys': _buildChatHistorysText(summaries),
     };
+  }
+
+  static String _buildChatHistorysText(List<ChatSummary>? summaries) {
+    if (summaries == null || summaries.isEmpty) return '';
+
+    final buffer = StringBuffer();
+    for (int i = 0; i < summaries.length; i++) {
+      final summary = summaries[i];
+      buffer.writeln('### Summary ${i + 1}');
+      buffer.writeln(summary.summaryContent);
+      if (i < summaries.length - 1) {
+        buffer.writeln();
+      }
+    }
+    return buffer.toString().trim();
   }
 
   static String _buildCharacterBookText(List<CharacterBook>? books) {

@@ -17,6 +17,7 @@ import '../../utils/prompt_builder.dart';
 import '../../utils/common_dialog.dart';
 import '../../utils/token_counter.dart';
 import '../../services/gemini_service.dart';
+import '../../services/auto_summary_service.dart';
 import '../../models/chat/chat_message_metadata.dart';
 import '../../models/chat/chat_model.dart';
 import '../../utils/metadata_parser.dart';
@@ -47,6 +48,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   DrawerTab _drawerTab = DrawerTab.info;
   final DatabaseHelper _db = DatabaseHelper.instance;
   final GeminiService _geminiService = GeminiService();
+  final AutoSummaryService _autoSummaryService = AutoSummaryService();
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
@@ -169,12 +171,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       return characterBook.enabled == CharacterBookActivationCondition.enabled;
     }).toList();
 
+    final summaries = await _db.getChatSummaries(widget.chatRoomId);
+
     final systemPrompt = PromptBuilder.buildSystemPrompt(
       chatPrompt: chatPrompt,
       character: _character!,
       persona: persona,
       startScenario: startScenario,
       activeCharacterBooks: activeCharacterBooks,
+      chatRoom: _chatRoom,
+      summaries: summaries,
     );
 
     final chatHistoryMap = await _buildChatHistoryMap(
@@ -200,6 +206,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       maxInputTokens: chatPrompt?.parameters?.maxInputTokens,
       tokenizer: tokenizer,
       lastMetadata: lastMetadata,
+      chatRoom: _chatRoom,
+      summaries: summaries,
     );
 
     return (systemPrompt: systemPrompt, contents: contents, parameters: chatPrompt?.parameters);
@@ -334,6 +342,19 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         updatedAt: DateTime.now(),
       );
       await _db.updateChatRoom(updatedChatRoom);
+
+      // 자동 요약 트리거 체크
+      final latestChatRoom = await _db.readChatRoom(widget.chatRoomId);
+      if (latestChatRoom != null) {
+        final shouldTrigger = await _autoSummaryService.shouldTriggerSummary(
+          chatRoomId: widget.chatRoomId,
+          currentTokenCount: latestChatRoom.totalTokenCount,
+        );
+
+        if (shouldTrigger) {
+          await _autoSummaryService.generateSummary(chatRoomId: widget.chatRoomId);
+        }
+      }
 
     } catch (e) {
       debugPrint('Error sending message: $e');

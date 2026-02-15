@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../../database/database_helper.dart';
 import '../../../models/chat/chat_room.dart';
+import '../../../models/chat/chat_summary.dart';
 import '../../../models/character/character.dart';
 import '../../../models/character/character_book_folder.dart';
 import '../../../models/character/persona.dart';
@@ -60,6 +61,9 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
   List<CharacterBook> _standaloneBooks = [];
   final Map<String, TextEditingController> _bookFieldControllers = {};
 
+  List<ChatSummary> _summaries = [];
+  final Map<int, TextEditingController> _summaryControllers = {};
+
   bool _isLoading = true;
 
   @override
@@ -84,6 +88,9 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
     for (final c in _bookFieldControllers.values) {
       c.dispose();
     }
+    for (final c in _summaryControllers.values) {
+      c.dispose();
+    }
     super.dispose();
   }
 
@@ -106,9 +113,17 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
     }
     final standaloneBooks = await _db.readStandaloneCharacterBooks(characterId);
 
+    final summaries = await _db.getChatSummaries(widget.chatRoom.id!);
+    for (final summary in summaries) {
+      if (!_summaryControllers.containsKey(summary.id)) {
+        _summaryControllers[summary.id!] = TextEditingController(text: summary.summaryContent);
+      }
+    }
+
     setState(() {
       _folders = folders;
       _standaloneBooks = standaloneBooks;
+      _summaries = summaries;
       _isLoading = false;
     });
   }
@@ -653,8 +668,88 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    '자동 요약 목록',
+                    style: Theme.of(context).textTheme.titleSmall,
+                  ),
+                  Text(
+                    '${_summaries.length}개',
+                    style: Theme.of(context).textTheme.bodySmall,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (_summaries.isEmpty)
+                Center(
+                  child: Padding(
+                    padding: const EdgeInsets.all(32),
+                    child: Text(
+                      '자동 요약이 없습니다.\n설정에서 자동 요약을 활성화하세요.',
+                      textAlign: TextAlign.center,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                    ),
+                  ),
+                )
+              else
+                ...List.generate(_summaries.length, (index) {
+                  final summary = _summaries[index];
+                  final controller = _summaryControllers[summary.id]!;
+
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 12),
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Text(
+                                'Summary #${index + 1}',
+                                style: Theme.of(context).textTheme.titleSmall,
+                              ),
+                              IconButton(
+                                icon: const Icon(Icons.delete_outline, size: 20),
+                                onPressed: () => _deleteSummary(summary.id!),
+                                tooltip: '삭제',
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          CommonEditText(
+                            controller: controller,
+                            hintText: '요약 내용',
+                            maxLines: null,
+                            minLines: 4,
+                            size: CommonEditTextSize.small,
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              TextButton.icon(
+                                onPressed: () => _saveSummaryItem(summary),
+                                icon: const Icon(Icons.save, size: 16),
+                                label: const Text('저장'),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+              const SizedBox(height: 16),
+              Divider(),
+              const SizedBox(height: 16),
               Text(
-                '요약',
+                '채팅방 요약 (레거시)',
                 style: Theme.of(context).textTheme.titleSmall,
               ),
               const SizedBox(height: 8),
@@ -662,7 +757,7 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
                 controller: _summaryController,
                 hintText: '요약을 입력하세요',
                 maxLines: null,
-                minLines: 10,
+                minLines: 6,
                 size: CommonEditTextSize.small,
               ),
             ],
@@ -671,5 +766,54 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
         _buildBottomSaveButton(_saveSummary),
       ],
     );
+  }
+
+  Future<void> _saveSummaryItem(ChatSummary summary) async {
+    try {
+      final controller = _summaryControllers[summary.id]!;
+      final updated = summary.copyWith(
+        summaryContent: controller.text,
+        updatedAt: DateTime.now(),
+      );
+      await _db.updateChatSummary(updated);
+
+      await _loadData();
+
+      if (!mounted) return;
+      CommonDialog.showSnackBar(context: context, message: '요약이 저장되었습니다');
+    } catch (e) {
+      if (!mounted) return;
+      CommonDialog.showSnackBar(
+        context: context,
+        message: '요약 저장 중 오류가 발생했습니다: $e',
+      );
+    }
+  }
+
+  Future<void> _deleteSummary(int summaryId) async {
+    final confirmed = await CommonDialog.showDeleteConfirmation(
+      context: context,
+      itemName: '이 요약',
+    );
+
+    if (!confirmed) return;
+
+    try {
+      await _db.deleteChatSummary(summaryId);
+
+      _summaryControllers[summaryId]?.dispose();
+      _summaryControllers.remove(summaryId);
+
+      await _loadData();
+
+      if (!mounted) return;
+      CommonDialog.showSnackBar(context: context, message: '요약이 삭제되었습니다');
+    } catch (e) {
+      if (!mounted) return;
+      CommonDialog.showSnackBar(
+        context: context,
+        message: '요약 삭제 중 오류가 발생했습니다: $e',
+      );
+    }
   }
 }

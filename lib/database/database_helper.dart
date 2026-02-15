@@ -12,6 +12,8 @@ import '../models/chat/chat_room.dart';
 import '../models/chat/chat_message.dart';
 import '../models/chat/chat_log.dart';
 import '../models/chat/chat_message_metadata.dart';
+import '../models/chat/auto_summary_settings.dart';
+import '../models/chat/chat_summary.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -31,7 +33,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 26,
+      version: 27,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -316,6 +318,58 @@ class DatabaseHelper {
     await db.execute('''
       CREATE INDEX idx_chat_room_id_metadata
       ON chat_message_metadata (chat_room_id)
+    ''');
+
+    // Auto summary settings table
+    await db.execute('''
+      CREATE TABLE auto_summary_settings (
+        id $idType,
+        chat_room_id $intType,
+        is_enabled $boolType DEFAULT 1,
+        summary_model $textType DEFAULT 'gemini-2.0-flash-exp',
+        token_threshold INTEGER NOT NULL DEFAULT 5000,
+        summary_prompt $textType,
+        created_at $textType,
+        updated_at $textType,
+        FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute('''
+      CREATE INDEX idx_chat_room_id_auto_summary_settings
+      ON auto_summary_settings (chat_room_id)
+    ''');
+
+    // Chat summaries table
+    await db.execute('''
+      CREATE TABLE chat_summaries (
+        id $idType,
+        chat_room_id $intType,
+        start_pin_message_id $intType,
+        end_pin_message_id $intType,
+        summary_content $textType,
+        token_count INTEGER NOT NULL DEFAULT 0,
+        created_at $textType,
+        updated_at $textType,
+        FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE,
+        FOREIGN KEY (start_pin_message_id) REFERENCES chat_messages (id) ON DELETE CASCADE,
+        FOREIGN KEY (end_pin_message_id) REFERENCES chat_messages (id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute('''
+      CREATE INDEX idx_chat_room_id_chat_summaries
+      ON chat_summaries (chat_room_id)
+    ''');
+
+    await db.execute('''
+      CREATE INDEX idx_start_pin_message_id_chat_summaries
+      ON chat_summaries (start_pin_message_id)
+    ''');
+
+    await db.execute('''
+      CREATE INDEX idx_end_pin_message_id_chat_summaries
+      ON chat_summaries (end_pin_message_id)
     ''');
   }
 
@@ -732,6 +786,58 @@ class DatabaseHelper {
       ''');
       await db.execute('''
         ALTER TABLE chat_rooms ADD COLUMN auto_pin_by_ai INTEGER NOT NULL DEFAULT 0
+      ''');
+    }
+
+    if (oldVersion < 27) {
+      await db.execute('''
+        CREATE TABLE auto_summary_settings (
+          id $idType,
+          chat_room_id $intType,
+          is_enabled $boolType DEFAULT 1,
+          summary_model $textType DEFAULT 'gemini-2.0-flash-exp',
+          token_threshold INTEGER NOT NULL DEFAULT 5000,
+          summary_prompt $textType,
+          created_at $textType,
+          updated_at $textType,
+          FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE
+        )
+      ''');
+
+      await db.execute('''
+        CREATE INDEX idx_chat_room_id_auto_summary_settings
+        ON auto_summary_settings (chat_room_id)
+      ''');
+
+      await db.execute('''
+        CREATE TABLE chat_summaries (
+          id $idType,
+          chat_room_id $intType,
+          start_pin_message_id $intType,
+          end_pin_message_id $intType,
+          summary_content $textType,
+          token_count INTEGER NOT NULL DEFAULT 0,
+          created_at $textType,
+          updated_at $textType,
+          FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE,
+          FOREIGN KEY (start_pin_message_id) REFERENCES chat_messages (id) ON DELETE CASCADE,
+          FOREIGN KEY (end_pin_message_id) REFERENCES chat_messages (id) ON DELETE CASCADE
+        )
+      ''');
+
+      await db.execute('''
+        CREATE INDEX idx_chat_room_id_chat_summaries
+        ON chat_summaries (chat_room_id)
+      ''');
+
+      await db.execute('''
+        CREATE INDEX idx_start_pin_message_id_chat_summaries
+        ON chat_summaries (start_pin_message_id)
+      ''');
+
+      await db.execute('''
+        CREATE INDEX idx_end_pin_message_id_chat_summaries
+        ON chat_summaries (end_pin_message_id)
       ''');
     }
   }
@@ -1534,6 +1640,17 @@ class DatabaseHelper {
     return null;
   }
 
+  Future<List<ChatMessageMetadata>> getChatMessageMetadataList(int chatRoomId) async {
+    final db = await database;
+    final maps = await db.query(
+      'chat_message_metadata',
+      where: 'chat_room_id = ?',
+      whereArgs: [chatRoomId],
+      orderBy: 'created_at ASC',
+    );
+    return maps.map((map) => ChatMessageMetadata.fromMap(map)).toList();
+  }
+
   Future<int> updateChatMessageMetadata(ChatMessageMetadata metadata) async {
     final db = await database;
     return await db.update(
@@ -1585,6 +1702,99 @@ class DatabaseHelper {
       return ChatMessageMetadata.fromMap(result.first);
     }
     return null;
+  }
+
+  // ==================== 자동 요약 설정 CRUD ====================
+
+  Future<int> createAutoSummarySettings(AutoSummarySettings settings) async {
+    final db = await database;
+    final map = settings.toMap();
+    map.remove('id');
+    return await db.insert('auto_summary_settings', map);
+  }
+
+  Future<AutoSummarySettings?> getAutoSummarySettings(int chatRoomId) async {
+    final db = await database;
+    final result = await db.query(
+      'auto_summary_settings',
+      where: 'chat_room_id = ?',
+      whereArgs: [chatRoomId],
+    );
+    if (result.isNotEmpty) {
+      return AutoSummarySettings.fromMap(result.first);
+    }
+    return null;
+  }
+
+  Future<int> updateAutoSummarySettings(AutoSummarySettings settings) async {
+    final db = await database;
+    return await db.update(
+      'auto_summary_settings',
+      settings.toMap(),
+      where: 'id = ?',
+      whereArgs: [settings.id],
+    );
+  }
+
+  Future<int> deleteAutoSummarySettings(int id) async {
+    final db = await database;
+    return await db.delete(
+      'auto_summary_settings',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  // ==================== 채팅 요약 CRUD ====================
+
+  Future<int> createChatSummary(ChatSummary summary) async {
+    final db = await database;
+    final map = summary.toMap();
+    map.remove('id');
+    return await db.insert('chat_summaries', map);
+  }
+
+  Future<List<ChatSummary>> getChatSummaries(int chatRoomId) async {
+    final db = await database;
+    final result = await db.query(
+      'chat_summaries',
+      where: 'chat_room_id = ?',
+      whereArgs: [chatRoomId],
+      orderBy: 'created_at DESC',
+    );
+    return result.map((map) => ChatSummary.fromMap(map)).toList();
+  }
+
+  Future<ChatSummary?> getChatSummary(int id) async {
+    final db = await database;
+    final result = await db.query(
+      'chat_summaries',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+    if (result.isNotEmpty) {
+      return ChatSummary.fromMap(result.first);
+    }
+    return null;
+  }
+
+  Future<int> updateChatSummary(ChatSummary summary) async {
+    final db = await database;
+    return await db.update(
+      'chat_summaries',
+      summary.toMap(),
+      where: 'id = ?',
+      whereArgs: [summary.id],
+    );
+  }
+
+  Future<int> deleteChatSummary(int id) async {
+    final db = await database;
+    return await db.delete(
+      'chat_summaries',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
   }
 
   // ==================== 유틸리티 ====================

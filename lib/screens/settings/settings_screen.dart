@@ -6,6 +6,7 @@ import '../../widgets/common/common_appbar.dart';
 import 'api_key_screen.dart';
 import 'chat_model_screen.dart';
 import 'chat_prompt_screen.dart';
+import 'auto_summary_screen.dart';
 import 'tokenizer_screen.dart';
 import 'log_screen.dart';
 import 'legal_document_screen.dart';
@@ -92,7 +93,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           const Divider(),
-          _buildSectionHeader('모델'),
+          _buildSectionHeader('채팅'),
           _buildListTile(
             icon: Icons.key,
             title: 'API 키 등록',
@@ -130,6 +131,21 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const ChatPromptScreen()),
+              );
+            },
+          ),
+          _buildListTile(
+            icon: Icons.auto_awesome,
+            title: '자동 요약',
+            subtitle: '전역 자동 요약 설정',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AutoSummaryScreen(
+                    chatRoomId: 0,
+                  ),
+                ),
               );
             },
           ),
