@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 enum CommonEditTextSize {
   medium,
@@ -40,6 +41,7 @@ class CommonEditText extends StatefulWidget {
   final TextInputAction? textInputAction;
   final ValueChanged<String>? onFieldSubmitted;
   final FocusNode? focusNode;
+  final List<TextInputFormatter>? inputFormatters;
 
   static final Map<CommonEditTextSize, _EditTextConfig> _configs = {
     CommonEditTextSize.medium: _EditTextConfig(
@@ -79,6 +81,7 @@ class CommonEditText extends StatefulWidget {
     this.onFieldSubmitted,
     this.focusNode,
     this.initialValue,
+    this.inputFormatters,
   });
 
   @override
@@ -171,6 +174,7 @@ class _CommonEditTextState extends State<CommonEditText> {
       keyboardType: widget.keyboardType,
       validator: widget.validator,
       onChanged: widget.onChanged,
+      inputFormatters: widget.inputFormatters,
     );
   }
 }

@@ -57,7 +57,7 @@ class PromptBuilder {
     List<CharacterBook>? activeCharacterBooks,
     int? maxInputTokens,
     TokenizerType? tokenizer,
-    ChatMessageMetadata? lastMetadata,
+    Map<int, ChatMessageMetadata>? metadataMap,
     ChatRoom? chatRoom,
     List<ChatSummary>? summaries,
   }) {
@@ -81,18 +81,6 @@ class PromptBuilder {
       tokenizer: tokenizer,
     );
 
-    // 마지막 assistant 메시지 ID를 찾기 위해 전체 chat 메시지를 수집
-    ChatMessage? lastAssistantMessage;
-    if (lastMetadata != null) {
-      for (final messages in adjustedChatHistoryMap.values) {
-        for (final msg in messages) {
-          if (msg.role == MessageRole.assistant) {
-            lastAssistantMessage = msg;
-          }
-        }
-      }
-    }
-
     final contents = <Map<String, dynamic>>[];
 
     if (chatPrompt != null && chatPrompt.items.isNotEmpty) {
@@ -103,8 +91,16 @@ class PromptBuilder {
           final messages = adjustedChatHistoryMap[item] ?? [];
           for (final msg in messages) {
             var content = msg.content;
-            if (lastAssistantMessage != null && msg.id == lastAssistantMessage.id) {
-              content = '$content\n${lastMetadata!.toTagString()}';
+            if (metadataMap != null &&
+                msg.role == MessageRole.assistant &&
+                msg.id != null) {
+              final metadata = metadataMap[msg.id!];
+              if (metadata != null) {
+                final tagString = metadata.toTagString();
+                if (tagString.isNotEmpty) {
+                  content = '$content\n$tagString';
+                }
+              }
             }
             _addContent(contents, _chatMessageRole(msg), content);
           }

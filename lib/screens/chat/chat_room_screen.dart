@@ -192,8 +192,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final tokenizerProvider = context.read<TokenizerProvider>();
     final tokenizer = tokenizerProvider.selectedTokenizer;
 
-    final lastMetadata = await _db.readLatestChatMessageMetadata(widget.chatRoomId);
-
     final contents = PromptBuilder.buildContents(
       chatPrompt: chatPrompt,
       character: _character!,
@@ -205,7 +203,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       activeCharacterBooks: activeCharacterBooks,
       maxInputTokens: chatPrompt?.parameters?.maxInputTokens,
       tokenizer: tokenizer,
-      lastMetadata: lastMetadata,
+      metadataMap: _metadataMap,
       chatRoom: _chatRoom,
       summaries: summaries,
     );
@@ -505,7 +503,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final isAutoMode = _chatRoom?.pinMode != 'manual';
     bool shouldPin = false;
     if (isAutoMode && _chatRoom != null) {
-      // 기계적 장면 구별 (날짜/장소 기준)
       shouldPin = MetadataParser.shouldAutoPinWithOptions(
         metadata,
         previous,

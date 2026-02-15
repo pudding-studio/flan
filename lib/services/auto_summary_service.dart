@@ -1,5 +1,5 @@
 import '../database/database_helper.dart';
-import '../models/chat/auto_summary_settings.dart';
+
 import '../models/chat/chat_summary.dart';
 import '../models/chat/chat_message.dart';
 import '../models/chat/chat_message_metadata.dart';
@@ -72,7 +72,7 @@ class AutoSummaryService {
         startPinMessageId: startPinMessage.id!,
         endPinMessageId: endPinMessage.id!,
         summaryContent: response.text,
-        tokenCount: response.usageMetadata?.totalTokens ?? 0,
+        tokenCount: response.usageMetadata?.totalTokenCount ?? 0,
       );
 
       final summaryId = await _db.createChatSummary(summary);
@@ -90,7 +90,7 @@ class AutoSummaryService {
 
     final pinnedMessages = <ChatMessage>[];
     for (final metadata in pinnedMetadata) {
-      final messages = await _db.readChatMessages(chatRoomId);
+      final messages = await _db.readChatMessagesByChatRoom(chatRoomId);
       final message = messages.firstWhere(
         (msg) => msg.id == metadata.chatMessageId,
         orElse: () => ChatMessage(
@@ -112,7 +112,7 @@ class AutoSummaryService {
     required int startPinMessageId,
     required int endPinMessageId,
   }) async {
-    final allMessages = await _db.readChatMessages(chatRoomId);
+    final allMessages = await _db.readChatMessagesByChatRoom(chatRoomId);
 
     final startIndex = allMessages.indexWhere((m) => m.id == startPinMessageId);
     final endIndex = allMessages.indexWhere((m) => m.id == endPinMessageId);

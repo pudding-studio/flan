@@ -12,7 +12,7 @@ class AutoSummarySettings {
     this.id,
     required this.chatRoomId,
     this.isEnabled = true,
-    this.summaryModel = 'gemini-2.0-flash-exp',
+    this.summaryModel = 'gemini-3-flash-preview',
     this.tokenThreshold = 5000,
     this.summaryPrompt = 'Please summarize the following conversation concisely.',
     DateTime? createdAt,
@@ -25,7 +25,7 @@ class AutoSummarySettings {
       id: map['id'] as int?,
       chatRoomId: map['chat_room_id'] as int,
       isEnabled: (map['is_enabled'] as int? ?? 1) == 1,
-      summaryModel: map['summary_model'] as String? ?? 'gemini-2.0-flash-exp',
+      summaryModel: map['summary_model'] as String? ?? 'gemini-3-flash-preview',
       tokenThreshold: map['token_threshold'] as int? ?? 5000,
       summaryPrompt: map['summary_prompt'] as String? ??
           'Please summarize the following conversation concisely.',
