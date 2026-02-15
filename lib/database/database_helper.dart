@@ -31,7 +31,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 24,
+      version: 25,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -233,6 +233,7 @@ class DatabaseHelper {
         total_token_count INTEGER NOT NULL DEFAULT 0,
         memo TEXT NOT NULL DEFAULT '',
         summary TEXT NOT NULL DEFAULT '',
+        pin_mode TEXT NOT NULL DEFAULT 'auto',
         created_at $textType,
         updated_at $textType,
         FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE,
@@ -710,6 +711,12 @@ class DatabaseHelper {
       ''');
       await db.execute('''
         ALTER TABLE chat_rooms ADD COLUMN summary TEXT NOT NULL DEFAULT ''
+      ''');
+    }
+
+    if (oldVersion < 25) {
+      await db.execute('''
+        ALTER TABLE chat_rooms ADD COLUMN pin_mode TEXT NOT NULL DEFAULT 'auto'
       ''');
     }
   }

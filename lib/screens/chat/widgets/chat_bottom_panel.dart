@@ -15,6 +15,7 @@ class ChatBottomPanel extends StatefulWidget {
   final ValueChanged<ChatModel> onModelChanged;
   final ValueChanged<int?> onPromptChanged;
   final ValueChanged<int?> onPersonaChanged;
+  final ValueChanged<String> onPinModeChanged;
 
   const ChatBottomPanel({
     super.key,
@@ -24,6 +25,7 @@ class ChatBottomPanel extends StatefulWidget {
     required this.onModelChanged,
     required this.onPromptChanged,
     required this.onPersonaChanged,
+    required this.onPinModeChanged,
   });
 
   @override
@@ -140,6 +142,21 @@ class _ChatBottomPanelState extends State<ChatBottomPanel> with SingleTickerProv
                   if (id == null) return '없음';
                   return widget.personas.firstWhere((p) => p.id == id).name;
                 },
+                size: CommonDropdownButtonSize.small,
+              ),
+            ),
+          ),
+          const SizedBox(height: 8),
+          _buildSettingRow(
+            label: '핀 모드',
+            child: Expanded(
+              child: CommonDropdownButton<String>(
+                value: widget.chatRoom.pinMode,
+                items: const ['auto', 'manual'],
+                onChanged: (mode) {
+                  if (mode != null) widget.onPinModeChanged(mode);
+                },
+                labelBuilder: (mode) => mode == 'auto' ? '자동' : '수동',
                 size: CommonDropdownButtonSize.small,
               ),
             ),

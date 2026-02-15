@@ -481,7 +481,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       previous: previous,
     );
 
-    final shouldPin = MetadataParser.shouldAutoPin(metadata, previous);
+    final isAutoMode = _chatRoom?.pinMode != 'manual';
+    final shouldPin = isAutoMode && MetadataParser.shouldAutoPin(metadata, previous);
     final finalMetadata = shouldPin ? metadata.copyWith(isPinned: true) : metadata;
 
     final metadataId = await _db.createChatMessageMetadata(finalMetadata);
@@ -602,6 +603,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       selectedStartScenarioId: _chatRoom!.selectedStartScenarioId,
       totalTokenCount: _chatRoom!.totalTokenCount,
       createdAt: _chatRoom!.createdAt,
+      updatedAt: DateTime.now(),
+    );
+    await _db.updateChatRoom(updated);
+    setState(() => _chatRoom = updated);
+  }
+
+  Future<void> _onPinModeChanged(String mode) async {
+    if (_chatRoom == null) return;
+    final updated = _chatRoom!.copyWith(
+      pinMode: mode,
       updatedAt: DateTime.now(),
     );
     await _db.updateChatRoom(updated);
@@ -1410,6 +1421,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               onModelChanged: _onModelChanged,
               onPromptChanged: _onPromptChanged,
               onPersonaChanged: _onPersonaChanged,
+              onPinModeChanged: _onPinModeChanged,
             ),
         ],
       ),

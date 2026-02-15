@@ -8,6 +8,7 @@ class ChatRoom {
   final int totalTokenCount;
   final String memo;
   final String summary;
+  final String pinMode; // 'auto' or 'manual'
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -21,6 +22,7 @@ class ChatRoom {
     this.totalTokenCount = 0,
     this.memo = '',
     this.summary = '',
+    this.pinMode = 'auto',
     DateTime? createdAt,
     DateTime? updatedAt,
   })  : createdAt = createdAt ?? DateTime.now(),
@@ -37,6 +39,7 @@ class ChatRoom {
       totalTokenCount: map['total_token_count'] as int? ?? 0,
       memo: map['memo'] as String? ?? '',
       summary: map['summary'] as String? ?? '',
+      pinMode: map['pin_mode'] as String? ?? 'auto',
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
     );
@@ -53,6 +56,7 @@ class ChatRoom {
       'total_token_count': totalTokenCount,
       'memo': memo,
       'summary': summary,
+      'pin_mode': pinMode,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -68,6 +72,7 @@ class ChatRoom {
     int? totalTokenCount,
     String? memo,
     String? summary,
+    String? pinMode,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -81,6 +86,7 @@ class ChatRoom {
       totalTokenCount: totalTokenCount ?? this.totalTokenCount,
       memo: memo ?? this.memo,
       summary: summary ?? this.summary,
+      pinMode: pinMode ?? this.pinMode,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
