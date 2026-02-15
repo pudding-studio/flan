@@ -2,31 +2,41 @@
 
 ## Git Workflow
 
-- 기본 브랜치: `mvp`
-- 커밋만 수행하고, push는 사용자가 요청할 때만 실행
-- push 시 항상 `mvp` 브랜치에 직접 push
-- 별도 feature 브랜치나 PR 사용하지 않음
+- Default branch: `mvp`
+- Only commit; push only when user explicitly requests
+- Always push directly to `mvp` branch
+- No feature branches or PRs
 
 ## Project Overview
 
-- Flutter 기반 AI 채팅 앱 (Android)
-- Google Gemini API 연동
-- SQLite(sqflite) 데이터베이스 사용
-- Provider 패턴으로 상태 관리
+- Flutter-based AI chat app (Android)
+- Google Gemini API integration
+- SQLite (sqflite) database
+- Provider pattern for state management
 
 ## Key File Locations
 
-| 용도 | 경로 |
-|------|------|
-| 채팅 메시지 모델 | `lib/models/chat/chat_message.dart` |
-| 메시지 메타데이터 | `lib/models/chat/chat_message_metadata.dart` |
-| 채팅방 모델 | `lib/models/chat/chat_room.dart` |
-| 채팅방 화면 (메인 UI) | `lib/screens/chat/chat_room_screen.dart` |
-| DB 헬퍼 | `lib/database/database_helper.dart` |
-| 메타데이터 파서 (핀/씬 로직) | `lib/utils/metadata_parser.dart` |
+| Purpose | Path |
+|---------|------|
+| Chat message model | `lib/models/chat/chat_message.dart` |
+| Message metadata | `lib/models/chat/chat_message_metadata.dart` |
+| Chat room model | `lib/models/chat/chat_room.dart` |
+| Chat room screen (main UI) | `lib/screens/chat/chat_room_screen.dart` |
+| Database helper | `lib/database/database_helper.dart` |
+| Metadata parser (pin/scene logic) | `lib/utils/metadata_parser.dart` |
 
 ## Conventions
 
-- 커밋 메시지: 한국어, `feat:` / `fix:` / `refactor:` / `chore:` 접두사 사용
-- 메타데이터 태그 포맷: `[📍|장소]`, `[📅|YYYY.MM.DD]`, `[🕰|HH:MM]`
-- Scene 태그: 핀 감지 시 메시지 content에 `<N><Info>...</Info>` / `</N>` 자동 삽입
+- **Commit messages**: Korean, use `feat:` / `fix:` / `refactor:` / `chore:` prefixes
+- **Metadata tag format**: `[📍|location]`, `[📅|YYYY.MM.DD]`, `[🕰|HH:MM]`
+- **Scene tags**: Auto-insert `<N><Info>...</Info>` / `</N>` in message content when pins detected
+- **Code comments**: English only
+- **Reports/explanations**: Korean
+
+## Coding Principles
+
+1. **Clean Code**: Prioritize self-explanatory code over comments
+2. **Testing**: Execute comprehensive testing/verification suite after coding
+3. **Single Responsibility Principle (SRP)**: Each module/function has single responsibility
+4. **DRY (Don't Repeat Yourself)**: Eliminate logic duplication by extracting into reusable modules/functions
+5. **Fail Fast**: Implement explicit exception handling to ensure system reliability
