@@ -48,6 +48,9 @@ class CommonEditableExpandableItem extends StatefulWidget {
   /// 인라인 편집 저장 콜백
   final void Function(String)? onSaveEdit;
 
+  /// 삭제 버튼 표시 여부
+  final bool showDeleteButton;
+
   const CommonEditableExpandableItem({
     super.key,
     required this.icon,
@@ -63,6 +66,7 @@ class CommonEditableExpandableItem extends StatefulWidget {
     this.onToggleEdit,
     this.editController,
     this.onSaveEdit,
+    this.showDeleteButton = true,
   });
 
   @override
@@ -151,14 +155,16 @@ class _CommonEditableExpandableItemState extends State<CommonEditableExpandableI
               ),
             if (!widget.showNameField && widget.onToggleEdit != null)
               const SizedBox(width: UIConstants.spacing12),
-            GestureDetector(
-              onTap: widget.onDelete,
-              child: const Icon(
-                Icons.delete_outline,
-                size: UIConstants.iconSizeMedium,
+            if (widget.showDeleteButton) ...[
+              GestureDetector(
+                onTap: widget.onDelete,
+                child: const Icon(
+                  Icons.delete_outline,
+                  size: UIConstants.iconSizeMedium,
+                ),
               ),
-            ),
-            const SizedBox(width: UIConstants.spacing12),
+              const SizedBox(width: UIConstants.spacing12),
+            ],
             Icon(
               widget.isExpanded ? Icons.expand_less : Icons.expand_more,
               size: UIConstants.iconSizeLarge,

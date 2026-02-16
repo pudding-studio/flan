@@ -33,7 +33,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 28,
+      version: 29,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -167,6 +167,7 @@ class DatabaseHelper {
         supported_model $textType DEFAULT 'ALL',
         parameters $textTypeNullable,
         is_selected $boolType,
+        is_default $boolType,
         `order` $intType DEFAULT 0,
         created_at $textType,
         updated_at $textType
@@ -851,6 +852,12 @@ class DatabaseHelper {
         ALTER TABLE auto_summary_settings ADD COLUMN summary_prompt_items TEXT
       ''');
     }
+
+    if (oldVersion < 29) {
+      await db.execute('''
+        ALTER TABLE chat_prompts ADD COLUMN is_default INTEGER NOT NULL DEFAULT 0
+      ''');
+    }
   }
 
   // ==================== 캐릭터 CRUD ====================
@@ -1182,7 +1189,7 @@ class DatabaseHelper {
 
   Future<List<ChatPrompt>> readAllChatPrompts() async {
     final db = await database;
-    const orderBy = 'created_at DESC';
+    const orderBy = 'is_default DESC, `order` ASC, created_at DESC';
     final result = await db.query('chat_prompts', orderBy: orderBy);
     final prompts = result.map((map) => ChatPrompt.fromMap(map)).toList();
 
@@ -1206,11 +1213,25 @@ class DatabaseHelper {
 
   Future<int> deleteChatPrompt(int id) async {
     final db = await database;
+    final rows = await db.query(
+      'chat_prompts',
+      where: 'id = ? AND is_default = 1',
+      whereArgs: [id],
+    );
+    if (rows.isNotEmpty) return 0;
     return await db.delete(
       'chat_prompts',
       where: 'id = ?',
       whereArgs: [id],
     );
+  }
+
+  Future<bool> hasDefaultChatPrompts() async {
+    final db = await database;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as cnt FROM chat_prompts WHERE is_default = 1',
+    );
+    return (result.first['cnt'] as int) > 0;
   }
 
   Future<void> setSelectedChatPrompt(int id) async {

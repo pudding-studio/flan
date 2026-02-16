@@ -11,6 +11,7 @@ class ChatPrompt {
   final String supportedModel;
   final PromptParameters? parameters;
   final bool isSelected;
+  final bool isDefault;
   final int order;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -23,6 +24,7 @@ class ChatPrompt {
     String? supportedModel,
     this.parameters,
     this.isSelected = false,
+    this.isDefault = false,
     this.order = 0,
     List<PromptItem>? items,
     DateTime? createdAt,
@@ -42,6 +44,7 @@ class ChatPrompt {
           ? PromptParameters.fromJson(jsonDecode(map['parameters'] as String))
           : null,
       isSelected: (map['is_selected'] as int? ?? 0) == 1,
+      isDefault: (map['is_default'] as int? ?? 0) == 1,
       order: map['order'] as int? ?? 0,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
@@ -56,6 +59,7 @@ class ChatPrompt {
       'supported_model': supportedModel,
       'parameters': parameters != null ? jsonEncode(parameters!.toJson()) : null,
       'is_selected': isSelected ? 1 : 0,
+      'is_default': isDefault ? 1 : 0,
       'order': order,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
@@ -69,6 +73,7 @@ class ChatPrompt {
     String? supportedModel,
     PromptParameters? parameters,
     bool? isSelected,
+    bool? isDefault,
     int? order,
     List<PromptItem>? items,
     DateTime? createdAt,
@@ -81,6 +86,7 @@ class ChatPrompt {
       supportedModel: supportedModel ?? this.supportedModel,
       parameters: parameters ?? this.parameters,
       isSelected: isSelected ?? this.isSelected,
+      isDefault: isDefault ?? this.isDefault,
       order: order ?? this.order,
       items: items ?? this.items,
       createdAt: createdAt ?? this.createdAt,

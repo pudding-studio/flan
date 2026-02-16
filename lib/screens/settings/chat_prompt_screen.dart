@@ -99,6 +99,121 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
     }
   }
 
+  Future<void> _createNewPrompt() async {
+    final defaults = _prompts.where((p) => p.isDefault).toList();
+
+    if (defaults.isEmpty) {
+      _navigateToEdit(null);
+      return;
+    }
+
+    if (defaults.length == 1) {
+      await _forkPrompt(defaults.first);
+      return;
+    }
+
+    // Multiple defaults: show selection dialog
+    final selected = await showDialog<ChatPrompt?>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('기본 프롬프트 선택'),
+        children: [
+          ...defaults.map((prompt) =>
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(context, prompt),
+              child: ListTile(
+                leading: Icon(
+                  Icons.description_outlined,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                title: Text(prompt.name),
+                subtitle: prompt.description != null
+                    ? Text(
+                        prompt.description!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      )
+                    : null,
+              ),
+            ),
+          ),
+          const Divider(),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context),
+            child: const ListTile(
+              leading: Icon(Icons.add),
+              title: Text('빈 프롬프트'),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted) return;
+
+    if (selected != null) {
+      await _forkPrompt(selected);
+    } else {
+      _navigateToEdit(null);
+    }
+  }
+
+  Future<void> _forkPrompt(ChatPrompt sourcePrompt) async {
+    try {
+      final folders = await _db.readPromptItemFolders(sourcePrompt.id!);
+      for (final folder in folders) {
+        folder.items.addAll(await _db.readPromptItemsByFolder(folder.id!));
+      }
+      final standaloneItems = await _db.readStandalonePromptItems(sourcePrompt.id!);
+
+      final forkedPrompt = ChatPrompt(
+        name: '',
+        description: '',
+        supportedModel: sourcePrompt.supportedModel,
+        parameters: sourcePrompt.parameters,
+      );
+      final newPromptId = await _db.createChatPrompt(forkedPrompt);
+
+      for (final folder in folders) {
+        final newFolderId = await _db.createPromptItemFolder(
+          folder.copyWith(id: null, chatPromptId: newPromptId),
+        );
+        for (int i = 0; i < folder.items.length; i++) {
+          await _db.createPromptItem(
+            folder.items[i].copyWithNullableFolderId(
+              id: null,
+              chatPromptId: newPromptId,
+              folderId: newFolderId,
+              order: i,
+            ),
+          );
+        }
+      }
+      for (int i = 0; i < standaloneItems.length; i++) {
+        await _db.createPromptItem(
+          standaloneItems[i].copyWithNullableFolderId(
+            id: null,
+            chatPromptId: newPromptId,
+            folderId: null,
+            order: i,
+          ),
+        );
+      }
+
+      final forkedWithId = await _db.readChatPrompt(newPromptId);
+      if (mounted && forkedWithId != null) {
+        _navigateToEdit(forkedWithId);
+      }
+    } catch (e) {
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '프롬프트 복사에 실패했습니다: $e',
+        );
+      }
+    }
+  }
+
   Future<void> _exportPrompt(ChatPrompt prompt) async {
     try {
       final folders = await _db.readPromptItemFolders(prompt.id!);
@@ -312,20 +427,20 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
                         title: prompt.name,
                         description: prompt.description ?? '${prompt.items.length}개 항목',
                         isSelected: prompt.isSelected,
+                        isDefault: prompt.isDefault,
                         onRadioTap: () => _selectPrompt(prompt.id!),
                         onTap: () => _navigateToEdit(prompt),
-                        onEdit: () => _navigateToEdit(prompt),
+                        onEdit: prompt.isDefault ? null : () => _navigateToEdit(prompt),
                         onExport: () => _exportPrompt(prompt),
-                        onDelete: () => _deletePrompt(
-                          prompt.id!,
-                          prompt.name,
-                        ),
+                        onDelete: prompt.isDefault
+                            ? null
+                            : () => _deletePrompt(prompt.id!, prompt.name),
                       ),
                     );
                   },
                 ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _navigateToEdit(null),
+        onPressed: () => _createNewPrompt(),
         elevation: 0,
         child: const Icon(Icons.add),
       ),

@@ -1,0 +1,12 @@
+[
+  {
+    "role": "user",
+    "content": "Please summarize the following conversation concisely.",
+    "order": 0
+  },
+  {
+    "role": "summary",
+    "content": "",
+    "order": 1
+  }
+]

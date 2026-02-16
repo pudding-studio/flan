@@ -50,6 +50,7 @@ class CommonDraggableFolderList<TFolder, TItem> extends StatefulWidget {
   final String addItemLabel;
   final String addFolderLabel;
   final Widget? emptyWidget;
+  final bool readOnly;
 
   const CommonDraggableFolderList({
     super.key,
@@ -79,6 +80,7 @@ class CommonDraggableFolderList<TFolder, TItem> extends StatefulWidget {
     this.addItemLabel = '항목 추가',
     this.addFolderLabel = '폴더 추가',
     this.emptyWidget,
+    this.readOnly = false,
   });
 
   @override
@@ -241,26 +243,28 @@ class _CommonDraggableFolderListState<TFolder, TItem>
                   },
                 ),
         ),
-        const SizedBox(height: 16),
-        Row(
-          children: [
-            Expanded(
-              child: CommonButton.outlined(
-                onPressed: widget.onAddFolder,
-                icon: Icons.folder_outlined,
-                label: widget.addFolderLabel,
+        if (!widget.readOnly) ...[
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              Expanded(
+                child: CommonButton.outlined(
+                  onPressed: widget.onAddFolder,
+                  icon: Icons.folder_outlined,
+                  label: widget.addFolderLabel,
+                ),
               ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: CommonButton.filled(
-                onPressed: () => widget.onAddItem(null),
-                icon: Icons.add,
-                label: widget.addItemLabel,
+              const SizedBox(width: 12),
+              Expanded(
+                child: CommonButton.filled(
+                  onPressed: () => widget.onAddItem(null),
+                  icon: Icons.add,
+                  label: widget.addItemLabel,
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
+        ],
       ],
     );
   }
@@ -512,18 +516,19 @@ class _CommonDraggableFolderListState<TFolder, TItem>
                     ],
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: CommonButton.outlined(
-                      onPressed: () => widget.onAddItem(folder),
-                      icon: Icons.add,
-                      iconSize: 16,
-                      label: widget.addItemLabel,
+                if (!widget.readOnly)
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: SizedBox(
+                      width: double.infinity,
+                      child: CommonButton.outlined(
+                        onPressed: () => widget.onAddItem(folder),
+                        icon: Icons.add,
+                        iconSize: 16,
+                        label: widget.addItemLabel,
+                      ),
                     ),
                   ),
-                ),
               ],
             ],
           ),

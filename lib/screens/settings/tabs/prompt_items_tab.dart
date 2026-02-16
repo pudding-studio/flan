@@ -22,12 +22,14 @@ class PromptItemsTab extends StatefulWidget {
   final void Function(PromptItem item, PromptItemFolder fromFolder) onMoveItemOutOfFolder;
   final void Function(PromptItem item, int targetIndex, PromptItemFolder? folder) onReorderItem;
   final void Function(PromptItemFolder folder, int targetIndex) onReorderFolder;
+  final bool readOnly;
 
   const PromptItemsTab({
     super.key,
     required this.folders,
     required this.standaloneItems,
     required this.contentControllers,
+    this.readOnly = false,
     required this.onUpdate,
     required this.onDeleteItem,
     required this.onDeleteFolder,
@@ -75,11 +77,11 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
               itemContentBuilder: _buildItemCard,
               getItemIcon: (item) => _getRoleIcon(item.role),
               getItemName: (item) => item.name ?? item.role.displayName,
-              onReorderItem: widget.onReorderItem,
-              onMoveItemToFolder: widget.onMoveItemToFolder,
-              onMoveItemOutOfFolder: widget.onMoveItemOutOfFolder,
-              onReorderFolder: widget.onReorderFolder,
-              onFolderNameChanged: (folder, newName) {
+              onReorderItem: widget.readOnly ? (_, __, ___) {} : widget.onReorderItem,
+              onMoveItemToFolder: widget.readOnly ? (_, __, ___) {} : widget.onMoveItemToFolder,
+              onMoveItemOutOfFolder: widget.readOnly ? (_, __) {} : widget.onMoveItemOutOfFolder,
+              onReorderFolder: widget.readOnly ? (_, __) {} : widget.onReorderFolder,
+              onFolderNameChanged: widget.readOnly ? (_, __) {} : (folder, newName) {
                 folder.name = newName;
                 widget.onUpdate();
               },
@@ -88,12 +90,13 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
                   folder.isExpanded = isExpanded;
                 });
               },
-              onDeleteFolder: widget.onDeleteFolder,
-              onAddItem: widget.onAddItem,
-              onAddFolder: widget.onAddFolder,
+              onDeleteFolder: widget.readOnly ? (_) {} : widget.onDeleteFolder,
+              onAddItem: widget.readOnly ? (_) {} : widget.onAddItem,
+              onAddFolder: widget.readOnly ? () {} : widget.onAddFolder,
               itemTypeKey: 'promptItem',
               addItemLabel: '항목 추가',
               addFolderLabel: '폴더 추가',
+              readOnly: widget.readOnly,
               emptyWidget: const CommonEmptyState(
                 icon: Icons.chat_bubble_outline,
                 message: '프롬프트 항목이 없습니다',
@@ -124,7 +127,8 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
         });
         widget.onUpdate();
       },
-      onDelete: () => widget.onDeleteItem(item),
+      onDelete: widget.readOnly ? () {} : () => widget.onDeleteItem(item),
+      showDeleteButton: !widget.readOnly,
       nameHint: '항목 이름 (예: 시스템 설정, 캐릭터 성격)',
       onNameChanged: (value) {
         if (folder != null) {

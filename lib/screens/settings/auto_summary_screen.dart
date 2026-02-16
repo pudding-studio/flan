@@ -62,6 +62,16 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
       _existingSettings = settings;
       final isValidModel =
           ChatModel.values.any((m) => m.modelId == settings.summaryModel);
+
+      List<SummaryPromptItem> promptItems;
+      if (settings.summaryPromptItems != null &&
+          settings.summaryPromptItems!.isNotEmpty) {
+        promptItems =
+            SummaryPromptItem.listFromJson(settings.summaryPromptItems);
+      } else {
+        promptItems = await SummaryPromptItem.loadDefaultItems();
+      }
+
       setState(() {
         _isEnabled = settings.isEnabled;
         _selectedModel = isValidModel
@@ -76,19 +86,14 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
         _maxOutputTokensController.text =
             _parameters.maxOutputTokens?.toString() ?? '';
 
-        if (settings.summaryPromptItems != null &&
-            settings.summaryPromptItems!.isNotEmpty) {
-          _promptItems =
-              SummaryPromptItem.listFromJson(settings.summaryPromptItems);
-        } else {
-          _promptItems = SummaryPromptItem.defaultItems();
-        }
+        _promptItems = promptItems;
         _buildContentControllers();
         _isLoading = false;
       });
     } else {
+      final promptItems = await SummaryPromptItem.loadDefaultItems();
       setState(() {
-        _promptItems = SummaryPromptItem.defaultItems();
+        _promptItems = promptItems;
         _buildContentControllers();
         _isLoading = false;
       });

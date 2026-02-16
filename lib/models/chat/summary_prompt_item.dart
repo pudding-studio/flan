@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/services.dart';
 
 enum SummaryPromptRole {
   system,
@@ -82,6 +83,18 @@ class SummaryPromptItem {
 
   static String listToJson(List<SummaryPromptItem> items) {
     return jsonEncode(items.map((e) => e.toJson()).toList());
+  }
+
+  static Future<List<SummaryPromptItem>> loadDefaultItems() async {
+    try {
+      final jsonString = await rootBundle.loadString(
+        'assets/defaults/summary_prompts/default_summary.json',
+      );
+      final List<dynamic> list = jsonDecode(jsonString);
+      return list.map((e) => SummaryPromptItem.fromJson(e)).toList();
+    } catch (_) {
+      return defaultItems();
+    }
   }
 
   static List<SummaryPromptItem> defaultItems() {

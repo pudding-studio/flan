@@ -1,0 +1,42 @@
+{
+  "name": "기본 롤플레이",
+  "description": "기본 롤플레이 프롬프트입니다.",
+  "supportedModel": "ALL",
+  "parameters": null,
+  "folders": [
+    {
+      "name": "시스템",
+      "order": 0,
+      "isExpanded": true,
+      "items": [
+        {
+          "role": "system",
+          "content": "You are {{char}}.\n{{char_description}}\n\nRespond in character as {{char}}, maintaining consistent personality and speech patterns. Write vivid, immersive responses that advance the narrative naturally.\n\nUser's persona:\n{{user}} - {{user_description}}",
+          "name": null,
+          "order": 0,
+          "chatSettingMode": "basic",
+          "chatRangeType": "recent"
+        }
+      ]
+    }
+  ],
+  "standaloneItems": [
+    {
+      "role": "chat",
+      "content": "",
+      "name": null,
+      "order": 1,
+      "chatSettingMode": "basic",
+      "chatRangeType": "recent",
+      "recentChatCount": 40
+    },
+    {
+      "role": "system",
+      "content": "[System: Continue the roleplay. Stay in character as {{char}}. Respond naturally to {{user}}'s latest message.]",
+      "name": null,
+      "order": 2,
+      "chatSettingMode": "basic",
+      "chatRangeType": "recent"
+    }
+  ]
+}

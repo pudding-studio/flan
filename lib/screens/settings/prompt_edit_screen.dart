@@ -53,6 +53,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
   final _thinkingMaxTokensController = TextEditingController();
 
   bool get _isEditing => widget.prompt != null;
+  bool get _isReadOnly => widget.prompt?.isDefault ?? false;
 
   @override
   void initState() {
@@ -420,22 +421,26 @@ class _PromptEditScreenState extends State<PromptEditScreen>
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CommonAppBar(
-        title: _isEditing ? '프롬프트 수정' : '새 프롬프트',
+        title: _isReadOnly
+            ? '프롬프트 보기'
+            : (_isEditing ? '프롬프트 수정' : '새 프롬프트'),
         actions: [
-          if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.symmetric(horizontal: 16.0),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2),
+          if (!_isReadOnly) ...[
+            if (_isLoading)
+              const Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              )
+            else
+              CommonAppBarIconButton(
+                icon: Icons.check,
+                onPressed: _savePrompt,
               ),
-            )
-          else
-            CommonAppBarIconButton(
-              icon: Icons.check,
-              onPressed: _savePrompt,
-            ),
+          ],
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(48),
@@ -479,6 +484,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
               folders: _folders,
               standaloneItems: _standaloneItems,
               contentControllers: _contentControllers,
+              readOnly: _isReadOnly,
               onUpdate: () => setState(() {}),
               onDeleteItem: _deleteItem,
               onDeleteFolder: _deleteFolder,
@@ -496,58 +502,65 @@ class _PromptEditScreenState extends State<PromptEditScreen>
   }
 
   Widget _buildBasicInfoTab() {
-    return ListView(
-        padding: const EdgeInsets.all(UIConstants.spacing20),
-        children: [
-          CommonCustomTextField(
-            controller: _nameController,
-            label: '프롬프트 이름',
-            hintText: '예: 친근한 도우미, 전문가 모드',
-            maxLines: null,
-            showCounter: true,
-            validator: (value) {
-              if (value == null || value.trim().isEmpty) {
-                return '프롬프트 이름을 입력해주세요';
-              }
-              return null;
-            },
-          ),
-          const SizedBox(height: UIConstants.spacing20),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: CommonCustomTextField.labelHorizontalPadding),
-                child: Row(
-                  children: [
-                    const CommonTitleMedium(text: '설명'),
-                    const SizedBox(width: 4),
-                    Text(
-                      '(선택)',
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                    ),
-                  ],
+    return IgnorePointer(
+      ignoring: _isReadOnly,
+      child: ListView(
+          padding: const EdgeInsets.all(UIConstants.spacing20),
+          children: [
+            CommonCustomTextField(
+              controller: _nameController,
+              label: '프롬프트 이름',
+              hintText: '예: 친근한 도우미, 전문가 모드',
+              maxLines: null,
+              showCounter: true,
+              validator: _isReadOnly
+                  ? null
+                  : (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return '프롬프트 이름을 입력해주세요';
+                      }
+                      return null;
+                    },
+            ),
+            const SizedBox(height: UIConstants.spacing20),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: CommonCustomTextField.labelHorizontalPadding),
+                  child: Row(
+                    children: [
+                      const CommonTitleMedium(text: '설명'),
+                      const SizedBox(width: 4),
+                      Text(
+                        '(선택)',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: CommonCustomTextField.labelBottomSpacing),
-              CommonEditText(
-                controller: _descriptionController,
-                hintText: '이 프롬프트에 대한 설명을 입력하세요',
-                size: CommonEditTextSize.medium,
-                maxLines: null,
-                minLines: 3,
-              ),
-            ],
-          ),
-          // TODO: 지원 모델 기능 구현 후 숨김 해제
-        ],
+                const SizedBox(height: CommonCustomTextField.labelBottomSpacing),
+                CommonEditText(
+                  controller: _descriptionController,
+                  hintText: '이 프롬프트에 대한 설명을 입력하세요',
+                  size: CommonEditTextSize.medium,
+                  maxLines: null,
+                  minLines: 3,
+                ),
+              ],
+            ),
+            // TODO: 지원 모델 기능 구현 후 숨김 해제
+          ],
+      ),
     );
   }
 
   Widget _buildParametersTab() {
-    return ListView(
+    return IgnorePointer(
+      ignoring: _isReadOnly,
+      child: ListView(
       padding: const EdgeInsets.all(UIConstants.spacing20),
       children: [
         const CommonInfoBox(
@@ -672,6 +685,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
         const SizedBox(height: 24),
         _buildThinkingSection(),
       ],
+    ),
     );
   }
 
