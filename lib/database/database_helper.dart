@@ -33,7 +33,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 27,
+      version: 28,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -329,6 +329,8 @@ class DatabaseHelper {
         summary_model $textType DEFAULT 'gemini-2.0-flash-exp',
         token_threshold INTEGER NOT NULL DEFAULT 5000,
         summary_prompt $textType,
+        parameters $textTypeNullable,
+        summary_prompt_items $textTypeNullable,
         created_at $textType,
         updated_at $textType,
         FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE
@@ -838,6 +840,15 @@ class DatabaseHelper {
       await db.execute('''
         CREATE INDEX idx_end_pin_message_id_chat_summaries
         ON chat_summaries (end_pin_message_id)
+      ''');
+    }
+
+    if (oldVersion < 28) {
+      await db.execute('''
+        ALTER TABLE auto_summary_settings ADD COLUMN parameters TEXT
+      ''');
+      await db.execute('''
+        ALTER TABLE auto_summary_settings ADD COLUMN summary_prompt_items TEXT
       ''');
     }
   }
@@ -1760,7 +1771,7 @@ class DatabaseHelper {
       'chat_summaries',
       where: 'chat_room_id = ?',
       whereArgs: [chatRoomId],
-      orderBy: 'created_at DESC',
+      orderBy: 'created_at ASC',
     );
     return result.map((map) => ChatSummary.fromMap(map)).toList();
   }

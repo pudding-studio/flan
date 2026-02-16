@@ -126,6 +126,7 @@ class GeminiService {
     PromptParameters? promptParameters,
     int? chatRoomId,
     int? characterId,
+    String logType = 'gemini',
   }) async {
     final modelId = await _getSelectedModelId();
     final apiKey = await _getApiKey();
@@ -171,6 +172,7 @@ class GeminiService {
           timestamp: startTime,
           chatRoomId: chatRoomId,
           characterId: characterId,
+          type: logType,
         );
         final blockReason = responseData['promptFeedback']?['blockReason'] as String?;
         if (blockReason != null) {
@@ -185,6 +187,7 @@ class GeminiService {
         timestamp: startTime,
         chatRoomId: chatRoomId,
         characterId: characterId,
+        type: logType,
       );
 
       return GeminiResponse(text: text, usageMetadata: usageMetadata, modelId: modelId);
@@ -195,6 +198,7 @@ class GeminiService {
         timestamp: startTime,
         chatRoomId: chatRoomId,
         characterId: characterId,
+        type: logType,
       );
       rethrow;
     }
@@ -291,11 +295,12 @@ class GeminiService {
     required DateTime timestamp,
     int? chatRoomId,
     int? characterId,
+    String type = 'gemini',
   }) async {
     try {
       final log = ChatLog(
         timestamp: timestamp,
-        type: 'gemini',
+        type: type,
         request: request,
         response: response,
         chatRoomId: chatRoomId,

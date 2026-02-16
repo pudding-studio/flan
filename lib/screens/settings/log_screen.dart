@@ -160,16 +160,31 @@ class _LogScreenState extends State<LogScreen> {
                   separatorBuilder: (context, index) => const Divider(height: 1),
                   itemBuilder: (context, index) {
                     final log = _logs[index];
+                    final isAutoSummary = log.type == 'auto_summary';
                     return ListTile(
+                      leading: isAutoSummary
+                          ? Icon(
+                              Icons.summarize,
+                              color: Theme.of(context).colorScheme.tertiary,
+                              size: 20,
+                            )
+                          : null,
                       title: Text(
                         _formatTimestamp(log.timestamp),
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w500,
+                              color: isAutoSummary
+                                  ? Theme.of(context).colorScheme.tertiary
+                                  : null,
                             ),
                       ),
                       subtitle: Text(
-                        'Type: ${log.type}',
-                        style: Theme.of(context).textTheme.bodySmall,
+                        isAutoSummary ? '자동 요약' : 'Type: ${log.type}',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: isAutoSummary
+                                  ? Theme.of(context).colorScheme.tertiary
+                                  : null,
+                            ),
                       ),
                       trailing: IconButton(
                         icon: const Icon(Icons.delete_outline),

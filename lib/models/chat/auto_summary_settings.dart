@@ -5,6 +5,8 @@ class AutoSummarySettings {
   final String summaryModel;
   final int tokenThreshold;
   final String summaryPrompt;
+  final String? parameters;
+  final String? summaryPromptItems;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -15,6 +17,8 @@ class AutoSummarySettings {
     this.summaryModel = 'gemini-3-flash-preview',
     this.tokenThreshold = 5000,
     this.summaryPrompt = 'Please summarize the following conversation concisely.',
+    this.parameters,
+    this.summaryPromptItems,
     DateTime? createdAt,
     DateTime? updatedAt,
   })  : createdAt = createdAt ?? DateTime.now(),
@@ -29,6 +33,8 @@ class AutoSummarySettings {
       tokenThreshold: map['token_threshold'] as int? ?? 5000,
       summaryPrompt: map['summary_prompt'] as String? ??
           'Please summarize the following conversation concisely.',
+      parameters: map['parameters'] as String?,
+      summaryPromptItems: map['summary_prompt_items'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
     );
@@ -42,6 +48,8 @@ class AutoSummarySettings {
       'summary_model': summaryModel,
       'token_threshold': tokenThreshold,
       'summary_prompt': summaryPrompt,
+      'parameters': parameters,
+      'summary_prompt_items': summaryPromptItems,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -54,6 +62,8 @@ class AutoSummarySettings {
     String? summaryModel,
     int? tokenThreshold,
     String? summaryPrompt,
+    String? parameters,
+    String? summaryPromptItems,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -64,6 +74,8 @@ class AutoSummarySettings {
       summaryModel: summaryModel ?? this.summaryModel,
       tokenThreshold: tokenThreshold ?? this.tokenThreshold,
       summaryPrompt: summaryPrompt ?? this.summaryPrompt,
+      parameters: parameters ?? this.parameters,
+      summaryPromptItems: summaryPromptItems ?? this.summaryPromptItems,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

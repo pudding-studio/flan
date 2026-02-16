@@ -9,6 +9,7 @@ import '../models/chat/chat_summary.dart';
 import '../models/prompt/chat_prompt.dart';
 import '../models/prompt/prompt_item.dart';
 import '../providers/tokenizer_provider.dart';
+import 'metadata_parser.dart';
 import 'token_counter.dart';
 
 class PromptBuilder {
@@ -20,6 +21,7 @@ class PromptBuilder {
     List<CharacterBook>? activeCharacterBooks,
     ChatRoom? chatRoom,
     List<ChatSummary>? summaries,
+    Map<int, ChatMessageMetadata>? summaryMetadataMap,
   }) {
     final keywords = _buildKeywordMap(
       character: character,
@@ -28,6 +30,7 @@ class PromptBuilder {
       activeCharacterBooks: activeCharacterBooks,
       chatRoom: chatRoom,
       summaries: summaries,
+      summaryMetadataMap: summaryMetadataMap,
     );
 
     final buffer = StringBuffer();
@@ -60,6 +63,7 @@ class PromptBuilder {
     Map<int, ChatMessageMetadata>? metadataMap,
     ChatRoom? chatRoom,
     List<ChatSummary>? summaries,
+    Map<int, ChatMessageMetadata>? summaryMetadataMap,
   }) {
     final keywords = _buildKeywordMap(
       character: character,
@@ -68,6 +72,7 @@ class PromptBuilder {
       activeCharacterBooks: activeCharacterBooks,
       chatRoom: chatRoom,
       summaries: summaries,
+      summaryMetadataMap: summaryMetadataMap,
     );
 
     // 토큰 제한이 있으면 채팅 히스토리 조정
@@ -229,6 +234,7 @@ class PromptBuilder {
     List<CharacterBook>? activeCharacterBooks,
     ChatRoom? chatRoom,
     List<ChatSummary>? summaries,
+    Map<int, ChatMessageMetadata>? summaryMetadataMap,
   }) {
     return {
       'char': character.name,
@@ -239,18 +245,34 @@ class PromptBuilder {
       'start_setting': startScenario?.startSetting ?? '',
       'start_message': startScenario?.startMessage ?? '',
       'chat_memo': chatRoom?.memo ?? '',
-      'chat_historys': _buildChatHistorysText(summaries),
+      'chat_historys': _buildChatHistorysText(summaries, summaryMetadataMap),
     };
   }
 
-  static String _buildChatHistorysText(List<ChatSummary>? summaries) {
+  static String _buildChatHistorysText(
+    List<ChatSummary>? summaries,
+    Map<int, ChatMessageMetadata>? summaryMetadataMap,
+  ) {
     if (summaries == null || summaries.isEmpty) return '';
 
     final buffer = StringBuffer();
     for (int i = 0; i < summaries.length; i++) {
       final summary = summaries[i];
-      buffer.writeln('### Summary ${i + 1}');
+      final sceneNumber = i + 1;
+      final metadata = summaryMetadataMap?[summary.endPinMessageId];
+
+      if (metadata != null) {
+        buffer.writeln(MetadataParser.buildSceneOpenTag(
+          sceneNumber: sceneNumber,
+          metadata: metadata,
+        ));
+      } else {
+        buffer.writeln('<$sceneNumber>');
+      }
+
       buffer.writeln(summary.summaryContent);
+      buffer.writeln(MetadataParser.buildSceneCloseTag(sceneNumber));
+
       if (i < summaries.length - 1) {
         buffer.writeln();
       }

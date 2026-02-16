@@ -29,7 +29,7 @@ import 'widgets/chat_bottom_panel.dart';
 import 'widgets/chat_room_drawer.dart';
 import '../character/character_view_screen.dart';
 
-enum SendingPhase { none, preparing, waiting }
+enum SendingPhase { none, preparing, waiting, summarizing }
 
 class ChatRoomScreen extends StatefulWidget {
   final int chatRoomId;
@@ -63,6 +63,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   int? _editingMessageId;
   final Map<int, TextEditingController> _editControllers = {};
   Map<int, ChatMessageMetadata> _metadataMap = {};
+  int? _summaryThresholdIndex;
+  Set<int> _summarizedMessageIds = {};
   bool _showBottomPanel = false;
   List<ChatPrompt> _chatPrompts = [];
   List<Persona> _personas = [];
@@ -121,6 +123,21 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           ? await _db.readPersonas(character.id!)
           : <Persona>[];
 
+      // Load summarized message IDs and calculate threshold index
+      final summarizedIds = await _autoSummaryService.getSummarizedMessageIds(widget.chatRoomId);
+      int? summaryThresholdIndex;
+      final summarySettings = await _db.getAutoSummarySettings(0);
+      if (summarySettings != null && summarySettings.isEnabled && messages.isNotEmpty) {
+        int cumulative = 0;
+        for (int i = messages.length - 1; i >= 0; i--) {
+          cumulative += messages[i].tokenCount;
+          if (cumulative >= summarySettings.tokenThreshold) {
+            summaryThresholdIndex = i;
+            break;
+          }
+        }
+      }
+
       if (!mounted) return;
       setState(() {
         _chatRoom = chatRoom;
@@ -129,6 +146,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         _messages = messages;
         _coverImages = coverImages;
         _metadataMap = metadataMap;
+        _summaryThresholdIndex = summaryThresholdIndex;
+        _summarizedMessageIds = summarizedIds;
         _chatPrompts = chatPrompts;
         _personas = personas;
         _isLoading = false;
@@ -173,6 +192,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
     final summaries = await _db.getChatSummaries(widget.chatRoomId);
 
+    final summaryMetadataMap = <int, ChatMessageMetadata>{};
+    for (final summary in summaries) {
+      final metadata = await _db.readChatMessageMetadataByMessage(summary.endPinMessageId);
+      if (metadata != null) {
+        summaryMetadataMap[summary.endPinMessageId] = metadata;
+      }
+    }
+
     final systemPrompt = PromptBuilder.buildSystemPrompt(
       chatPrompt: chatPrompt,
       character: _character!,
@@ -181,11 +208,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       activeCharacterBooks: activeCharacterBooks,
       chatRoom: _chatRoom,
       summaries: summaries,
+      summaryMetadataMap: summaryMetadataMap,
     );
+
+    // Exclude summarized messages from chat history
+    final summarizedIds = await _autoSummaryService.getSummarizedMessageIds(widget.chatRoomId);
+    final allExcludeIds = {...summarizedIds, ...?excludeMessageIds};
 
     final chatHistoryMap = await _buildChatHistoryMap(
       chatPrompt: chatPrompt,
-      excludeMessageIds: excludeMessageIds,
+      excludeMessageIds: allExcludeIds.toList(),
       beforeMessageIndex: beforeMessageIndex,
     );
 
@@ -206,6 +238,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       metadataMap: _metadataMap,
       chatRoom: _chatRoom,
       summaries: summaries,
+      summaryMetadataMap: summaryMetadataMap,
     );
 
     return (systemPrompt: systemPrompt, contents: contents, parameters: chatPrompt?.parameters);
@@ -341,7 +374,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       );
       await _db.updateChatRoom(updatedChatRoom);
 
-      // 자동 요약 트리거 체크
+      // 자동 요약 트리거 체크 (전역 설정)
       final latestChatRoom = await _db.readChatRoom(widget.chatRoomId);
       if (latestChatRoom != null) {
         final shouldTrigger = await _autoSummaryService.shouldTriggerSummary(
@@ -350,7 +383,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         );
 
         if (shouldTrigger) {
-          await _autoSummaryService.generateSummary(chatRoomId: widget.chatRoomId);
+          if (mounted) setState(() => _sendingPhase = SendingPhase.summarizing);
+          await _autoSummaryService.generateAllPendingSummaries(chatRoomId: widget.chatRoomId);
         }
       }
 
@@ -525,55 +559,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     String messageContent = content;
     if (MetadataParser.hasMetadataPattern(content)) {
       messageContent = MetadataParser.removeMetadataTags(content);
-    }
-
-    if (shouldPin) {
-      final pinnedCount = await _db.countPinnedMetadataByChatRoom(widget.chatRoomId);
-      final newSceneNumber = pinnedCount; // 현재 핀 포함된 카운트 = 새 씬 번호
-      final prevSceneNumber = newSceneNumber - 1;
-
-      if (prevSceneNumber >= 1 && previous != null) {
-        // 이전 씬의 시작 핀 metadata 조회 (종료된 씬의 시작~종료 시간 표기용)
-        final prevScenePinMetadata = await _db.readPinnedMetadataForScene(
-          widget.chatRoomId,
-          prevSceneNumber - 1, // 0-indexed offset
-        );
-
-        // 이전 씬의 열기 태그가 있는 메시지를 찾아 시간 범위로 업데이트
-        if (prevScenePinMetadata != null) {
-          final pinMessage = await _db.readChatMessage(prevScenePinMetadata.chatMessageId);
-          if (pinMessage != null) {
-            final oldOpenTag = MetadataParser.buildSceneOpenTag(
-              sceneNumber: prevSceneNumber,
-              metadata: prevScenePinMetadata,
-            );
-            final newOpenTag = MetadataParser.buildSceneOpenTagWithEndTime(
-              sceneNumber: prevSceneNumber,
-              startMetadata: prevScenePinMetadata,
-              endMetadata: previous,
-            );
-            final updatedPinContent = pinMessage.content.replaceFirst(oldOpenTag, newOpenTag);
-            if (updatedPinContent != pinMessage.content) {
-              await _db.updateChatMessage(pinMessage.copyWith(content: updatedPinContent));
-            }
-          }
-        }
-
-        // 이전 assistant 메시지에 씬 닫기 태그 추가
-        final prevMessage = await _db.readChatMessage(previous.chatMessageId);
-        if (prevMessage != null) {
-          final closeTag = MetadataParser.buildSceneCloseTag(prevSceneNumber);
-          final updatedContent = '${prevMessage.content}\n\n$closeTag';
-          await _db.updateChatMessage(prevMessage.copyWith(content: updatedContent));
-        }
-      }
-
-      // 현재 메시지에 씬 열기 태그 추가
-      final openTag = MetadataParser.buildSceneOpenTag(
-        sceneNumber: newSceneNumber,
-        metadata: finalMetadata,
-      );
-      messageContent = '$openTag\n\n$messageContent';
     }
 
     final message = await _db.readChatMessage(messageId);
@@ -1214,6 +1199,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         (metadata.date != null || metadata.time != null || metadata.location != null);
     final viewer = context.watch<ViewerSettingsProvider>();
 
+    final isSummaryThreshold = _summaryThresholdIndex != null && index == _summaryThresholdIndex;
+    final isSummarized = message.id != null && _summarizedMessageIds.contains(message.id!);
+
     return Column(
       children: [
         Container(
@@ -1336,8 +1324,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           padding: const EdgeInsets.only(left: 16, right: 16, top: 0, bottom: 8),
           child: Divider(
             height: 1,
-            thickness: 1,
-            color: Theme.of(context).colorScheme.outlineVariant,
+            thickness: isSummaryThreshold ? 1.5 : 1,
+            color: isSummaryThreshold
+                ? Theme.of(context).colorScheme.primary
+                : isSummarized
+                    ? Theme.of(context).colorScheme.secondary
+                    : Theme.of(context).colorScheme.outlineVariant,
           ),
         ),
       ],
@@ -1440,7 +1432,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       ? '메시지 생성 중...'
                       : _sendingPhase == SendingPhase.waiting
                           ? '응답 대기 중...'
-                          : '메시지를 입력하세요',
+                          : _sendingPhase == SendingPhase.summarizing
+                              ? '요약 중...'
+                              : '메시지를 입력하세요',
                   minLines: 1,
                   maxLines: 5,
                   textInputAction: TextInputAction.newline,
@@ -1459,7 +1453,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                                     strokeWidth: 2,
                                     color: _sendingPhase == SendingPhase.preparing
                                         ? Theme.of(context).colorScheme.primary
-                                        : null,
+                                        : _sendingPhase == SendingPhase.summarizing
+                                            ? Theme.of(context).colorScheme.secondary
+                                            : null,
                                   ),
                                 )
                               : const Icon(Icons.send),

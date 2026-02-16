@@ -6,6 +6,7 @@ import '../../../models/chat/chat_summary.dart';
 import '../../../models/character/character.dart';
 import '../../../models/character/character_book_folder.dart';
 import '../../../models/character/persona.dart';
+import '../../../services/auto_summary_service.dart';
 import '../../../utils/common_dialog.dart';
 import '../../../widgets/common/common_edit_text.dart';
 import '../../../widgets/common/common_button.dart';
@@ -63,6 +64,9 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
 
   List<ChatSummary> _summaries = [];
   final Map<int, TextEditingController> _summaryControllers = {};
+  final Set<int> _expandedSummaryIds = {};
+  final Set<int> _regeneratingSummaryIds = {};
+  final AutoSummaryService _autoSummaryService = AutoSummaryService();
 
   bool _isLoading = true;
 
@@ -195,7 +199,41 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
     CommonDialog.showSnackBar(context: context, message: '캐릭터 설정이 저장되었습니다');
   }
 
+  void _syncBookFieldsFromControllers() {
+    for (final folder in _folders) {
+      for (final book in folder.characterBooks) {
+        _syncBookFromController(book);
+      }
+    }
+    for (final book in _standaloneBooks) {
+      _syncBookFromController(book);
+    }
+  }
+
+  void _syncBookFromController(CharacterBook book) {
+    final contentKey = 'book_${book.id}_content';
+    if (_bookFieldControllers.containsKey(contentKey)) {
+      book.content = _bookFieldControllers[contentKey]!.text;
+    }
+    final keysKey = 'book_${book.id}_keys';
+    if (_bookFieldControllers.containsKey(keysKey)) {
+      book.keys = _bookFieldControllers[keysKey]!.text
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+    }
+    final orderKey = 'book_${book.id}_insertionOrder';
+    if (_bookFieldControllers.containsKey(orderKey)) {
+      final intValue = int.tryParse(_bookFieldControllers[orderKey]!.text);
+      if (intValue != null) book.insertionOrder = intValue;
+    }
+  }
+
   Future<void> _saveLorebook() async {
+    FocusScope.of(context).unfocus();
+    _syncBookFieldsFromControllers();
+
     final characterId = widget.character.id!;
 
     for (final folder in _folders) {
@@ -699,49 +737,94 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
                 ...List.generate(_summaries.length, (index) {
                   final summary = _summaries[index];
                   final controller = _summaryControllers[summary.id]!;
+                  final isExpanded = _expandedSummaryIds.contains(summary.id);
 
                   return Card(
-                    margin: const EdgeInsets.only(bottom: 12),
-                    child: Padding(
-                      padding: const EdgeInsets.all(12),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                'Summary #${index + 1}',
-                                style: Theme.of(context).textTheme.titleSmall,
-                              ),
-                              IconButton(
-                                icon: const Icon(Icons.delete_outline, size: 20),
-                                onPressed: () => _deleteSummary(summary.id!),
-                                tooltip: '삭제',
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          CommonEditText(
-                            controller: controller,
-                            hintText: '요약 내용',
-                            maxLines: null,
-                            minLines: 4,
-                            size: CommonEditTextSize.small,
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.end,
-                            children: [
-                              TextButton.icon(
-                                onPressed: () => _saveSummaryItem(summary),
-                                icon: const Icon(Icons.save, size: 16),
-                                label: const Text('저장'),
-                              ),
-                            ],
-                          ),
-                        ],
+                    margin: const EdgeInsets.only(bottom: 8),
+                    clipBehavior: Clip.antiAlias,
+                    child: ExpansionTile(
+                      key: ValueKey('summary_${summary.id}'),
+                      initiallyExpanded: isExpanded,
+                      onExpansionChanged: (expanded) {
+                        setState(() {
+                          if (expanded) {
+                            _expandedSummaryIds.add(summary.id!);
+                          } else {
+                            _expandedSummaryIds.remove(summary.id!);
+                          }
+                        });
+                      },
+                      title: Text(
+                        'Summary #${index + 1}',
+                        style: Theme.of(context).textTheme.titleSmall,
                       ),
+                      subtitle: Text(
+                        controller.text.length > 50
+                            ? '${controller.text.substring(0, 50)}...'
+                            : controller.text,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                      trailing: Icon(
+                        isExpanded ? Icons.expand_less : Icons.expand_more,
+                      ),
+                      children: [
+                        Padding(
+                          padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+                          child: Column(
+                            children: [
+                              CommonEditText(
+                                controller: controller,
+                                hintText: '요약 내용',
+                                maxLines: null,
+                                minLines: 4,
+                                size: CommonEditTextSize.small,
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment: MainAxisAlignment.end,
+                                children: [
+                                  TextButton.icon(
+                                    onPressed: () => _deleteSummary(summary.id!),
+                                    icon: const Icon(Icons.delete_outline, size: 16),
+                                    label: const Text('삭제'),
+                                    style: TextButton.styleFrom(
+                                      foregroundColor: Theme.of(context).colorScheme.error,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  TextButton.icon(
+                                    onPressed: _regeneratingSummaryIds.contains(summary.id)
+                                        ? null
+                                        : () => _regenerateSummary(summary),
+                                    icon: _regeneratingSummaryIds.contains(summary.id)
+                                        ? const SizedBox(
+                                            width: 16,
+                                            height: 16,
+                                            child: CircularProgressIndicator(strokeWidth: 2),
+                                          )
+                                        : const Icon(Icons.refresh, size: 16),
+                                    label: Text(
+                                      _regeneratingSummaryIds.contains(summary.id)
+                                          ? '생성 중...'
+                                          : '재생성',
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  TextButton.icon(
+                                    onPressed: () => _saveSummaryItem(summary),
+                                    icon: const Icon(Icons.save, size: 16),
+                                    label: const Text('저장'),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
                     ),
                   );
                 }),
@@ -787,6 +870,32 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
         context: context,
         message: '요약 저장 중 오류가 발생했습니다: $e',
       );
+    }
+  }
+
+  Future<void> _regenerateSummary(ChatSummary summary) async {
+    final summaryId = summary.id!;
+    setState(() => _regeneratingSummaryIds.add(summaryId));
+
+    try {
+      final updated = await _autoSummaryService.regenerateSummary(summary: summary);
+
+      _summaryControllers[summaryId]?.text = updated.summaryContent;
+
+      await _loadData();
+
+      if (!mounted) return;
+      CommonDialog.showSnackBar(context: context, message: '요약이 재생성되었습니다');
+    } catch (e) {
+      if (!mounted) return;
+      CommonDialog.showSnackBar(
+        context: context,
+        message: '요약 재생성 중 오류가 발생했습니다: $e',
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _regeneratingSummaryIds.remove(summaryId));
+      }
     }
   }
 
