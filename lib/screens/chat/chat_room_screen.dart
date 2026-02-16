@@ -16,10 +16,12 @@ import '../../providers/tokenizer_provider.dart';
 import '../../utils/prompt_builder.dart';
 import '../../utils/common_dialog.dart';
 import '../../utils/token_counter.dart';
-import '../../services/gemini_service.dart';
+import '../../services/ai_service.dart';
 import '../../services/auto_summary_service.dart';
 import '../../models/chat/chat_message_metadata.dart';
+import '../../models/chat/chat_summary.dart';
 import '../../models/chat/chat_model.dart';
+import '../../models/chat/unified_model.dart';
 import '../../utils/metadata_parser.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../../widgets/common/common_edit_text.dart';
@@ -47,7 +49,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
   DrawerTab _drawerTab = DrawerTab.info;
   final DatabaseHelper _db = DatabaseHelper.instance;
-  final GeminiService _geminiService = GeminiService();
+  final AiService _aiService = AiService();
   final AutoSummaryService _autoSummaryService = AutoSummaryService();
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
@@ -343,28 +345,30 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       if (mounted) setState(() => _sendingPhase = SendingPhase.waiting);
 
-      final geminiResponse = await _geminiService.sendMessage(
+      final modelProvider = context.read<ChatModelSettingsProvider>();
+      final aiResponse = await _aiService.sendMessage(
         systemPrompt: apiData.systemPrompt,
         contents: apiData.contents,
+        model: modelProvider.selectedModel,
         promptParameters: apiData.parameters,
         chatRoomId: widget.chatRoomId,
         characterId: _character?.id,
       );
 
-      final assistantTokenCount = geminiResponse.usageMetadata?.candidatesTokenCount ??
-          TokenCounter.estimateTokenCount(geminiResponse.text, tokenizer: tokenizer);
+      final assistantTokenCount = aiResponse.usageMetadata?.candidatesTokenCount ??
+          TokenCounter.estimateTokenCount(aiResponse.text, tokenizer: tokenizer);
       final assistantMessage = ChatMessage(
         chatRoomId: widget.chatRoomId,
         role: MessageRole.assistant,
-        content: geminiResponse.text,
+        content: aiResponse.text,
         tokenCount: assistantTokenCount,
-        usageMetadata: geminiResponse.usageMetadata,
-        modelId: geminiResponse.modelId,
+        usageMetadata: aiResponse.usageMetadata,
+        modelId: aiResponse.modelId,
       );
 
       final assistantMessageId = await _db.createChatMessage(assistantMessage);
 
-      await _saveMessageMetadata(assistantMessageId, geminiResponse.text);
+      await _saveMessageMetadata(assistantMessageId, aiResponse.text);
 
       // 채팅방 토큰 합산 업데이트
       await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
@@ -587,7 +591,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
-  Future<void> _onModelChanged(ChatModel model) async {
+  Future<void> _onModelChanged(UnifiedModel model) async {
     final provider = context.read<ChatModelSettingsProvider>();
     await provider.setModel(model);
   }
@@ -671,28 +675,30 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       if (mounted) setState(() => _sendingPhase = SendingPhase.waiting);
 
-      final geminiResponse = await _geminiService.sendMessage(
+      final modelProvider2 = context.read<ChatModelSettingsProvider>();
+      final aiResponse2 = await _aiService.sendMessage(
         systemPrompt: apiData.systemPrompt,
         contents: apiData.contents,
+        model: modelProvider2.selectedModel,
         promptParameters: apiData.parameters,
         chatRoomId: widget.chatRoomId,
         characterId: _character?.id,
       );
 
-      final tokenCount = geminiResponse.usageMetadata?.candidatesTokenCount ??
-          TokenCounter.estimateTokenCount(geminiResponse.text, tokenizer: tokenizer);
+      final tokenCount = aiResponse2.usageMetadata?.candidatesTokenCount ??
+          TokenCounter.estimateTokenCount(aiResponse2.text, tokenizer: tokenizer);
       final assistantMessage = ChatMessage(
         chatRoomId: widget.chatRoomId,
         role: MessageRole.assistant,
-        content: geminiResponse.text,
+        content: aiResponse2.text,
         tokenCount: tokenCount,
-        usageMetadata: geminiResponse.usageMetadata,
-        modelId: geminiResponse.modelId,
+        usageMetadata: aiResponse2.usageMetadata,
+        modelId: aiResponse2.modelId,
       );
 
       final assistantMessageId = await _db.createChatMessage(assistantMessage);
 
-      await _saveMessageMetadata(assistantMessageId, geminiResponse.text);
+      await _saveMessageMetadata(assistantMessageId, aiResponse2.text);
 
       // 채팅방 토큰 합산 업데이트
       await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
@@ -772,7 +778,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       final newChatRoomId = await _db.createChatRoom(newChatRoom);
 
-      // 분기점까지의 메시지 및 메타데이터 복사
+      // 분기점까지의 메시지 및 메타데이터 복사 (old ID -> new ID 매핑 생성)
+      final messageIdMap = <int, int>{};
       for (int i = 0; i <= messageIndex; i++) {
         final msg = _messages[i];
         final newMessage = ChatMessage(
@@ -787,8 +794,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         );
         final newMessageId = await _db.createChatMessage(newMessage);
 
-        // 메타데이터 복사 (날짜, 시간, 장소, 핀 상태)
         if (msg.id != null) {
+          messageIdMap[msg.id!] = newMessageId;
+
+          // 메타데이터 복사 (날짜, 시간, 장소, 핀 상태)
           final metadata = _metadataMap[msg.id!];
           if (metadata != null) {
             final newMetadata = ChatMessageMetadata(
@@ -803,6 +812,38 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             await _db.createChatMessageMetadata(newMetadata);
           }
         }
+      }
+
+      // 요약 복사 (메시지 ID 매핑 적용)
+      final summaries = await _db.getChatSummaries(_chatRoom!.id!);
+      for (final summary in summaries) {
+        final newEndId = messageIdMap[summary.endPinMessageId];
+        if (newEndId == null) continue;
+
+        final newStartId = summary.startPinMessageId == 0
+            ? 0
+            : messageIdMap[summary.startPinMessageId];
+        if (newStartId == null) continue;
+
+        await _db.createChatSummary(ChatSummary(
+          chatRoomId: newChatRoomId,
+          startPinMessageId: newStartId,
+          endPinMessageId: newEndId,
+          summaryContent: summary.summaryContent,
+          tokenCount: summary.tokenCount,
+          createdAt: summary.createdAt,
+          updatedAt: summary.updatedAt,
+        ));
+      }
+
+      // 자동 요약 설정 복사
+      final autoSummarySettings =
+          await _db.getAutoSummarySettings(_chatRoom!.id!);
+      if (autoSummarySettings != null) {
+        await _db.createAutoSummarySettings(autoSummarySettings.copyWith(
+          id: null,
+          chatRoomId: newChatRoomId,
+        ));
       }
 
       // 새 채팅방 토큰 합산 업데이트
@@ -856,28 +897,30 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       if (mounted) setState(() => _sendingPhase = SendingPhase.waiting);
 
-      final geminiResponse = await _geminiService.sendMessage(
+      final modelProvider3 = context.read<ChatModelSettingsProvider>();
+      final aiResponse3 = await _aiService.sendMessage(
         systemPrompt: apiData.systemPrompt,
         contents: apiData.contents,
+        model: modelProvider3.selectedModel,
         promptParameters: apiData.parameters,
         chatRoomId: widget.chatRoomId,
         characterId: _character?.id,
       );
 
-      final tokenCount = geminiResponse.usageMetadata?.candidatesTokenCount ??
-          TokenCounter.estimateTokenCount(geminiResponse.text, tokenizer: tokenizer);
+      final tokenCount = aiResponse3.usageMetadata?.candidatesTokenCount ??
+          TokenCounter.estimateTokenCount(aiResponse3.text, tokenizer: tokenizer);
       final updatedMessage = message.copyWith(
-        content: geminiResponse.text,
+        content: aiResponse3.text,
         tokenCount: tokenCount,
         editedAt: DateTime.now(),
-        usageMetadata: geminiResponse.usageMetadata,
-        modelId: geminiResponse.modelId,
+        usageMetadata: aiResponse3.usageMetadata,
+        modelId: aiResponse3.modelId,
       );
 
       await _db.updateChatMessage(updatedMessage);
 
       await _db.deleteChatMessageMetadataByMessage(messageId);
-      await _saveMessageMetadata(messageId, geminiResponse.text);
+      await _saveMessageMetadata(messageId, aiResponse3.text);
 
       // 채팅방 토큰 합산 업데이트
       await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
