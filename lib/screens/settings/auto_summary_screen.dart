@@ -101,7 +101,13 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
   }
 
   void _buildContentControllers() {
+    // Dispose existing controllers before clearing
+    for (final controller in _itemContentControllers.values) {
+      controller.dispose();
+    }
     _itemContentControllers.clear();
+
+    // Create new controllers
     for (int i = 0; i < _promptItems.length; i++) {
       _itemContentControllers[i] =
           TextEditingController(text: _promptItems[i].content);
@@ -176,24 +182,26 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
 
   void _deletePromptItem(int index) {
     setState(() {
+      // Dispose the controller at the deleted index
       _itemContentControllers[index]?.dispose();
-      _promptItems.removeAt(index);
-      _rebuildControllerKeys();
-    });
-  }
 
-  void _rebuildControllerKeys() {
-    final oldControllers =
-        Map<int, TextEditingController>.from(_itemContentControllers);
-    _itemContentControllers.clear();
-    for (int i = 0; i < _promptItems.length; i++) {
-      if (oldControllers.containsKey(i)) {
-        _itemContentControllers[i] = oldControllers[i]!;
-      } else {
-        _itemContentControllers[i] =
-            TextEditingController(text: _promptItems[i].content);
+      // Remove the item from the list
+      _promptItems.removeAt(index);
+
+      // Rebuild controllers with proper index mapping
+      final Map<int, TextEditingController> newControllers = {};
+      for (int i = 0; i < _promptItems.length; i++) {
+        if (i < index) {
+          // Keep controllers before the deleted index
+          newControllers[i] = _itemContentControllers[i]!;
+        } else {
+          // Shift controllers after the deleted index forward
+          newControllers[i] = _itemContentControllers[i + 1]!;
+        }
       }
-    }
+      _itemContentControllers.clear();
+      _itemContentControllers.addAll(newControllers);
+    });
   }
 
   @override

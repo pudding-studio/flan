@@ -56,8 +56,14 @@ class MyApp extends StatelessWidget {
         return MaterialApp(
           title: 'Flan',
           debugShowCheckedModeBanner: false,
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
+          theme: AppTheme.getTheme(
+            seedColor: themeProvider.seedColor,
+            brightness: Brightness.light,
+          ),
+          darkTheme: AppTheme.getTheme(
+            seedColor: themeProvider.seedColor,
+            brightness: Brightness.dark,
+          ),
           themeMode: themeProvider.themeMode,
           home: const MainScreen(),
         );

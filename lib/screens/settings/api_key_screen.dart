@@ -8,10 +8,16 @@ import '../../widgets/common/common_filter_chip.dart';
 import '../../widgets/common/common_title_medium.dart';
 
 enum ApiKeyType {
-  googleAiStudio('Google AI Studio');
+  googleAiStudio('Google AI Studio', 'google'),
+  openai('OpenAI', 'openai'),
+  anthropic('Anthropic', 'anthropic');
+  // openRouter('OpenRouter', 'openrouter');
 
   final String displayName;
-  const ApiKeyType(this.displayName);
+  final String prefsKey;
+  const ApiKeyType(this.displayName, this.prefsKey);
+
+  String get storageKey => 'api_key_$prefsKey';
 }
 
 class ApiKeyScreen extends StatefulWidget {
@@ -30,7 +36,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
   @override
   void initState() {
     super.initState();
-    _loadApiKey();
+    _migrateAndLoadApiKey();
   }
 
   @override
@@ -39,12 +45,21 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
     super.dispose();
   }
 
-  Future<void> _loadApiKey() async {
+  Future<void> _migrateAndLoadApiKey() async {
     setState(() => _isLoading = true);
     try {
       final prefs = await SharedPreferences.getInstance();
-      final apiKey = prefs.getString('api_key') ?? '';
-      _apiKeyController.text = apiKey;
+
+      // Migrate legacy single 'api_key' to 'api_key_google'
+      final legacyKey = prefs.getString('api_key');
+      if (legacyKey != null && legacyKey.isNotEmpty) {
+        final googleKey = prefs.getString('api_key_google');
+        if (googleKey == null || googleKey.isEmpty) {
+          await prefs.setString('api_key_google', legacyKey);
+        }
+      }
+
+      _loadKeyForType(_selectedApiKeyType);
     } catch (e) {
       if (mounted) {
         CommonDialog.showSnackBar(
@@ -59,20 +74,31 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
     }
   }
 
+  Future<void> _loadKeyForType(ApiKeyType type) async {
+    final prefs = await SharedPreferences.getInstance();
+    final key = prefs.getString(type.storageKey) ?? '';
+    _apiKeyController.text = key;
+  }
+
   Future<void> _saveApiKey() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('api_key', _apiKeyController.text.trim());
+      final key = _apiKeyController.text.trim();
+      await prefs.setString(_selectedApiKeyType.storageKey, key);
+
+      // Also write legacy key for backward compatibility
+      if (_selectedApiKeyType == ApiKeyType.googleAiStudio) {
+        await prefs.setString('api_key', key);
+      }
 
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: 'API 키가 저장되었습니다',
+          message: '${_selectedApiKeyType.displayName} API 키가 저장되었습니다',
         );
-        Navigator.pop(context);
       }
     } catch (e) {
       if (mounted) {
@@ -81,7 +107,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
           message: 'API 키 저장 실패: $e',
         );
       }
-    } finally{
+    } finally {
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -92,7 +118,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
     final confirmed = await CommonDialog.showConfirmation(
       context: context,
       title: 'API 키 삭제',
-      content: '저장된 API 키를 삭제하시겠습니까?',
+      content: '${_selectedApiKeyType.displayName}의 API 키를 삭제하시겠습니까?',
       confirmText: '삭제',
       isDestructive: true,
     );
@@ -102,7 +128,12 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
     setState(() => _isLoading = true);
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.remove('api_key');
+      await prefs.remove(_selectedApiKeyType.storageKey);
+
+      if (_selectedApiKeyType == ApiKeyType.googleAiStudio) {
+        await prefs.remove('api_key');
+      }
+
       _apiKeyController.clear();
 
       if (mounted) {
@@ -126,20 +157,25 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
   }
 
   Widget _buildApiKeyTypeSelector(BuildContext context) {
-    return Wrap(
-      spacing: 8,
-      runSpacing: 8,
-      children: ApiKeyType.values.map((type) {
-        return CommonFilterChip(
-          label: type.displayName,
-          selected: _selectedApiKeyType == type,
-          onSelected: (selected) {
-            if (selected) {
-              setState(() => _selectedApiKeyType = type);
-            }
-          },
-        );
-      }).toList(),
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: ApiKeyType.values.map((type) {
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: CommonFilterChip(
+              label: type.displayName,
+              selected: _selectedApiKeyType == type,
+              onSelected: (selected) {
+                if (selected) {
+                  setState(() => _selectedApiKeyType = type);
+                  _loadKeyForType(type);
+                }
+              },
+            ),
+          );
+        }).toList(),
+      ),
     );
   }
 
@@ -185,10 +221,15 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
                             const SizedBox(height: 12),
                             Text(
                               'AI 모델을 사용하기 위해 API 키가 필요합니다.\n'
-                              'API 키는 안전하게 암호화되어 기기에 저장됩니다.',
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onSurfaceVariant,
-                              ),
+                              '각 제공사별로 API 키를 등록해주세요.',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
                             ),
                           ],
                         ),
@@ -199,8 +240,9 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
                     const SizedBox(height: 24),
                     CommonCustomTextField(
                       controller: _apiKeyController,
-                      label: 'API 키',
-                      helpText: '${_selectedApiKeyType.displayName}에서 발급받은 API 키를 입력해주세요.',
+                      label: '${_selectedApiKeyType.displayName} API 키',
+                      helpText:
+                          '${_selectedApiKeyType.displayName}에서 발급받은 API 키를 입력해주세요.',
                       hintText: 'API 키를 입력해주세요',
                       maxLines: 1,
                       obscureText: true,

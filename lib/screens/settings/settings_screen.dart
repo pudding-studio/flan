@@ -92,6 +92,48 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
             },
           ),
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, child) {
+              return _buildListTile(
+                icon: Icons.palette,
+                title: '테마 색상',
+                trailing: DropdownButton<ThemeColor>(
+                  value: themeProvider.themeColor,
+                  underline: const SizedBox(),
+                  borderRadius: BorderRadius.circular(16),
+                  items: ThemeColor.values.map((color) {
+                    return DropdownMenuItem(
+                      value: color,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              color: color.color,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.grey.withValues(alpha: 0.3),
+                                width: 1,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(color.displayName),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      themeProvider.setThemeColor(value);
+                    }
+                  },
+                ),
+              );
+            },
+          ),
           const Divider(),
           _buildSectionHeader('채팅'),
           _buildListTile(

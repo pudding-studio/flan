@@ -1,16 +1,18 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
 import '../database/database_helper.dart';
+import '../models/chat/chat_model.dart';
 import '../models/chat/chat_summary.dart';
 import '../models/chat/chat_message.dart';
 import '../models/chat/chat_message_metadata.dart';
 import '../models/chat/summary_prompt_item.dart';
+import '../models/chat/unified_model.dart';
 import '../models/prompt/prompt_parameters.dart';
-import 'gemini_service.dart';
+import 'ai_service.dart';
 
 class AutoSummaryService {
   final DatabaseHelper _db = DatabaseHelper.instance;
-  final GeminiService _geminiService = GeminiService();
+  final AiService _aiService = AiService();
 
   static const String _logTag = 'AutoSummary';
 
@@ -145,9 +147,11 @@ class AutoSummaryService {
           ];
         }
 
-        final response = await _geminiService.sendMessage(
+        final summaryModel = _resolveModel(settings.summaryModel);
+        final response = await _aiService.sendMessage(
           systemPrompt: systemPrompt,
           contents: contents,
+          model: summaryModel,
           promptParameters: promptParameters,
           chatRoomId: chatRoomId,
           logType: 'auto_summary',
@@ -297,9 +301,11 @@ class AutoSummaryService {
 
     _log('Regenerating summary #${summary.id} for range [${summary.startPinMessageId} → ${summary.endPinMessageId}]');
 
-    final response = await _geminiService.sendMessage(
+    final summaryModel = _resolveModel(settings.summaryModel);
+    final response = await _aiService.sendMessage(
       systemPrompt: systemPrompt,
       contents: contents,
+      model: summaryModel,
       promptParameters: promptParameters,
       chatRoomId: chatRoomId,
       logType: 'auto_summary',
@@ -376,6 +382,15 @@ class AutoSummaryService {
       buffer.writeln();
     }
     return buffer.toString().trim();
+  }
+
+  UnifiedModel _resolveModel(String modelId) {
+    final builtIn = ChatModel.fromModelId(modelId);
+    if (builtIn != null) {
+      return UnifiedModel.fromChatModel(builtIn);
+    }
+    // Fallback: treat as Gemini model (backward compatible with existing summary settings)
+    return UnifiedModel.fromChatModel(ChatModel.geminiFlash3Preview);
   }
 
   Future<List<ChatMessageMetadata>> getChatMessageMetadataList(

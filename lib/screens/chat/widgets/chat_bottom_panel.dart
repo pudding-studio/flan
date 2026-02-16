@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../models/chat/chat_model.dart';
 import '../../../models/chat/chat_room.dart';
+import '../../../models/chat/unified_model.dart';
 import '../../../models/prompt/chat_prompt.dart';
 import '../../../models/character/persona.dart';
 import '../../../providers/chat_model_provider.dart';
@@ -12,7 +12,7 @@ class ChatBottomPanel extends StatefulWidget {
   final ChatRoom chatRoom;
   final List<ChatPrompt> chatPrompts;
   final List<Persona> personas;
-  final ValueChanged<ChatModel> onModelChanged;
+  final ValueChanged<UnifiedModel> onModelChanged;
   final ValueChanged<int?> onPromptChanged;
   final ValueChanged<int?> onPersonaChanged;
   final ValueChanged<String> onPinModeChanged;
@@ -109,9 +109,9 @@ class _ChatBottomPanelState extends State<ChatBottomPanel> with SingleTickerProv
           _buildSettingRow(
             label: '채팅 모델',
             child: Expanded(
-              child: CommonDropdownButton<ChatModel>(
+              child: CommonDropdownButton<UnifiedModel>(
                 value: modelProvider.selectedModel,
-                items: ChatModel.values,
+                items: modelProvider.availableModels,
                 onChanged: (model) {
                   if (model != null) widget.onModelChanged(model);
                 },

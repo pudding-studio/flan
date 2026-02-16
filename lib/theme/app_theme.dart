@@ -20,6 +20,99 @@ class AppTheme {
   static const double appBarTitleFontSize = 20;
   static const FontWeight appBarTitleFontWeight = FontWeight.w500;
 
+  static ThemeData getTheme({
+    required Color seedColor,
+    required Brightness brightness,
+  }) {
+    return ThemeData(
+      useMaterial3: true,
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: seedColor,
+        brightness: brightness,
+      ),
+      appBarTheme: AppBarTheme(
+        centerTitle: false,
+        elevation: 0,
+        toolbarHeight: appBarHeight,
+        titleSpacing: appBarTitleSpacing,
+        titleTextStyle: TextStyle(
+          fontSize: appBarTitleFontSize,
+          fontWeight: appBarTitleFontWeight,
+          color: brightness == Brightness.light ? Colors.black87 : Colors.white,
+        ),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        height: navBarHeight,
+        elevation: 0,
+        indicatorShape: CustomIndicatorShape(
+          width: navBarIndicatorWidth,
+          height: navBarIndicatorHeight,
+          borderRadius: const BorderRadius.all(Radius.circular(navBarIndicatorRadius)),
+          offsetY: navBarIconOffset,
+        ),
+        labelBehavior: NavigationDestinationLabelBehavior.alwaysShow,
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(size: navBarIconSizeSelected);
+          }
+          return const IconThemeData(size: navBarIconSizeUnselected);
+        }),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const TextStyle(fontSize: 10, fontWeight: FontWeight.bold);
+          }
+          return const TextStyle(fontSize: 9);
+        }),
+      ),
+      cardTheme: CardTheme(
+        elevation: 2,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 24,
+            vertical: 12,
+          ),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 24,
+            vertical: 12,
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 24,
+            vertical: 12,
+          ),
+        ),
+      ),
+    );
+  }
+
+  @Deprecated('Use getTheme with seedColor parameter instead')
   static final ThemeData lightTheme = ThemeData(
     useMaterial3: true,
     colorScheme: ColorScheme.fromSeed(
