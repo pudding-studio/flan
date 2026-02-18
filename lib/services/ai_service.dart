@@ -38,6 +38,124 @@ class AiService {
     {'category': 'HARM_CATEGORY_CIVIC_INTEGRITY', 'threshold': 'BLOCK_NONE'},
   ];
 
+  /// Validate API key by sending a minimal test request.
+  /// Returns null on success, or an error message string on failure.
+  static Future<String?> validateApiKey(String apiKeyType, String apiKey) async {
+    try {
+      switch (apiKeyType) {
+        case 'google':
+          return await _validateGeminiKey(apiKey);
+        case 'openai':
+          return await _validateOpenAIKey(apiKey);
+        case 'anthropic':
+          return await _validateClaudeKey(apiKey);
+        default:
+          return null;
+      }
+    } catch (e) {
+      return 'API 키 검증 실패: $e';
+    }
+  }
+
+  static Future<String?> _validateGeminiKey(String apiKey) async {
+    final url = Uri.parse(
+        '$_geminiBaseUrl/gemini-2.5-pro:generateContent?key=$apiKey');
+    final response = await http.post(
+      url,
+      headers: {'Content-Type': 'application/json'},
+      body: jsonEncode({
+        'contents': [
+          {
+            'parts': [
+              {'text': 'hi'}
+            ]
+          }
+        ],
+        'generationConfig': {
+          'maxOutputTokens': 5,
+          'thinkingConfig': {'thinkingBudget': 0},
+        },
+      }),
+    ).timeout(const Duration(seconds: 30));
+
+    if (response.statusCode == 200) return null;
+
+    final body = jsonDecode(response.body);
+    final error = body['error'];
+    if (error != null) {
+      final status = error['status'] ?? '';
+      final message = error['message'] ?? '';
+
+      // thinkingBudget related errors mean the key itself is valid
+      if (message.toString().contains('thinking') ||
+          message.toString().contains('Budget')) {
+        return null;
+      }
+
+      if (status == 'RESOURCE_EXHAUSTED' ||
+          message.toString().contains('quota') ||
+          message.toString().contains('rate limit')) {
+        return '사용량 초과: API 키의 할당량이 초과되었습니다';
+      }
+      if (status == 'PERMISSION_DENIED' ||
+          response.statusCode == 403) {
+        return '권한 없음: 유효하지 않은 API 키입니다';
+      }
+      if (response.statusCode == 400 &&
+          message.toString().contains('API_KEY_INVALID')) {
+        return '유효하지 않은 API 키입니다';
+      }
+      return '키 검증 실패: $message';
+    }
+    return '키 검증 실패: HTTP ${response.statusCode}';
+  }
+
+  static Future<String?> _validateOpenAIKey(String apiKey) async {
+    final url = Uri.parse('$_openaiBaseUrl/v1/models');
+    final response = await http.get(
+      url,
+      headers: {'Authorization': 'Bearer $apiKey'},
+    ).timeout(const Duration(seconds: 15));
+
+    if (response.statusCode == 200) return null;
+    if (response.statusCode == 401) return '유효하지 않은 API 키입니다';
+    if (response.statusCode == 429) return '사용량 초과: API 키의 할당량이 초과되었습니다';
+    return '키 검증 실패: HTTP ${response.statusCode}';
+  }
+
+  static Future<String?> _validateClaudeKey(String apiKey) async {
+    final url = Uri.parse('$_claudeBaseUrl/v1/messages');
+    final response = await http.post(
+      url,
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': apiKey,
+        'anthropic-version': '2023-06-01',
+      },
+      body: jsonEncode({
+        'model': 'claude-haiku-4-5-20251001',
+        'max_tokens': 5,
+        'messages': [
+          {'role': 'user', 'content': 'hi'}
+        ],
+      }),
+    ).timeout(const Duration(seconds: 15));
+
+    if (response.statusCode == 200) return null;
+    if (response.statusCode == 401) return '유효하지 않은 API 키입니다';
+    if (response.statusCode == 429) return '사용량 초과: API 키의 할당량이 초과되었습니다';
+
+    final body = jsonDecode(response.body);
+    final error = body['error'];
+    if (error != null) {
+      // 'credit_balance' error means key is valid but no credits
+      final type = error['type'] ?? '';
+      if (type == 'authentication_error') return '유효하지 않은 API 키입니다';
+      if (type == 'rate_limit_error') return '사용량 초과: API 키의 할당량이 초과되었습니다';
+    }
+    return '키 검증 실패: HTTP ${response.statusCode}';
+  }
+
   Future<String> getApiKey(String apiKeyType) async {
     final prefs = await SharedPreferences.getInstance();
 

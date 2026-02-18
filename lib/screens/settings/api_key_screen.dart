@@ -7,6 +7,7 @@ import '../../widgets/common/common_custom_text_field.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../../widgets/common/common_filter_chip.dart';
 import '../../widgets/common/common_title_medium.dart';
+import '../../services/ai_service.dart';
 
 enum ApiKeyType {
   googleAiStudio('Google AI Studio', 'google'),
@@ -148,6 +149,22 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
     setState(() => _isLoading = true);
     try {
       final key = _apiKeyController.text.trim();
+
+      // Validate API key before saving
+      final validationError = await AiService.validateApiKey(
+        _selectedApiKeyType.prefsKey,
+        key,
+      );
+      if (validationError != null) {
+        if (mounted) {
+          await CommonDialog.showInfo(
+            context: context,
+            title: 'API 키 검증 실패',
+            content: validationError,
+          );
+        }
+        return;
+      }
 
       if (_editingIndex != null) {
         _keys[_editingIndex!] = key;
