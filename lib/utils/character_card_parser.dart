@@ -94,17 +94,48 @@ class CharacterCardParser {
         tags = (data['tags'] as List).map((e) => e.toString()).toList();
       }
 
+      // Build description with additional fields as tagged sections
+      final description = _buildDescription(data);
+
       return Character(
         name: data['name'] as String? ?? 'Unknown',
         creatorNotes: data['creator_notes'] as String?,
         tags: tags,
-        description: data['description'] as String?,
+        description: description,
         isDraft: false,
       );
     }
 
     // 알 수 없는 형식
     throw FormatException('Unsupported character card format: $spec');
+  }
+
+  /// Character Card V2 data 필드들을 description에 태그로 구분하여 합칩니다
+  static String? _buildDescription(Map<String, dynamic> data) {
+    final parts = <String>[];
+
+    final baseDescription = (data['description'] as String?)?.trim() ?? '';
+    if (baseDescription.isNotEmpty) {
+      parts.add(baseDescription);
+    }
+
+    const tagFields = [
+      'scenario',
+      'personality',
+      'mes_example',
+      'system_prompt',
+      'post_history_instructions',
+    ];
+
+    for (final field in tagFields) {
+      final value = (data[field] as String?)?.trim() ?? '';
+      if (value.isNotEmpty) {
+        parts.add('<$field>\n$value\n</$field>');
+      }
+    }
+
+    if (parts.isEmpty) return null;
+    return parts.join('\n\n');
   }
 
   /// Character Card V2/V3에서 personas를 추출합니다

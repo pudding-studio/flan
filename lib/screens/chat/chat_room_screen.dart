@@ -1080,21 +1080,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   Widget _buildStartMessageBubble() {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.75,
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(16),
-        ),
-        child: Text(
-          _startScenario!.startMessage!,
-          style: Theme.of(context).textTheme.bodyLarge,
-        ),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Text(
+        _startScenario!.startMessage!,
+        style: Theme.of(context).textTheme.bodyLarge,
       ),
     );
   }

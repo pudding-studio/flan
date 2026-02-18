@@ -16,6 +16,7 @@ import '../../models/character/character_book_folder.dart';
 import '../../models/character/cover_image.dart';
 import '../../utils/common_dialog.dart';
 import '../../utils/character_card_parser.dart';
+import '../../utils/image_processor.dart';
 import 'character_edit_screen.dart';
 import 'character_view_screen.dart';
 import '../../widgets/character/character_card.dart';
@@ -361,6 +362,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
         final jsonData = json.decode(jsonString) as Map<String, dynamic>;
 
         final format = jsonData['format'] as String?;
+        final spec = jsonData['spec'] as String?;
 
         if (format == 'flan_v1') {
           // 자체 형식
@@ -386,11 +388,13 @@ class _CharacterScreenState extends State<CharacterScreen> {
           coverImages = (jsonData['coverImages'] as List?)
               ?.map((c) => CoverImage.fromJson(c as Map<String, dynamic>))
               .toList();
-        } else if (format == 'chara_card_v2' || format == 'chara_card_v3') {
+        } else if (spec == 'chara_card_v2' || spec == 'chara_card_v3') {
           // Character Card V2/V3 JSON 형식
           character = CharacterCardParser.parseCharacterCard(jsonData);
+          startScenarios = CharacterCardParser.parseStartScenarios(jsonData, 0);
+          standaloneCharacterBooks = CharacterCardParser.parseCharacterBooks(jsonData, 0);
         } else {
-          throw FormatException('지원하지 않는 형식입니다: $format');
+          throw FormatException('지원하지 않는 형식입니다: ${format ?? spec}');
         }
       } else if (extension == 'png') {
         // PNG 파일에서 메타데이터 추출
@@ -402,6 +406,23 @@ class _CharacterScreenState extends State<CharacterScreen> {
         }
 
         character = CharacterCardParser.parseCharacterCard(metadata);
+        startScenarios = CharacterCardParser.parseStartScenarios(metadata, 0);
+        standaloneCharacterBooks = CharacterCardParser.parseCharacterBooks(metadata, 0);
+
+        // PNG 이미지를 표지 이미지로 변환
+        try {
+          final imageData = await ImageProcessor.processToWebp512FromBytes(pngBytes);
+          coverImages = [
+            CoverImage(
+              characterId: 0,
+              name: '표지 1',
+              order: 0,
+              imageData: imageData,
+            ),
+          ];
+        } catch (_) {
+          // Image processing failure is non-critical
+        }
       } else {
         throw FormatException('지원하지 않는 파일 형식입니다');
       }
