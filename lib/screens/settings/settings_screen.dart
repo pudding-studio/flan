@@ -8,6 +8,7 @@ import 'chat_model_screen.dart';
 import 'chat_prompt_screen.dart';
 import 'auto_summary_screen.dart';
 import 'tokenizer_screen.dart';
+import 'backup_screen.dart';
 import 'log_screen.dart';
 import 'legal_document_screen.dart';
 
@@ -193,6 +194,17 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           const Divider(),
           _buildSectionHeader('데이터'),
+          _buildListTile(
+            icon: Icons.backup,
+            title: '백업 및 복구',
+            subtitle: '데이터 내보내기/가져오기',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const BackupScreen()),
+              );
+            },
+          ),
           _buildListTile(
             icon: Icons.article_outlined,
             title: '로그',

@@ -1906,6 +1906,25 @@ class DatabaseHelper {
     );
   }
 
+  // ==================== 백업 및 복구 ====================
+
+  Future<String> getDatabaseFilePath() async {
+    final dbPath = await getDatabasesPath();
+    return join(dbPath, 'flan.db');
+  }
+
+  Future<void> closeDatabase() async {
+    if (_database != null) {
+      await _database!.close();
+      _database = null;
+    }
+  }
+
+  Future<void> reopenDatabase() async {
+    await closeDatabase();
+    _database = await _initDB('flan.db');
+  }
+
   // ==================== 유틸리티 ====================
 
   Future<void> close() async {
