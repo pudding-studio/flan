@@ -50,6 +50,19 @@ class AiService {
       }
     }
 
+    // Try multi-key storage first
+    final multiKeys = prefs.getString('api_keys_$apiKeyType');
+    if (multiKeys != null) {
+      final List<dynamic> keys = jsonDecode(multiKeys);
+      if (keys.isNotEmpty) {
+        final activeIndex =
+            (prefs.getInt('api_key_active_$apiKeyType') ?? 0)
+                .clamp(0, keys.length - 1);
+        return keys[activeIndex] as String;
+      }
+    }
+
+    // Fallback to single key storage
     final key = prefs.getString('api_key_$apiKeyType');
     if (key == null || key.isEmpty) {
       throw Exception('API 키가 설정되지 않았습니다 ($apiKeyType)');

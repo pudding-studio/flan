@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/common_dialog.dart';
@@ -18,6 +19,8 @@ enum ApiKeyType {
   const ApiKeyType(this.displayName, this.prefsKey);
 
   String get storageKey => 'api_key_$prefsKey';
+  String get multiStorageKey => 'api_keys_$prefsKey';
+  String get activeIndexKey => 'api_key_active_$prefsKey';
 }
 
 class ApiKeyScreen extends StatefulWidget {
@@ -32,11 +35,14 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
   final _apiKeyController = TextEditingController();
   bool _isLoading = false;
   ApiKeyType _selectedApiKeyType = ApiKeyType.googleAiStudio;
+  List<String> _keys = [];
+  int _activeIndex = 0;
+  int? _editingIndex;
 
   @override
   void initState() {
     super.initState();
-    _migrateAndLoadApiKey();
+    _migrateAndLoadApiKeys();
   }
 
   @override
@@ -45,7 +51,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
     super.dispose();
   }
 
-  Future<void> _migrateAndLoadApiKey() async {
+  Future<void> _migrateAndLoadApiKeys() async {
     setState(() => _isLoading = true);
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -59,7 +65,20 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
         }
       }
 
-      _loadKeyForType(_selectedApiKeyType);
+      // Migrate single key to multi-key format for all types
+      for (final type in ApiKeyType.values) {
+        final multiKeys = prefs.getString(type.multiStorageKey);
+        if (multiKeys == null) {
+          final singleKey = prefs.getString(type.storageKey);
+          if (singleKey != null && singleKey.isNotEmpty) {
+            await prefs.setString(
+                type.multiStorageKey, jsonEncode([singleKey]));
+            await prefs.setInt(type.activeIndexKey, 0);
+          }
+        }
+      }
+
+      _loadKeysForType(_selectedApiKeyType);
     } catch (e) {
       if (mounted) {
         CommonDialog.showSnackBar(
@@ -74,31 +93,81 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
     }
   }
 
-  Future<void> _loadKeyForType(ApiKeyType type) async {
+  Future<void> _loadKeysForType(ApiKeyType type) async {
     final prefs = await SharedPreferences.getInstance();
-    final key = prefs.getString(type.storageKey) ?? '';
-    _apiKeyController.text = key;
+    final multiKeys = prefs.getString(type.multiStorageKey);
+    final activeIdx = prefs.getInt(type.activeIndexKey) ?? 0;
+
+    if (multiKeys != null) {
+      final List<dynamic> decoded = jsonDecode(multiKeys);
+      _keys = decoded.cast<String>();
+    } else {
+      _keys = [];
+    }
+
+    _activeIndex = _keys.isEmpty ? 0 : activeIdx.clamp(0, _keys.length - 1);
+    _editingIndex = null;
+    _apiKeyController.clear();
+
+    if (mounted) setState(() {});
   }
 
-  Future<void> _saveApiKey() async {
+  Future<void> _syncActiveKey() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (_keys.isNotEmpty) {
+      final activeKey = _keys[_activeIndex];
+      await prefs.setString(_selectedApiKeyType.storageKey, activeKey);
+
+      if (_selectedApiKeyType == ApiKeyType.googleAiStudio) {
+        await prefs.setString('api_key', activeKey);
+      }
+    } else {
+      await prefs.remove(_selectedApiKeyType.storageKey);
+      if (_selectedApiKeyType == ApiKeyType.googleAiStudio) {
+        await prefs.remove('api_key');
+      }
+    }
+  }
+
+  Future<void> _saveKeys() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (_keys.isEmpty) {
+      await prefs.remove(_selectedApiKeyType.multiStorageKey);
+      await prefs.remove(_selectedApiKeyType.activeIndexKey);
+    } else {
+      await prefs.setString(
+          _selectedApiKeyType.multiStorageKey, jsonEncode(_keys));
+      await prefs.setInt(_selectedApiKeyType.activeIndexKey, _activeIndex);
+    }
+    await _syncActiveKey();
+  }
+
+  Future<void> _saveOrUpdateKey() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
     try {
-      final prefs = await SharedPreferences.getInstance();
       final key = _apiKeyController.text.trim();
-      await prefs.setString(_selectedApiKeyType.storageKey, key);
 
-      // Also write legacy key for backward compatibility
-      if (_selectedApiKeyType == ApiKeyType.googleAiStudio) {
-        await prefs.setString('api_key', key);
+      if (_editingIndex != null) {
+        _keys[_editingIndex!] = key;
+        if (_keys.length == 1) _activeIndex = 0;
+      } else {
+        _keys.add(key);
+        if (_keys.length == 1) _activeIndex = 0;
       }
+
+      await _saveKeys();
+
+      _editingIndex = null;
+      _apiKeyController.clear();
 
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
           message: '${_selectedApiKeyType.displayName} API 키가 저장되었습니다',
         );
+        setState(() {});
       }
     } catch (e) {
       if (mounted) {
@@ -114,11 +183,11 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
     }
   }
 
-  Future<void> _deleteApiKey() async {
+  Future<void> _deleteKey(int index) async {
     final confirmed = await CommonDialog.showConfirmation(
       context: context,
       title: 'API 키 삭제',
-      content: '${_selectedApiKeyType.displayName}의 API 키를 삭제하시겠습니까?',
+      content: '이 API 키를 삭제하시겠습니까?',
       confirmText: '삭제',
       isDestructive: true,
     );
@@ -127,20 +196,31 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
 
     setState(() => _isLoading = true);
     try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.remove(_selectedApiKeyType.storageKey);
+      _keys.removeAt(index);
 
-      if (_selectedApiKeyType == ApiKeyType.googleAiStudio) {
-        await prefs.remove('api_key');
+      if (_keys.isEmpty) {
+        _activeIndex = 0;
+      } else {
+        if (_activeIndex >= _keys.length) {
+          _activeIndex = _keys.length - 1;
+        }
       }
 
-      _apiKeyController.clear();
+      if (_editingIndex == index) {
+        _editingIndex = null;
+        _apiKeyController.clear();
+      } else if (_editingIndex != null && _editingIndex! > index) {
+        _editingIndex = _editingIndex! - 1;
+      }
+
+      await _saveKeys();
 
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
           message: 'API 키가 삭제되었습니다',
         );
+        setState(() {});
       }
     } catch (e) {
       if (mounted) {
@@ -156,6 +236,42 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
     }
   }
 
+  Future<void> _setActiveKey(int index) async {
+    if (_keys.length <= 1) return;
+
+    setState(() {
+      _activeIndex = index;
+    });
+
+    await _saveKeys();
+
+    if (mounted) {
+      CommonDialog.showSnackBar(
+        context: context,
+        message: 'API 키 ${index + 1}이(가) 활성화되었습니다',
+      );
+    }
+  }
+
+  void _startEditing(int index) {
+    setState(() {
+      _editingIndex = index;
+      _apiKeyController.text = _keys[index];
+    });
+  }
+
+  void _cancelEditing() {
+    setState(() {
+      _editingIndex = null;
+      _apiKeyController.clear();
+    });
+  }
+
+  String _obscureKey(String key) {
+    if (key.length <= 8) return '•' * key.length;
+    return '${key.substring(0, 4)}${'•' * (key.length - 8)}${key.substring(key.length - 4)}';
+  }
+
   Widget _buildApiKeyTypeSelector(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -168,8 +284,12 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
               selected: _selectedApiKeyType == type,
               onSelected: (selected) {
                 if (selected) {
-                  setState(() => _selectedApiKeyType = type);
-                  _loadKeyForType(type);
+                  setState(() {
+                    _selectedApiKeyType = type;
+                    _editingIndex = null;
+                    _apiKeyController.clear();
+                  });
+                  _loadKeysForType(type);
                 }
               },
             ),
@@ -179,18 +299,99 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
     );
   }
 
+  Widget _buildKeyList() {
+    if (_keys.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Text(
+          '등록된 API 키가 없습니다',
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+        ),
+      );
+    }
+
+    return Column(
+      children: List.generate(_keys.length, (index) {
+        final isActive = index == _activeIndex;
+        final isEditing = _editingIndex == index;
+
+        return Card(
+          color: isEditing
+              ? Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3)
+              : null,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () => _setActiveKey(index),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              child: Row(
+                children: [
+                  Radio<int>(
+                    value: index,
+                    groupValue: _activeIndex,
+                    onChanged: _keys.length <= 1
+                        ? null
+                        : (value) {
+                            if (value != null) _setActiveKey(value);
+                          },
+                  ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Key ${index + 1}',
+                          style:
+                              Theme.of(context).textTheme.labelSmall?.copyWith(
+                                    color: isActive
+                                        ? Theme.of(context).colorScheme.primary
+                                        : Theme.of(context)
+                                            .colorScheme
+                                            .onSurfaceVariant,
+                                  ),
+                        ),
+                        Text(
+                          _obscureKey(_keys[index]),
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    fontFamily: 'monospace',
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.edit_outlined, size: 18),
+                    onPressed: () => _startEditing(index),
+                    tooltip: '수정',
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.delete_outline, size: 18),
+                    onPressed: () => _deleteKey(index),
+                    tooltip: '삭제',
+                    visualDensity: VisualDensity.compact,
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      }),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: CommonAppBar(
         title: 'API 키 등록',
-        actions: [
-          if (_apiKeyController.text.isNotEmpty)
-            CommonAppBarIconButton(
-              icon: Icons.delete_outline,
-              onPressed: _isLoading ? null : _deleteApiKey,
-            ),
-        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -221,7 +422,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
                             const SizedBox(height: 12),
                             Text(
                               'AI 모델을 사용하기 위해 API 키가 필요합니다.\n'
-                              '각 제공사별로 API 키를 등록해주세요.',
+                              '각 제공사별로 여러 개의 API 키를 등록할 수 있습니다.',
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyMedium
@@ -237,10 +438,14 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
                     ),
                     const SizedBox(height: 24),
                     _buildApiKeyTypeSelector(context),
-                    const SizedBox(height: 24),
+                    const SizedBox(height: 16),
+                    _buildKeyList(),
+                    const SizedBox(height: 16),
                     CommonCustomTextField(
                       controller: _apiKeyController,
-                      label: '${_selectedApiKeyType.displayName} API 키',
+                      label: _editingIndex != null
+                          ? 'Key ${_editingIndex! + 1} 수정'
+                          : '새 API 키',
                       helpText:
                           '${_selectedApiKeyType.displayName}에서 발급받은 API 키를 입력해주세요.',
                       hintText: 'API 키를 입력해주세요',
@@ -254,11 +459,29 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
                         return null;
                       },
                     ),
-                    const SizedBox(height: 24),
-                    CommonButton.filled(
-                      onPressed: _isLoading ? null : _saveApiKey,
-                      icon: Icons.save,
-                      label: '저장',
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        if (_editingIndex != null) ...[
+                          Expanded(
+                            child: CommonButton.outlined(
+                              onPressed: _cancelEditing,
+                              icon: Icons.close,
+                              label: '취소',
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                        ],
+                        Expanded(
+                          child: CommonButton.filled(
+                            onPressed: _isLoading ? null : _saveOrUpdateKey,
+                            icon: _editingIndex != null
+                                ? Icons.save
+                                : Icons.add,
+                            label: _editingIndex != null ? '저장' : '키 추가',
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
