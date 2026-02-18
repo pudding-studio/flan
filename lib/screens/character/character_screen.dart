@@ -7,6 +7,7 @@ import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:archive/archive.dart';
 import '../../providers/theme_provider.dart';
 import '../../database/database_helper.dart';
 import '../../models/character/character.dart';
@@ -341,7 +342,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['json', 'png'],
+        allowedExtensions: ['json', 'png', 'charx'],
       );
 
       if (result == null || result.files.isEmpty) return;
@@ -409,20 +410,57 @@ class _CharacterScreenState extends State<CharacterScreen> {
         startScenarios = CharacterCardParser.parseStartScenarios(metadata, 0);
         standaloneCharacterBooks = CharacterCardParser.parseCharacterBooks(metadata, 0);
 
-        // PNG 이미지를 표지 이미지로 변환
-        try {
-          final imageData = await ImageProcessor.processToWebp512FromBytes(pngBytes);
-          coverImages = [
-            CoverImage(
-              characterId: 0,
-              name: '표지 1',
-              order: 0,
-              imageData: imageData,
-            ),
-          ];
-        } catch (_) {
-          // Image processing failure is non-critical
+        // V3 assets에서 icon 추출 시도
+        final assetCovers = await CharacterCardParser.parseAssets(metadata, 0);
+        if (assetCovers.isNotEmpty) {
+          coverImages = assetCovers;
+        } else {
+          // PNG 이미지 자체를 표지 이미지로 변환
+          try {
+            final imageData = await ImageProcessor.processToWebp512FromBytes(pngBytes);
+            coverImages = [
+              CoverImage(
+                characterId: 0,
+                name: '표지 1',
+                order: 0,
+                imageData: imageData,
+              ),
+            ];
+          } catch (_) {
+            // Image processing failure is non-critical
+          }
         }
+      } else if (extension == 'charx') {
+        // CHARX (ZIP archive) 파일 처리
+        final archiveBytes = await file.readAsBytes();
+        final archive = ZipDecoder().decodeBytes(archiveBytes);
+
+        // card.json 찾기
+        final cardJsonFile = archive.findFile('card.json');
+        if (cardJsonFile == null) {
+          throw FormatException('CHARX 파일에서 card.json을 찾을 수 없습니다');
+        }
+
+        final jsonString = utf8.decode(cardJsonFile.content as List<int>);
+        final jsonData = json.decode(jsonString) as Map<String, dynamic>;
+
+        character = CharacterCardParser.parseCharacterCard(jsonData);
+        startScenarios = CharacterCardParser.parseStartScenarios(jsonData, 0);
+        standaloneCharacterBooks = CharacterCardParser.parseCharacterBooks(jsonData, 0);
+
+        // 아카이브 파일 맵 구성 (embeded:// URI 해석용)
+        final archiveFiles = <String, Uint8List>{};
+        for (final file in archive) {
+          if (!file.isFile) continue;
+          archiveFiles[file.name] = Uint8List.fromList(file.content as List<int>);
+        }
+
+        // V3 assets에서 이미지 추출
+        coverImages = await CharacterCardParser.parseAssets(
+          jsonData,
+          0,
+          archiveFiles: archiveFiles,
+        );
       } else {
         throw FormatException('지원하지 않는 파일 형식입니다');
       }

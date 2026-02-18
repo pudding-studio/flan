@@ -7,6 +7,7 @@ import 'cover_image.dart';
 class Character {
   final int? id;
   final String name;
+  final String? nickname;
   final String? creatorNotes;
   final List<String> tags;
   final String? description;
@@ -19,6 +20,7 @@ class Character {
   Character({
     this.id,
     required this.name,
+    this.nickname,
     this.creatorNotes,
     List<String>? tags,
     this.description,
@@ -51,6 +53,7 @@ class Character {
     return Character(
       id: map['id'] as int?,
       name: map['name'] as String,
+      nickname: map['nickname'] as String?,
       creatorNotes: map['creator_notes'] as String?,
       tags: parsedTags,
       description: map['description'] as String?,
@@ -68,6 +71,7 @@ class Character {
     return {
       'id': id,
       'name': name,
+      'nickname': nickname,
       'creator_notes': creatorNotes,
       'tags': json.encode(tags),
       'description': description,
@@ -82,6 +86,7 @@ class Character {
   Character copyWith({
     int? id,
     String? name,
+    String? nickname,
     String? creatorNotes,
     List<String>? tags,
     String? description,
@@ -94,6 +99,7 @@ class Character {
     return Character(
       id: id ?? this.id,
       name: name ?? this.name,
+      nickname: nickname ?? this.nickname,
       creatorNotes: creatorNotes ?? this.creatorNotes,
       tags: tags ?? this.tags,
       description: description ?? this.description,
@@ -115,6 +121,7 @@ class Character {
     return {
       'format': 'flan_v1',
       'name': name,
+      'nickname': nickname,
       'creatorNotes': creatorNotes,
       'tags': tags,
       'description': description,
@@ -139,6 +146,7 @@ class Character {
 
     return Character(
       name: json['name'] as String,
+      nickname: json['nickname'] as String?,
       creatorNotes: json['creatorNotes'] as String?,
       tags: parsedTags,
       description: json['description'] as String?,

@@ -40,6 +40,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   late TabController _tabController;
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _nicknameController = TextEditingController();
   final _creatorNotesController = TextEditingController();
   final _keywordsController = TextEditingController();
   final _descriptionController = TextEditingController();
@@ -65,6 +66,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
 
   // 원본 데이터 저장 (변경 감지용)
   String _originalName = '';
+  String _originalNickname = '';
   String _originalCreatorNotes = '';
   String _originalKeywords = '';
   String _originalDescription = '';
@@ -93,6 +95,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
 
     // 텍스트 컨트롤러에 리스너 추가하여 자동 저장
     _nameController.addListener(_autoSave);
+    _nicknameController.addListener(_autoSave);
     _creatorNotesController.addListener(_autoSave);
     _keywordsController.addListener(_autoSave);
     _descriptionController.addListener(_autoSave);
@@ -108,6 +111,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       final character = await _db.readCharacter(widget.characterId!);
       if (character != null) {
         _nameController.text = character.name;
+        _nicknameController.text = character.nickname ?? '';
         _creatorNotesController.text = character.creatorNotes ?? '';
         _keywordsController.text = character.tags.join(', ');
         _descriptionController.text = character.description ?? '';
@@ -115,6 +119,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
 
         // 원본 데이터 저장
         _originalName = character.name;
+        _originalNickname = character.nickname ?? '';
         _originalCreatorNotes = character.creatorNotes ?? '';
         _originalKeywords = character.tags.join(', ');
         _originalDescription = character.description ?? '';
@@ -231,6 +236,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   bool _hasChanges() {
     // 기본 정보 변경 확인
     if (_nameController.text != _originalName ||
+        _nicknameController.text != _originalNickname ||
         _creatorNotesController.text != _originalCreatorNotes ||
         _keywordsController.text != _originalKeywords ||
         _descriptionController.text != _originalDescription ||
@@ -339,6 +345,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
 
     _tabController.dispose();
     _nameController.dispose();
+    _nicknameController.dispose();
     _creatorNotesController.dispose();
     _keywordsController.dispose();
     _descriptionController.dispose();
@@ -372,6 +379,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       final prefs = await SharedPreferences.getInstance();
       final data = {
         'name': _nameController.text,
+        'nickname': _nicknameController.text,
         'creatorNotes': _creatorNotesController.text,
         'keywords': _keywordsController.text,
         'description': _descriptionController.text,
@@ -425,6 +433,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       if (shouldRestore == true && mounted) {
         setState(() {
           _nameController.text = data['name'] as String? ?? '';
+          _nicknameController.text = data['nickname'] as String? ?? '';
           _creatorNotesController.text = data['creatorNotes'] as String? ?? '';
           _keywordsController.text = data['keywords'] as String? ?? '';
           _descriptionController.text = data['description'] as String? ?? '';
@@ -480,6 +489,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         // 복원한 데이터를 원본으로 설정 (편집 모드인 경우)
         if (_isEditMode) {
           _originalName = _nameController.text;
+          _originalNickname = _nicknameController.text;
           _originalCreatorNotes = _creatorNotesController.text;
           _originalKeywords = _keywordsController.text;
           _originalDescription = _descriptionController.text;
@@ -555,6 +565,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         final character = Character(
           id: characterId,
           name: _nameController.text,
+          nickname: _nicknameController.text.isEmpty ? null : _nicknameController.text,
           creatorNotes: _creatorNotesController.text.isEmpty ? null : _creatorNotesController.text,
           tags: tags,
           description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
@@ -571,6 +582,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
 
         final character = Character(
           name: _nameController.text,
+          nickname: _nicknameController.text.isEmpty ? null : _nicknameController.text,
           creatorNotes: _creatorNotesController.text.isEmpty ? null : _creatorNotesController.text,
           tags: tags,
           description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
@@ -974,6 +986,15 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
               }
               return null;
             },
+          ),
+          const SizedBox(height: UIConstants.spacing20),
+          CommonCustomTextField(
+            controller: _nicknameController,
+            label: '닉네임',
+            helpText: '프롬프트에서 {{char}} 대신 사용할 호칭입니다. 비워두면 이름이 사용됩니다.',
+            hintText: '캐릭터의 닉네임을 입력해주세요.',
+            maxLines: null,
+            showCounter: true,
           ),
           const SizedBox(height: UIConstants.spacing20),
           CommonCustomTextField(

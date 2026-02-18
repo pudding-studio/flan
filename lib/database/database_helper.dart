@@ -34,7 +34,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 31,
+      version: 32,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -51,6 +51,7 @@ class DatabaseHelper {
       CREATE TABLE characters (
         id $idType,
         name $textType,
+        nickname $textTypeNullable,
         creator_notes $textTypeNullable,
         tags $textTypeNullable,
         description $textTypeNullable,
@@ -902,6 +903,12 @@ class DatabaseHelper {
     if (oldVersion < 31) {
       await db.execute('''
         ALTER TABLE character_books ADD COLUMN secondary_keys TEXT
+      ''');
+    }
+
+    if (oldVersion < 32) {
+      await db.execute('''
+        ALTER TABLE characters ADD COLUMN nickname TEXT
       ''');
     }
   }

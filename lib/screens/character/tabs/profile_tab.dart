@@ -5,6 +5,7 @@ import '../../../constants/ui_constants.dart';
 class ProfileTab extends StatelessWidget {
   final GlobalKey<FormState> formKey;
   final TextEditingController nameController;
+  final TextEditingController nicknameController;
   final TextEditingController creatorNotesController;
   final TextEditingController keywordsController;
 
@@ -12,6 +13,7 @@ class ProfileTab extends StatelessWidget {
     super.key,
     required this.formKey,
     required this.nameController,
+    required this.nicknameController,
     required this.creatorNotesController,
     required this.keywordsController,
   });
@@ -36,6 +38,15 @@ class ProfileTab extends StatelessWidget {
               }
               return null;
             },
+          ),
+          const SizedBox(height: UIConstants.spacing20),
+          CommonCustomTextField(
+            controller: nicknameController,
+            label: '닉네임',
+            helpText: '프롬프트에서 {{char}} 대신 사용할 호칭입니다. 비워두면 이름이 사용됩니다.',
+            hintText: '캐릭터의 닉네임을 입력해주세요.',
+            maxLines: null,
+            showCounter: true,
           ),
           const SizedBox(height: UIConstants.spacing20),
           CommonCustomTextField(
