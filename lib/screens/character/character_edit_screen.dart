@@ -186,7 +186,8 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       isExpanded: characterBook.isExpanded,
       enabled: characterBook.enabled,
       keys: List<String>.from(characterBook.keys),
-      keyCondition: characterBook.keyCondition,
+      secondaryKeyUsage: characterBook.secondaryKeyUsage,
+      secondaryKeys: List<String>.from(characterBook.secondaryKeys),
       insertionOrder: characterBook.insertionOrder,
       content: characterBook.content,
     );
@@ -875,7 +876,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
               Tab(
                 child: SizedBox(
                   width: UIConstants.tabWidth,
-                  child: Center(child: Text('로어북')),
+                  child: Center(child: Text('설정집')),
                 ),
               ),
               Tab(

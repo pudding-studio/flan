@@ -1,4 +1,9 @@
+import 'dart:convert';
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../../constants/ui_constants.dart';
 import '../../../models/character/character_book_folder.dart';
@@ -66,6 +71,250 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
     return maxOrder + 1;
   }
 
+  /// SillyTavern / RisuAI character_book JSON에서 가져오기
+  Future<void> _importCharacterBooks() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
+
+      if (result == null || result.files.isEmpty) return;
+
+      final file = File(result.files.single.path!);
+      final jsonString = await file.readAsString();
+      final jsonData = jsonDecode(jsonString);
+
+      if (jsonData is! Map<String, dynamic>) {
+        if (mounted) {
+          CommonDialog.showSnackBar(
+            context: context,
+            message: '올바른 설정집 형식이 아닙니다',
+          );
+        }
+        return;
+      }
+
+      List<CharacterBook> parsed;
+      if (jsonData.containsKey('entries')) {
+        parsed = _parseSillyTavernEntries(jsonData['entries'] as List);
+      } else if (jsonData.containsKey('data') && jsonData['data'] is List) {
+        parsed = _parseRisuAIEntries(jsonData['data'] as List);
+      } else {
+        if (mounted) {
+          CommonDialog.showSnackBar(
+            context: context,
+            message: '올바른 설정집 형식이 아닙니다',
+          );
+        }
+        return;
+      }
+
+      if (parsed.isEmpty) {
+        if (mounted) {
+          CommonDialog.showSnackBar(
+            context: context,
+            message: '가져올 설정이 없습니다',
+          );
+        }
+        return;
+      }
+
+      setState(() {
+        widget.standaloneCharacterBooks.addAll(parsed);
+      });
+      _notifyUpdate();
+
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '${parsed.length}개 설정을 가져왔습니다',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '가져오기 실패: $e',
+        );
+      }
+    }
+  }
+
+  List<CharacterBook> _parseSillyTavernEntries(List entries) {
+    final result = <CharacterBook>[];
+    for (final entry in entries) {
+      final item = entry as Map<String, dynamic>;
+      final keys = (item['keys'] as List?)
+              ?.map((k) => k.toString())
+              .where((k) => k.isNotEmpty)
+              .toList() ??
+          [];
+      final secondaryKeys = (item['secondary_keys'] as List?)
+              ?.map((k) => k.toString())
+              .where((k) => k.isNotEmpty)
+              .toList() ??
+          [];
+      final selective = item['selective'] as bool? ?? false;
+      final enabled = item['enabled'] as bool? ?? false;
+      final constant = item['constant'] as bool? ?? false;
+
+      CharacterBookActivationCondition condition;
+      if (constant) {
+        condition = CharacterBookActivationCondition.enabled;
+      } else if (enabled) {
+        condition = CharacterBookActivationCondition.keyBased;
+      } else {
+        condition = CharacterBookActivationCondition.disabled;
+      }
+
+      result.add(CharacterBook(
+        id: _getNextTempId(),
+        characterId: -1,
+        name: item['name'] as String? ??
+            item['comment'] as String? ??
+            '설정 ${widget.standaloneCharacterBooks.length + result.length + 1}',
+        order: _getNextMixedOrder() + result.length,
+        enabled: condition,
+        keys: keys,
+        secondaryKeyUsage: selective && secondaryKeys.isNotEmpty
+            ? CharacterBookSecondaryKeyUsage.enabled
+            : CharacterBookSecondaryKeyUsage.disabled,
+        secondaryKeys: secondaryKeys,
+        insertionOrder: item['insertion_order'] as int? ?? 0,
+        content: item['content'] as String?,
+      ));
+    }
+    return result;
+  }
+
+  List<CharacterBook> _parseRisuAIEntries(List entries) {
+    // Collect folder names to filter from keys
+    final folderNames = <String>{};
+    for (final entry in entries) {
+      final item = entry as Map<String, dynamic>;
+      final type = item['type'] as String? ?? '';
+      if (type == 'folder') {
+        final name = item['name'] as String? ?? item['comment'] as String? ?? '';
+        if (name.isNotEmpty) folderNames.add(name);
+      }
+    }
+
+    final result = <CharacterBook>[];
+    for (final entry in entries) {
+      final item = entry as Map<String, dynamic>;
+      final type = item['type'] as String? ?? '';
+      if (type == 'folder') continue;
+
+      final rawKeys = _splitCommaString(item['key'] as String? ?? '');
+      final hasFolderKey = rawKeys.any((k) => folderNames.contains(k));
+      final keys = rawKeys.where((k) => !folderNames.contains(k)).toList();
+      final secondaryKeys = _splitCommaString(item['secondkey'] as String? ?? '');
+      final selective = item['selective'] as bool? ?? false;
+      final alwaysActive = item['alwaysActive'] as bool? ?? false;
+
+      CharacterBookActivationCondition condition;
+      if (alwaysActive || hasFolderKey) {
+        condition = CharacterBookActivationCondition.enabled;
+      } else if (keys.isNotEmpty) {
+        condition = CharacterBookActivationCondition.keyBased;
+      } else {
+        condition = CharacterBookActivationCondition.disabled;
+      }
+
+      result.add(CharacterBook(
+        id: _getNextTempId(),
+        characterId: -1,
+        name: item['comment'] as String? ??
+            '설정 ${widget.standaloneCharacterBooks.length + result.length + 1}',
+        order: _getNextMixedOrder() + result.length,
+        enabled: condition,
+        keys: keys,
+        secondaryKeyUsage: selective && secondaryKeys.isNotEmpty
+            ? CharacterBookSecondaryKeyUsage.enabled
+            : CharacterBookSecondaryKeyUsage.disabled,
+        secondaryKeys: secondaryKeys,
+        insertionOrder: item['insertorder'] as int? ?? 0,
+        content: item['content'] as String?,
+      ));
+    }
+    return result;
+  }
+
+  List<String> _splitCommaString(String value) {
+    return value
+        .split(',')
+        .map((e) => e.trim())
+        .where((e) => e.isNotEmpty)
+        .toList();
+  }
+
+  /// SillyTavern character_book JSON으로 내보내기
+  Future<void> _exportCharacterBooks() async {
+    try {
+      final allBooks = <CharacterBook>[];
+      for (final folder in widget.folders) {
+        allBooks.addAll(folder.characterBooks);
+      }
+      allBooks.addAll(widget.standaloneCharacterBooks);
+
+      if (allBooks.isEmpty) {
+        if (mounted) {
+          CommonDialog.showSnackBar(
+            context: context,
+            message: '내보낼 설정이 없습니다',
+          );
+        }
+        return;
+      }
+
+      final entries = allBooks.map((cb) => {
+            'keys': cb.keys,
+            'secondary_keys': cb.secondaryKeys,
+            'content': cb.content ?? '',
+            'extensions': <String, dynamic>{},
+            'enabled': cb.enabled != CharacterBookActivationCondition.disabled,
+            'insertion_order': cb.insertionOrder,
+            'case_sensitive': false,
+            'name': cb.name,
+            'priority': 10,
+            'id': 0,
+            'comment': '',
+            'selective': cb.secondaryKeyUsage == CharacterBookSecondaryKeyUsage.enabled,
+            'constant': cb.enabled == CharacterBookActivationCondition.enabled,
+            'order': cb.order,
+          }).toList();
+
+      final jsonString = const JsonEncoder.withIndent('  ').convert({
+        'entries': entries,
+      });
+
+      if (Platform.isAndroid) {
+        const platform = MethodChannel('com.flanapp.flan/file_saver');
+        final result = await platform.invokeMethod('saveToDownloads', {
+          'fileName': 'character_book.json',
+          'content': jsonString,
+        });
+
+        if (mounted) {
+          CommonDialog.showSnackBar(
+            context: context,
+            message: result == true
+                ? 'Download/character_book.json에 저장되었습니다'
+                : '저장에 실패했습니다',
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '내보내기 실패: $e',
+        );
+      }
+    }
+  }
+
   void _addFolder() {
     setState(() {
       final newFolder = CharacterBookFolder(
@@ -85,7 +334,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
         id: _getNextTempId(),
         characterId: -1,
         folderId: folder?.id,
-        name: '새 캐릭터북',
+        name: '새 설정',
         order: folder != null ? folder.characterBooks.length : _getNextMixedOrder(),
         isExpanded: true,
       );
@@ -103,7 +352,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
     final confirmed = await CommonDialog.showConfirmation(
       context: context,
       title: '폴더 삭제',
-      content: '${folder.name} 폴더를 삭제하시겠습니까?\n폴더 내 모든 캐릭터북도 함께 삭제됩니다.',
+      content: '${folder.name} 폴더를 삭제하시겠습니까?\n폴더 내 모든 설정도 함께 삭제됩니다.',
       confirmText: '삭제',
       isDestructive: true,
     );
@@ -220,8 +469,8 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 5),
             child: CommonTitleMedium(
-              text: '캐릭터북',
-              helpMessage: '캐릭터의 세계관과 관련된 정보를 캐릭터북에 추가할 수 있습니다.\n\n'
+              text: '설정집',
+              helpMessage: '캐릭터의 세계관과 관련된 정보를 설정집에 추가할 수 있습니다.\n\n'
                   '길게 눌러 순서를 변경할 수 있습니다.',
             ),
           ),
@@ -256,15 +505,45 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
               onDeleteFolder: _deleteFolder,
               onAddItem: _addCharacterBook,
               onAddFolder: _addFolder,
+              extraActions: [
+                _buildSquareIconButton(
+                  icon: Icons.download_outlined,
+                  onPressed: _importCharacterBooks,
+                ),
+                _buildSquareIconButton(
+                  icon: Icons.upload_outlined,
+                  onPressed: _exportCharacterBooks,
+                ),
+              ],
               itemTypeKey: 'characterBook',
-              addItemLabel: '캐릭터북 추가',
+              addItemLabel: '설정 추가',
               addFolderLabel: '폴더 추가',
               emptyWidget: const CommonEmptyState(
-                message: '캐릭터북 항목이 없습니다',
+                message: '설정집 항목이 없습니다',
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSquareIconButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
+    return SizedBox(
+      height: 48,
+      width: 48,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: OutlinedButton.styleFrom(
+          padding: EdgeInsets.zero,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+        ),
+        child: Icon(icon, size: 20),
       ),
     );
   }
@@ -288,7 +567,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
         });
       },
       onDelete: () => _deleteCharacterBook(characterBook, folder),
-      nameHint: '캐릭터북 이름',
+      nameHint: '설정 이름',
       onNameChanged: (value) {
         characterBook.name = value;
         _notifyUpdate();
@@ -299,7 +578,9 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
           _buildActivationConditionField(characterBook),
           if (characterBook.enabled == CharacterBookActivationCondition.keyBased) ...[
             _buildActivationKeysField(characterBook),
-            _buildKeyConditionField(characterBook),
+            _buildSecondaryKeyUsageField(characterBook),
+            if (characterBook.secondaryKeyUsage == CharacterBookSecondaryKeyUsage.enabled)
+              _buildSecondaryKeysField(characterBook),
           ],
           _buildDeploymentOrderField(characterBook),
           _buildContentField(characterBook),
@@ -347,19 +628,41 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
     );
   }
 
-  Widget _buildKeyConditionField(CharacterBook characterBook) {
+  Widget _buildSecondaryKeyUsageField(CharacterBook characterBook) {
     return CommonFieldSection(
-      label: '키 사용 조건',
-      child: CommonSegmentedButton<CharacterBookKeyCondition>(
-        values: CharacterBookKeyCondition.values,
-        selected: characterBook.keyCondition,
+      label: '두번째 키',
+      child: CommonSegmentedButton<CharacterBookSecondaryKeyUsage>(
+        values: CharacterBookSecondaryKeyUsage.values,
+        selected: characterBook.secondaryKeyUsage,
         onSelectionChanged: (selected) {
           setState(() {
-            characterBook.keyCondition = selected;
+            characterBook.secondaryKeyUsage = selected;
           });
           _notifyUpdate();
         },
-        labelBuilder: (condition) => condition.displayName,
+        labelBuilder: (usage) => usage.displayName,
+      ),
+    );
+  }
+
+  Widget _buildSecondaryKeysField(CharacterBook characterBook) {
+    final key = 'characterBook_${characterBook.id}_secondaryKeys';
+    final controller = _getFieldController(key, characterBook.secondaryKeys.join(', '));
+
+    return CommonFieldSection(
+      label: '두번째 키',
+      child: CommonEditText(
+        controller: controller,
+        hintText: '쉼표로 구분하여 입력 (예: 마법, 전투)',
+        size: CommonEditTextSize.small,
+        onFocusLost: (value) {
+          characterBook.secondaryKeys = value
+              .split(',')
+              .map((e) => e.trim())
+              .where((e) => e.isNotEmpty)
+              .toList();
+          _notifyUpdate(rebuildUI: false);
+        },
       ),
     );
   }
@@ -395,7 +698,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
       bottomSpacing: 0,
       child: CommonEditText(
         controller: controller,
-        hintText: '캐릭터북 내용을 입력해주세요',
+        hintText: '설정 내용을 입력해주세요',
         size: CommonEditTextSize.small,
         maxLines: null,
         minLines: 5,

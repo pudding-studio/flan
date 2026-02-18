@@ -98,16 +98,16 @@ enum CharacterBookActivationCondition {
   }
 }
 
-enum CharacterBookKeyCondition {
-  or,
-  and;
+enum CharacterBookSecondaryKeyUsage {
+  disabled,
+  enabled;
 
   String get displayName {
     switch (this) {
-      case CharacterBookKeyCondition.or:
-        return 'OR';
-      case CharacterBookKeyCondition.and:
-        return 'AND';
+      case CharacterBookSecondaryKeyUsage.disabled:
+        return '불용';
+      case CharacterBookSecondaryKeyUsage.enabled:
+        return '사용';
     }
   }
 }
@@ -121,7 +121,8 @@ class CharacterBook {
   bool isExpanded;
   CharacterBookActivationCondition enabled;
   List<String> keys;
-  CharacterBookKeyCondition keyCondition;
+  CharacterBookSecondaryKeyUsage secondaryKeyUsage;
+  List<String> secondaryKeys;
   int insertionOrder;
   String? content;
 
@@ -134,10 +135,12 @@ class CharacterBook {
     this.isExpanded = false,
     this.enabled = CharacterBookActivationCondition.disabled,
     List<String>? keys,
-    this.keyCondition = CharacterBookKeyCondition.or,
+    this.secondaryKeyUsage = CharacterBookSecondaryKeyUsage.disabled,
+    List<String>? secondaryKeys,
     this.insertionOrder = 0,
     this.content,
-  }) : keys = keys ?? [];
+  }) : keys = keys ?? [],
+       secondaryKeys = secondaryKeys ?? [];
 
   // DB에서 읽어올 때 사용
   factory CharacterBook.fromMap(Map<String, dynamic> map) {
@@ -152,11 +155,12 @@ class CharacterBook {
         (e) => e.name == (map['enabled'] as String),
         orElse: () => CharacterBookActivationCondition.disabled,
       ),
-      keys: (map['keys'] as String?)?.split(',') ?? [],
-      keyCondition: CharacterBookKeyCondition.values.firstWhere(
-        (e) => e.name == (map['key_condition'] as String),
-        orElse: () => CharacterBookKeyCondition.or,
+      keys: (map['keys'] as String?)?.split(',').where((e) => e.isNotEmpty).toList() ?? [],
+      secondaryKeyUsage: CharacterBookSecondaryKeyUsage.values.firstWhere(
+        (e) => e.name == (map['key_condition'] as String? ?? 'disabled'),
+        orElse: () => CharacterBookSecondaryKeyUsage.disabled,
       ),
+      secondaryKeys: (map['secondary_keys'] as String?)?.split(',').where((e) => e.isNotEmpty).toList() ?? [],
       insertionOrder: map['insertion_order'] as int? ?? 0,
       content: map['content'] as String?,
     );
@@ -173,7 +177,8 @@ class CharacterBook {
       'is_expanded': isExpanded ? 1 : 0,
       'enabled': enabled.name,
       'keys': keys.join(','),
-      'key_condition': keyCondition.name,
+      'key_condition': secondaryKeyUsage.name,
+      'secondary_keys': secondaryKeys.join(','),
       'insertion_order': insertionOrder,
       'content': content,
     };
@@ -188,7 +193,8 @@ class CharacterBook {
     bool? isExpanded,
     CharacterBookActivationCondition? enabled,
     List<String>? keys,
-    CharacterBookKeyCondition? keyCondition,
+    CharacterBookSecondaryKeyUsage? secondaryKeyUsage,
+    List<String>? secondaryKeys,
     int? insertionOrder,
     String? content,
   }) {
@@ -201,7 +207,8 @@ class CharacterBook {
       isExpanded: isExpanded ?? this.isExpanded,
       enabled: enabled ?? this.enabled,
       keys: keys ?? this.keys,
-      keyCondition: keyCondition ?? this.keyCondition,
+      secondaryKeyUsage: secondaryKeyUsage ?? this.secondaryKeyUsage,
+      secondaryKeys: secondaryKeys ?? this.secondaryKeys,
       insertionOrder: insertionOrder ?? this.insertionOrder,
       content: content ?? this.content,
     );
@@ -217,7 +224,8 @@ class CharacterBook {
       'isExpanded': isExpanded,
       'enabled': enabled.name,
       'keys': keys,
-      'keyCondition': keyCondition.name,
+      'secondaryKeyUsage': secondaryKeyUsage.name,
+      'secondaryKeys': secondaryKeys,
       'insertionOrder': insertionOrder,
       'content': content,
     };
@@ -239,10 +247,14 @@ class CharacterBook {
               ?.map((e) => e as String)
               .toList() ??
           [],
-      keyCondition: CharacterBookKeyCondition.values.firstWhere(
-        (e) => e.name == json['keyCondition'],
-        orElse: () => CharacterBookKeyCondition.or,
+      secondaryKeyUsage: CharacterBookSecondaryKeyUsage.values.firstWhere(
+        (e) => e.name == (json['secondaryKeyUsage'] ?? json['keyCondition'] ?? 'disabled'),
+        orElse: () => CharacterBookSecondaryKeyUsage.disabled,
       ),
+      secondaryKeys: (json['secondaryKeys'] as List<dynamic>?)
+              ?.map((e) => e as String)
+              .toList() ??
+          [],
       insertionOrder: json['insertionOrder'] as int? ?? 0,
       content: json['content'] as String?,
     );

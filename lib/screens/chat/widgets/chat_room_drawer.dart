@@ -221,6 +221,14 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
           .where((e) => e.isNotEmpty)
           .toList();
     }
+    final secondaryKeysKey = 'book_${book.id}_secondaryKeys';
+    if (_bookFieldControllers.containsKey(secondaryKeysKey)) {
+      book.secondaryKeys = _bookFieldControllers[secondaryKeysKey]!.text
+          .split(',')
+          .map((e) => e.trim())
+          .where((e) => e.isNotEmpty)
+          .toList();
+    }
     final orderKey = 'book_${book.id}_insertionOrder';
     if (_bookFieldControllers.containsKey(orderKey)) {
       final intValue = int.tryParse(_bookFieldControllers[orderKey]!.text);
@@ -260,7 +268,7 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
     }
 
     if (!mounted) return;
-    CommonDialog.showSnackBar(context: context, message: '로어북이 저장되었습니다');
+    CommonDialog.showSnackBar(context: context, message: '설정집이 저장되었습니다');
   }
 
   Future<void> _saveOrCreateBook(CharacterBook book, int characterId, {int? folderId}) async {
@@ -331,7 +339,7 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
             const SizedBox(width: 8),
             _buildChip(
               icon: Icons.description_outlined,
-              label: '로어북',
+              label: '설정집',
               tab: DrawerTab.lorebook,
             ),
             const SizedBox(width: 8),
@@ -527,7 +535,7 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
           child: allItems.isEmpty
               ? Center(
                   child: Text(
-                    '로어북 항목이 없습니다',
+                    '설정집 항목이 없습니다',
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -576,7 +584,7 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
         setState(() => book.isExpanded = !book.isExpanded);
       },
       onDelete: () => _deleteBook(book, folder),
-      nameHint: '캐릭터북 이름',
+      nameHint: '설정 이름',
       onNameChanged: (value) => book.name = value,
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -595,16 +603,18 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
           if (book.enabled == CharacterBookActivationCondition.keyBased) ...[
             _buildBookKeysField(book),
             CommonFieldSection(
-              label: '키 사용 조건',
-              child: CommonSegmentedButton<CharacterBookKeyCondition>(
-                values: CharacterBookKeyCondition.values,
-                selected: book.keyCondition,
+              label: '두번째 키',
+              child: CommonSegmentedButton<CharacterBookSecondaryKeyUsage>(
+                values: CharacterBookSecondaryKeyUsage.values,
+                selected: book.secondaryKeyUsage,
                 onSelectionChanged: (selected) {
-                  setState(() => book.keyCondition = selected);
+                  setState(() => book.secondaryKeyUsage = selected);
                 },
                 labelBuilder: (c) => c.displayName,
               ),
             ),
+            if (book.secondaryKeyUsage == CharacterBookSecondaryKeyUsage.enabled)
+              _buildBookSecondaryKeysField(book),
           ],
           _buildBookInsertionOrderField(book),
           _buildBookContentField(book),
@@ -624,6 +634,22 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
         size: CommonEditTextSize.small,
         onFocusLost: (value) {
           book.keys = value.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+        },
+      ),
+    );
+  }
+
+  Widget _buildBookSecondaryKeysField(CharacterBook book) {
+    final key = 'book_${book.id}_secondaryKeys';
+    final controller = _getBookFieldController(key, book.secondaryKeys.join(', '));
+    return CommonFieldSection(
+      label: '두번째 키',
+      child: CommonEditText(
+        controller: controller,
+        hintText: '쉼표로 구분하여 입력 (예: 마법, 전투)',
+        size: CommonEditTextSize.small,
+        onFocusLost: (value) {
+          book.secondaryKeys = value.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
         },
       ),
     );
@@ -655,7 +681,7 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
       bottomSpacing: 0,
       child: CommonEditText(
         controller: controller,
-        hintText: '캐릭터북 내용을 입력해주세요',
+        hintText: '설정 내용을 입력해주세요',
         size: CommonEditTextSize.small,
         maxLines: null,
         minLines: 5,

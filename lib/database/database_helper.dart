@@ -34,7 +34,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 30,
+      version: 31,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -86,6 +86,7 @@ class DatabaseHelper {
         enabled $textType,
         keys $textTypeNullable,
         key_condition $textType,
+        secondary_keys $textTypeNullable,
         insertion_order $intType,
         content $textTypeNullable,
         FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE,
@@ -895,6 +896,12 @@ class DatabaseHelper {
       await db.execute('''
         CREATE INDEX idx_chat_prompt_id_prompt_regex_rules
         ON prompt_regex_rules (chat_prompt_id)
+      ''');
+    }
+
+    if (oldVersion < 31) {
+      await db.execute('''
+        ALTER TABLE character_books ADD COLUMN secondary_keys TEXT
       ''');
     }
   }

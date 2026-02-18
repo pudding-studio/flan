@@ -49,6 +49,7 @@ class CommonDraggableFolderList<TFolder, TItem> extends StatefulWidget {
   final String itemTypeKey;
   final String addItemLabel;
   final String addFolderLabel;
+  final List<Widget>? extraActions;
   final Widget? emptyWidget;
   final bool readOnly;
 
@@ -79,6 +80,7 @@ class CommonDraggableFolderList<TFolder, TItem> extends StatefulWidget {
     required this.itemTypeKey,
     this.addItemLabel = '항목 추가',
     this.addFolderLabel = '폴더 추가',
+    this.extraActions,
     this.emptyWidget,
     this.readOnly = false,
   });
@@ -246,7 +248,10 @@ class _CommonDraggableFolderListState<TFolder, TItem>
         if (!widget.readOnly) ...[
           const SizedBox(height: 16),
           Row(
+            spacing: 6,
             children: [
+              if (widget.extraActions != null)
+                ...widget.extraActions!,
               Expanded(
                 child: CommonButton.outlined(
                   onPressed: widget.onAddFolder,
@@ -254,7 +259,6 @@ class _CommonDraggableFolderListState<TFolder, TItem>
                   label: widget.addFolderLabel,
                 ),
               ),
-              const SizedBox(width: 12),
               Expanded(
                 child: CommonButton.filled(
                   onPressed: () => widget.onAddItem(null),
