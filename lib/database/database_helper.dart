@@ -8,6 +8,7 @@ import '../models/character/cover_image.dart';
 import '../models/prompt/chat_prompt.dart';
 import '../models/prompt/prompt_item.dart';
 import '../models/prompt/prompt_item_folder.dart';
+import '../models/prompt/prompt_regex_rule.dart';
 import '../models/chat/chat_room.dart';
 import '../models/chat/chat_message.dart';
 import '../models/chat/chat_log.dart';
@@ -33,7 +34,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 29,
+      version: 30,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -222,6 +223,25 @@ class DatabaseHelper {
     await db.execute('''
       CREATE INDEX idx_folder_id_prompt_items
       ON prompt_items (folder_id)
+    ''');
+
+    // 프롬프트 정규식 규칙 테이블
+    await db.execute('''
+      CREATE TABLE prompt_regex_rules (
+        id $idType,
+        chat_prompt_id $intType,
+        name $textType,
+        target $textType DEFAULT 'disabled',
+        pattern $textTypeNullable,
+        replacement $textTypeNullable,
+        `order` $intType DEFAULT 0,
+        FOREIGN KEY (chat_prompt_id) REFERENCES chat_prompts (id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute('''
+      CREATE INDEX idx_chat_prompt_id_prompt_regex_rules
+      ON prompt_regex_rules (chat_prompt_id)
     ''');
 
     // 채팅방 테이블
@@ -858,6 +878,25 @@ class DatabaseHelper {
         ALTER TABLE chat_prompts ADD COLUMN is_default INTEGER NOT NULL DEFAULT 0
       ''');
     }
+
+    if (oldVersion < 30) {
+      await db.execute('''
+        CREATE TABLE prompt_regex_rules (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          chat_prompt_id INTEGER NOT NULL,
+          name TEXT NOT NULL,
+          target TEXT NOT NULL DEFAULT 'disabled',
+          pattern TEXT,
+          replacement TEXT,
+          `order` INTEGER NOT NULL DEFAULT 0,
+          FOREIGN KEY (chat_prompt_id) REFERENCES chat_prompts (id) ON DELETE CASCADE
+        )
+      ''');
+      await db.execute('''
+        CREATE INDEX idx_chat_prompt_id_prompt_regex_rules
+        ON prompt_regex_rules (chat_prompt_id)
+      ''');
+    }
   }
 
   // ==================== 캐릭터 CRUD ====================
@@ -1378,6 +1417,44 @@ class DatabaseHelper {
       return ChatPrompt.fromMap(maps.first);
     }
     return null;
+  }
+
+  // ==================== 프롬프트 정규식 규칙 CRUD ====================
+
+  Future<int> createPromptRegexRule(PromptRegexRule rule) async {
+    final db = await database;
+    final map = rule.toMap();
+    map.remove('id');
+    return await db.insert('prompt_regex_rules', map);
+  }
+
+  Future<List<PromptRegexRule>> readPromptRegexRules(int chatPromptId) async {
+    final db = await database;
+    final result = await db.query(
+      'prompt_regex_rules',
+      where: 'chat_prompt_id = ?',
+      whereArgs: [chatPromptId],
+      orderBy: '`order` ASC',
+    );
+    return result.map((map) => PromptRegexRule.fromMap(map)).toList();
+  }
+
+  Future<int> deletePromptRegexRule(int id) async {
+    final db = await database;
+    return await db.delete(
+      'prompt_regex_rules',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<void> deletePromptRegexRulesByPrompt(int chatPromptId) async {
+    final db = await database;
+    await db.delete(
+      'prompt_regex_rules',
+      where: 'chat_prompt_id = ?',
+      whereArgs: [chatPromptId],
+    );
   }
 
   // ==================== 채팅방 CRUD ====================

@@ -283,8 +283,12 @@ class PromptBuilder {
   static String _buildCharacterBookText(List<CharacterBook>? books) {
     if (books == null || books.isEmpty) return '';
 
+    // Sort by insertionOrder so higher-priority entries appear first
+    final sorted = [...books]
+      ..sort((a, b) => a.insertionOrder.compareTo(b.insertionOrder));
+
     final buffer = StringBuffer();
-    for (final book in books) {
+    for (final book in sorted) {
       if (book.content != null && book.content!.isNotEmpty) {
         buffer.writeln('### ${book.name}');
         buffer.writeln(book.content);

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'prompt_item.dart';
 import 'prompt_item_folder.dart';
 import 'prompt_parameters.dart';
+import 'prompt_regex_rule.dart';
 
 class ChatPrompt {
   final int? id;
@@ -97,6 +98,7 @@ class ChatPrompt {
   Map<String, dynamic> toJson({
     List<PromptItemFolder>? folders,
     List<PromptItem>? standaloneItems,
+    List<PromptRegexRule>? regexRules,
   }) {
     return {
       'name': name,
@@ -105,6 +107,7 @@ class ChatPrompt {
       'parameters': parameters?.toJson(),
       'folders': folders?.map((f) => f.toJson()).toList(),
       'standaloneItems': standaloneItems?.map((item) => item.toJson()).toList(),
+      'regexRules': regexRules?.map((r) => r.toJson()).toList(),
     };
   }
 
@@ -132,6 +135,13 @@ class ChatPrompt {
   List<PromptItem> standaloneItemsFromJson(Map<String, dynamic> json) {
     return (json['standaloneItems'] as List<dynamic>?)
             ?.map((item) => PromptItem.fromJson(item as Map<String, dynamic>))
+            .toList() ??
+        [];
+  }
+
+  List<PromptRegexRule> regexRulesFromJson(Map<String, dynamic> json) {
+    return (json['regexRules'] as List<dynamic>?)
+            ?.map((r) => PromptRegexRule.fromJson(r as Map<String, dynamic>))
             .toList() ??
         [];
   }

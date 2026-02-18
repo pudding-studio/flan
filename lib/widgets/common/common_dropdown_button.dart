@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 enum CommonDropdownButtonSize {
   medium,
   small,
+  xsmall,
 }
 
 class _DropdownConfig {
@@ -42,6 +43,13 @@ class CommonDropdownButton<T> extends StatelessWidget {
     CommonDropdownButtonSize.small: _DropdownConfig(
       borderRadius: 8.0,
       contentPadding: const EdgeInsets.only(right: 8, top: 8, bottom: 8),
+      getTextStyle: (context) => Theme.of(context).textTheme.bodySmall,
+      menuMaxHeight: 250.0,
+      itemHeight: 32.0,
+    ),
+    CommonDropdownButtonSize.xsmall: _DropdownConfig(
+      borderRadius: 8.0,
+      contentPadding: const EdgeInsets.only(left: 4.0, right: 8, top: 4, bottom: 4),
       getTextStyle: (context) => Theme.of(context).textTheme.bodySmall,
       menuMaxHeight: 250.0,
       itemHeight: 32.0,

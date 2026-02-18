@@ -200,6 +200,18 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
         );
       }
 
+      // Fork regex rules
+      final regexRules = await _db.readPromptRegexRules(sourcePrompt.id!);
+      for (int i = 0; i < regexRules.length; i++) {
+        await _db.createPromptRegexRule(
+          regexRules[i].copyWith(
+            id: null,
+            chatPromptId: newPromptId,
+            order: i,
+          ),
+        );
+      }
+
       final forkedWithId = await _db.readChatPrompt(newPromptId);
       if (mounted && forkedWithId != null) {
         _navigateToEdit(forkedWithId);
@@ -221,9 +233,10 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
         folder.items.addAll(await _db.readPromptItemsByFolder(folder.id!));
       }
       final standaloneItems = await _db.readStandalonePromptItems(prompt.id!);
+      final regexRules = await _db.readPromptRegexRules(prompt.id!);
 
       final jsonString = const JsonEncoder.withIndent('  ').convert(
-        prompt.toJson(folders: folders, standaloneItems: standaloneItems),
+        prompt.toJson(folders: folders, standaloneItems: standaloneItems, regexRules: regexRules),
       );
       final fileName = '${prompt.name}.json';
 
@@ -319,6 +332,18 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
             ),
           );
         }
+      }
+
+      // Import regex rules
+      final regexRules = prompt.regexRulesFromJson(jsonData);
+      for (int i = 0; i < regexRules.length; i++) {
+        await _db.createPromptRegexRule(
+          regexRules[i].copyWith(
+            id: null,
+            chatPromptId: promptId,
+            order: i,
+          ),
+        );
       }
 
       await _loadPrompts();

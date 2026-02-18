@@ -14,7 +14,9 @@ import '../../widgets/common/common_edit_text.dart';
 import '../../widgets/common/common_info_box.dart';
 import '../../widgets/common/common_parameter_field.dart';
 import '../../widgets/common/common_title_medium.dart';
+import '../../models/prompt/prompt_regex_rule.dart';
 import 'tabs/prompt_items_tab.dart';
+import 'tabs/prompt_regex_tab.dart';
 
 class PromptEditScreen extends StatefulWidget {
   final ChatPrompt? prompt;
@@ -46,6 +48,13 @@ class _PromptEditScreenState extends State<PromptEditScreen>
   int _nextFolderTempId = -1;
   int _getNextFolderTempId() => _nextFolderTempId--;
 
+  // Regex rules
+  final List<PromptRegexRule> _regexRules = [];
+  final Map<int, TextEditingController> _regexPatternControllers = {};
+  final Map<int, TextEditingController> _regexReplacementControllers = {};
+  int _nextRegexTempId = -1;
+  int _getNextRegexTempId() => _nextRegexTempId--;
+
   // Parameter controllers
   final _maxInputTokensController = TextEditingController();
   final _maxOutputTokensController = TextEditingController();
@@ -58,7 +67,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 4, vsync: this);
 
     if (_isEditing) {
       _loadPromptData();
@@ -96,6 +105,14 @@ class _PromptEditScreenState extends State<PromptEditScreen>
       _contentControllers[item.id!] = TextEditingController(text: item.content);
     }
 
+    // Load regex rules
+    final regexRules = await _db.readPromptRegexRules(prompt.id!);
+    _regexRules.addAll(regexRules);
+    for (var rule in regexRules) {
+      _regexPatternControllers[rule.id!] = TextEditingController(text: rule.pattern);
+      _regexReplacementControllers[rule.id!] = TextEditingController(text: rule.replacement);
+    }
+
     if (mounted) {
       setState(() {});
     }
@@ -113,6 +130,12 @@ class _PromptEditScreenState extends State<PromptEditScreen>
     _maxOutputTokensController.dispose();
     _thinkingTokensController.dispose();
     _thinkingMaxTokensController.dispose();
+    for (var controller in _regexPatternControllers.values) {
+      controller.dispose();
+    }
+    for (var controller in _regexReplacementControllers.values) {
+      controller.dispose();
+    }
     super.dispose();
   }
 
@@ -226,6 +249,24 @@ class _PromptEditScreenState extends State<PromptEditScreen>
             chatPromptId: promptId,
             folderId: null,
             content: controller.text.trim(),
+          ),
+        );
+      }
+
+      // Save regex rules
+      await _db.deletePromptRegexRulesByPrompt(promptId);
+      for (int i = 0; i < _regexRules.length; i++) {
+        final rule = _regexRules[i];
+        final patternCtrl = _regexPatternControllers[rule.id];
+        final replacementCtrl = _regexReplacementControllers[rule.id];
+
+        await _db.createPromptRegexRule(
+          rule.copyWith(
+            id: null,
+            chatPromptId: promptId,
+            pattern: patternCtrl?.text ?? rule.pattern,
+            replacement: replacementCtrl?.text ?? rule.replacement,
+            order: i,
           ),
         );
       }
@@ -417,6 +458,36 @@ class _PromptEditScreenState extends State<PromptEditScreen>
     }
   }
 
+  void _addRegexRule() {
+    setState(() {
+      final newRule = PromptRegexRule(
+        id: _getNextRegexTempId(),
+        name: '',
+        target: RegexTarget.disabled,
+        order: _regexRules.length,
+        isExpanded: true,
+      );
+      _regexRules.add(newRule);
+      _regexPatternControllers[newRule.id!] = TextEditingController();
+      _regexReplacementControllers[newRule.id!] = TextEditingController();
+    });
+  }
+
+  Future<void> _deleteRegexRule(PromptRegexRule rule) async {
+    final confirmed = await CommonDialog.showDeleteConfirmation(
+      context: context,
+      itemName: rule.name.isEmpty ? '정규식 규칙' : rule.name,
+    );
+
+    if (confirmed) {
+      setState(() {
+        _regexRules.remove(rule);
+        _regexPatternControllers.remove(rule.id)?.dispose();
+        _regexReplacementControllers.remove(rule.id)?.dispose();
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -469,6 +540,12 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                   child: Center(child: Text('프롬프트')),
                 ),
               ),
+              Tab(
+                child: SizedBox(
+                  width: 65,
+                  child: Center(child: Text('정규식')),
+                ),
+              ),
             ],
           ),
         ),
@@ -494,6 +571,15 @@ class _PromptEditScreenState extends State<PromptEditScreen>
               onMoveItemOutOfFolder: _moveItemOutOfFolder,
               onReorderItem: _reorderItem,
               onReorderFolder: _reorderFolder,
+            ),
+            PromptRegexTab(
+              rules: _regexRules,
+              patternControllers: _regexPatternControllers,
+              replacementControllers: _regexReplacementControllers,
+              readOnly: _isReadOnly,
+              onUpdate: () => setState(() {}),
+              onDeleteRule: _deleteRegexRule,
+              onAddRule: _addRegexRule,
             ),
           ],
         ),

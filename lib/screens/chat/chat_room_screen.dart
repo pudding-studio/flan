@@ -11,6 +11,8 @@ import '../../models/character/start_scenario.dart';
 import '../../models/prompt/chat_prompt.dart';
 import '../../models/prompt/prompt_item.dart';
 import '../../models/prompt/prompt_parameters.dart';
+import '../../models/prompt/prompt_regex_rule.dart';
+import '../../utils/regex_processor.dart';
 import '../../database/database_helper.dart';
 import '../../providers/tokenizer_provider.dart';
 import '../../utils/prompt_builder.dart';
@@ -163,19 +165,28 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
 
-  Future<({String systemPrompt, List<Map<String, dynamic>> contents, PromptParameters? parameters})> _buildApiData({
+  Future<({String systemPrompt, List<Map<String, dynamic>> contents, PromptParameters? parameters, List<PromptRegexRule> regexRules})> _buildApiData({
     required String userMessage,
     List<int>? excludeMessageIds,
     int? beforeMessageIndex,
   }) async {
     if (_chatRoom == null || _character == null) {
-      return (systemPrompt: '', contents: <Map<String, dynamic>>[], parameters: null);
+      return (systemPrompt: '', contents: <Map<String, dynamic>>[], parameters: null, regexRules: <PromptRegexRule>[]);
     }
 
+    // Stage 1: Load prompt frame
     ChatPrompt? chatPrompt;
     if (_chatRoom!.selectedChatPromptId != null) {
       chatPrompt = await _db.readChatPrompt(_chatRoom!.selectedChatPromptId!);
     }
+
+    // Load regex rules for this prompt
+    final List<PromptRegexRule> regexRules = chatPrompt?.id != null
+        ? await _db.readPromptRegexRules(chatPrompt!.id!)
+        : [];
+
+    // Stage 3 (pre): Apply inputModify to user message (API-only, DB message unchanged)
+    final apiUserMessage = RegexProcessor.apply(userMessage, regexRules, RegexTarget.inputModify);
 
     Persona? persona;
     if (_chatRoom!.selectedPersonaId != null) {
@@ -187,10 +198,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       startScenario = await _db.readStartScenario(_chatRoom!.selectedStartScenarioId!);
     }
 
+    // Stage 2.1: Filter character books (enabled only, ordered by insertionOrder in PromptBuilder)
     final allCharacterBooks = await _db.readCharacterBooks(_character!.id!);
-    final activeCharacterBooks = allCharacterBooks.where((characterBook) {
-      return characterBook.enabled == CharacterBookActivationCondition.enabled;
-    }).toList();
+    final activeCharacterBooks = allCharacterBooks
+        .where((b) => b.enabled == CharacterBookActivationCondition.enabled)
+        .toList();
 
     final summaries = await _db.getChatSummaries(widget.chatRoomId);
 
@@ -202,7 +214,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       }
     }
 
-    final systemPrompt = PromptBuilder.buildSystemPrompt(
+    // Stage 1+2: Build frame and apply keyword substitution
+    final rawSystemPrompt = PromptBuilder.buildSystemPrompt(
       chatPrompt: chatPrompt,
       character: _character!,
       persona: persona,
@@ -226,12 +239,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final tokenizerProvider = context.read<TokenizerProvider>();
     final tokenizer = tokenizerProvider.selectedTokenizer;
 
-    final contents = PromptBuilder.buildContents(
+    final rawContents = PromptBuilder.buildContents(
       chatPrompt: chatPrompt,
       character: _character!,
-      userMessage: userMessage,
+      userMessage: apiUserMessage,
       chatHistoryMap: chatHistoryMap,
-      systemPrompt: systemPrompt,
+      systemPrompt: rawSystemPrompt,
       persona: persona,
       startScenario: startScenario,
       activeCharacterBooks: activeCharacterBooks,
@@ -243,7 +256,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       summaryMetadataMap: summaryMetadataMap,
     );
 
-    return (systemPrompt: systemPrompt, contents: contents, parameters: chatPrompt?.parameters);
+    // Stage 3: Apply sendDataModify to the fully assembled prompt data
+    final systemPrompt = RegexProcessor.apply(rawSystemPrompt, regexRules, RegexTarget.sendDataModify);
+    final contents = RegexProcessor.applyToContents(rawContents, regexRules, RegexTarget.sendDataModify);
+
+    return (systemPrompt: systemPrompt, contents: contents, parameters: chatPrompt?.parameters, regexRules: regexRules);
   }
 
   Future<Map<PromptItem, List<ChatMessage>>> _buildChatHistoryMap({
@@ -355,12 +372,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         characterId: _character?.id,
       );
 
+      // Stage 3: Apply outputModify to AI response
+      final responseText = RegexProcessor.apply(aiResponse.text, apiData.regexRules, RegexTarget.outputModify);
+
       final assistantTokenCount = aiResponse.usageMetadata?.candidatesTokenCount ??
-          TokenCounter.estimateTokenCount(aiResponse.text, tokenizer: tokenizer);
+          TokenCounter.estimateTokenCount(responseText, tokenizer: tokenizer);
       final assistantMessage = ChatMessage(
         chatRoomId: widget.chatRoomId,
         role: MessageRole.assistant,
-        content: aiResponse.text,
+        content: responseText,
         tokenCount: assistantTokenCount,
         usageMetadata: aiResponse.usageMetadata,
         modelId: aiResponse.modelId,
@@ -368,7 +388,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       final assistantMessageId = await _db.createChatMessage(assistantMessage);
 
-      await _saveMessageMetadata(assistantMessageId, aiResponse.text);
+      await _saveMessageMetadata(assistantMessageId, responseText);
 
       // 채팅방 토큰 합산 업데이트
       await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
@@ -685,12 +705,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         characterId: _character?.id,
       );
 
+      // Stage 3: Apply outputModify to AI response
+      final responseText2 = RegexProcessor.apply(aiResponse2.text, apiData.regexRules, RegexTarget.outputModify);
+
       final tokenCount = aiResponse2.usageMetadata?.candidatesTokenCount ??
-          TokenCounter.estimateTokenCount(aiResponse2.text, tokenizer: tokenizer);
+          TokenCounter.estimateTokenCount(responseText2, tokenizer: tokenizer);
       final assistantMessage = ChatMessage(
         chatRoomId: widget.chatRoomId,
         role: MessageRole.assistant,
-        content: aiResponse2.text,
+        content: responseText2,
         tokenCount: tokenCount,
         usageMetadata: aiResponse2.usageMetadata,
         modelId: aiResponse2.modelId,
@@ -698,7 +721,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       final assistantMessageId = await _db.createChatMessage(assistantMessage);
 
-      await _saveMessageMetadata(assistantMessageId, aiResponse2.text);
+      await _saveMessageMetadata(assistantMessageId, responseText2);
 
       // 채팅방 토큰 합산 업데이트
       await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
@@ -907,10 +930,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         characterId: _character?.id,
       );
 
+      // Stage 3: Apply outputModify to AI response
+      final responseText3 = RegexProcessor.apply(aiResponse3.text, apiData.regexRules, RegexTarget.outputModify);
+
       final tokenCount = aiResponse3.usageMetadata?.candidatesTokenCount ??
-          TokenCounter.estimateTokenCount(aiResponse3.text, tokenizer: tokenizer);
+          TokenCounter.estimateTokenCount(responseText3, tokenizer: tokenizer);
       final updatedMessage = message.copyWith(
-        content: aiResponse3.text,
+        content: responseText3,
         tokenCount: tokenCount,
         editedAt: DateTime.now(),
         usageMetadata: aiResponse3.usageMetadata,
@@ -920,7 +946,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       await _db.updateChatMessage(updatedMessage);
 
       await _db.deleteChatMessageMetadataByMessage(messageId);
-      await _saveMessageMetadata(messageId, aiResponse3.text);
+      await _saveMessageMetadata(messageId, responseText3);
 
       // 채팅방 토큰 합산 업데이트
       await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
