@@ -72,6 +72,13 @@ class ModelPricing {
 
 enum ChatModel {
   // Gemini models
+  geminiPro31Preview(
+    'Gemini 3.1 Pro Preview',
+    ChatModelProvider.googleAIStudio,
+    'gemini-3.1-pro-preview',
+    ApiFormat.gemini,
+    ModelPricing(inputPrice: 2.00, cachedInputPrice: 0.20, outputPrice: 12.00),
+  ),
   geminiPro3Preview(
     'Gemini 3 Pro Preview',
     ChatModelProvider.googleAIStudio,
