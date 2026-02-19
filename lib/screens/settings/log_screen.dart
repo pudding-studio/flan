@@ -227,6 +227,8 @@ class _LogDetailSheetState extends State<_LogDetailSheet> {
       if (modelId == null) return 'Gemini API';
 
       switch (modelId) {
+        case 'gemini-3.1-pro-preview':
+          return 'Gemini 3.1 Pro Preview';
         case 'gemini-3-pro-preview':
           return 'Gemini 3 Pro Preview';
         case 'gemini-3-flash-preview':
