@@ -382,7 +382,18 @@ class AiService {
       final content = candidates[0]['content'];
       final parts = content['parts'] as List<dynamic>?;
       if (parts == null || parts.isEmpty) return '';
-      return parts[0]['text'] as String? ?? '';
+
+      final buffer = StringBuffer();
+      for (final part in parts) {
+        if (part is Map<String, dynamic>) {
+          final isThought = part['thought'] as bool? ?? false;
+          if (!isThought) {
+            final text = part['text'] as String?;
+            if (text != null && text.isNotEmpty) buffer.write(text);
+          }
+        }
+      }
+      return buffer.toString();
     } catch (e) {
       return '';
     }
