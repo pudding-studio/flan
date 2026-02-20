@@ -1,6 +1,9 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
 import '../database/database_helper.dart';
+import '../models/character/character_book_folder.dart';
+import '../models/character/persona.dart';
+import '../models/character/start_scenario.dart';
 import '../models/chat/chat_model.dart';
 import '../models/chat/chat_summary.dart';
 import '../models/chat/chat_message.dart';
@@ -8,6 +11,7 @@ import '../models/chat/chat_message_metadata.dart';
 import '../models/chat/summary_prompt_item.dart';
 import '../models/chat/unified_model.dart';
 import '../models/prompt/prompt_parameters.dart';
+import '../utils/prompt_builder.dart';
 import 'ai_service.dart';
 
 class AutoSummaryService {
@@ -110,6 +114,7 @@ class AutoSummaryService {
         '${existingSummaries.length} existing summaries');
 
     // Build ranges: [beginning→pin1], [pin1→pin2], ...
+    // Process sequentially so earlier summaries feed into {{chat_historys}} for later ones
     int generatedCount = 0;
     for (final endPinId in eligiblePinIds) {
       if (summarizedEndIds.contains(endPinId)) continue;
@@ -127,18 +132,21 @@ class AutoSummaryService {
       _log('Generating summary for range [$startPinId → $endPinId] (${messagesToSummarize.length} messages)');
 
       try {
+        // Reload keywords each iteration so {{chat_historys}} includes previously generated summaries
+        final keywords = await _loadKeywordMap(chatRoomId);
         final conversationText = _buildConversationText(messagesToSummarize);
 
         String systemPrompt = '';
         List<Map<String, dynamic>> contents = [];
 
         if (promptItems.isNotEmpty) {
-          final result = _buildPromptFromItems(promptItems, conversationText);
+          final result = _buildPromptFromItems(promptItems, conversationText, keywords);
           systemPrompt = result.systemPrompt;
           contents = result.contents;
         } else {
           // Fallback: legacy single prompt
-          final summaryPrompt = '${settings.summaryPrompt}\n\n$conversationText';
+          final replacedPrompt = PromptBuilder.replaceKeywords(settings.summaryPrompt, keywords);
+          final summaryPrompt = '$replacedPrompt\n\n$conversationText';
           contents = [
             {
               'role': 'user',
@@ -210,29 +218,74 @@ class AutoSummaryService {
     return result;
   }
 
+  /// Load keyword map for keyword substitution in summary prompts
+  Future<Map<String, String>> _loadKeywordMap(int chatRoomId) async {
+    final chatRoom = await _db.readChatRoom(chatRoomId);
+    if (chatRoom == null) return {};
+
+    final character = await _db.readCharacter(chatRoom.characterId);
+    if (character == null) return {};
+
+    Persona? persona;
+    if (chatRoom.selectedPersonaId != null) {
+      persona = await _db.readPersona(chatRoom.selectedPersonaId!);
+    }
+
+    StartScenario? startScenario;
+    if (chatRoom.selectedStartScenarioId != null) {
+      startScenario = await _db.readStartScenario(chatRoom.selectedStartScenarioId!);
+    }
+
+    final allCharacterBooks = await _db.readCharacterBooks(character.id!);
+    final activeCharacterBooks = allCharacterBooks
+        .where((b) => b.enabled == CharacterBookActivationCondition.enabled)
+        .toList();
+
+    final summaries = await _db.getChatSummaries(chatRoomId);
+    final summaryMetadataMap = <int, ChatMessageMetadata>{};
+    for (final summary in summaries) {
+      final metadata = await _db.readChatMessageMetadataByMessage(summary.endPinMessageId);
+      if (metadata != null) {
+        summaryMetadataMap[summary.endPinMessageId] = metadata;
+      }
+    }
+
+    return PromptBuilder.buildKeywordMap(
+      character: character,
+      persona: persona,
+      startScenario: startScenario,
+      activeCharacterBooks: activeCharacterBooks,
+      chatRoom: chatRoom,
+      summaries: summaries,
+      summaryMetadataMap: summaryMetadataMap,
+    );
+  }
+
   /// Build prompt from SummaryPromptItem list
   _PromptBuildResult _buildPromptFromItems(
     List<SummaryPromptItem> items,
     String conversationText,
+    Map<String, String> keywords,
   ) {
     final systemParts = <String>[];
     final contents = <Map<String, dynamic>>[];
 
     for (final item in items) {
+      final replaced = PromptBuilder.replaceKeywords(item.content, keywords);
       switch (item.role) {
         case SummaryPromptRole.system:
-          if (item.content.isNotEmpty) {
-            systemParts.add(item.content);
+          if (replaced.isNotEmpty) {
+            systemParts.add(replaced);
           }
         case SummaryPromptRole.user:
           contents.add({
             'role': 'user',
-            'parts': [{'text': item.content}]
+            'parts': [{'text': replaced}]
           });
         case SummaryPromptRole.assistant:
           contents.add({
             'role': 'model',
-            'parts': [{'text': item.content}]
+            'parts': [{'text': replaced}]
           });
         case SummaryPromptRole.summary:
           contents.add({
@@ -280,17 +333,19 @@ class AutoSummaryService {
         ? SummaryPromptItem.listFromJson(settings.summaryPromptItems)
         : <SummaryPromptItem>[];
 
+    final keywords = await _loadKeywordMap(chatRoomId);
     final conversationText = _buildConversationText(messagesToSummarize);
 
     String systemPrompt = '';
     List<Map<String, dynamic>> contents = [];
 
     if (promptItems.isNotEmpty) {
-      final result = _buildPromptFromItems(promptItems, conversationText);
+      final result = _buildPromptFromItems(promptItems, conversationText, keywords);
       systemPrompt = result.systemPrompt;
       contents = result.contents;
     } else {
-      final summaryPrompt = '${settings.summaryPrompt}\n\n$conversationText';
+      final replacedPrompt = PromptBuilder.replaceKeywords(settings.summaryPrompt, keywords);
+      final summaryPrompt = '$replacedPrompt\n\n$conversationText';
       contents = [
         {
           'role': 'user',

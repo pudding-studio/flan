@@ -23,7 +23,7 @@ class PromptBuilder {
     List<ChatSummary>? summaries,
     Map<int, ChatMessageMetadata>? summaryMetadataMap,
   }) {
-    final keywords = _buildKeywordMap(
+    final keywords = buildKeywordMap(
       character: character,
       persona: persona,
       startScenario: startScenario,
@@ -65,7 +65,7 @@ class PromptBuilder {
     List<ChatSummary>? summaries,
     Map<int, ChatMessageMetadata>? summaryMetadataMap,
   }) {
-    final keywords = _buildKeywordMap(
+    final keywords = buildKeywordMap(
       character: character,
       persona: persona,
       startScenario: startScenario,
@@ -227,7 +227,7 @@ class PromptBuilder {
     return msg.role == MessageRole.user ? 'user' : 'model';
   }
 
-  static Map<String, String> _buildKeywordMap({
+  static Map<String, String> buildKeywordMap({
     required Character character,
     Persona? persona,
     StartScenario? startScenario,
