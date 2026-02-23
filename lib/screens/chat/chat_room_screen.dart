@@ -647,7 +647,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       updatedAt: DateTime.now(),
     );
     await _db.updateChatRoom(updated);
-    setState(() => _chatRoom = updated);
+    final personas = await _db.readPersonas(_chatRoom!.characterId);
+    setState(() {
+      _chatRoom = updated;
+      _personas = personas;
+    });
   }
 
   Future<void> _onPinModeChanged(String mode) async {
@@ -1430,6 +1434,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         initialTab: _drawerTab,
         onTabChanged: (tab) => _drawerTab = tab,
         onChatRoomUpdated: _loadChatData,
+        chatPrompts: _chatPrompts,
+        personas: _personas,
+        onModelChanged: _onModelChanged,
+        onPromptChanged: _onPromptChanged,
+        onPersonaChanged: _onPersonaChanged,
+        onPinModeChanged: _onPinModeChanged,
+        onAutoPinByDateChanged: (v) => _onAutoPinOptionChanged(byDate: v),
+        onAutoPinByLocationChanged: (v) => _onAutoPinOptionChanged(byLocation: v),
+        onAutoPinByAiChanged: (v) => _onAutoPinOptionChanged(byAi: v),
       ),
       appBar: CommonAppBar(
         title: _character!.name,
@@ -1543,18 +1556,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             ),
           ),
           if (_showBottomPanel)
-            ChatBottomPanel(
-              chatRoom: _chatRoom!,
-              chatPrompts: _chatPrompts,
-              personas: _personas,
-              onModelChanged: _onModelChanged,
-              onPromptChanged: _onPromptChanged,
-              onPersonaChanged: _onPersonaChanged,
-              onPinModeChanged: _onPinModeChanged,
-              onAutoPinByDateChanged: (v) => _onAutoPinOptionChanged(byDate: v),
-              onAutoPinByLocationChanged: (v) => _onAutoPinOptionChanged(byLocation: v),
-              onAutoPinByAiChanged: (v) => _onAutoPinOptionChanged(byAi: v),
-            ),
+            const ChatBottomPanel(),
         ],
       ),
     );

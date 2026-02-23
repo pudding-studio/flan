@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
 
+import 'package:provider/provider.dart';
 import '../../../database/database_helper.dart';
 import '../../../models/chat/chat_room.dart';
 import '../../../models/chat/chat_summary.dart';
+import '../../../models/chat/unified_model.dart';
 import '../../../models/character/character.dart';
 import '../../../models/character/character_book_folder.dart';
 import '../../../models/character/persona.dart';
+import '../../../models/prompt/chat_prompt.dart';
+import '../../../providers/chat_model_provider.dart';
 import '../../../services/auto_summary_service.dart';
 import '../../../utils/common_dialog.dart';
+import '../../../widgets/common/common_dropdown_button.dart';
 import '../../../widgets/common/common_edit_text.dart';
 import '../../../widgets/common/common_button.dart';
 import '../../../widgets/common/common_editable_expandable_item.dart';
@@ -29,6 +34,15 @@ class ChatRoomDrawer extends StatefulWidget {
   final DrawerTab initialTab;
   final ValueChanged<DrawerTab> onTabChanged;
   final VoidCallback onChatRoomUpdated;
+  final List<ChatPrompt> chatPrompts;
+  final List<Persona> personas;
+  final ValueChanged<UnifiedModel> onModelChanged;
+  final ValueChanged<int?> onPromptChanged;
+  final ValueChanged<int?> onPersonaChanged;
+  final ValueChanged<String> onPinModeChanged;
+  final ValueChanged<bool> onAutoPinByDateChanged;
+  final ValueChanged<bool> onAutoPinByLocationChanged;
+  final ValueChanged<bool> onAutoPinByAiChanged;
 
   const ChatRoomDrawer({
     super.key,
@@ -38,6 +52,15 @@ class ChatRoomDrawer extends StatefulWidget {
     this.initialTab = DrawerTab.info,
     required this.onTabChanged,
     required this.onChatRoomUpdated,
+    required this.chatPrompts,
+    required this.personas,
+    required this.onModelChanged,
+    required this.onPromptChanged,
+    required this.onPersonaChanged,
+    required this.onPinModeChanged,
+    required this.onAutoPinByDateChanged,
+    required this.onAutoPinByLocationChanged,
+    required this.onAutoPinByAiChanged,
   });
 
   @override
@@ -83,6 +106,7 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
 
   @override
   void dispose() {
+    _saveCurrentTabData();
     _memoController.dispose();
     _descriptionController.dispose();
     _personaNameController.dispose();
@@ -94,6 +118,39 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
       c.dispose();
     }
     super.dispose();
+  }
+
+  void _saveCurrentTabData() {
+    switch (_selectedTab) {
+      case DrawerTab.info:
+        _saveMemo();
+        break;
+      case DrawerTab.persona:
+        _savePersona();
+        break;
+      case DrawerTab.character:
+        _saveDescription();
+        break;
+      case DrawerTab.lorebook:
+        _saveLorebook();
+        break;
+      case DrawerTab.summary:
+        _saveAllSummaries();
+        break;
+    }
+  }
+
+  Future<void> _saveAllSummaries() async {
+    for (final summary in _summaries) {
+      final controller = _summaryControllers[summary.id];
+      if (controller != null && controller.text != summary.summaryContent) {
+        final updated = summary.copyWith(
+          summaryContent: controller.text,
+          updatedAt: DateTime.now(),
+        );
+        await _db.updateChatSummary(updated);
+      }
+    }
   }
 
   Future<void> _loadData() async {
@@ -138,63 +195,53 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
   }
 
   Future<void> _saveMemo() async {
+    if (_memoController.text == widget.chatRoom.memo) return;
     final updated = widget.chatRoom.copyWith(
       memo: _memoController.text,
       updatedAt: DateTime.now(),
     );
     await _db.updateChatRoom(updated);
-    widget.onChatRoomUpdated();
-    if (!mounted) return;
-    CommonDialog.showSnackBar(context: context, message: '메모가 저장되었습니다');
   }
 
   Future<void> _savePersona() async {
+    if (_persona == null) return;
     final name = _personaNameController.text.trim();
     final content = _personaContentController.text;
 
-    if (_persona != null) {
-      final updated = _persona!.copyWith(
-        name: name.isEmpty ? _persona!.name : name,
-        content: content,
-      );
-      await _db.updatePersona(updated);
-      _persona = updated;
-      if (!mounted) return;
-      CommonDialog.showSnackBar(context: context, message: '페르소나가 저장되었습니다');
-    } else {
-      if (name.isEmpty && content.isEmpty) return;
-      final characterId = widget.character.id!;
-      final personas = await _db.readPersonas(characterId);
-      final newPersona = Persona(
-        characterId: characterId,
-        name: name.isEmpty ? '새 페르소나' : name,
-        order: personas.length,
-        content: content,
-      );
-      final newId = await _db.createPersona(newPersona);
-      _persona = newPersona.copyWith(id: newId);
+    final updated = _persona!.copyWith(
+      name: name.isEmpty ? _persona!.name : name,
+      content: content,
+    );
+    await _db.updatePersona(updated);
+    _persona = updated;
+  }
 
-      final updatedRoom = widget.chatRoom.copyWith(
-        selectedPersonaId: newId,
-        updatedAt: DateTime.now(),
-      );
-      await _db.updateChatRoom(updatedRoom);
-      widget.onChatRoomUpdated();
+  Future<void> _createNewPersona() async {
+    final characterId = widget.character.id!;
+    final personas = await _db.readPersonas(characterId);
+    final newPersona = Persona(
+      characterId: characterId,
+      name: '새 페르소나',
+      order: personas.length,
+      content: '',
+    );
+    final newId = await _db.createPersona(newPersona);
+    _persona = newPersona.copyWith(id: newId);
 
-      if (!mounted) return;
-      setState(() {});
-      CommonDialog.showSnackBar(context: context, message: '새 페르소나가 생성되었습니다');
-    }
+    _personaNameController.text = _persona!.name;
+    _personaContentController.text = '';
+
+    widget.onPersonaChanged(newId);
+    if (mounted) setState(() {});
   }
 
   Future<void> _saveDescription() async {
+    if (_descriptionController.text == (widget.character.description ?? '')) return;
     final updated = widget.character.copyWith(
       description: _descriptionController.text,
       updatedAt: DateTime.now(),
     );
     await _db.updateCharacter(updated);
-    if (!mounted) return;
-    CommonDialog.showSnackBar(context: context, message: '캐릭터 설정이 저장되었습니다');
   }
 
   void _syncBookFieldsFromControllers() {
@@ -267,8 +314,6 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
       await _saveOrCreateBook(book, characterId);
     }
 
-    if (!mounted) return;
-    CommonDialog.showSnackBar(context: context, message: '설정집이 저장되었습니다');
   }
 
   Future<void> _saveOrCreateBook(CharacterBook book, int characterId, {int? folderId}) async {
@@ -277,21 +322,6 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
     } else {
       await _db.createCharacterBook(book.copyWith(characterId: characterId, folderId: folderId));
     }
-  }
-
-  Widget _buildBottomSaveButton(VoidCallback onPressed) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: SizedBox(
-        width: double.infinity,
-        child: CommonButton.filled(
-          onPressed: onPressed,
-          icon: Icons.save_outlined,
-          label: '저장',
-          size: CommonButtonSize.small,
-        ),
-      ),
-    );
   }
 
   @override
@@ -365,6 +395,7 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
       label: Text(label),
       selected: selected,
       onSelected: (_) {
+        _saveCurrentTabData();
         setState(() => _selectedTab = tab);
         widget.onTabChanged(tab);
       },
@@ -408,6 +439,8 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
                 ),
               ),
               const SizedBox(height: 24),
+              _buildChatSettings(),
+              const SizedBox(height: 24),
               InkWell(
                 onTap: () => setState(() => _memoExpanded = !_memoExpanded),
                 child: Row(
@@ -437,10 +470,147 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
             ],
           ),
         ),
-        if (_memoExpanded)
-          _buildBottomSaveButton(_saveMemo),
       ],
     );
+  }
+
+  Widget _buildChatSettings() {
+    final modelProvider = context.watch<ChatModelSettingsProvider>();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '채팅창 설정',
+          style: Theme.of(context).textTheme.titleSmall,
+        ),
+        const SizedBox(height: 12),
+        _buildVerticalSettingRow(
+          label: '채팅 모델',
+          child: CommonDropdownButton<UnifiedModel>(
+            value: modelProvider.selectedModel,
+            items: modelProvider.availableModels,
+            onChanged: (model) {
+              if (model != null) widget.onModelChanged(model);
+            },
+            labelBuilder: (model) => model.displayName,
+            size: CommonDropdownButtonSize.xsmall,
+          ),
+        ),
+        const SizedBox(height: 8),
+        _buildVerticalSettingRow(
+          label: '채팅 프롬프트',
+          child: CommonDropdownButton<int?>(
+            value: widget.chatRoom.selectedChatPromptId,
+            items: [null, ...widget.chatPrompts.map((p) => p.id)],
+            onChanged: (id) => widget.onPromptChanged(id),
+            labelBuilder: (id) {
+              if (id == null) return '없음';
+              return widget.chatPrompts.firstWhere((p) => p.id == id).name;
+            },
+            size: CommonDropdownButtonSize.xsmall,
+          ),
+        ),
+        const SizedBox(height: 8),
+        _buildVerticalSettingRow(
+          label: '핀 모드',
+          child: CommonDropdownButton<String>(
+            value: widget.chatRoom.pinMode,
+            items: const ['auto', 'manual'],
+            onChanged: (mode) {
+              if (mode != null) widget.onPinModeChanged(mode);
+            },
+            labelBuilder: (mode) => mode == 'auto' ? '자동' : '수동',
+            size: CommonDropdownButtonSize.xsmall,
+          ),
+        ),
+        if (widget.chatRoom.pinMode == 'auto') ...[
+          const SizedBox(height: 4),
+          _buildToggleRow(
+            label: '날짜 기준',
+            value: widget.chatRoom.autoPinByDate,
+            onChanged: widget.onAutoPinByDateChanged,
+          ),
+          _buildToggleRow(
+            label: '장소 기준',
+            value: widget.chatRoom.autoPinByLocation,
+            onChanged: widget.onAutoPinByLocationChanged,
+          ),
+          _buildToggleRow(
+            label: 'AI 자동',
+            value: widget.chatRoom.autoPinByAi,
+            onChanged: widget.onAutoPinByAiChanged,
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildVerticalSettingRow({required String label, required Widget child}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: Theme.of(context).textTheme.bodySmall),
+        const SizedBox(height: 4),
+        child,
+      ],
+    );
+  }
+
+  Widget _buildToggleRow({
+    required String label,
+    required bool value,
+    required ValueChanged<bool> onChanged,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 0),
+      child: Row(
+        children: [
+          const SizedBox(width: 16),
+          SizedBox(
+            width: 64,
+            child: Text(label, style: Theme.of(context).textTheme.bodySmall),
+          ),
+          const Spacer(),
+          SizedBox(
+            height: 28,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Switch(
+                value: value,
+                onChanged: onChanged,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  static const int _createNewPersonaId = -1;
+
+  Future<void> _onPersonaDropdownChanged(int? id) async {
+    if (id == _createNewPersonaId) {
+      await _createNewPersona();
+      return;
+    }
+
+    await _savePersona();
+    widget.onPersonaChanged(id);
+
+    if (id == null) {
+      _persona = null;
+      _personaNameController.text = '';
+      _personaContentController.text = '';
+    } else {
+      final persona = await _db.readPersona(id);
+      if (persona != null) {
+        _persona = persona;
+        _personaNameController.text = persona.name;
+        _personaContentController.text = persona.content ?? '';
+      }
+    }
+    if (mounted) setState(() {});
   }
 
   // ==================== 페르소나 탭 ====================
@@ -452,33 +622,44 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
           child: ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              Text(
-                '페르소나 이름',
-                style: Theme.of(context).textTheme.titleSmall,
+              CommonFieldSection(
+                label: '페르소나 선택',
+                child: CommonDropdownButton<int?>(
+                  value: widget.chatRoom.selectedPersonaId,
+                  items: [null, ...widget.personas.map((p) => p.id), _createNewPersonaId],
+                  onChanged: _onPersonaDropdownChanged,
+                  labelBuilder: (id) {
+                    if (id == null) return '없음';
+                    if (id == _createNewPersonaId) return '+ 새 페르소나 생성';
+                    return widget.personas.firstWhere((p) => p.id == id).name;
+                  },
+                  size: CommonDropdownButtonSize.xsmall,
+                ),
               ),
-              const SizedBox(height: 8),
-              CommonEditText(
-                controller: _personaNameController,
-                hintText: '페르소나 이름',
-                size: CommonEditTextSize.small,
-              ),
-              const SizedBox(height: 16),
-              Text(
-                '페르소나 설명',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              const SizedBox(height: 8),
-              CommonEditText(
-                controller: _personaContentController,
-                hintText: '페르소나 설명을 입력하세요',
-                maxLines: null,
-                minLines: 10,
-                size: CommonEditTextSize.small,
-              ),
+              if (_persona != null) ...[
+                CommonFieldSection(
+                  label: '페르소나 이름',
+                  child: CommonEditText(
+                    controller: _personaNameController,
+                    hintText: '페르소나 이름',
+                    size: CommonEditTextSize.small,
+                  ),
+                ),
+                CommonFieldSection(
+                  label: '페르소나 설명',
+                  bottomSpacing: 0,
+                  child: CommonEditText(
+                    controller: _personaContentController,
+                    hintText: '페르소나 설명을 입력하세요',
+                    maxLines: null,
+                    minLines: 10,
+                    size: CommonEditTextSize.small,
+                  ),
+                ),
+              ],
             ],
           ),
         ),
-        _buildBottomSaveButton(_savePersona),
       ],
     );
   }
@@ -507,7 +688,6 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
             ],
           ),
         ),
-        _buildBottomSaveButton(_saveDescription),
       ],
     );
   }
@@ -546,7 +726,6 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
                   children: allItems,
                 ),
         ),
-        _buildBottomSaveButton(_saveLorebook),
       ],
     );
   }
@@ -803,12 +982,6 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
                                     : '재생성',
                               ),
                             ),
-                            const SizedBox(width: 8),
-                            TextButton.icon(
-                              onPressed: () => _saveSummaryItem(summary),
-                              icon: const Icon(Icons.save, size: 16),
-                              label: const Text('저장'),
-                            ),
                           ],
                         ),
                       ],
@@ -891,28 +1064,6 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
       if (mounted) {
         setState(() => _isAddingSummary = false);
       }
-    }
-  }
-
-  Future<void> _saveSummaryItem(ChatSummary summary) async {
-    try {
-      final controller = _summaryControllers[summary.id]!;
-      final updated = summary.copyWith(
-        summaryContent: controller.text,
-        updatedAt: DateTime.now(),
-      );
-      await _db.updateChatSummary(updated);
-
-      await _loadData();
-
-      if (!mounted) return;
-      CommonDialog.showSnackBar(context: context, message: '요약이 저장되었습니다');
-    } catch (e) {
-      if (!mounted) return;
-      CommonDialog.showSnackBar(
-        context: context,
-        message: '요약 저장 중 오류가 발생했습니다: $e',
-      );
     }
   }
 
