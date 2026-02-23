@@ -65,6 +65,7 @@ class PromptParameters {
   final bool? includeThoughts;
   final int? thinkingMaxTokens;
   final ThinkingLevel? thinkingLevel;
+  final List<String>? stopSequences;
 
   const PromptParameters({
     this.maxInputTokens,
@@ -78,6 +79,7 @@ class PromptParameters {
     this.includeThoughts,
     this.thinkingMaxTokens,
     this.thinkingLevel,
+    this.stopSequences,
   });
 
   factory PromptParameters.fromJson(Map<String, dynamic> json) {
@@ -95,6 +97,9 @@ class PromptParameters {
       thinkingLevel: json['thinkingLevel'] != null
           ? ThinkingLevel.fromString(json['thinkingLevel'] as String)
           : null,
+      stopSequences: (json['stopSequences'] as List<dynamic>?)
+          ?.map((e) => e as String)
+          .toList(),
     );
   }
 
@@ -111,6 +116,7 @@ class PromptParameters {
       if (includeThoughts != null) 'includeThoughts': includeThoughts,
       if (thinkingMaxTokens != null) 'thinkingMaxTokens': thinkingMaxTokens,
       if (thinkingLevel != null) 'thinkingLevel': thinkingLevel!.apiValue,
+      if (stopSequences != null && stopSequences!.isNotEmpty) 'stopSequences': stopSequences,
     };
   }
 
@@ -126,6 +132,7 @@ class PromptParameters {
     Object? includeThoughts = _undefined,
     Object? thinkingMaxTokens = _undefined,
     Object? thinkingLevel = _undefined,
+    Object? stopSequences = _undefined,
   }) {
     return PromptParameters(
       maxInputTokens: maxInputTokens == _undefined ? this.maxInputTokens : maxInputTokens as int?,
@@ -139,6 +146,7 @@ class PromptParameters {
       includeThoughts: includeThoughts == _undefined ? this.includeThoughts : includeThoughts as bool?,
       thinkingMaxTokens: thinkingMaxTokens == _undefined ? this.thinkingMaxTokens : thinkingMaxTokens as int?,
       thinkingLevel: thinkingLevel == _undefined ? this.thinkingLevel : thinkingLevel as ThinkingLevel?,
+      stopSequences: stopSequences == _undefined ? this.stopSequences : stopSequences as List<String>?,
     );
   }
 }

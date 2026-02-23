@@ -768,10 +768,112 @@ class _PromptEditScreenState extends State<PromptEditScreen>
             });
           },
         ),
+        const SizedBox(height: UIConstants.spacing20),
+        _buildStopSequencesSection(),
         const SizedBox(height: 24),
         _buildThinkingSection(),
       ],
     ),
+    );
+  }
+
+  Widget _buildStopSequencesSection() {
+    final sequences = _parameters.stopSequences ?? [];
+    final controller = TextEditingController();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '정지 문자열',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'AI가 해당 문자열을 생성하면 응답을 중단합니다.',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+        ),
+        const SizedBox(height: 8),
+        if (sequences.isNotEmpty)
+          Wrap(
+            spacing: 6,
+            runSpacing: 6,
+            children: sequences.asMap().entries.map((entry) {
+              return Chip(
+                label: Text(
+                  entry.value,
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                deleteIcon: const Icon(Icons.close, size: 16),
+                onDeleted: _isReadOnly ? null : () {
+                  setState(() {
+                    final updated = List<String>.from(sequences)..removeAt(entry.key);
+                    _parameters = _parameters.copyWith(
+                      stopSequences: updated.isEmpty ? null : updated,
+                    );
+                  });
+                },
+                materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                visualDensity: VisualDensity.compact,
+              );
+            }).toList(),
+          ),
+        if (!_isReadOnly) ...[
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: controller,
+                  style: Theme.of(context).textTheme.bodySmall,
+                  decoration: InputDecoration(
+                    hintText: '문자열 입력 후 추가',
+                    hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  onSubmitted: (value) {
+                    if (value.trim().isNotEmpty) {
+                      setState(() {
+                        final updated = List<String>.from(sequences)..add(value.trim());
+                        _parameters = _parameters.copyWith(stopSequences: updated);
+                      });
+                      controller.clear();
+                    }
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton(
+                icon: const Icon(Icons.add, size: 20),
+                constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                padding: EdgeInsets.zero,
+                onPressed: () {
+                  if (controller.text.trim().isNotEmpty) {
+                    setState(() {
+                      final updated = List<String>.from(sequences)..add(controller.text.trim());
+                      _parameters = _parameters.copyWith(stopSequences: updated);
+                    });
+                    controller.clear();
+                  }
+                },
+              ),
+            ],
+          ),
+        ],
+      ],
     );
   }
 

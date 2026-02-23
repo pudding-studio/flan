@@ -117,6 +117,10 @@ class GeminiService {
       }
     }
 
+    if (parameters.stopSequences != null && parameters.stopSequences!.isNotEmpty) {
+      config['stopSequences'] = parameters.stopSequences;
+    }
+
     return config.isEmpty ? null : config;
   }
 

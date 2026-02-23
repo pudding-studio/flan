@@ -448,6 +448,10 @@ class AiService {
           promptParameters.frequencyPenalty != 0.0) {
         requestBody['frequency_penalty'] = promptParameters.frequencyPenalty;
       }
+      if (promptParameters.stopSequences != null &&
+          promptParameters.stopSequences!.isNotEmpty) {
+        requestBody['stop'] = promptParameters.stopSequences;
+      }
     }
 
     final requestJson = jsonEncode(requestBody);
@@ -574,6 +578,10 @@ class AiService {
       }
       if (promptParameters.topK != null) {
         requestBody['top_k'] = promptParameters.topK;
+      }
+      if (promptParameters.stopSequences != null &&
+          promptParameters.stopSequences!.isNotEmpty) {
+        requestBody['stop_sequences'] = promptParameters.stopSequences;
       }
     }
 
