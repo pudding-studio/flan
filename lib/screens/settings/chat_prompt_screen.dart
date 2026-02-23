@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../database/database_helper.dart';
 import '../../models/prompt/chat_prompt.dart';
 import '../../utils/common_dialog.dart';
+import '../../utils/silly_tavern_preset_converter.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../../widgets/settings/settings_prompt_list_item.dart';
 import 'prompt_edit_screen.dart';
@@ -158,6 +159,76 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
     }
   }
 
+  Future<void> _duplicatePrompt(ChatPrompt sourcePrompt) async {
+    try {
+      final folders = await _db.readPromptItemFolders(sourcePrompt.id!);
+      for (final folder in folders) {
+        folder.items.addAll(await _db.readPromptItemsByFolder(folder.id!));
+      }
+      final standaloneItems = await _db.readStandalonePromptItems(sourcePrompt.id!);
+
+      final duplicatedPrompt = ChatPrompt(
+        name: '${sourcePrompt.name} (복사본)',
+        description: sourcePrompt.description,
+        supportedModel: sourcePrompt.supportedModel,
+        parameters: sourcePrompt.parameters,
+      );
+      final newPromptId = await _db.createChatPrompt(duplicatedPrompt);
+
+      for (final folder in folders) {
+        final newFolderId = await _db.createPromptItemFolder(
+          folder.copyWith(id: null, chatPromptId: newPromptId),
+        );
+        for (int i = 0; i < folder.items.length; i++) {
+          await _db.createPromptItem(
+            folder.items[i].copyWithNullableFolderId(
+              id: null,
+              chatPromptId: newPromptId,
+              folderId: newFolderId,
+              order: i,
+            ),
+          );
+        }
+      }
+      for (int i = 0; i < standaloneItems.length; i++) {
+        await _db.createPromptItem(
+          standaloneItems[i].copyWithNullableFolderId(
+            id: null,
+            chatPromptId: newPromptId,
+            folderId: null,
+            order: i,
+          ),
+        );
+      }
+
+      final regexRules = await _db.readPromptRegexRules(sourcePrompt.id!);
+      for (int i = 0; i < regexRules.length; i++) {
+        await _db.createPromptRegexRule(
+          regexRules[i].copyWith(
+            id: null,
+            chatPromptId: newPromptId,
+            order: i,
+          ),
+        );
+      }
+
+      await _loadPrompts();
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '프롬프트가 복사되었습니다',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '프롬프트 복사에 실패했습니다: $e',
+        );
+      }
+    }
+  }
+
   Future<void> _forkPrompt(ChatPrompt sourcePrompt) async {
     try {
       final folders = await _db.readPromptItemFolders(sourcePrompt.id!);
@@ -291,11 +362,22 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
       final jsonString = await file.readAsString();
       final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
 
-      final prompt = ChatPrompt.fromJson(jsonData);
+      final Map<String, dynamic> normalizedData;
+      if (SillyTavernPresetConverter.isSillyTavernPreset(jsonData)) {
+        final fileName = result.files.single.name.replaceAll('.json', '');
+        normalizedData = SillyTavernPresetConverter.convertToNativeFormat(
+          jsonData,
+          fileName: fileName,
+        );
+      } else {
+        normalizedData = jsonData;
+      }
+
+      final prompt = ChatPrompt.fromJson(normalizedData);
       final promptId = await _db.createChatPrompt(prompt);
 
-      if (jsonData.containsKey('folders')) {
-        final folders = prompt.foldersFromJson(jsonData);
+      if (normalizedData.containsKey('folders') || normalizedData.containsKey('standaloneItems')) {
+        final folders = prompt.foldersFromJson(normalizedData);
         for (final folder in folders) {
           final folderId = await _db.createPromptItemFolder(
             folder.copyWith(id: null, chatPromptId: promptId),
@@ -311,7 +393,7 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
             );
           }
         }
-        final standaloneItems = prompt.standaloneItemsFromJson(jsonData);
+        final standaloneItems = prompt.standaloneItemsFromJson(normalizedData);
         for (int i = 0; i < standaloneItems.length; i++) {
           await _db.createPromptItem(
             standaloneItems[i].copyWithNullableFolderId(
@@ -335,7 +417,7 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
       }
 
       // Import regex rules
-      final regexRules = prompt.regexRulesFromJson(jsonData);
+      final regexRules = prompt.regexRulesFromJson(normalizedData);
       for (int i = 0; i < regexRules.length; i++) {
         await _db.createPromptRegexRule(
           regexRules[i].copyWith(
@@ -456,6 +538,7 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
                         onRadioTap: () => _selectPrompt(prompt.id!),
                         onTap: () => _navigateToEdit(prompt),
                         onEdit: prompt.isDefault ? null : () => _navigateToEdit(prompt),
+                        onCopy: () => _duplicatePrompt(prompt),
                         onExport: () => _exportPrompt(prompt),
                         onDelete: prompt.isDefault
                             ? null

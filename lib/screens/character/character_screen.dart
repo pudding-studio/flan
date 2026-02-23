@@ -235,6 +235,76 @@ class _CharacterScreenState extends State<CharacterScreen> {
     }
   }
 
+  Future<void> _duplicateCharacter(int characterId) async {
+    try {
+      final character = await _db.readCharacter(characterId);
+      if (character == null) throw Exception('캐릭터를 찾을 수 없습니다');
+
+      final personas = await _db.readPersonas(characterId);
+      final startScenarios = await _db.readStartScenarios(characterId);
+      final characterBookFolders = await _db.readCharacterBookFolders(characterId);
+      final standaloneCharacterBooks = await _db.readCharacterBooks(characterId);
+      final coverImages = await _db.readCoverImages(characterId);
+
+      for (final folder in characterBookFolders) {
+        folder.characterBooks.addAll(await _db.readCharacterBooksByFolder(folder.id!));
+      }
+
+      final newCharacterId = await _db.createCharacter(
+        Character(
+          name: '${character.name} (복사본)',
+          nickname: character.nickname,
+          creatorNotes: character.creatorNotes,
+          tags: List<String>.from(character.tags),
+          description: character.description,
+          isDraft: character.isDraft,
+        ),
+      );
+
+      for (final persona in personas) {
+        await _db.createPersona(persona.copyWith(id: null, characterId: newCharacterId));
+      }
+
+      for (final scenario in startScenarios) {
+        await _db.createStartScenario(scenario.copyWith(id: null, characterId: newCharacterId));
+      }
+
+      for (final folder in characterBookFolders) {
+        final newFolderId = await _db.createCharacterBookFolder(
+          folder.copyWith(id: null, characterId: newCharacterId),
+        );
+        for (final book in folder.characterBooks) {
+          await _db.createCharacterBook(
+            book.copyWith(id: null, characterId: newCharacterId, folderId: newFolderId),
+          );
+        }
+      }
+
+      for (final book in standaloneCharacterBooks) {
+        await _db.createCharacterBook(book.copyWith(id: null, characterId: newCharacterId));
+      }
+
+      for (final image in coverImages) {
+        await _db.createCoverImage(image.copyWith(id: null, characterId: newCharacterId));
+      }
+
+      await _loadCharacters();
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '캐릭터가 복사되었습니다',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '캐릭터 복사에 실패했습니다: $e',
+        );
+      }
+    }
+  }
+
   Future<void> _deleteCharacter(int id) async {
     final confirm = await CommonDialog.showConfirmation(
       context: context,
@@ -983,6 +1053,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
             _loadCharacters();
           }
         },
+        onCopy: () => _duplicateCharacter(_characters[index].id!),
         onExport: () => _exportCharacter(_characters[index].id!),
         onDelete: () => _deleteCharacter(_characters[index].id!),
       );

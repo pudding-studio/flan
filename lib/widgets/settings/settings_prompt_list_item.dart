@@ -9,6 +9,7 @@ class SettingsPromptListItem extends StatelessWidget {
   final VoidCallback? onDelete;
   final VoidCallback? onEdit;
   final VoidCallback? onExport;
+  final VoidCallback? onCopy;
   final VoidCallback? onRadioTap;
 
   const SettingsPromptListItem({
@@ -21,6 +22,7 @@ class SettingsPromptListItem extends StatelessWidget {
     this.onDelete,
     this.onEdit,
     this.onExport,
+    this.onCopy,
     this.onRadioTap,
   });
 
@@ -152,6 +154,17 @@ class SettingsPromptListItem extends StatelessWidget {
                         ],
                       ),
                     ),
+                  PopupMenuItem<String>(
+                    value: 'copy',
+                    onTap: onCopy,
+                    child: const Row(
+                      children: [
+                        Icon(Icons.copy_outlined, size: 20),
+                        SizedBox(width: 12),
+                        Text('복사하기'),
+                      ],
+                    ),
+                  ),
                   PopupMenuItem<String>(
                     value: 'export',
                     onTap: onExport,

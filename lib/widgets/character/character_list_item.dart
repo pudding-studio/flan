@@ -11,6 +11,7 @@ class CharacterListItem extends StatelessWidget {
   final VoidCallback? onDelete;
   final VoidCallback? onEdit;
   final VoidCallback? onExport;
+  final VoidCallback? onCopy;
   final bool isEditMode;
   final bool isSelected;
 
@@ -24,6 +25,7 @@ class CharacterListItem extends StatelessWidget {
     this.onDelete,
     this.onEdit,
     this.onExport,
+    this.onCopy,
     this.isEditMode = false,
     this.isSelected = false,
   });
@@ -170,6 +172,17 @@ class CharacterListItem extends StatelessWidget {
                         Icon(Icons.edit_outlined, size: 20),
                         SizedBox(width: 12),
                         Text('수정'),
+                      ],
+                    ),
+                  ),
+                  PopupMenuItem<String>(
+                    value: 'copy',
+                    onTap: onCopy,
+                    child: const Row(
+                      children: [
+                        Icon(Icons.copy_outlined, size: 20),
+                        SizedBox(width: 12),
+                        Text('복사하기'),
                       ],
                     ),
                   ),
