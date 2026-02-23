@@ -109,12 +109,30 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
   }
 
   Widget _buildItemCard(BuildContext context, PromptItem item, PromptItemFolder? folder) {
-    return CommonEditableExpandableItem(
+    final disabledColor = Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5);
+
+    return Opacity(
+      opacity: item.enabled ? 1.0 : 0.5,
+      child: CommonEditableExpandableItem(
       key: ValueKey(item.id),
-      icon: Icon(
-        _getRoleIcon(item.role),
-        size: UIConstants.iconSizeMedium,
-        color: Theme.of(context).colorScheme.secondary,
+      icon: Stack(
+        children: [
+          Icon(
+            _getRoleIcon(item.role),
+            size: UIConstants.iconSizeMedium,
+            color: item.enabled
+                ? Theme.of(context).colorScheme.secondary
+                : disabledColor,
+          ),
+          if (!item.enabled)
+            Positioned.fill(
+              child: CustomPaint(
+                painter: _DisabledSlashPainter(
+                  color: disabledColor,
+                ),
+              ),
+            ),
+        ],
       ),
       name: item.name ?? item.role.displayName,
       isExpanded: item.isExpanded,
@@ -147,6 +165,22 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text(
+            '활성화',
+            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+          const SizedBox(height: 6),
+          CommonSegmentedButton<bool>(
+            values: const [true, false],
+            selected: item.enabled,
+            onSelectionChanged: widget.readOnly ? (_) {} : (selected) {
+              _updateItem(item, folder, item.copyWith(enabled: selected));
+            },
+            labelBuilder: (value) => value ? '활성화' : '비활성화',
+          ),
+          const SizedBox(height: UIConstants.spacing12),
           Text(
             '역할',
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -198,6 +232,7 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
           ],
         ],
       ),
+    ),
     );
   }
 
@@ -308,4 +343,28 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
         return Icons.chat_outlined;
     }
   }
+}
+
+class _DisabledSlashPainter extends CustomPainter {
+  final Color color;
+
+  _DisabledSlashPainter({required this.color});
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 2.0
+      ..style = PaintingStyle.stroke
+      ..strokeCap = StrokeCap.round;
+
+    canvas.drawLine(
+      Offset(size.width * 0.85, size.height * 0.15),
+      Offset(size.width * 0.15, size.height * 0.85),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

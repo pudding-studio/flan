@@ -34,7 +34,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 32,
+      version: 33,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -199,6 +199,7 @@ class DatabaseHelper {
         content $textTypeNullable,
         name $textTypeNullable,
         `order` $intType DEFAULT 0,
+        enabled $intType DEFAULT 1,
         chat_setting_mode $textType DEFAULT 'basic',
         include_start_position INTEGER,
         chat_range_type $textType DEFAULT 'recent',
@@ -910,6 +911,17 @@ class DatabaseHelper {
       await db.execute('''
         ALTER TABLE characters ADD COLUMN nickname TEXT
       ''');
+    }
+
+    if (oldVersion < 33) {
+      final columns = await db.rawQuery('PRAGMA table_info(prompt_items)');
+      final columnNames = columns.map((c) => c['name'] as String).toSet();
+
+      if (!columnNames.contains('enabled')) {
+        await db.execute('''
+          ALTER TABLE prompt_items ADD COLUMN enabled INTEGER NOT NULL DEFAULT 1
+        ''');
+      }
     }
   }
 

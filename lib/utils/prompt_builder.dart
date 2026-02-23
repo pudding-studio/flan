@@ -37,7 +37,7 @@ class PromptBuilder {
 
     if (chatPrompt != null && chatPrompt.items.isNotEmpty) {
       for (final item in chatPrompt.items) {
-        if (item.role != PromptRole.system) continue;
+        if (item.role != PromptRole.system || !item.enabled) continue;
 
         final replaced = replaceKeywords(item.content, keywords);
         buffer.writeln('## ${item.name ?? item.role.displayName}');
@@ -90,7 +90,7 @@ class PromptBuilder {
 
     if (chatPrompt != null && chatPrompt.items.isNotEmpty) {
       for (final item in chatPrompt.items) {
-        if (item.role == PromptRole.system) continue;
+        if (item.role == PromptRole.system || !item.enabled) continue;
 
         if (item.role == PromptRole.chat) {
           final messages = adjustedChatHistoryMap[item] ?? [];
@@ -143,7 +143,7 @@ class PromptBuilder {
     // 프롬프트 항목 중 chat이 아닌 것들의 토큰 계산
     if (chatPrompt != null) {
       for (final item in chatPrompt.items) {
-        if (item.role == PromptRole.system || item.role == PromptRole.chat) continue;
+        if (item.role == PromptRole.system || item.role == PromptRole.chat || !item.enabled) continue;
         final replaced = replaceKeywords(item.content, keywords);
         baseTokens += TokenCounter.estimateTokenCount(replaced, tokenizer: tokenizer);
       }

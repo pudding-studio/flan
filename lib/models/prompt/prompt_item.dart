@@ -57,6 +57,7 @@ class PromptItem {
   final String content;
   final String? name;
   final int order;
+  final bool enabled;
   bool isExpanded;
 
   // chat role settings
@@ -75,6 +76,7 @@ class PromptItem {
     required this.content,
     this.name,
     this.order = 0,
+    this.enabled = true,
     this.isExpanded = false,
     this.chatSettingMode = ChatSettingMode.basic,
     this.includeStartPosition,
@@ -96,6 +98,7 @@ class PromptItem {
       content: map['content'] as String? ?? '',
       name: map['name'] as String?,
       order: map['order'] as int? ?? 0,
+      enabled: (map['enabled'] as int? ?? 1) == 1,
       chatSettingMode: ChatSettingMode.values.firstWhere(
         (m) => m.name == (map['chat_setting_mode'] as String?),
         orElse: () => ChatSettingMode.basic,
@@ -120,6 +123,7 @@ class PromptItem {
       'content': content,
       'name': name,
       'order': order,
+      'enabled': enabled ? 1 : 0,
       'chat_setting_mode': chatSettingMode.name,
       'include_start_position': includeStartPosition,
       'chat_range_type': chatRangeType.name,
@@ -138,6 +142,7 @@ class PromptItem {
       'content': content,
       'name': name,
       'order': order,
+      'enabled': enabled,
       'isExpanded': isExpanded,
       'chatSettingMode': chatSettingMode.name,
       'includeStartPosition': includeStartPosition,
@@ -160,6 +165,7 @@ class PromptItem {
       content: json['content'] as String? ?? '',
       name: json['name'] as String?,
       order: json['order'] as int? ?? 0,
+      enabled: json['enabled'] as bool? ?? true,
       isExpanded: json['isExpanded'] as bool? ?? false,
       chatSettingMode: ChatSettingMode.values.firstWhere(
         (m) => m.name == (json['chatSettingMode'] as String?),
@@ -184,6 +190,7 @@ class PromptItem {
     String? content,
     String? name,
     int? order,
+    bool? enabled,
     bool? isExpanded,
     ChatSettingMode? chatSettingMode,
     int? includeStartPosition,
@@ -200,6 +207,7 @@ class PromptItem {
       content: content ?? this.content,
       name: name ?? this.name,
       order: order ?? this.order,
+      enabled: enabled ?? this.enabled,
       isExpanded: isExpanded ?? this.isExpanded,
       chatSettingMode: chatSettingMode ?? this.chatSettingMode,
       includeStartPosition: includeStartPosition ?? this.includeStartPosition,
@@ -218,6 +226,7 @@ class PromptItem {
     String? content,
     String? name,
     int? order,
+    bool? enabled,
     bool? isExpanded,
     ChatSettingMode? chatSettingMode,
     int? includeStartPosition,
@@ -234,6 +243,7 @@ class PromptItem {
       content: content ?? this.content,
       name: name ?? this.name,
       order: order ?? this.order,
+      enabled: enabled ?? this.enabled,
       isExpanded: isExpanded ?? this.isExpanded,
       chatSettingMode: chatSettingMode ?? this.chatSettingMode,
       includeStartPosition: includeStartPosition ?? this.includeStartPosition,
