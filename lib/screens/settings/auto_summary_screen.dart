@@ -115,7 +115,7 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
   }
 
   Future<void> _saveAndPop() async {
-    _syncContentFromControllers();
+_syncContentFromControllers();
     _syncParametersFromControllers();
 
     final settings = AutoSummarySettings(

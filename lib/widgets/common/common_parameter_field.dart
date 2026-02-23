@@ -197,7 +197,7 @@ class CommonParameterSlider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isEnabled = value != null;
-    final displayValue = value ?? defaultValue;
+    final displayValue = (value ?? defaultValue).clamp(min, max);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
