@@ -1,13 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../../constants/ui_constants.dart';
+import '../../../models/prompt/prompt_condition.dart';
+import '../../../models/prompt/prompt_condition_option.dart';
 import '../../../models/prompt/prompt_item.dart';
 import '../../../models/prompt/prompt_item_folder.dart';
 import '../../../widgets/common/common_draggable_folder_list.dart';
+import '../../../widgets/common/common_dropdown_button.dart';
 import '../../../widgets/common/common_editable_expandable_item.dart';
 import '../../../widgets/common/common_edit_text.dart';
 import '../../../widgets/common/common_empty_state.dart';
 import '../../../widgets/common/common_segmented_button.dart';
 import '../../../widgets/common/common_title_medium.dart';
+import 'prompt_conditions_section.dart';
 
 class PromptItemsTab extends StatefulWidget {
   final List<PromptItemFolder> folders;
@@ -24,6 +28,15 @@ class PromptItemsTab extends StatefulWidget {
   final void Function(PromptItemFolder folder, int targetIndex) onReorderFolder;
   final bool readOnly;
 
+  // Condition props
+  final List<PromptCondition> conditions;
+  final bool conditionsSectionExpanded;
+  final VoidCallback onConditionsSectionToggle;
+  final VoidCallback onAddCondition;
+  final void Function(PromptCondition) onDeleteCondition;
+  final VoidCallback onUpdateConditions;
+  final int Function() getNextConditionOptionTempId;
+
   const PromptItemsTab({
     super.key,
     required this.folders,
@@ -39,6 +52,13 @@ class PromptItemsTab extends StatefulWidget {
     required this.onMoveItemOutOfFolder,
     required this.onReorderItem,
     required this.onReorderFolder,
+    required this.conditions,
+    required this.conditionsSectionExpanded,
+    required this.onConditionsSectionToggle,
+    required this.onAddCondition,
+    required this.onDeleteCondition,
+    required this.onUpdateConditions,
+    required this.getNextConditionOptionTempId,
   });
 
   @override
@@ -50,9 +70,19 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(UIConstants.spacing20),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: ListView(
         children: [
+          PromptConditionsSection(
+            conditions: widget.conditions,
+            isExpanded: widget.conditionsSectionExpanded,
+            onToggle: widget.onConditionsSectionToggle,
+            onAddCondition: widget.onAddCondition,
+            onDeleteCondition: widget.onDeleteCondition,
+            onUpdate: widget.onUpdateConditions,
+            getNextOptionTempId: widget.getNextConditionOptionTempId,
+            readOnly: widget.readOnly,
+          ),
+          const SizedBox(height: 12),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 5),
             child: CommonTitleMedium(
@@ -63,44 +93,43 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
             ),
           ),
           const SizedBox(height: 8),
-          Expanded(
-            child: CommonDraggableFolderList<PromptItemFolder, PromptItem>(
-              folders: widget.folders,
-              standaloneItems: widget.standaloneItems,
-              getFolderId: (folder) => folder.id,
-              getFolderName: (folder) => folder.name,
-              getFolderExpanded: (folder) => folder.isExpanded,
-              getFolderItems: (folder) => folder.items,
-              getFolderOrder: (folder) => folder.order,
-              getItemId: (item) => item.id,
-              getItemOrder: (item) => item.order,
-              itemContentBuilder: _buildItemCard,
-              getItemIcon: (item) => _getRoleIcon(item.role),
-              getItemName: (item) => item.name ?? item.role.displayName,
-              onReorderItem: widget.readOnly ? (_, __, ___) {} : widget.onReorderItem,
-              onMoveItemToFolder: widget.readOnly ? (_, __, ___) {} : widget.onMoveItemToFolder,
-              onMoveItemOutOfFolder: widget.readOnly ? (_, __) {} : widget.onMoveItemOutOfFolder,
-              onReorderFolder: widget.readOnly ? (_, __) {} : widget.onReorderFolder,
-              onFolderNameChanged: widget.readOnly ? (_, __) {} : (folder, newName) {
-                folder.name = newName;
-                widget.onUpdate();
-              },
-              onFolderExpandedChanged: (folder, isExpanded) {
-                setState(() {
-                  folder.isExpanded = isExpanded;
-                });
-              },
-              onDeleteFolder: widget.readOnly ? (_) {} : widget.onDeleteFolder,
-              onAddItem: widget.readOnly ? (_) {} : widget.onAddItem,
-              onAddFolder: widget.readOnly ? () {} : widget.onAddFolder,
-              itemTypeKey: 'promptItem',
-              addItemLabel: '항목 추가',
-              addFolderLabel: '폴더 추가',
-              readOnly: widget.readOnly,
-              emptyWidget: const CommonEmptyState(
-                icon: Icons.chat_bubble_outline,
-                message: '프롬프트 항목이 없습니다',
-              ),
+          CommonDraggableFolderList<PromptItemFolder, PromptItem>(
+            folders: widget.folders,
+            standaloneItems: widget.standaloneItems,
+            getFolderId: (folder) => folder.id,
+            getFolderName: (folder) => folder.name,
+            getFolderExpanded: (folder) => folder.isExpanded,
+            getFolderItems: (folder) => folder.items,
+            getFolderOrder: (folder) => folder.order,
+            getItemId: (item) => item.id,
+            getItemOrder: (item) => item.order,
+            itemContentBuilder: _buildItemCard,
+            getItemIcon: (item) => _getRoleIcon(item.role),
+            getItemName: (item) => item.name ?? item.role.displayName,
+            onReorderItem: widget.readOnly ? (_, __, ___) {} : widget.onReorderItem,
+            onMoveItemToFolder: widget.readOnly ? (_, __, ___) {} : widget.onMoveItemToFolder,
+            onMoveItemOutOfFolder: widget.readOnly ? (_, __) {} : widget.onMoveItemOutOfFolder,
+            onReorderFolder: widget.readOnly ? (_, __) {} : widget.onReorderFolder,
+            onFolderNameChanged: widget.readOnly ? (_, __) {} : (folder, newName) {
+              folder.name = newName;
+              widget.onUpdate();
+            },
+            onFolderExpandedChanged: (folder, isExpanded) {
+              setState(() {
+                folder.isExpanded = isExpanded;
+              });
+            },
+            onDeleteFolder: widget.readOnly ? (_) {} : widget.onDeleteFolder,
+            onAddItem: widget.readOnly ? (_) {} : widget.onAddItem,
+            onAddFolder: widget.readOnly ? () {} : widget.onAddFolder,
+            itemTypeKey: 'promptItem',
+            addItemLabel: '항목 추가',
+            addFolderLabel: '폴더 추가',
+            readOnly: widget.readOnly,
+            shrinkWrap: true,
+            emptyWidget: const CommonEmptyState(
+              icon: Icons.chat_bubble_outline,
+              message: '프롬프트 항목이 없습니다',
             ),
           ),
         ],
@@ -111,8 +140,10 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
   Widget _buildItemCard(BuildContext context, PromptItem item, PromptItemFolder? folder) {
     final disabledColor = Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5);
 
+    final isVisuallyEnabled = item.enableMode != EnableMode.disabled;
+
     return Opacity(
-      opacity: item.enabled ? 1.0 : 0.5,
+      opacity: isVisuallyEnabled ? 1.0 : 0.5,
       child: CommonEditableExpandableItem(
       key: ValueKey(item.id),
       icon: Stack(
@@ -120,11 +151,11 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
           Icon(
             _getRoleIcon(item.role),
             size: UIConstants.iconSizeMedium,
-            color: item.enabled
+            color: isVisuallyEnabled
                 ? Theme.of(context).colorScheme.secondary
                 : disabledColor,
           ),
-          if (!item.enabled)
+          if (!isVisuallyEnabled)
             Positioned.fill(
               child: CustomPaint(
                 painter: _DisabledSlashPainter(
@@ -172,14 +203,34 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
                 ),
           ),
           const SizedBox(height: 6),
-          CommonSegmentedButton<bool>(
-            values: const [true, false],
-            selected: item.enabled,
+          CommonSegmentedButton<EnableMode>(
+            values: EnableMode.values,
+            selected: item.enableMode,
             onSelectionChanged: widget.readOnly ? (_) {} : (selected) {
-              _updateItem(item, folder, item.copyWith(enabled: selected));
+              if (selected == EnableMode.enabled) {
+                _updateItem(item, folder, item.copyWithNullableCondition(
+                  enableMode: EnableMode.enabled,
+                  conditionId: null,
+                  conditionValue: null,
+                ).copyWith(enabled: true));
+              } else if (selected == EnableMode.disabled) {
+                _updateItem(item, folder, item.copyWithNullableCondition(
+                  enableMode: EnableMode.disabled,
+                  conditionId: null,
+                  conditionValue: null,
+                ).copyWith(enabled: false));
+              } else {
+                _updateItem(item, folder, item.copyWith(
+                  enableMode: EnableMode.conditional,
+                ));
+              }
             },
-            labelBuilder: (value) => value ? '활성화' : '비활성화',
+            labelBuilder: (mode) => mode.displayName,
           ),
+          if (item.enableMode == EnableMode.conditional) ...[
+            const SizedBox(height: UIConstants.spacing12),
+            _buildConditionSelector(item, folder),
+          ],
           const SizedBox(height: UIConstants.spacing12),
           Text(
             '역할',
@@ -249,6 +300,108 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       widget.onUpdate();
     });
+  }
+
+  Widget _buildConditionSelector(PromptItem item, PromptItemFolder? folder) {
+    final labelStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
+          fontWeight: FontWeight.w600,
+        );
+
+    // Exclude variable type conditions from the selectable list
+    final selectableConditions = widget.conditions
+        .where((c) => c.type != ConditionType.variable)
+        .toList();
+
+    // Find the currently selected condition
+    final selectedCondition = selectableConditions.cast<PromptCondition?>().firstWhere(
+      (c) => c!.id == item.conditionId,
+      orElse: () => null,
+    );
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text('조건 선택', style: labelStyle),
+        const SizedBox(height: 6),
+        CommonDropdownButton<PromptCondition>(
+          value: selectedCondition,
+          items: selectableConditions,
+          size: CommonDropdownButtonSize.xsmall,
+          hintText: '조건을 선택하세요',
+          onChanged: widget.readOnly
+              ? null
+              : (value) {
+                  if (value != null) {
+                    // Set default conditionValue based on type
+                    String? defaultValue;
+                    if (value.type == ConditionType.toggle) {
+                      defaultValue = 'true';
+                    } else if (value.type == ConditionType.singleSelect &&
+                        value.options.isNotEmpty) {
+                      defaultValue = value.options.first.name;
+                    }
+                    _updateItem(
+                      item,
+                      folder,
+                      item.copyWithNullableCondition(
+                        enableMode: EnableMode.conditional,
+                        conditionId: value.id,
+                        conditionValue: defaultValue,
+                      ),
+                    );
+                  }
+                },
+          labelBuilder: (c) => c.name.isEmpty ? '이름 없음' : c.name,
+        ),
+        if (selectedCondition != null) ...[
+          const SizedBox(height: UIConstants.spacing12),
+          if (selectedCondition.type == ConditionType.toggle) ...[
+            Text('조건 값', style: labelStyle),
+            const SizedBox(height: 6),
+            CommonSegmentedButton<String>(
+              values: const ['true', 'false'],
+              selected: item.conditionValue ?? 'true',
+              onSelectionChanged: widget.readOnly
+                  ? (_) {}
+                  : (selected) {
+                      _updateItem(
+                        item,
+                        folder,
+                        item.copyWith(conditionValue: selected),
+                      );
+                    },
+              labelBuilder: (v) => v == 'true' ? '활성화' : '비활성화',
+            ),
+          ],
+          if (selectedCondition.type == ConditionType.singleSelect &&
+              selectedCondition.options.isNotEmpty) ...[
+            Text('선택 항목', style: labelStyle),
+            const SizedBox(height: 6),
+            CommonDropdownButton<PromptConditionOption>(
+              value: selectedCondition.options.cast<PromptConditionOption?>().firstWhere(
+                (o) => o!.name == item.conditionValue,
+                orElse: () => null,
+              ),
+              items: selectedCondition.options,
+              size: CommonDropdownButtonSize.xsmall,
+              hintText: '항목을 선택하세요',
+              onChanged: widget.readOnly
+                  ? null
+                  : (value) {
+                      if (value != null) {
+                        _updateItem(
+                          item,
+                          folder,
+                          item.copyWith(conditionValue: value.name),
+                        );
+                      }
+                    },
+              labelBuilder: (o) => o.name,
+            ),
+          ],
+        ],
+      ],
+    );
   }
 
   Widget _buildChatSettings(PromptItem item, PromptItemFolder? folder) {

@@ -7,6 +7,7 @@ import '../models/chat/chat_message_metadata.dart';
 import '../models/chat/chat_room.dart';
 import '../models/chat/chat_summary.dart';
 import '../models/prompt/chat_prompt.dart';
+import '../models/prompt/prompt_condition.dart';
 import '../models/prompt/prompt_item.dart';
 import '../providers/tokenizer_provider.dart';
 import 'metadata_parser.dart';
@@ -22,6 +23,8 @@ class PromptBuilder {
     ChatRoom? chatRoom,
     List<ChatSummary>? summaries,
     Map<int, ChatMessageMetadata>? summaryMetadataMap,
+    List<PromptCondition>? conditions,
+    Map<int, String>? conditionStates,
   }) {
     final keywords = buildKeywordMap(
       character: character,
@@ -33,11 +36,17 @@ class PromptBuilder {
       summaryMetadataMap: summaryMetadataMap,
     );
 
+    // Add condition variable keywords
+    if (conditions != null && conditionStates != null) {
+      keywords.addAll(buildConditionKeywords(conditions, conditionStates));
+    }
+
+    final states = conditionStates ?? {};
     final buffer = StringBuffer();
 
     if (chatPrompt != null && chatPrompt.items.isNotEmpty) {
       for (final item in chatPrompt.items) {
-        if (item.role != PromptRole.system || !item.enabled) continue;
+        if (item.role != PromptRole.system || !isItemActive(item, states)) continue;
 
         final replaced = replaceKeywords(item.content, keywords);
         buffer.writeln('## ${item.name ?? item.role.displayName}');
@@ -64,6 +73,8 @@ class PromptBuilder {
     ChatRoom? chatRoom,
     List<ChatSummary>? summaries,
     Map<int, ChatMessageMetadata>? summaryMetadataMap,
+    List<PromptCondition>? conditions,
+    Map<int, String>? conditionStates,
   }) {
     final keywords = buildKeywordMap(
       character: character,
@@ -75,6 +86,13 @@ class PromptBuilder {
       summaryMetadataMap: summaryMetadataMap,
     );
 
+    // Add condition variable keywords
+    if (conditions != null && conditionStates != null) {
+      keywords.addAll(buildConditionKeywords(conditions, conditionStates));
+    }
+
+    final states = conditionStates ?? {};
+
     // 토큰 제한이 있으면 채팅 히스토리 조정
     final adjustedChatHistoryMap = _adjustChatHistoryForTokenLimit(
       chatPrompt: chatPrompt,
@@ -84,13 +102,14 @@ class PromptBuilder {
       keywords: keywords,
       maxInputTokens: maxInputTokens,
       tokenizer: tokenizer,
+      conditionStates: states,
     );
 
     final contents = <Map<String, dynamic>>[];
 
     if (chatPrompt != null && chatPrompt.items.isNotEmpty) {
       for (final item in chatPrompt.items) {
-        if (item.role == PromptRole.system || !item.enabled) continue;
+        if (item.role == PromptRole.system || !isItemActive(item, states)) continue;
 
         if (item.role == PromptRole.chat) {
           final messages = adjustedChatHistoryMap[item] ?? [];
@@ -131,6 +150,7 @@ class PromptBuilder {
     required Map<String, String> keywords,
     int? maxInputTokens,
     TokenizerType? tokenizer,
+    Map<int, String> conditionStates = const {},
   }) {
     if (maxInputTokens == null || maxInputTokens <= 0) {
       return chatHistoryMap;
@@ -143,7 +163,7 @@ class PromptBuilder {
     // 프롬프트 항목 중 chat이 아닌 것들의 토큰 계산
     if (chatPrompt != null) {
       for (final item in chatPrompt.items) {
-        if (item.role == PromptRole.system || item.role == PromptRole.chat || !item.enabled) continue;
+        if (item.role == PromptRole.system || item.role == PromptRole.chat || !isItemActive(item, conditionStates)) continue;
         final replaced = replaceKeywords(item.content, keywords);
         baseTokens += TokenCounter.estimateTokenCount(replaced, tokenizer: tokenizer);
       }
@@ -303,5 +323,47 @@ class PromptBuilder {
       result = result.replaceAll('{{${entry.key}}}', entry.value);
     }
     return result;
+  }
+
+  /// Check if a prompt item is active based on its enableMode and condition states.
+  /// [conditionStates] maps conditionId -> current value
+  ///   - toggle: "true" or "false"
+  ///   - singleSelect: selected option name
+  static bool isItemActive(
+    PromptItem item,
+    Map<int, String> conditionStates,
+  ) {
+    switch (item.enableMode) {
+      case EnableMode.enabled:
+        return true;
+      case EnableMode.disabled:
+        return false;
+      case EnableMode.conditional:
+        if (item.conditionId == null || item.conditionValue == null) {
+          return false;
+        }
+        final currentValue = conditionStates[item.conditionId!];
+        if (currentValue == null) return false;
+        return currentValue == item.conditionValue;
+    }
+  }
+
+  /// Build variable substitution keywords from condition states.
+  /// For conditions of type "variable", replaces {{variableName}} with
+  /// the currently selected option value.
+  static Map<String, String> buildConditionKeywords(
+    List<PromptCondition> conditions,
+    Map<int, String> conditionStates,
+  ) {
+    final keywords = <String, String>{};
+    for (final condition in conditions) {
+      if (condition.type == ConditionType.variable &&
+          condition.variableName != null &&
+          condition.variableName!.isNotEmpty) {
+        final value = conditionStates[condition.id!] ?? '';
+        keywords[condition.variableName!] = value;
+      }
+    }
+    return keywords;
   }
 }

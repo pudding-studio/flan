@@ -14,6 +14,7 @@ import '../../widgets/common/common_edit_text.dart';
 import '../../widgets/common/common_info_box.dart';
 import '../../widgets/common/common_parameter_field.dart';
 import '../../widgets/common/common_title_medium.dart';
+import '../../models/prompt/prompt_condition.dart';
 import '../../models/prompt/prompt_regex_rule.dart';
 import 'tabs/prompt_items_tab.dart';
 import 'tabs/prompt_regex_tab.dart';
@@ -54,6 +55,14 @@ class _PromptEditScreenState extends State<PromptEditScreen>
   final Map<int, TextEditingController> _regexReplacementControllers = {};
   int _nextRegexTempId = -1;
   int _getNextRegexTempId() => _nextRegexTempId--;
+
+  // Conditions
+  final List<PromptCondition> _conditions = [];
+  int _nextConditionTempId = -1;
+  int _getNextConditionTempId() => _nextConditionTempId--;
+  int _nextConditionOptionTempId = -1;
+  int _getNextConditionOptionTempId() => _nextConditionOptionTempId--;
+  bool _conditionsSectionExpanded = true;
 
   // Parameter controllers
   final _maxInputTokensController = TextEditingController();
@@ -112,6 +121,14 @@ class _PromptEditScreenState extends State<PromptEditScreen>
       _regexPatternControllers[rule.id!] = TextEditingController(text: rule.pattern);
       _regexReplacementControllers[rule.id!] = TextEditingController(text: rule.replacement);
     }
+
+    // Load conditions
+    final conditions = await _db.readPromptConditions(prompt.id!);
+    for (var condition in conditions) {
+      final options = await _db.readPromptConditionOptions(condition.id!);
+      condition.options.addAll(options);
+    }
+    _conditions.addAll(conditions);
 
     if (mounted) {
       setState(() {});
@@ -269,6 +286,28 @@ class _PromptEditScreenState extends State<PromptEditScreen>
             order: i,
           ),
         );
+      }
+
+      // Save conditions
+      await _db.deletePromptConditionsByPrompt(promptId);
+      for (int i = 0; i < _conditions.length; i++) {
+        final condition = _conditions[i];
+        final conditionId = await _db.createPromptCondition(
+          condition.copyWith(
+            id: null,
+            chatPromptId: promptId,
+            order: i,
+          ),
+        );
+        for (int j = 0; j < condition.options.length; j++) {
+          await _db.createPromptConditionOption(
+            condition.options[j].copyWith(
+              id: null,
+              conditionId: conditionId,
+              order: j,
+            ),
+          );
+        }
       }
 
       if (mounted) {
@@ -488,6 +527,31 @@ class _PromptEditScreenState extends State<PromptEditScreen>
     }
   }
 
+  void _addCondition() {
+    setState(() {
+      _conditions.add(PromptCondition(
+        id: _getNextConditionTempId(),
+        name: '',
+        type: ConditionType.toggle,
+        order: _conditions.length,
+        isExpanded: true,
+      ));
+    });
+  }
+
+  Future<void> _deleteCondition(PromptCondition condition) async {
+    final confirmed = await CommonDialog.showDeleteConfirmation(
+      context: context,
+      itemName: condition.name.isEmpty ? '조건' : condition.name,
+    );
+
+    if (confirmed) {
+      setState(() {
+        _conditions.remove(condition);
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -571,6 +635,14 @@ class _PromptEditScreenState extends State<PromptEditScreen>
               onMoveItemOutOfFolder: _moveItemOutOfFolder,
               onReorderItem: _reorderItem,
               onReorderFolder: _reorderFolder,
+              conditions: _conditions,
+              conditionsSectionExpanded: _conditionsSectionExpanded,
+              onConditionsSectionToggle: () =>
+                  setState(() => _conditionsSectionExpanded = !_conditionsSectionExpanded),
+              onAddCondition: _addCondition,
+              onDeleteCondition: _deleteCondition,
+              onUpdateConditions: () => setState(() {}),
+              getNextConditionOptionTempId: _getNextConditionOptionTempId,
             ),
             PromptRegexTab(
               rules: _regexRules,

@@ -32,6 +32,23 @@ enum ChatSettingMode {
   }
 }
 
+enum EnableMode {
+  enabled,
+  conditional,
+  disabled;
+
+  String get displayName {
+    switch (this) {
+      case EnableMode.enabled:
+        return '활성화';
+      case EnableMode.conditional:
+        return '조건';
+      case EnableMode.disabled:
+        return '비활성화';
+    }
+  }
+}
+
 enum ChatRangeType {
   recent,
   middle,
@@ -68,6 +85,11 @@ class PromptItem {
   final int? chatStartPosition;
   final int? chatEndPosition;
 
+  // Condition-based activation
+  final EnableMode enableMode;
+  final int? conditionId;
+  final String? conditionValue;
+
   PromptItem({
     this.id,
     this.chatPromptId,
@@ -84,6 +106,9 @@ class PromptItem {
     this.recentChatCount,
     this.chatStartPosition,
     this.chatEndPosition,
+    this.enableMode = EnableMode.enabled,
+    this.conditionId,
+    this.conditionValue,
   });
 
   factory PromptItem.fromMap(Map<String, dynamic> map) {
@@ -111,6 +136,14 @@ class PromptItem {
       recentChatCount: map['recent_chat_count'] as int?,
       chatStartPosition: map['chat_start_position'] as int?,
       chatEndPosition: map['chat_end_position'] as int?,
+      enableMode: EnableMode.values.firstWhere(
+        (m) => m.name == (map['enable_mode'] as String?),
+        orElse: () => (map['enabled'] as int? ?? 1) == 1
+            ? EnableMode.enabled
+            : EnableMode.disabled,
+      ),
+      conditionId: map['condition_id'] as int?,
+      conditionValue: map['condition_value'] as String?,
     );
   }
 
@@ -130,6 +163,9 @@ class PromptItem {
       'recent_chat_count': recentChatCount,
       'chat_start_position': chatStartPosition,
       'chat_end_position': chatEndPosition,
+      'enable_mode': enableMode.name,
+      'condition_id': conditionId,
+      'condition_value': conditionValue,
     };
   }
 
@@ -150,6 +186,9 @@ class PromptItem {
       'recentChatCount': recentChatCount,
       'chatStartPosition': chatStartPosition,
       'chatEndPosition': chatEndPosition,
+      'enableMode': enableMode.name,
+      'conditionId': conditionId,
+      'conditionValue': conditionValue,
     };
   }
 
@@ -179,6 +218,14 @@ class PromptItem {
       recentChatCount: json['recentChatCount'] as int?,
       chatStartPosition: json['chatStartPosition'] as int?,
       chatEndPosition: json['chatEndPosition'] as int?,
+      enableMode: EnableMode.values.firstWhere(
+        (m) => m.name == (json['enableMode'] as String?),
+        orElse: () => (json['enabled'] as bool? ?? true)
+            ? EnableMode.enabled
+            : EnableMode.disabled,
+      ),
+      conditionId: json['conditionId'] as int?,
+      conditionValue: json['conditionValue'] as String?,
     );
   }
 
@@ -198,6 +245,9 @@ class PromptItem {
     int? recentChatCount,
     int? chatStartPosition,
     int? chatEndPosition,
+    EnableMode? enableMode,
+    int? conditionId,
+    String? conditionValue,
   }) {
     return PromptItem(
       id: id ?? this.id,
@@ -215,6 +265,36 @@ class PromptItem {
       recentChatCount: recentChatCount ?? this.recentChatCount,
       chatStartPosition: chatStartPosition ?? this.chatStartPosition,
       chatEndPosition: chatEndPosition ?? this.chatEndPosition,
+      enableMode: enableMode ?? this.enableMode,
+      conditionId: conditionId ?? this.conditionId,
+      conditionValue: conditionValue ?? this.conditionValue,
+    );
+  }
+
+  PromptItem copyWithNullableCondition({
+    EnableMode? enableMode,
+    required int? conditionId,
+    required String? conditionValue,
+  }) {
+    return PromptItem(
+      id: id,
+      chatPromptId: chatPromptId,
+      folderId: folderId,
+      role: role,
+      content: content,
+      name: name,
+      order: order,
+      enabled: enabled,
+      isExpanded: isExpanded,
+      chatSettingMode: chatSettingMode,
+      includeStartPosition: includeStartPosition,
+      chatRangeType: chatRangeType,
+      recentChatCount: recentChatCount,
+      chatStartPosition: chatStartPosition,
+      chatEndPosition: chatEndPosition,
+      enableMode: enableMode ?? this.enableMode,
+      conditionId: conditionId,
+      conditionValue: conditionValue,
     );
   }
 
@@ -234,6 +314,9 @@ class PromptItem {
     int? recentChatCount,
     int? chatStartPosition,
     int? chatEndPosition,
+    EnableMode? enableMode,
+    int? conditionId,
+    String? conditionValue,
   }) {
     return PromptItem(
       id: id ?? this.id,
@@ -251,6 +334,9 @@ class PromptItem {
       recentChatCount: recentChatCount ?? this.recentChatCount,
       chatStartPosition: chatStartPosition ?? this.chatStartPosition,
       chatEndPosition: chatEndPosition ?? this.chatEndPosition,
+      enableMode: enableMode ?? this.enableMode,
+      conditionId: conditionId ?? this.conditionId,
+      conditionValue: conditionValue ?? this.conditionValue,
     );
   }
 }

@@ -8,6 +8,8 @@ import '../models/character/cover_image.dart';
 import '../models/prompt/chat_prompt.dart';
 import '../models/prompt/prompt_item.dart';
 import '../models/prompt/prompt_item_folder.dart';
+import '../models/prompt/prompt_condition.dart';
+import '../models/prompt/prompt_condition_option.dart';
 import '../models/prompt/prompt_regex_rule.dart';
 import '../models/chat/chat_room.dart';
 import '../models/chat/chat_message.dart';
@@ -34,7 +36,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 34,
+      version: 36,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -206,6 +208,9 @@ class DatabaseHelper {
         recent_chat_count INTEGER,
         chat_start_position INTEGER,
         chat_end_position INTEGER,
+        enable_mode $textType DEFAULT 'enabled',
+        condition_id INTEGER,
+        condition_value $textTypeNullable,
         FOREIGN KEY (chat_prompt_id) REFERENCES chat_prompts (id) ON DELETE CASCADE,
         FOREIGN KEY (folder_id) REFERENCES prompt_item_folders (id) ON DELETE CASCADE
       )
@@ -245,6 +250,40 @@ class DatabaseHelper {
     await db.execute('''
       CREATE INDEX idx_chat_prompt_id_prompt_regex_rules
       ON prompt_regex_rules (chat_prompt_id)
+    ''');
+
+    // 프롬프트 조건 테이블
+    await db.execute('''
+      CREATE TABLE prompt_conditions (
+        id $idType,
+        chat_prompt_id $intType,
+        name $textType DEFAULT '',
+        type $textType DEFAULT 'toggle',
+        variable_name $textTypeNullable,
+        `order` $intType DEFAULT 0,
+        FOREIGN KEY (chat_prompt_id) REFERENCES chat_prompts (id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute('''
+      CREATE INDEX idx_chat_prompt_id_prompt_conditions
+      ON prompt_conditions (chat_prompt_id)
+    ''');
+
+    // 프롬프트 조건 옵션 테이블
+    await db.execute('''
+      CREATE TABLE prompt_condition_options (
+        id $idType,
+        condition_id $intType,
+        name $textType DEFAULT '',
+        `order` $intType DEFAULT 0,
+        FOREIGN KEY (condition_id) REFERENCES prompt_conditions (id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute('''
+      CREATE INDEX idx_condition_id_prompt_condition_options
+      ON prompt_condition_options (condition_id)
     ''');
 
     // 채팅방 테이블
@@ -930,6 +969,62 @@ class DatabaseHelper {
         ALTER TABLE chat_rooms ADD COLUMN auto_pin_by_message_count INTEGER
       ''');
     }
+
+    if (oldVersion < 35) {
+      await db.execute('''
+        CREATE TABLE prompt_conditions (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          chat_prompt_id INTEGER NOT NULL,
+          name TEXT NOT NULL DEFAULT '',
+          type TEXT NOT NULL DEFAULT 'toggle',
+          variable_name TEXT,
+          `order` INTEGER NOT NULL DEFAULT 0,
+          FOREIGN KEY (chat_prompt_id) REFERENCES chat_prompts (id) ON DELETE CASCADE
+        )
+      ''');
+      await db.execute('''
+        CREATE INDEX idx_chat_prompt_id_prompt_conditions
+        ON prompt_conditions (chat_prompt_id)
+      ''');
+      await db.execute('''
+        CREATE TABLE prompt_condition_options (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          condition_id INTEGER NOT NULL,
+          name TEXT NOT NULL DEFAULT '',
+          `order` INTEGER NOT NULL DEFAULT 0,
+          FOREIGN KEY (condition_id) REFERENCES prompt_conditions (id) ON DELETE CASCADE
+        )
+      ''');
+      await db.execute('''
+        CREATE INDEX idx_condition_id_prompt_condition_options
+        ON prompt_condition_options (condition_id)
+      ''');
+    }
+
+    if (oldVersion < 36) {
+      final columns = await db.rawQuery('PRAGMA table_info(prompt_items)');
+      final columnNames = columns.map((c) => c['name'] as String).toSet();
+
+      if (!columnNames.contains('enable_mode')) {
+        await db.execute('''
+          ALTER TABLE prompt_items ADD COLUMN enable_mode TEXT NOT NULL DEFAULT 'enabled'
+        ''');
+        // Migrate existing enabled=0 to enable_mode='disabled'
+        await db.execute('''
+          UPDATE prompt_items SET enable_mode = 'disabled' WHERE enabled = 0
+        ''');
+      }
+      if (!columnNames.contains('condition_id')) {
+        await db.execute('''
+          ALTER TABLE prompt_items ADD COLUMN condition_id INTEGER
+        ''');
+      }
+      if (!columnNames.contains('condition_value')) {
+        await db.execute('''
+          ALTER TABLE prompt_items ADD COLUMN condition_value TEXT
+        ''');
+      }
+    }
   }
 
   // ==================== 캐릭터 CRUD ====================
@@ -1488,6 +1583,55 @@ class DatabaseHelper {
       where: 'chat_prompt_id = ?',
       whereArgs: [chatPromptId],
     );
+  }
+
+  // ==================== 프롬프트 조건 CRUD ====================
+
+  Future<int> createPromptCondition(PromptCondition condition) async {
+    final db = await database;
+    final map = condition.toMap();
+    map.remove('id');
+    return await db.insert('prompt_conditions', map);
+  }
+
+  Future<List<PromptCondition>> readPromptConditions(int chatPromptId) async {
+    final db = await database;
+    final result = await db.query(
+      'prompt_conditions',
+      where: 'chat_prompt_id = ?',
+      whereArgs: [chatPromptId],
+      orderBy: '`order` ASC',
+    );
+    return result.map((map) => PromptCondition.fromMap(map)).toList();
+  }
+
+  Future<void> deletePromptConditionsByPrompt(int chatPromptId) async {
+    final db = await database;
+    await db.delete(
+      'prompt_conditions',
+      where: 'chat_prompt_id = ?',
+      whereArgs: [chatPromptId],
+    );
+  }
+
+  // ==================== 프롬프트 조건 옵션 CRUD ====================
+
+  Future<int> createPromptConditionOption(PromptConditionOption option) async {
+    final db = await database;
+    final map = option.toMap();
+    map.remove('id');
+    return await db.insert('prompt_condition_options', map);
+  }
+
+  Future<List<PromptConditionOption>> readPromptConditionOptions(int conditionId) async {
+    final db = await database;
+    final result = await db.query(
+      'prompt_condition_options',
+      where: 'condition_id = ?',
+      whereArgs: [conditionId],
+      orderBy: '`order` ASC',
+    );
+    return result.map((map) => PromptConditionOption.fromMap(map)).toList();
   }
 
   // ==================== 채팅방 CRUD ====================
