@@ -9,6 +9,10 @@ import '../../../models/character/character.dart';
 import '../../../models/character/character_book_folder.dart';
 import '../../../models/character/persona.dart';
 import '../../../models/prompt/chat_prompt.dart';
+import '../../../models/prompt/prompt_condition.dart';
+import '../../../models/prompt/prompt_condition_option.dart';
+import '../../../models/prompt/prompt_condition_preset.dart';
+import '../../../models/prompt/prompt_condition_preset_value.dart';
 import '../../../providers/chat_model_provider.dart';
 import '../../../services/auto_summary_service.dart';
 import '../../../utils/common_dialog.dart';
@@ -44,6 +48,7 @@ class ChatRoomDrawer extends StatefulWidget {
   final ValueChanged<bool> onAutoPinByLocationChanged;
   final ValueChanged<bool> onAutoPinByAiChanged;
   final ValueChanged<int?> onAutoPinByMessageCountChanged;
+  final ValueChanged<int?> onPresetChanged;
 
   const ChatRoomDrawer({
     super.key,
@@ -63,6 +68,7 @@ class ChatRoomDrawer extends StatefulWidget {
     required this.onAutoPinByLocationChanged,
     required this.onAutoPinByAiChanged,
     required this.onAutoPinByMessageCountChanged,
+    required this.onPresetChanged,
   });
 
   @override
@@ -71,6 +77,14 @@ class ChatRoomDrawer extends StatefulWidget {
 
 class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   final DatabaseHelper _db = DatabaseHelper.instance;
+
+  // Drawer label styles (+2pt from default)
+  TextStyle? get _sectionHeaderStyle =>
+      Theme.of(context).textTheme.titleSmall?.copyWith(fontSize: 16);
+  TextStyle? get _fieldLabelStyle =>
+      Theme.of(context).textTheme.bodySmall?.copyWith(fontWeight: FontWeight.w600, fontSize: 14);
+  TextStyle? get _subLabelStyle =>
+      Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 14);
 
   late DrawerTab _selectedTab;
   bool _memoExpanded = true;
@@ -81,6 +95,10 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   late TextEditingController _personaContentController;
 
   Persona? _persona;
+
+  List<PromptConditionPreset> _presets = [];
+  List<PromptCondition> _conditions = [];
+  final Map<int, TextEditingController> _customValueControllers = {};
 
   List<CharacterBookFolder> _folders = [];
   List<CharacterBook> _standaloneBooks = [];
@@ -119,6 +137,9 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
     _personaNameController.dispose();
     _personaContentController.dispose();
     _pinMessageCountController.dispose();
+    for (final c in _customValueControllers.values) {
+      c.dispose();
+    }
     for (final c in _bookFieldControllers.values) {
       c.dispose();
     }
@@ -173,6 +194,8 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
       }
     }
 
+    await _loadPresetsAndConditions();
+
     final folders = await _db.readCharacterBookFolders(characterId);
     for (final folder in folders) {
       final books = await _db.readCharacterBooksByFolder(folder.id!);
@@ -200,6 +223,91 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
       _bookFieldControllers[key] = TextEditingController(text: initialValue);
     }
     return _bookFieldControllers[key]!;
+  }
+
+  Future<void> _loadPresetsAndConditions() async {
+    final promptId = widget.chatRoom.selectedChatPromptId;
+    if (promptId == null) {
+      _presets = [];
+      _conditions = [];
+      return;
+    }
+
+    final presets = await _db.readPromptConditionPresets(promptId);
+    for (final preset in presets) {
+      final values = await _db.readPromptConditionPresetValues(preset.id!);
+      preset.values.addAll(values);
+    }
+
+    final conditions = await _db.readPromptConditions(promptId);
+    for (final condition in conditions) {
+      final options = await _db.readPromptConditionOptions(condition.id!);
+      condition.options.addAll(options);
+    }
+
+    _presets = presets;
+    _conditions = conditions;
+  }
+
+  PromptConditionPreset? get _selectedPreset {
+    final presetId = widget.chatRoom.selectedConditionPresetId;
+    if (presetId == null) {
+      // Return default preset
+      try {
+        return _presets.firstWhere((p) => p.isDefault);
+      } catch (_) {
+        return _presets.isNotEmpty ? _presets.first : null;
+      }
+    }
+    try {
+      return _presets.firstWhere((p) => p.id == presetId);
+    } catch (_) {
+      return _presets.isNotEmpty ? _presets.first : null;
+    }
+  }
+
+  PromptConditionPresetValue? _getValueForCondition(PromptConditionPreset preset, int? conditionId) {
+    if (conditionId == null) return null;
+    try {
+      return preset.values.firstWhere((v) => v.conditionId == conditionId);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _setValueForCondition(PromptConditionPreset preset, PromptCondition condition, String value, {String? customValue}) {
+    setState(() {
+      final existingIndex = preset.values.indexWhere((v) => v.conditionId == condition.id);
+      final presetValue = PromptConditionPresetValue(
+        presetId: preset.id,
+        conditionId: condition.id,
+        value: value,
+        customValue: customValue,
+      );
+      if (existingIndex != -1) {
+        preset.values[existingIndex] = presetValue;
+      } else {
+        preset.values.add(presetValue);
+      }
+    });
+    _savePresetValues(preset);
+  }
+
+  Future<void> _savePresetValues(PromptConditionPreset preset) async {
+    if (preset.id == null) return;
+    await _db.deletePromptConditionPresetValuesByPreset(preset.id!);
+    for (final value in preset.values) {
+      await _db.createPromptConditionPresetValue(
+        value.copyWith(presetId: preset.id),
+      );
+    }
+  }
+
+  TextEditingController _getCustomValueController(int conditionId, String? initialValue) {
+    if (!_customValueControllers.containsKey(conditionId)) {
+      _customValueControllers[conditionId] = TextEditingController(text: initialValue ?? '');
+    }
+    return _customValueControllers[conditionId]!;
   }
 
   Future<void> _saveMemo() async {
@@ -436,14 +544,10 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
             padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomInset),
             children: [
               Text(
-                '사용 캐릭터',
-                style: Theme.of(context).textTheme.titleSmall,
-              ),
-              const SizedBox(height: 8),
-              Text(
                 widget.character.name,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
+                  fontSize: 24,
                 ),
               ),
               const SizedBox(height: 24),
@@ -455,7 +559,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
                   children: [
                     Text(
                       '채팅 메모',
-                      style: Theme.of(context).textTheme.titleSmall,
+                      style: _sectionHeaderStyle,
                     ),
                     const Spacer(),
                     Icon(
@@ -490,7 +594,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
       children: [
         Text(
           '채팅창 설정',
-          style: Theme.of(context).textTheme.titleSmall,
+          style: _sectionHeaderStyle,
         ),
         const SizedBox(height: 12),
         _buildVerticalSettingRow(
@@ -519,6 +623,10 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
             size: CommonDropdownButtonSize.xsmall,
           ),
         ),
+        if (widget.chatRoom.selectedChatPromptId != null && _presets.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          _buildPresetSection(),
+        ],
         const SizedBox(height: 8),
         _buildVerticalSettingRow(
           label: '핀 모드',
@@ -589,11 +697,211 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
     );
   }
 
+  Widget _buildPresetSection() {
+    final selectedPreset = _selectedPreset;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _buildVerticalSettingRow(
+          label: '프롬프트 프리셋',
+          child: CommonDropdownButton<int?>(
+            value: selectedPreset?.id,
+            items: _presets.map((p) => p.id).toList(),
+            onChanged: (id) {
+              widget.onPresetChanged(id);
+              // Reset custom value controllers when preset changes
+              for (final c in _customValueControllers.values) {
+                c.dispose();
+              }
+              _customValueControllers.clear();
+              setState(() {});
+            },
+            labelBuilder: (id) {
+              if (id == null) return '없음';
+              try {
+                return _presets.firstWhere((p) => p.id == id).name;
+              } catch (_) {
+                return '없음';
+              }
+            },
+            size: CommonDropdownButtonSize.xsmall,
+          ),
+        ),
+        if (selectedPreset != null && _conditions.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.only(left: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: _conditions.map((condition) =>
+                _buildPresetConditionRow(selectedPreset, condition),
+              ).toList(),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildPresetConditionRow(PromptConditionPreset preset, PromptCondition condition) {
+    switch (condition.type) {
+      case ConditionType.toggle:
+        return _buildPresetToggleRow(preset, condition);
+      case ConditionType.singleSelect:
+        return _buildPresetSingleSelectRow(preset, condition);
+      case ConditionType.variable:
+        return _buildPresetVariableRow(preset, condition);
+    }
+  }
+
+  Widget _buildPresetToggleRow(PromptConditionPreset preset, PromptCondition condition) {
+    final presetValue = _getValueForCondition(preset, condition.id);
+    final isOn = presetValue?.value == 'true';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              condition.name.isEmpty ? '이름 없음' : condition.name,
+              style: _subLabelStyle,
+            ),
+          ),
+          SizedBox(
+            height: 28,
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Switch(
+                value: isOn,
+                onChanged: (value) {
+                  _setValueForCondition(preset, condition, value ? 'true' : 'false');
+                },
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPresetSingleSelectRow(PromptConditionPreset preset, PromptCondition condition) {
+    final presetValue = _getValueForCondition(preset, condition.id);
+    final selectedOption = condition.options.cast<PromptConditionOption?>().firstWhere(
+      (o) => o!.name == presetValue?.value,
+      orElse: () => null,
+    );
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            condition.name.isEmpty ? '이름 없음' : condition.name,
+            style: _subLabelStyle,
+          ),
+          const SizedBox(height: 4),
+          CommonDropdownButton<PromptConditionOption>(
+            value: selectedOption,
+            items: condition.options,
+            size: CommonDropdownButtonSize.xsmall,
+            hintText: '항목을 선택하세요',
+            onChanged: (value) {
+              if (value != null) {
+                _setValueForCondition(preset, condition, value.name);
+              }
+            },
+            labelBuilder: (o) => o.name,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPresetVariableRow(PromptConditionPreset preset, PromptCondition condition) {
+    final presetValue = _getValueForCondition(preset, condition.id);
+    final isCustom = presetValue?.value == PromptConditionPresetValue.customOptionKey;
+
+    final optionsWithCustom = [
+      ...condition.options,
+      PromptConditionOption(id: -9999, name: '기타', order: condition.options.length),
+    ];
+
+    PromptConditionOption? selectedOption;
+    if (isCustom) {
+      selectedOption = optionsWithCustom.last;
+    } else if (presetValue != null) {
+      selectedOption = optionsWithCustom.cast<PromptConditionOption?>().firstWhere(
+        (o) => o!.name == presetValue.value && o.id != -9999,
+        orElse: () => null,
+      );
+    }
+
+    final customController = _getCustomValueController(
+      condition.id!,
+      presetValue?.customValue,
+    );
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            condition.name.isEmpty ? '이름 없음' : condition.name,
+            style: _subLabelStyle,
+          ),
+          const SizedBox(height: 4),
+          CommonDropdownButton<PromptConditionOption>(
+            value: selectedOption,
+            items: optionsWithCustom,
+            size: CommonDropdownButtonSize.xsmall,
+            hintText: '항목을 선택하세요',
+            onChanged: (value) {
+              if (value != null) {
+                if (value.id == -9999) {
+                  _setValueForCondition(
+                    preset,
+                    condition,
+                    PromptConditionPresetValue.customOptionKey,
+                    customValue: customController.text,
+                  );
+                } else {
+                  _setValueForCondition(preset, condition, value.name);
+                  customController.clear();
+                }
+              }
+            },
+            labelBuilder: (o) => o.name,
+          ),
+          if (isCustom) ...[
+            const SizedBox(height: 4),
+            CommonEditText(
+              controller: customController,
+              size: CommonEditTextSize.small,
+              hintText: '값을 입력하세요',
+              onFocusLost: (value) {
+                _setValueForCondition(
+                  preset,
+                  condition,
+                  PromptConditionPresetValue.customOptionKey,
+                  customValue: value.trim(),
+                );
+              },
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildVerticalSettingRow({required String label, required Widget child}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
+        Text(label, style: _fieldLabelStyle),
         const SizedBox(height: 4),
         child,
       ],
@@ -612,7 +920,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
           const SizedBox(width: 16),
           SizedBox(
             width: 64,
-            child: Text(label, style: Theme.of(context).textTheme.bodySmall),
+            child: Text(label, style: _subLabelStyle),
           ),
           const Spacer(),
           SizedBox(
@@ -668,6 +976,8 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
             children: [
               CommonFieldSection(
                 label: '페르소나 선택',
+                labelStyle: _sectionHeaderStyle,
+                labelSpacing: 8,
                 child: CommonDropdownButton<int?>(
                   value: widget.chatRoom.selectedPersonaId,
                   items: [null, ...widget.personas.map((p) => p.id), _createNewPersonaId],
@@ -683,6 +993,8 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
               if (_persona != null) ...[
                 CommonFieldSection(
                   label: '페르소나 이름',
+                  labelStyle: _sectionHeaderStyle,
+                  labelSpacing: 8,
                   child: CommonEditText(
                     controller: _personaNameController,
                     hintText: '페르소나 이름',
@@ -691,6 +1003,8 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
                 ),
                 CommonFieldSection(
                   label: '페르소나 설명',
+                  labelStyle: _sectionHeaderStyle,
+                  labelSpacing: 8,
                   bottomSpacing: 0,
                   child: CommonEditText(
                     controller: _personaContentController,
@@ -720,7 +1034,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
             children: [
               Text(
                 '캐릭터',
-                style: Theme.of(context).textTheme.titleSmall,
+                style: _sectionHeaderStyle,
               ),
               const SizedBox(height: 8),
               CommonEditText(
@@ -779,7 +1093,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: ExpansionTile(
-        title: Text(folder.name, style: Theme.of(context).textTheme.titleSmall),
+        title: Text(folder.name, style: _sectionHeaderStyle),
         leading: const Icon(Icons.folder_outlined, size: 20),
         initiallyExpanded: folder.isExpanded,
         onExpansionChanged: (expanded) => folder.isExpanded = expanded,
@@ -949,7 +1263,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
                 children: [
                   Text(
                     '자동 요약 목록',
-                    style: Theme.of(context).textTheme.titleSmall,
+                    style: _sectionHeaderStyle,
                   ),
                   Text(
                     '${_summaries.length}개',

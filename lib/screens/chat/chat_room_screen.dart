@@ -11,6 +11,9 @@ import '../../models/character/start_scenario.dart';
 import '../../models/prompt/chat_prompt.dart';
 import '../../models/prompt/prompt_item.dart';
 import '../../models/prompt/prompt_parameters.dart';
+import '../../models/prompt/prompt_condition.dart';
+import '../../models/prompt/prompt_condition_preset.dart';
+import '../../models/prompt/prompt_condition_preset_value.dart';
 import '../../models/prompt/prompt_regex_rule.dart';
 import '../../utils/regex_processor.dart';
 import '../../database/database_helper.dart';
@@ -227,6 +230,41 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       }
     }
 
+    // Load condition states from selected preset
+    List<PromptCondition>? conditions;
+    Map<int, String>? conditionStates;
+    if (chatPrompt != null) {
+      conditions = await _db.readPromptConditions(chatPrompt.id!);
+      for (final condition in conditions) {
+        final options = await _db.readPromptConditionOptions(condition.id!);
+        condition.options.addAll(options);
+      }
+
+      final presets = await _db.readPromptConditionPresets(chatPrompt.id!);
+      PromptConditionPreset? selectedPreset;
+      final presetId = _chatRoom!.selectedConditionPresetId;
+      if (presetId != null) {
+        try {
+          selectedPreset = presets.firstWhere((p) => p.id == presetId);
+        } catch (_) {}
+      }
+      selectedPreset ??= presets.where((p) => p.isDefault).firstOrNull ?? presets.firstOrNull;
+
+      if (selectedPreset != null) {
+        final values = await _db.readPromptConditionPresetValues(selectedPreset.id!);
+        conditionStates = {};
+        for (final v in values) {
+          if (v.conditionId != null) {
+            if (v.value == PromptConditionPresetValue.customOptionKey) {
+              conditionStates[v.conditionId!] = v.customValue ?? '';
+            } else {
+              conditionStates[v.conditionId!] = v.value;
+            }
+          }
+        }
+      }
+    }
+
     // Stage 1+2: Build frame and apply keyword substitution
     final rawSystemPrompt = PromptBuilder.buildSystemPrompt(
       chatPrompt: chatPrompt,
@@ -237,6 +275,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       chatRoom: _chatRoom,
       summaries: summaries,
       summaryMetadataMap: summaryMetadataMap,
+      conditions: conditions,
+      conditionStates: conditionStates,
     );
 
     // Exclude summarized messages from chat history
@@ -267,6 +307,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       chatRoom: _chatRoom,
       summaries: summaries,
       summaryMetadataMap: summaryMetadataMap,
+      conditions: conditions,
+      conditionStates: conditionStates,
     );
 
     // Stage 3: Apply sendDataModify to the fully assembled prompt data
@@ -647,6 +689,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       selectedStartScenarioId: _chatRoom!.selectedStartScenarioId,
       totalTokenCount: _chatRoom!.totalTokenCount,
       createdAt: _chatRoom!.createdAt,
+      updatedAt: DateTime.now(),
+    );
+    await _db.updateChatRoom(updated);
+    setState(() => _chatRoom = updated);
+  }
+
+  Future<void> _onPresetChanged(int? presetId) async {
+    if (_chatRoom == null) return;
+    final updated = _chatRoom!.copyWith(
+      selectedConditionPresetId: presetId,
       updatedAt: DateTime.now(),
     );
     await _db.updateChatRoom(updated);
@@ -1488,6 +1540,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         onAutoPinByLocationChanged: (v) => _onAutoPinOptionChanged(byLocation: v),
         onAutoPinByAiChanged: (v) => _onAutoPinOptionChanged(byAi: v),
         onAutoPinByMessageCountChanged: (v) => _onAutoPinOptionChanged(byMessageCount: v),
+        onPresetChanged: _onPresetChanged,
       ),
       appBar: CommonAppBar(
         title: _character!.name,

@@ -5,6 +5,7 @@ class ChatRoom {
   final int? selectedChatPromptId;
   final int? selectedPersonaId;
   final int? selectedStartScenarioId;
+  final int? selectedConditionPresetId;
   final int totalTokenCount;
   final String memo;
   final String summary;
@@ -23,6 +24,7 @@ class ChatRoom {
     this.selectedChatPromptId,
     this.selectedPersonaId,
     this.selectedStartScenarioId,
+    this.selectedConditionPresetId,
     this.totalTokenCount = 0,
     this.memo = '',
     this.summary = '',
@@ -44,6 +46,7 @@ class ChatRoom {
       selectedChatPromptId: map['selected_chat_prompt_id'] as int?,
       selectedPersonaId: map['selected_persona_id'] as int?,
       selectedStartScenarioId: map['selected_start_scenario_id'] as int?,
+      selectedConditionPresetId: map['selected_condition_preset_id'] as int?,
       totalTokenCount: map['total_token_count'] as int? ?? 0,
       memo: map['memo'] as String? ?? '',
       summary: map['summary'] as String? ?? '',
@@ -65,6 +68,7 @@ class ChatRoom {
       'selected_chat_prompt_id': selectedChatPromptId,
       'selected_persona_id': selectedPersonaId,
       'selected_start_scenario_id': selectedStartScenarioId,
+      'selected_condition_preset_id': selectedConditionPresetId,
       'total_token_count': totalTokenCount,
       'memo': memo,
       'summary': summary,
@@ -85,6 +89,7 @@ class ChatRoom {
     int? selectedChatPromptId,
     int? selectedPersonaId,
     int? selectedStartScenarioId,
+    Object? selectedConditionPresetId = _sentinel,
     int? totalTokenCount,
     String? memo,
     String? summary,
@@ -103,6 +108,9 @@ class ChatRoom {
       selectedChatPromptId: selectedChatPromptId ?? this.selectedChatPromptId,
       selectedPersonaId: selectedPersonaId ?? this.selectedPersonaId,
       selectedStartScenarioId: selectedStartScenarioId ?? this.selectedStartScenarioId,
+      selectedConditionPresetId: selectedConditionPresetId == _sentinel
+          ? this.selectedConditionPresetId
+          : selectedConditionPresetId as int?,
       totalTokenCount: totalTokenCount ?? this.totalTokenCount,
       memo: memo ?? this.memo,
       summary: summary ?? this.summary,

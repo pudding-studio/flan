@@ -38,7 +38,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 37,
+      version: 38,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -340,6 +340,7 @@ class DatabaseHelper {
         auto_pin_by_location INTEGER NOT NULL DEFAULT 1,
         auto_pin_by_ai INTEGER NOT NULL DEFAULT 0,
         auto_pin_by_message_count INTEGER,
+        selected_condition_preset_id INTEGER,
         created_at $textType,
         updated_at $textType,
         FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE,
@@ -1094,6 +1095,12 @@ class DatabaseHelper {
         ON prompt_condition_preset_values (preset_id)
       ''');
     }
+
+    if (oldVersion < 38) {
+      await db.execute('''
+        ALTER TABLE chat_rooms ADD COLUMN selected_condition_preset_id INTEGER
+      ''');
+    }
   }
 
   // ==================== 캐릭터 CRUD ====================
@@ -1749,6 +1756,15 @@ class DatabaseHelper {
       whereArgs: [presetId],
     );
     return result.map((map) => PromptConditionPresetValue.fromMap(map)).toList();
+  }
+
+  Future<void> deletePromptConditionPresetValuesByPreset(int presetId) async {
+    final db = await database;
+    await db.delete(
+      'prompt_condition_preset_values',
+      where: 'preset_id = ?',
+      whereArgs: [presetId],
+    );
   }
 
   // ==================== 채팅방 CRUD ====================
