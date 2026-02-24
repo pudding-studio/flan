@@ -52,6 +52,8 @@ class CommonDraggableFolderList<TFolder, TItem> extends StatefulWidget {
   final List<Widget>? extraActions;
   final Widget? emptyWidget;
   final bool readOnly;
+  final bool shrinkWrap;
+  final ScrollController? scrollController;
 
   const CommonDraggableFolderList({
     super.key,
@@ -83,6 +85,8 @@ class CommonDraggableFolderList<TFolder, TItem> extends StatefulWidget {
     this.extraActions,
     this.emptyWidget,
     this.readOnly = false,
+    this.shrinkWrap = false,
+    this.scrollController,
   });
 
   @override
@@ -222,53 +226,68 @@ class _CommonDraggableFolderListState<TFolder, TItem>
     final isEmpty = widget.folders.isEmpty && widget.standaloneItems.isEmpty;
     final entries = _buildMixedEntries();
 
+    final listWidget = isEmpty
+        ? (widget.emptyWidget ?? const Center(child: Text('항목이 없습니다')))
+        : ListView.builder(
+            key: _listKey,
+            controller: widget.shrinkWrap ? null : (widget.scrollController ?? _scrollController),
+            shrinkWrap: widget.shrinkWrap,
+            physics: widget.shrinkWrap ? const NeverScrollableScrollPhysics() : null,
+            itemCount: entries.length + 1,
+            itemBuilder: (context, index) {
+              if (index < entries.length) {
+                final entry = entries[index];
+                if (entry.isFolder) {
+                  return _buildDraggableFolderItem(entry.folder as TFolder, index);
+                } else {
+                  return _buildTopLevelItemWidget(entry.item as TItem, index);
+                }
+              } else {
+                return _buildTopLevelDropSlot(entries.length);
+              }
+            },
+          );
+
+    final actionButtons = !widget.readOnly
+        ? Padding(
+            padding: const EdgeInsets.only(top: 16),
+            child: Row(
+              spacing: 6,
+              children: [
+                if (widget.extraActions != null)
+                  ...widget.extraActions!,
+                Expanded(
+                  child: CommonButton.outlined(
+                    onPressed: widget.onAddFolder,
+                    icon: Icons.folder_outlined,
+                    label: widget.addFolderLabel,
+                  ),
+                ),
+                Expanded(
+                  child: CommonButton.filled(
+                    onPressed: () => widget.onAddItem(null),
+                    icon: Icons.add,
+                    label: widget.addItemLabel,
+                  ),
+                ),
+              ],
+            ),
+          )
+        : null;
+
+    if (widget.shrinkWrap) {
+      return Column(
+        children: [
+          listWidget,
+          if (actionButtons != null) actionButtons,
+        ],
+      );
+    }
+
     return Column(
       children: [
-        Expanded(
-          child: isEmpty
-              ? (widget.emptyWidget ?? const Center(child: Text('항목이 없습니다')))
-              : ListView.builder(
-                  key: _listKey,
-                  controller: _scrollController,
-                  itemCount: entries.length + 1,
-                  itemBuilder: (context, index) {
-                    if (index < entries.length) {
-                      final entry = entries[index];
-                      if (entry.isFolder) {
-                        return _buildDraggableFolderItem(entry.folder as TFolder, index);
-                      } else {
-                        return _buildTopLevelItemWidget(entry.item as TItem, index);
-                      }
-                    } else {
-                      return _buildTopLevelDropSlot(entries.length);
-                    }
-                  },
-                ),
-        ),
-        if (!widget.readOnly) ...[
-          const SizedBox(height: 16),
-          Row(
-            spacing: 6,
-            children: [
-              if (widget.extraActions != null)
-                ...widget.extraActions!,
-              Expanded(
-                child: CommonButton.outlined(
-                  onPressed: widget.onAddFolder,
-                  icon: Icons.folder_outlined,
-                  label: widget.addFolderLabel,
-                ),
-              ),
-              Expanded(
-                child: CommonButton.filled(
-                  onPressed: () => widget.onAddItem(null),
-                  icon: Icons.add,
-                  label: widget.addItemLabel,
-                ),
-              ),
-            ],
-          ),
-        ],
+        Expanded(child: listWidget),
+        if (actionButtons != null) actionButtons,
       ],
     );
   }

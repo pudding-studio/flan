@@ -37,6 +37,7 @@ class CommonEditText extends StatefulWidget {
   final int? maxLength;
   final bool obscureText;
   final Widget? suffixIcon;
+  final BoxConstraints? suffixIconConstraints;
   final bool enabled;
   final TextInputAction? textInputAction;
   final ValueChanged<String>? onFieldSubmitted;
@@ -76,6 +77,7 @@ class CommonEditText extends StatefulWidget {
     this.maxLength,
     this.obscureText = false,
     this.suffixIcon,
+    this.suffixIconConstraints,
     this.enabled = true,
     this.textInputAction,
     this.onFieldSubmitted,
@@ -163,6 +165,7 @@ class _CommonEditTextState extends State<CommonEditText> {
         ),
         contentPadding: contentPadding,
         suffixIcon: widget.suffixIcon,
+        suffixIconConstraints: widget.suffixIconConstraints,
         counterText: '',
         isDense: isDense,
       ),
