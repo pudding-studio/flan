@@ -64,10 +64,10 @@ class ChatRoomDrawer extends StatefulWidget {
   });
 
   @override
-  State<ChatRoomDrawer> createState() => _ChatRoomDrawerState();
+  ChatRoomDrawerState createState() => ChatRoomDrawerState();
 }
 
-class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
+class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   final DatabaseHelper _db = DatabaseHelper.instance;
 
   late DrawerTab _selectedTab;
@@ -106,7 +106,7 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
 
   @override
   void dispose() {
-    _saveCurrentTabData();
+    saveCurrentTabData();
     _memoController.dispose();
     _descriptionController.dispose();
     _personaNameController.dispose();
@@ -120,7 +120,7 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
     super.dispose();
   }
 
-  void _saveCurrentTabData() {
+  void saveCurrentTabData() {
     switch (_selectedTab) {
       case DrawerTab.info:
         _saveMemo();
@@ -284,7 +284,6 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
   }
 
   Future<void> _saveLorebook() async {
-    FocusScope.of(context).unfocus();
     _syncBookFieldsFromControllers();
 
     final characterId = widget.character.id!;
@@ -395,7 +394,7 @@ class _ChatRoomDrawerState extends State<ChatRoomDrawer> {
       label: Text(label),
       selected: selected,
       onSelected: (_) {
-        _saveCurrentTabData();
+        saveCurrentTabData();
         setState(() => _selectedTab = tab);
         widget.onTabChanged(tab);
       },

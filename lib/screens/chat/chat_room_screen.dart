@@ -49,6 +49,7 @@ class ChatRoomScreen extends StatefulWidget {
 
 class _ChatRoomScreenState extends State<ChatRoomScreen> {
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
+  final GlobalKey<ChatRoomDrawerState> _drawerKey = GlobalKey<ChatRoomDrawerState>();
   DrawerTab _drawerTab = DrawerTab.info;
   final DatabaseHelper _db = DatabaseHelper.instance;
   final AiService _aiService = AiService();
@@ -1427,7 +1428,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     return Scaffold(
       key: _scaffoldKey,
       endDrawerEnableOpenDragGesture: false,
+      onEndDrawerChanged: (isOpen) {
+        if (!isOpen) {
+          _drawerKey.currentState?.saveCurrentTabData();
+        }
+      },
       endDrawer: ChatRoomDrawer(
+        key: _drawerKey,
         chatRoom: _chatRoom!,
         character: _character!,
         selectedPersonaId: _chatRoom!.selectedPersonaId,
