@@ -71,6 +71,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   int? _summaryThresholdIndex;
   Set<int> _summarizedMessageIds = {};
   bool _showBottomPanel = false;
+  bool _showScrollButtons = false;
   List<ChatPrompt> _chatPrompts = [];
   List<Persona> _personas = [];
   final FocusNode _messageFocusNode = FocusNode();
@@ -79,7 +80,17 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   void initState() {
     super.initState();
     _messageFocusNode.addListener(_onMessageFocusChanged);
+    _scrollController.addListener(_onScrollChanged);
     _loadChatData();
+  }
+
+  void _onScrollChanged() {
+    final show = _scrollController.hasClients &&
+        _scrollController.position.maxScrollExtent > 0 &&
+        _scrollController.offset > 200;
+    if (show != _showScrollButtons) {
+      setState(() => _showScrollButtons = show);
+    }
   }
 
   void _onMessageFocusChanged() {
@@ -93,6 +104,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     _messageFocusNode.removeListener(_onMessageFocusChanged);
     _messageFocusNode.dispose();
     _messageController.dispose();
+    _scrollController.removeListener(_onScrollChanged);
     _scrollController.dispose();
     for (var controller in _editControllers.values) {
       controller.dispose();
@@ -1414,6 +1426,22 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     );
   }
 
+  Widget _buildScrollButton({required IconData icon, required VoidCallback onPressed}) {
+    return SizedBox(
+      width: 36,
+      height: 36,
+      child: FloatingActionButton.small(
+        heroTag: null,
+        onPressed: onPressed,
+        elevation: 2,
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+        foregroundColor: Theme.of(context).colorScheme.onSurface,
+        shape: const CircleBorder(),
+        child: Icon(icon, size: 20),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -1484,24 +1512,59 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       body: Column(
         children: [
           Expanded(
-            child: GestureDetector(
-              onTap: () {
-                if (_showBottomPanel) {
-                  setState(() => _showBottomPanel = false);
-                }
-              },
-              child: ListView.builder(
-                controller: _scrollController,
-                reverse: true,
-                itemCount: _messages.length + 1,
-                itemBuilder: (context, index) {
-                  if (index == _messages.length) {
-                    return _buildChatHeader();
-                  }
-                  final messageIndex = _messages.length - 1 - index;
-                  return _buildMessage(_messages[messageIndex], messageIndex);
-                },
-              ),
+            child: Stack(
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    if (_showBottomPanel) {
+                      setState(() => _showBottomPanel = false);
+                    }
+                  },
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    reverse: true,
+                    itemCount: _messages.length + 1,
+                    itemBuilder: (context, index) {
+                      if (index == _messages.length) {
+                        return _buildChatHeader();
+                      }
+                      final messageIndex = _messages.length - 1 - index;
+                      return _buildMessage(_messages[messageIndex], messageIndex);
+                    },
+                  ),
+                ),
+                if (_showScrollButtons)
+                  Positioned(
+                    right: 12,
+                    bottom: 12,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        _buildScrollButton(
+                          icon: Icons.keyboard_arrow_up,
+                          onPressed: () {
+                            _scrollController.animateTo(
+                              _scrollController.position.maxScrollExtent,
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeOut,
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 8),
+                        _buildScrollButton(
+                          icon: Icons.keyboard_arrow_down,
+                          onPressed: () {
+                            _scrollController.animateTo(
+                              0,
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeOut,
+                            );
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
             ),
           ),
           Container(
