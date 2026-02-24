@@ -12,6 +12,7 @@ class ChatRoom {
   final bool autoPinByDate;
   final bool autoPinByLocation;
   final bool autoPinByAi;
+  final int? autoPinByMessageCount;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -29,6 +30,7 @@ class ChatRoom {
     this.autoPinByDate = false,
     this.autoPinByLocation = false,
     this.autoPinByAi = true,
+    this.autoPinByMessageCount,
     DateTime? createdAt,
     DateTime? updatedAt,
   })  : createdAt = createdAt ?? DateTime.now(),
@@ -49,6 +51,7 @@ class ChatRoom {
       autoPinByDate: (map['auto_pin_by_date'] as int? ?? 0) == 1,
       autoPinByLocation: (map['auto_pin_by_location'] as int? ?? 0) == 1,
       autoPinByAi: (map['auto_pin_by_ai'] as int? ?? 1) == 1,
+      autoPinByMessageCount: map['auto_pin_by_message_count'] as int?,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
     );
@@ -69,6 +72,7 @@ class ChatRoom {
       'auto_pin_by_date': autoPinByDate ? 1 : 0,
       'auto_pin_by_location': autoPinByLocation ? 1 : 0,
       'auto_pin_by_ai': autoPinByAi ? 1 : 0,
+      'auto_pin_by_message_count': autoPinByMessageCount,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -88,6 +92,7 @@ class ChatRoom {
     bool? autoPinByDate,
     bool? autoPinByLocation,
     bool? autoPinByAi,
+    Object? autoPinByMessageCount = _sentinel,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -105,8 +110,13 @@ class ChatRoom {
       autoPinByDate: autoPinByDate ?? this.autoPinByDate,
       autoPinByLocation: autoPinByLocation ?? this.autoPinByLocation,
       autoPinByAi: autoPinByAi ?? this.autoPinByAi,
+      autoPinByMessageCount: autoPinByMessageCount == _sentinel
+          ? this.autoPinByMessageCount
+          : autoPinByMessageCount as int?,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
+
+  static const _sentinel = Object();
 }

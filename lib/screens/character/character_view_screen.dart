@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/character/character.dart';
 import '../../models/character/cover_image.dart';
 import '../../models/character/persona.dart';
@@ -272,6 +273,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
         roomNumber++;
       }
 
+      final prefs = await SharedPreferences.getInstance();
       final chatRoom = ChatRoom(
         characterId: widget.characterId,
         name: '${baseName}_$roomNumber',
@@ -282,6 +284,11 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
         selectedStartScenarioId: _selectedScenarioIndex != null
             ? _startScenarios[_selectedScenarioIndex!].id
             : null,
+        pinMode: prefs.getString('default_pin_mode') ?? 'auto',
+        autoPinByDate: prefs.getBool('default_auto_pin_by_date') ?? false,
+        autoPinByLocation: prefs.getBool('default_auto_pin_by_location') ?? false,
+        autoPinByAi: prefs.getBool('default_auto_pin_by_ai') ?? true,
+        autoPinByMessageCount: prefs.getInt('default_auto_pin_by_message_count'),
       );
 
       final chatRoomId = await _db.createChatRoom(chatRoom);

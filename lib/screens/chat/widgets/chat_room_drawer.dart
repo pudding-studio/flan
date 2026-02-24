@@ -43,6 +43,7 @@ class ChatRoomDrawer extends StatefulWidget {
   final ValueChanged<bool> onAutoPinByDateChanged;
   final ValueChanged<bool> onAutoPinByLocationChanged;
   final ValueChanged<bool> onAutoPinByAiChanged;
+  final ValueChanged<int?> onAutoPinByMessageCountChanged;
 
   const ChatRoomDrawer({
     super.key,
@@ -61,6 +62,7 @@ class ChatRoomDrawer extends StatefulWidget {
     required this.onAutoPinByDateChanged,
     required this.onAutoPinByLocationChanged,
     required this.onAutoPinByAiChanged,
+    required this.onAutoPinByMessageCountChanged,
   });
 
   @override
@@ -84,6 +86,8 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   List<CharacterBook> _standaloneBooks = [];
   final Map<String, TextEditingController> _bookFieldControllers = {};
 
+  late TextEditingController _pinMessageCountController;
+
   List<ChatSummary> _summaries = [];
   final Map<int, TextEditingController> _summaryControllers = {};
   final Set<int> _expandedSummaryIds = {};
@@ -101,6 +105,9 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
     _descriptionController = TextEditingController(text: widget.character.description ?? '');
     _personaNameController = TextEditingController();
     _personaContentController = TextEditingController();
+    _pinMessageCountController = TextEditingController(
+      text: widget.chatRoom.autoPinByMessageCount?.toString() ?? '',
+    );
     _loadData();
   }
 
@@ -111,6 +118,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
     _descriptionController.dispose();
     _personaNameController.dispose();
     _personaContentController.dispose();
+    _pinMessageCountController.dispose();
     for (final c in _bookFieldControllers.values) {
       c.dispose();
     }
@@ -540,6 +548,41 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
             value: widget.chatRoom.autoPinByAi,
             onChanged: widget.onAutoPinByAiChanged,
           ),
+          _buildToggleRow(
+            label: '메시지 수 기준',
+            value: widget.chatRoom.autoPinByMessageCount != null,
+            onChanged: (value) {
+              if (value) {
+                _pinMessageCountController.text = '10';
+                widget.onAutoPinByMessageCountChanged(10);
+              } else {
+                _pinMessageCountController.clear();
+                widget.onAutoPinByMessageCountChanged(null);
+              }
+            },
+          ),
+          if (widget.chatRoom.autoPinByMessageCount != null)
+            Padding(
+              padding: const EdgeInsets.only(left: 32),
+              child: _buildVerticalSettingRow(
+                label: '요약 메시지 수',
+                child: SizedBox(
+                  width: double.infinity,
+                  child: CommonEditText(
+                    controller: _pinMessageCountController,
+                    hintText: '메시지 수',
+                    size: CommonEditTextSize.small,
+                    keyboardType: TextInputType.number,
+                    onChanged: (value) {
+                      final count = int.tryParse(value);
+                      if (count != null && count > 0) {
+                        widget.onAutoPinByMessageCountChanged(count);
+                      }
+                    },
+                  ),
+                ),
+              ),
+            ),
         ],
       ],
     );

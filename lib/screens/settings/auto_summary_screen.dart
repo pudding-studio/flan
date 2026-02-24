@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../constants/ui_constants.dart';
 import '../../database/database_helper.dart';
 import '../../models/chat/chat_model.dart';
@@ -41,6 +42,14 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
   PromptParameters _parameters = const PromptParameters();
   final _maxOutputTokensController = TextEditingController();
 
+  // Pin defaults (global only)
+  String _pinMode = 'auto';
+  bool _autoPinByDate = false;
+  bool _autoPinByLocation = false;
+  bool _autoPinByAi = true;
+  bool _autoPinByMessageCountEnabled = false;
+  final _autoPinByMessageCountController = TextEditingController();
+
   // Drag state
   bool _isDragging = false;
 
@@ -57,6 +66,17 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
   }
 
   Future<void> _loadSettings() async {
+    if (widget.chatRoomId == 0) {
+      final prefs = await SharedPreferences.getInstance();
+      _pinMode = prefs.getString('default_pin_mode') ?? 'auto';
+      _autoPinByDate = prefs.getBool('default_auto_pin_by_date') ?? false;
+      _autoPinByLocation = prefs.getBool('default_auto_pin_by_location') ?? false;
+      _autoPinByAi = prefs.getBool('default_auto_pin_by_ai') ?? true;
+      final msgCount = prefs.getInt('default_auto_pin_by_message_count');
+      _autoPinByMessageCountEnabled = msgCount != null;
+      _autoPinByMessageCountController.text = msgCount?.toString() ?? '10';
+    }
+
     final settings = await _db.getAutoSummarySettings(widget.chatRoomId);
     if (settings != null) {
       _existingSettings = settings;
@@ -136,6 +156,24 @@ _syncContentFromControllers();
       await _db.createAutoSummarySettings(settings);
     }
 
+    if (widget.chatRoomId == 0) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('default_pin_mode', _pinMode);
+      await prefs.setBool('default_auto_pin_by_date', _autoPinByDate);
+      await prefs.setBool('default_auto_pin_by_location', _autoPinByLocation);
+      await prefs.setBool('default_auto_pin_by_ai', _autoPinByAi);
+      if (_autoPinByMessageCountEnabled) {
+        final msgCount = int.tryParse(_autoPinByMessageCountController.text);
+        if (msgCount != null && msgCount > 0) {
+          await prefs.setInt('default_auto_pin_by_message_count', msgCount);
+        } else {
+          await prefs.remove('default_auto_pin_by_message_count');
+        }
+      } else {
+        await prefs.remove('default_auto_pin_by_message_count');
+      }
+    }
+
     if (mounted) {
       Navigator.of(context).pop();
     }
@@ -209,6 +247,7 @@ _syncContentFromControllers();
     _tabController.dispose();
     _tokenThresholdController.dispose();
     _maxOutputTokensController.dispose();
+    _autoPinByMessageCountController.dispose();
     for (final controller in _itemContentControllers.values) {
       controller.dispose();
     }
@@ -336,6 +375,89 @@ _syncContentFromControllers();
               hintText: '토큰 수를 입력하세요',
             ),
           ),
+        ],
+        if (widget.chatRoomId == 0) ...[
+          const Divider(),
+          _buildSectionHeader('핀 기본 설정'),
+          _buildListTile(
+            icon: Icons.push_pin,
+            title: '핀 모드',
+            trailing: DropdownButton<String>(
+              value: _pinMode,
+              underline: const SizedBox(),
+              borderRadius: BorderRadius.circular(16),
+              items: const [
+                DropdownMenuItem(value: 'auto', child: Text('자동')),
+                DropdownMenuItem(value: 'manual', child: Text('수동')),
+              ],
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() {
+                    _pinMode = value;
+                  });
+                }
+              },
+            ),
+          ),
+          if (_pinMode == 'auto') ...[
+            SwitchListTile(
+              secondary: const Icon(Icons.calendar_today),
+              title: const Text('날짜 기준'),
+              subtitle: const Text('날짜 메타데이터로 자동 핀 생성'),
+              value: _autoPinByDate,
+              onChanged: (value) {
+                setState(() {
+                  _autoPinByDate = value;
+                });
+              },
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.location_on),
+              title: const Text('장소 기준'),
+              subtitle: const Text('장소 메타데이터로 자동 핀 생성'),
+              value: _autoPinByLocation,
+              onChanged: (value) {
+                setState(() {
+                  _autoPinByLocation = value;
+                });
+              },
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.smart_toy),
+              title: const Text('AI 자동'),
+              subtitle: const Text('AI가 자동으로 핀 생성'),
+              value: _autoPinByAi,
+              onChanged: (value) {
+                setState(() {
+                  _autoPinByAi = value;
+                });
+              },
+            ),
+            SwitchListTile(
+              secondary: const Icon(Icons.format_list_numbered),
+              title: const Text('메시지 수 기준'),
+              subtitle: const Text('N개 메시지마다 자동 핀 생성'),
+              value: _autoPinByMessageCountEnabled,
+              onChanged: (value) {
+                setState(() {
+                  _autoPinByMessageCountEnabled = value;
+                });
+              },
+            ),
+            if (_autoPinByMessageCountEnabled)
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: CommonEditText(
+                  controller: _autoPinByMessageCountController,
+                  hintText: '메시지 수를 입력하세요',
+                  size: CommonEditTextSize.small,
+                  keyboardType: TextInputType.number,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                  ],
+                ),
+              ),
+          ],
         ],
         const SizedBox(height: 32),
       ],

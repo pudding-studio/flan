@@ -34,7 +34,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 33,
+      version: 34,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -263,6 +263,7 @@ class DatabaseHelper {
         auto_pin_by_date INTEGER NOT NULL DEFAULT 1,
         auto_pin_by_location INTEGER NOT NULL DEFAULT 1,
         auto_pin_by_ai INTEGER NOT NULL DEFAULT 0,
+        auto_pin_by_message_count INTEGER,
         created_at $textType,
         updated_at $textType,
         FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE,
@@ -922,6 +923,12 @@ class DatabaseHelper {
           ALTER TABLE prompt_items ADD COLUMN enabled INTEGER NOT NULL DEFAULT 1
         ''');
       }
+    }
+
+    if (oldVersion < 34) {
+      await db.execute('''
+        ALTER TABLE chat_rooms ADD COLUMN auto_pin_by_message_count INTEGER
+      ''');
     }
   }
 
@@ -1794,6 +1801,32 @@ class DatabaseHelper {
       where: 'id = ?',
       whereArgs: [metadata.id],
     );
+  }
+
+  Future<int> countMetadataSinceLastPin(int chatRoomId) async {
+    final db = await database;
+    final lastPin = await db.query(
+      'chat_message_metadata',
+      where: 'chat_room_id = ? AND is_pinned = 1',
+      whereArgs: [chatRoomId],
+      orderBy: 'created_at DESC',
+      limit: 1,
+    );
+
+    if (lastPin.isEmpty) {
+      final result = await db.rawQuery(
+        'SELECT COUNT(*) as cnt FROM chat_message_metadata WHERE chat_room_id = ?',
+        [chatRoomId],
+      );
+      return Sqflite.firstIntValue(result) ?? 0;
+    }
+
+    final lastPinCreatedAt = lastPin.first['created_at'] as String;
+    final result = await db.rawQuery(
+      'SELECT COUNT(*) as cnt FROM chat_message_metadata WHERE chat_room_id = ? AND created_at > ?',
+      [chatRoomId, lastPinCreatedAt],
+    );
+    return Sqflite.firstIntValue(result) ?? 0;
   }
 
   Future<int> deleteChatMessageMetadata(int id) async {

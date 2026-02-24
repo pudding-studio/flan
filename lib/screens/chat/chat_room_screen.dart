@@ -573,6 +573,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         final aiPin = MetadataParser.parseAiPinTag(content);
         if (aiPin == true) shouldPin = true;
       }
+      // 메시지 수 기준 자동 핀
+      if (!shouldPin && _chatRoom!.autoPinByMessageCount != null && _chatRoom!.autoPinByMessageCount! > 0) {
+        final count = await _db.countMetadataSinceLastPin(widget.chatRoomId);
+        if (count >= _chatRoom!.autoPinByMessageCount!) {
+          shouldPin = true;
+        }
+      }
     }
     final finalMetadata = shouldPin ? metadata.copyWith(isPinned: true) : metadata;
 
@@ -669,12 +676,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     bool? byDate,
     bool? byLocation,
     bool? byAi,
+    int? byMessageCount,
   }) async {
     if (_chatRoom == null) return;
     final updated = _chatRoom!.copyWith(
       autoPinByDate: byDate,
       autoPinByLocation: byLocation,
       autoPinByAi: byAi,
+      autoPinByMessageCount: byMessageCount,
       updatedAt: DateTime.now(),
     );
     await _db.updateChatRoom(updated);
@@ -1450,6 +1459,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         onAutoPinByDateChanged: (v) => _onAutoPinOptionChanged(byDate: v),
         onAutoPinByLocationChanged: (v) => _onAutoPinOptionChanged(byLocation: v),
         onAutoPinByAiChanged: (v) => _onAutoPinOptionChanged(byAi: v),
+        onAutoPinByMessageCountChanged: (v) => _onAutoPinOptionChanged(byMessageCount: v),
       ),
       appBar: CommonAppBar(
         title: _character!.name,
