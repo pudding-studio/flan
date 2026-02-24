@@ -428,11 +428,12 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   // ==================== 기본 정보 탭 ====================
 
   Widget _buildInfoTab() {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Column(
       children: [
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomInset),
             children: [
               Text(
                 '사용 캐릭터',
@@ -658,11 +659,12 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   // ==================== 페르소나 탭 ====================
 
   Widget _buildPersonaTab() {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Column(
       children: [
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomInset),
             children: [
               CommonFieldSection(
                 label: '페르소나 선택',
@@ -709,11 +711,12 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   // ==================== 캐릭터 정보 탭 ====================
 
   Widget _buildCharacterTab() {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Column(
       children: [
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomInset),
             children: [
               Text(
                 '캐릭터',
@@ -764,7 +767,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
                   ),
                 )
               : ListView(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.of(context).viewInsets.bottom),
                   children: allItems,
                 ),
         ),
@@ -934,11 +937,12 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   // ==================== 요약 탭 ====================
 
   Widget _buildSummaryTab() {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Column(
       children: [
         Expanded(
           child: ListView(
-            padding: const EdgeInsets.all(16),
+            padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomInset),
             children: [
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
