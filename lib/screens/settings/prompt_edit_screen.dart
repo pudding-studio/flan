@@ -15,8 +15,10 @@ import '../../widgets/common/common_info_box.dart';
 import '../../widgets/common/common_parameter_field.dart';
 import '../../widgets/common/common_title_medium.dart';
 import '../../models/prompt/prompt_condition.dart';
+import '../../models/prompt/prompt_condition_preset.dart';
 import '../../models/prompt/prompt_regex_rule.dart';
 import 'tabs/prompt_items_tab.dart';
+import 'tabs/prompt_other_settings_tab.dart';
 import 'tabs/prompt_regex_tab.dart';
 
 class PromptEditScreen extends StatefulWidget {
@@ -64,6 +66,12 @@ class _PromptEditScreenState extends State<PromptEditScreen>
   int _getNextConditionOptionTempId() => _nextConditionOptionTempId--;
   bool _conditionsSectionExpanded = true;
 
+  // Presets
+  final List<PromptConditionPreset> _presets = [];
+  int _nextPresetTempId = -1;
+  int _getNextPresetTempId() => _nextPresetTempId--;
+  bool _presetsSectionExpanded = true;
+
   // Parameter controllers
   final _maxInputTokensController = TextEditingController();
   final _maxOutputTokensController = TextEditingController();
@@ -76,10 +84,18 @@ class _PromptEditScreenState extends State<PromptEditScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 5, vsync: this);
 
     if (_isEditing) {
       _loadPromptData();
+    } else {
+      // New prompt: create default preset
+      _presets.add(PromptConditionPreset(
+        id: _getNextPresetTempId(),
+        name: '기본',
+        isDefault: true,
+        order: 0,
+      ));
     }
   }
 
@@ -129,6 +145,24 @@ class _PromptEditScreenState extends State<PromptEditScreen>
       condition.options.addAll(options);
     }
     _conditions.addAll(conditions);
+
+    // Load presets
+    final presets = await _db.readPromptConditionPresets(prompt.id!);
+    for (var preset in presets) {
+      final values = await _db.readPromptConditionPresetValues(preset.id!);
+      preset.values.addAll(values);
+    }
+    _presets.addAll(presets);
+
+    // Ensure default preset exists
+    if (_presets.isEmpty || !_presets.any((p) => p.isDefault)) {
+      _presets.insert(0, PromptConditionPreset(
+        id: _getNextPresetTempId(),
+        name: '기본',
+        isDefault: true,
+        order: 0,
+      ));
+    }
 
     if (mounted) {
       setState(() {});
@@ -288,10 +322,12 @@ class _PromptEditScreenState extends State<PromptEditScreen>
         );
       }
 
-      // Save conditions
+      // Save conditions and build old->new ID mapping
       await _db.deletePromptConditionsByPrompt(promptId);
+      final Map<int, int> conditionIdMap = {};
       for (int i = 0; i < _conditions.length; i++) {
         final condition = _conditions[i];
+        final oldId = condition.id;
         final conditionId = await _db.createPromptCondition(
           condition.copyWith(
             id: null,
@@ -299,12 +335,38 @@ class _PromptEditScreenState extends State<PromptEditScreen>
             order: i,
           ),
         );
+        if (oldId != null) {
+          conditionIdMap[oldId] = conditionId;
+        }
         for (int j = 0; j < condition.options.length; j++) {
           await _db.createPromptConditionOption(
             condition.options[j].copyWith(
               id: null,
               conditionId: conditionId,
               order: j,
+            ),
+          );
+        }
+      }
+
+      // Save presets
+      await _db.deletePromptConditionPresetsByPrompt(promptId);
+      for (int i = 0; i < _presets.length; i++) {
+        final preset = _presets[i];
+        final presetId = await _db.createPromptConditionPreset(
+          preset.copyWith(
+            id: null,
+            chatPromptId: promptId,
+            order: i,
+          ),
+        );
+        for (final value in preset.values) {
+          final newConditionId = conditionIdMap[value.conditionId] ?? value.conditionId;
+          await _db.createPromptConditionPresetValue(
+            value.copyWith(
+              id: null,
+              presetId: presetId,
+              conditionId: newConditionId,
             ),
           );
         }
@@ -539,6 +601,33 @@ class _PromptEditScreenState extends State<PromptEditScreen>
     });
   }
 
+  void _addPreset() {
+    setState(() {
+      _presets.add(PromptConditionPreset(
+        id: _getNextPresetTempId(),
+        name: '',
+        isDefault: false,
+        order: _presets.length,
+        isExpanded: true,
+      ));
+    });
+  }
+
+  Future<void> _deletePreset(PromptConditionPreset preset) async {
+    if (preset.isDefault) return;
+
+    final confirmed = await CommonDialog.showDeleteConfirmation(
+      context: context,
+      itemName: preset.name.isEmpty ? '프리셋' : preset.name,
+    );
+
+    if (confirmed) {
+      setState(() {
+        _presets.remove(preset);
+      });
+    }
+  }
+
   Future<void> _deleteCondition(PromptCondition condition) async {
     final confirmed = await CommonDialog.showDeleteConfirmation(
       context: context,
@@ -610,6 +699,12 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                   child: Center(child: Text('정규식')),
                 ),
               ),
+              Tab(
+                child: SizedBox(
+                  width: 65,
+                  child: Center(child: Text('기타설정')),
+                ),
+              ),
             ],
           ),
         ),
@@ -652,6 +747,17 @@ class _PromptEditScreenState extends State<PromptEditScreen>
               onUpdate: () => setState(() {}),
               onDeleteRule: _deleteRegexRule,
               onAddRule: _addRegexRule,
+            ),
+            PromptOtherSettingsTab(
+              presets: _presets,
+              conditions: _conditions,
+              readOnly: _isReadOnly,
+              onUpdate: () => setState(() {}),
+              onDeletePreset: _deletePreset,
+              onAddPreset: _addPreset,
+              presetsSectionExpanded: _presetsSectionExpanded,
+              onPresetsSectionToggle: () =>
+                  setState(() => _presetsSectionExpanded = !_presetsSectionExpanded),
             ),
           ],
         ),

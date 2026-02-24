@@ -10,6 +10,8 @@ import '../models/prompt/prompt_item.dart';
 import '../models/prompt/prompt_item_folder.dart';
 import '../models/prompt/prompt_condition.dart';
 import '../models/prompt/prompt_condition_option.dart';
+import '../models/prompt/prompt_condition_preset.dart';
+import '../models/prompt/prompt_condition_preset_value.dart';
 import '../models/prompt/prompt_regex_rule.dart';
 import '../models/chat/chat_room.dart';
 import '../models/chat/chat_message.dart';
@@ -36,7 +38,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 36,
+      version: 37,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -284,6 +286,41 @@ class DatabaseHelper {
     await db.execute('''
       CREATE INDEX idx_condition_id_prompt_condition_options
       ON prompt_condition_options (condition_id)
+    ''');
+
+    // 프롬프트 조건 프리셋 테이블
+    await db.execute('''
+      CREATE TABLE prompt_condition_presets (
+        id $idType,
+        chat_prompt_id $intType,
+        name $textType DEFAULT '기본',
+        is_default $boolType,
+        `order` $intType DEFAULT 0,
+        FOREIGN KEY (chat_prompt_id) REFERENCES chat_prompts (id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute('''
+      CREATE INDEX idx_chat_prompt_id_prompt_condition_presets
+      ON prompt_condition_presets (chat_prompt_id)
+    ''');
+
+    // 프롬프트 조건 프리셋 값 테이블
+    await db.execute('''
+      CREATE TABLE prompt_condition_preset_values (
+        id $idType,
+        preset_id $intType,
+        condition_id $intType,
+        value $textType DEFAULT '',
+        custom_value $textTypeNullable,
+        FOREIGN KEY (preset_id) REFERENCES prompt_condition_presets (id) ON DELETE CASCADE,
+        FOREIGN KEY (condition_id) REFERENCES prompt_conditions (id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute('''
+      CREATE INDEX idx_preset_id_prompt_condition_preset_values
+      ON prompt_condition_preset_values (preset_id)
     ''');
 
     // 채팅방 테이블
@@ -1025,6 +1062,38 @@ class DatabaseHelper {
         ''');
       }
     }
+
+    if (oldVersion < 37) {
+      await db.execute('''
+        CREATE TABLE prompt_condition_presets (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          chat_prompt_id INTEGER NOT NULL,
+          name TEXT NOT NULL DEFAULT '기본',
+          is_default INTEGER NOT NULL DEFAULT 0,
+          `order` INTEGER NOT NULL DEFAULT 0,
+          FOREIGN KEY (chat_prompt_id) REFERENCES chat_prompts (id) ON DELETE CASCADE
+        )
+      ''');
+      await db.execute('''
+        CREATE INDEX idx_chat_prompt_id_prompt_condition_presets
+        ON prompt_condition_presets (chat_prompt_id)
+      ''');
+      await db.execute('''
+        CREATE TABLE prompt_condition_preset_values (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          preset_id INTEGER NOT NULL,
+          condition_id INTEGER NOT NULL,
+          value TEXT NOT NULL DEFAULT '',
+          custom_value TEXT,
+          FOREIGN KEY (preset_id) REFERENCES prompt_condition_presets (id) ON DELETE CASCADE,
+          FOREIGN KEY (condition_id) REFERENCES prompt_conditions (id) ON DELETE CASCADE
+        )
+      ''');
+      await db.execute('''
+        CREATE INDEX idx_preset_id_prompt_condition_preset_values
+        ON prompt_condition_preset_values (preset_id)
+      ''');
+    }
   }
 
   // ==================== 캐릭터 CRUD ====================
@@ -1632,6 +1701,54 @@ class DatabaseHelper {
       orderBy: '`order` ASC',
     );
     return result.map((map) => PromptConditionOption.fromMap(map)).toList();
+  }
+
+  // ==================== 프롬프트 조건 프리셋 CRUD ====================
+
+  Future<int> createPromptConditionPreset(PromptConditionPreset preset) async {
+    final db = await database;
+    final map = preset.toMap();
+    map.remove('id');
+    return await db.insert('prompt_condition_presets', map);
+  }
+
+  Future<List<PromptConditionPreset>> readPromptConditionPresets(int chatPromptId) async {
+    final db = await database;
+    final result = await db.query(
+      'prompt_condition_presets',
+      where: 'chat_prompt_id = ?',
+      whereArgs: [chatPromptId],
+      orderBy: '`order` ASC',
+    );
+    return result.map((map) => PromptConditionPreset.fromMap(map)).toList();
+  }
+
+  Future<void> deletePromptConditionPresetsByPrompt(int chatPromptId) async {
+    final db = await database;
+    await db.delete(
+      'prompt_condition_presets',
+      where: 'chat_prompt_id = ?',
+      whereArgs: [chatPromptId],
+    );
+  }
+
+  // ==================== 프롬프트 조건 프리셋 값 CRUD ====================
+
+  Future<int> createPromptConditionPresetValue(PromptConditionPresetValue value) async {
+    final db = await database;
+    final map = value.toMap();
+    map.remove('id');
+    return await db.insert('prompt_condition_preset_values', map);
+  }
+
+  Future<List<PromptConditionPresetValue>> readPromptConditionPresetValues(int presetId) async {
+    final db = await database;
+    final result = await db.query(
+      'prompt_condition_preset_values',
+      where: 'preset_id = ?',
+      whereArgs: [presetId],
+    );
+    return result.map((map) => PromptConditionPresetValue.fromMap(map)).toList();
   }
 
   // ==================== 채팅방 CRUD ====================
