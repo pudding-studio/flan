@@ -703,30 +703,29 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _buildVerticalSettingRow(
-          label: '프롬프트 프리셋',
-          child: CommonDropdownButton<int?>(
-            value: selectedPreset?.id,
-            items: _presets.map((p) => p.id).toList(),
-            onChanged: (id) {
-              widget.onPresetChanged(id);
-              // Reset custom value controllers when preset changes
-              for (final c in _customValueControllers.values) {
-                c.dispose();
-              }
-              _customValueControllers.clear();
-              setState(() {});
-            },
-            labelBuilder: (id) {
-              if (id == null) return '없음';
-              try {
-                return _presets.firstWhere((p) => p.id == id).name;
-              } catch (_) {
-                return '없음';
-              }
-            },
-            size: CommonDropdownButtonSize.xsmall,
-          ),
+        Text('프롬프트 프리셋', style: _fieldLabelStyle),
+        const SizedBox(height: 4),
+        CommonDropdownButton<int?>(
+          value: selectedPreset?.id,
+          items: _presets.map((p) => p.id).toList(),
+          onChanged: (id) {
+            widget.onPresetChanged(id);
+            // Reset custom value controllers when preset changes
+            for (final c in _customValueControllers.values) {
+              c.dispose();
+            }
+            _customValueControllers.clear();
+            setState(() {});
+          },
+          labelBuilder: (id) {
+            if (id == null) return '없음';
+            try {
+              return _presets.firstWhere((p) => p.id == id).name;
+            } catch (_) {
+              return '없음';
+            }
+          },
+          size: CommonDropdownButtonSize.xsmall,
         ),
         if (selectedPreset != null && _conditions.isNotEmpty) ...[
           const SizedBox(height: 8),
@@ -764,20 +763,27 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
       child: Row(
         children: [
           Expanded(
+            flex: 3,
             child: Text(
               condition.name.isEmpty ? '이름 없음' : condition.name,
               style: _subLabelStyle,
             ),
           ),
-          SizedBox(
-            height: 28,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Switch(
-                value: isOn,
-                onChanged: (value) {
-                  _setValueForCondition(preset, condition, value ? 'true' : 'false');
-                },
+          Expanded(
+            flex: 1,
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: SizedBox(
+                height: 28,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Switch(
+                    value: isOn,
+                    onChanged: (value) {
+                      _setValueForCondition(preset, condition, value ? 'true' : 'false');
+                    },
+                  ),
+                ),
               ),
             ),
           ),
@@ -795,25 +801,29 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Text(
-            condition.name.isEmpty ? '이름 없음' : condition.name,
-            style: _subLabelStyle,
+          Expanded(
+            flex: 1,
+            child: Text(
+              condition.name.isEmpty ? '이름 없음' : condition.name,
+              style: _subLabelStyle,
+            ),
           ),
-          const SizedBox(height: 4),
-          CommonDropdownButton<PromptConditionOption>(
-            value: selectedOption,
-            items: condition.options,
-            size: CommonDropdownButtonSize.xsmall,
-            hintText: '항목을 선택하세요',
-            onChanged: (value) {
-              if (value != null) {
-                _setValueForCondition(preset, condition, value.name);
-              }
-            },
-            labelBuilder: (o) => o.name,
+          Expanded(
+            flex: 2,
+            child: CommonDropdownButton<PromptConditionOption>(
+              value: selectedOption,
+              items: condition.options,
+              size: CommonDropdownButtonSize.xsmall,
+              hintText: '항목을 선택하세요',
+              onChanged: (value) {
+                if (value != null) {
+                  _setValueForCondition(preset, condition, value.name);
+                }
+              },
+              labelBuilder: (o) => o.name,
+            ),
           ),
         ],
       ),
@@ -849,32 +859,41 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            condition.name.isEmpty ? '이름 없음' : condition.name,
-            style: _subLabelStyle,
-          ),
-          const SizedBox(height: 4),
-          CommonDropdownButton<PromptConditionOption>(
-            value: selectedOption,
-            items: optionsWithCustom,
-            size: CommonDropdownButtonSize.xsmall,
-            hintText: '항목을 선택하세요',
-            onChanged: (value) {
-              if (value != null) {
-                if (value.id == -9999) {
-                  _setValueForCondition(
-                    preset,
-                    condition,
-                    PromptConditionPresetValue.customOptionKey,
-                    customValue: customController.text,
-                  );
-                } else {
-                  _setValueForCondition(preset, condition, value.name);
-                  customController.clear();
-                }
-              }
-            },
-            labelBuilder: (o) => o.name,
+          Row(
+            children: [
+              Expanded(
+                flex: 1,
+                child: Text(
+                  condition.name.isEmpty ? '이름 없음' : condition.name,
+                  style: _subLabelStyle,
+                ),
+              ),
+              Expanded(
+                flex: 2,
+                child: CommonDropdownButton<PromptConditionOption>(
+                  value: selectedOption,
+                  items: optionsWithCustom,
+                  size: CommonDropdownButtonSize.xsmall,
+                  hintText: '항목을 선택하세요',
+                  onChanged: (value) {
+                    if (value != null) {
+                      if (value.id == -9999) {
+                        _setValueForCondition(
+                          preset,
+                          condition,
+                          PromptConditionPresetValue.customOptionKey,
+                          customValue: customController.text,
+                        );
+                      } else {
+                        _setValueForCondition(preset, condition, value.name);
+                        customController.clear();
+                      }
+                    }
+                  },
+                  labelBuilder: (o) => o.name,
+                ),
+              ),
+            ],
           ),
           if (isCustom) ...[
             const SizedBox(height: 4),
@@ -917,19 +936,23 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
       padding: const EdgeInsets.symmetric(vertical: 0),
       child: Row(
         children: [
-          const SizedBox(width: 16),
-          SizedBox(
-            width: 64,
+          Expanded(
+            flex: 3,
             child: Text(label, style: _subLabelStyle),
           ),
-          const Spacer(),
-          SizedBox(
-            height: 28,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Switch(
-                value: value,
-                onChanged: onChanged,
+          Expanded(
+            flex: 1,
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: SizedBox(
+                height: 28,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Switch(
+                    value: value,
+                    onChanged: onChanged,
+                  ),
+                ),
               ),
             ),
           ),
