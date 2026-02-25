@@ -18,6 +18,7 @@ import '../models/chat/chat_message.dart';
 import '../models/chat/chat_log.dart';
 import '../models/chat/chat_message_metadata.dart';
 import '../models/chat/auto_summary_settings.dart';
+import '../models/chat/chat_room_summary.dart';
 import '../models/chat/chat_summary.dart';
 
 class DatabaseHelper {
@@ -1852,6 +1853,71 @@ class DatabaseHelper {
       orderBy: 'created_at ASC',
     );
     return result.map((map) => ChatMessage.fromMap(map)).toList();
+  }
+
+  Future<ChatMessage?> readLastChatMessage(int chatRoomId) async {
+    final db = await database;
+    final result = await db.query(
+      'chat_messages',
+      where: 'chat_room_id = ?',
+      whereArgs: [chatRoomId],
+      orderBy: 'created_at DESC',
+      limit: 1,
+    );
+    if (result.isEmpty) return null;
+    return ChatMessage.fromMap(result.first);
+  }
+
+  Future<int> countAssistantMessages(int chatRoomId) async {
+    final db = await database;
+    final result = await db.rawQuery(
+      "SELECT COUNT(*) FROM chat_messages WHERE chat_room_id = ? AND role = 'assistant'",
+      [chatRoomId],
+    );
+    return Sqflite.firstIntValue(result) ?? 0;
+  }
+
+  Future<List<ChatRoomSummary>> readChatRoomSummaries({int? characterId}) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps;
+    if (characterId != null) {
+      maps = await db.query(
+        'chat_rooms',
+        where: 'character_id = ?',
+        whereArgs: [characterId],
+        orderBy: 'updated_at DESC',
+      );
+    } else {
+      maps = await db.query(
+        'chat_rooms',
+        orderBy: 'updated_at DESC',
+      );
+    }
+    final chatRooms = maps.map((map) => ChatRoom.fromMap(map)).toList();
+
+    final List<ChatRoomSummary> summaries = [];
+    for (final chatRoom in chatRooms) {
+      final results = await Future.wait([
+        readCharacter(chatRoom.characterId),
+        readCoverImages(chatRoom.characterId),
+        readLastChatMessage(chatRoom.id!),
+        countAssistantMessages(chatRoom.id!),
+      ]);
+
+      final character = results[0] as Character?;
+      if (character == null) continue;
+
+      final coverImages = results[1] as List<CoverImage>;
+      summaries.add(ChatRoomSummary(
+        chatRoom: chatRoom,
+        character: character,
+        coverImage: coverImages.isNotEmpty ? coverImages.first : null,
+        lastMessage: results[2] as ChatMessage?,
+        messageCount: results[3] as int,
+        tokenCount: chatRoom.totalTokenCount,
+      ));
+    }
+    return summaries;
   }
 
   Future<List<ChatMessage>> readChatMessagesRecent(int chatRoomId, int count) async {

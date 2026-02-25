@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../widgets/chat/chat_room_card.dart';
 import '../../models/chat/chat_room.dart';
-import '../../models/chat/chat_message.dart';
-import '../../models/character/character.dart';
-import '../../models/character/cover_image.dart';
+import '../../models/chat/chat_room_summary.dart';
 import '../../database/database_helper.dart';
 import '../../utils/common_dialog.dart';
 import '../../widgets/common/common_appbar.dart';
@@ -19,7 +17,7 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final DatabaseHelper _db = DatabaseHelper.instance;
-  List<_ChatRoomData> _chatRooms = [];
+  List<ChatRoomSummary> _chatRooms = [];
   bool _isLoading = true;
   bool _isEditMode = false;
   final Set<int> _selectedChatRoomIds = {};
@@ -35,45 +33,10 @@ class _ChatScreenState extends State<ChatScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final allChatRooms = await _db.database.then((db) async {
-        final List<Map<String, dynamic>> maps = await db.query(
-          'chat_rooms',
-          orderBy: 'updated_at DESC',
-        );
-        return maps.map((map) => ChatRoom.fromMap(map)).toList();
-      });
-
-      final List<_ChatRoomData> chatRoomDataList = [];
-
-      for (final chatRoom in allChatRooms) {
-        final character = await _db.readCharacter(chatRoom.characterId);
-        if (character == null) continue;
-
-        final coverImages = await _db.readCoverImages(chatRoom.characterId);
-        final selectedCover = coverImages.isNotEmpty ? coverImages.first : null;
-
-        final messages = await _db.readChatMessagesByChatRoom(chatRoom.id!);
-        final lastMessage = messages.isNotEmpty ? messages.last : null;
-
-        int assistantMessageCount = 0;
-        for (final message in messages) {
-          if (message.role == MessageRole.assistant) {
-            assistantMessageCount++;
-          }
-        }
-
-        chatRoomDataList.add(_ChatRoomData(
-          chatRoom: chatRoom,
-          character: character,
-          coverImage: selectedCover,
-          lastMessage: lastMessage,
-          messageCount: assistantMessageCount,
-          tokenCount: chatRoom.totalTokenCount,
-        ));
-      }
+      final summaries = await _db.readChatRoomSummaries();
 
       setState(() {
-        _chatRooms = chatRoomDataList;
+        _chatRooms = summaries;
         _sortChatRooms();
         _isLoading = false;
       });
@@ -466,20 +429,3 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 }
 
-class _ChatRoomData {
-  final ChatRoom chatRoom;
-  final Character character;
-  final CoverImage? coverImage;
-  final ChatMessage? lastMessage;
-  final int messageCount;
-  final int tokenCount;
-
-  _ChatRoomData({
-    required this.chatRoom,
-    required this.character,
-    this.coverImage,
-    this.lastMessage,
-    required this.messageCount,
-    required this.tokenCount,
-  });
-}

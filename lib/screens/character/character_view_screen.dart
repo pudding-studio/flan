@@ -6,7 +6,7 @@ import '../../models/character/persona.dart';
 import '../../models/character/start_scenario.dart';
 import '../../database/database_helper.dart';
 import '../../models/chat/chat_room.dart';
-import '../../models/chat/chat_message.dart';
+import '../../models/chat/chat_room_summary.dart';
 import '../chat/chat_room_screen.dart';
 import 'character_edit_screen.dart';
 import '../../widgets/character/character_tag_chip.dart';
@@ -38,7 +38,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
   List<CoverImage> _coverImages = [];
   List<Persona> _personas = [];
   List<StartScenario> _startScenarios = [];
-  List<_ChatRoomData> _chatRooms = [];
+  List<ChatRoomSummary> _chatRooms = [];
   bool _isLoading = true;
   bool _hasChanges = false;
 
@@ -87,46 +87,10 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
 
   Future<void> _loadChatRooms() async {
     try {
-      final chatRooms = await _db.database.then((db) async {
-        final List<Map<String, dynamic>> maps = await db.query(
-          'chat_rooms',
-          where: 'character_id = ?',
-          whereArgs: [widget.characterId],
-          orderBy: 'updated_at DESC',
-        );
-        return maps.map((map) => ChatRoom.fromMap(map)).toList();
-      });
-
-      final List<_ChatRoomData> chatRoomDataList = [];
-
-      for (final chatRoom in chatRooms) {
-        final character = await _db.readCharacter(chatRoom.characterId);
-        if (character == null) continue;
-
-        final coverImages = await _db.readCoverImages(chatRoom.characterId);
-        final selectedCover = coverImages.isNotEmpty ? coverImages.first : null;
-
-        final messages = await _db.readChatMessagesByChatRoom(chatRoom.id!);
-        final lastMessage = messages.isNotEmpty ? messages.last : null;
-
-        int assistantMessageCount = 0;
-        for (final message in messages) {
-          if (message.role == MessageRole.assistant) {
-            assistantMessageCount++;
-          }
-        }
-
-        chatRoomDataList.add(_ChatRoomData(
-          chatRoom: chatRoom,
-          coverImage: selectedCover,
-          lastMessage: lastMessage,
-          messageCount: assistantMessageCount,
-          tokenCount: chatRoom.totalTokenCount,
-        ));
-      }
+      final summaries = await _db.readChatRoomSummaries(characterId: widget.characterId);
 
       setState(() {
-        _chatRooms = chatRoomDataList;
+        _chatRooms = summaries;
       });
     } catch (e) {
       debugPrint('Error loading chat rooms: $e');
@@ -304,8 +268,8 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
         ),
       );
 
-      final messages = await _db.readChatMessagesByChatRoom(chatRoomId);
-      if (messages.isEmpty) {
+      final lastMessage = await _db.readLastChatMessage(chatRoomId);
+      if (lastMessage == null) {
         await _db.deleteChatRoom(chatRoomId);
       }
 
@@ -763,18 +727,3 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
   }
 }
 
-class _ChatRoomData {
-  final ChatRoom chatRoom;
-  final CoverImage? coverImage;
-  final ChatMessage? lastMessage;
-  final int messageCount;
-  final int tokenCount;
-
-  _ChatRoomData({
-    required this.chatRoom,
-    this.coverImage,
-    this.lastMessage,
-    required this.messageCount,
-    required this.tokenCount,
-  });
-}
