@@ -136,7 +136,7 @@ class PromptBuilder {
       }
     }
 
-    _addContent(contents, 'user', userMessage);
+    _addContent(contents, 'user', replaceKeywords(userMessage, keywords));
 
     return contents;
   }
@@ -318,11 +318,16 @@ class PromptBuilder {
   }
 
   static String replaceKeywords(String text, Map<String, String> keywords) {
-    var result = text;
+    var result = stripComments(text);
     for (final entry in keywords.entries) {
       result = result.replaceAll('{{${entry.key}}}', entry.value);
     }
     return result;
+  }
+
+  /// Strips /* ... */ block comments from text before sending to AI.
+  static String stripComments(String text) {
+    return text.replaceAll(RegExp(r'/\*.*?\*/', dotAll: true), '');
   }
 
   /// Check if a prompt item is active based on its enableMode and condition states.
