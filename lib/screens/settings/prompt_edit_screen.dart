@@ -265,64 +265,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
         await _db.deletePromptItemFolder(folder.id!);
       }
 
-      // Save folders and their items
-      for (final folder in _folders) {
-        final folderId = await _db.createPromptItemFolder(
-          folder.copyWith(
-            id: null,
-            chatPromptId: promptId,
-          ),
-        );
-
-        for (int j = 0; j < folder.items.length; j++) {
-          final item = folder.items[j];
-          final controller = _contentControllers[item.id]!;
-
-          await _db.createPromptItem(
-            item.copyWithNullableFolderId(
-              id: null,
-              chatPromptId: promptId,
-              folderId: folderId,
-              content: controller.text.trim(),
-              order: j,
-            ),
-          );
-        }
-      }
-
-      // Save standalone items
-      for (final item in _standaloneItems) {
-        final controller = _contentControllers[item.id]!;
-
-        await _db.createPromptItem(
-          item.copyWithNullableFolderId(
-            id: null,
-            chatPromptId: promptId,
-            folderId: null,
-            content: controller.text.trim(),
-          ),
-        );
-      }
-
-      // Save regex rules
-      await _db.deletePromptRegexRulesByPrompt(promptId);
-      for (int i = 0; i < _regexRules.length; i++) {
-        final rule = _regexRules[i];
-        final patternCtrl = _regexPatternControllers[rule.id];
-        final replacementCtrl = _regexReplacementControllers[rule.id];
-
-        await _db.createPromptRegexRule(
-          rule.copyWith(
-            id: null,
-            chatPromptId: promptId,
-            pattern: patternCtrl?.text ?? rule.pattern,
-            replacement: replacementCtrl?.text ?? rule.replacement,
-            order: i,
-          ),
-        );
-      }
-
-      // Save conditions and build old->new ID mapping
+      // Save conditions first and build old->new ID mapping
       await _db.deletePromptConditionsByPrompt(promptId);
       final Map<int, int> conditionIdMap = {};
       for (int i = 0; i < _conditions.length; i++) {
@@ -370,6 +313,71 @@ class _PromptEditScreenState extends State<PromptEditScreen>
             ),
           );
         }
+      }
+
+      // Remap conditionId from old/temp IDs to new DB IDs
+      int? remapConditionId(int? oldId) {
+        if (oldId == null) return null;
+        return conditionIdMap[oldId] ?? oldId;
+      }
+
+      // Save folders and their items
+      for (final folder in _folders) {
+        final folderId = await _db.createPromptItemFolder(
+          folder.copyWith(
+            id: null,
+            chatPromptId: promptId,
+          ),
+        );
+
+        for (int j = 0; j < folder.items.length; j++) {
+          final item = folder.items[j];
+          final controller = _contentControllers[item.id]!;
+
+          await _db.createPromptItem(
+            item.copyWithNullableFolderId(
+              id: null,
+              chatPromptId: promptId,
+              folderId: folderId,
+              content: controller.text.trim(),
+              order: j,
+              conditionId: remapConditionId(item.conditionId),
+            ),
+          );
+        }
+      }
+
+      // Save standalone items
+      for (final item in _standaloneItems) {
+        final controller = _contentControllers[item.id]!;
+
+        await _db.createPromptItem(
+          item.copyWithNullableFolderId(
+            id: null,
+            chatPromptId: promptId,
+            folderId: null,
+            content: controller.text.trim(),
+            conditionId: remapConditionId(item.conditionId),
+          ),
+        );
+      }
+
+      // Save regex rules
+      await _db.deletePromptRegexRulesByPrompt(promptId);
+      for (int i = 0; i < _regexRules.length; i++) {
+        final rule = _regexRules[i];
+        final patternCtrl = _regexPatternControllers[rule.id];
+        final replacementCtrl = _regexReplacementControllers[rule.id];
+
+        await _db.createPromptRegexRule(
+          rule.copyWith(
+            id: null,
+            chatPromptId: promptId,
+            pattern: patternCtrl?.text ?? rule.pattern,
+            replacement: replacementCtrl?.text ?? rule.replacement,
+            order: i,
+          ),
+        );
       }
 
       if (mounted) {
