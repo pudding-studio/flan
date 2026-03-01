@@ -627,7 +627,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         byDate: _chatRoom!.autoPinByDate,
         byLocation: _chatRoom!.autoPinByLocation,
       );
-      // AI 자동 핀: [📌|ON] 태그 감지
+      // AI 자동 핀: 【📌|ON】 태그 감지
       if (!shouldPin && _chatRoom!.autoPinByAi) {
         final aiPin = MetadataParser.parseAiPinTag(content);
         if (aiPin == true) shouldPin = true;

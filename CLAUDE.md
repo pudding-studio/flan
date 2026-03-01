@@ -28,7 +28,7 @@
 ## Conventions
 
 - **Commit messages**: Korean, use `feat:` / `fix:` / `refactor:` / `chore:` prefixes
-- **Metadata tag format**: `[📍|location]`, `[📅|YYYY.MM.DD]`, `[🕰|HH:MM]`
+- **Metadata tag format**: `【📍|location】`, `【📅|YYYY.MM.DD】`, `【🕰|HH:MM】`
 - **Scene tags**: Auto-insert `<N><Info>...</Info>` / `</N>` in message content when pins detected
 - **Code comments**: English only
 - **Reports/explanations**: Korean

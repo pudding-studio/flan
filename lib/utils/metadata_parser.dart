@@ -1,10 +1,10 @@
 import '../models/chat/chat_message_metadata.dart';
 
 class MetadataParser {
-  static final _locationPattern = RegExp(r'\[📍\|([^\]]*)\]');
-  static final _datePattern = RegExp(r'\[📅\|([^\]]*)\]');
-  static final _timePattern = RegExp(r'\[🕰\|([^\]]*)\]');
-  static final _pinPattern = RegExp(r'\[📌\|([^\]]*)\]', caseSensitive: false);
+  static final _locationPattern = RegExp(r'【📍\|([^】]*)】');
+  static final _datePattern = RegExp(r'【📅\|([^】]*)】');
+  static final _timePattern = RegExp(r'【🕰\|([^】]*)】');
+  static final _pinPattern = RegExp(r'【📌\|([^】]*)】', caseSensitive: false);
 
   static ({String? location, String? date, String? time}) parse(String content) {
     final locationMatch = _locationPattern.firstMatch(content);
@@ -95,7 +95,7 @@ class MetadataParser {
   }
 
   /// 📌 태그에서 AI 자동 핀 ON/OFF 파싱
-  /// [📌|ON] → true, [📌|OFF] → false, 없으면 null
+  /// 【📌|ON】 → true, 【📌|OFF】 → false, 없으면 null
   static bool? parseAiPinTag(String content) {
     final match = _pinPattern.firstMatch(content);
     if (match == null) return null;
@@ -138,10 +138,10 @@ class MetadataParser {
         _pinPattern.hasMatch(content);
   }
 
-  static final _locationLinePattern = RegExp(r'^\[📍\|[^\]]*\]\s*\n?', multiLine: true);
-  static final _dateLinePattern = RegExp(r'^\[📅\|[^\]]*\]\s*\n?', multiLine: true);
-  static final _timeLinePattern = RegExp(r'^\[🕰\|[^\]]*\]\s*\n?', multiLine: true);
-  static final _pinLinePattern = RegExp(r'^\[📌\|[^\]]*\]\s*\n?', multiLine: true, caseSensitive: false);
+  static final _locationLinePattern = RegExp(r'^【📍\|[^】]*】\s*\n?', multiLine: true);
+  static final _dateLinePattern = RegExp(r'^【📅\|[^】]*】\s*\n?', multiLine: true);
+  static final _timeLinePattern = RegExp(r'^【🕰\|[^】]*】\s*\n?', multiLine: true);
+  static final _pinLinePattern = RegExp(r'^【📌\|[^】]*】\s*\n?', multiLine: true, caseSensitive: false);
 
   static String removeMetadataTags(String content) {
     var result = content

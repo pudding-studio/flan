@@ -47,9 +47,9 @@ class ChatMessageMetadata {
 
   String toTagString() {
     final tags = <String>[];
-    if (location != null) tags.add('[📍|$location]');
-    if (date != null) tags.add('[📅|$date]');
-    if (time != null) tags.add('[🕰|$time]');
+    if (location != null) tags.add('【📍|$location】');
+    if (date != null) tags.add('【📅|$date】');
+    if (time != null) tags.add('【🕰|$time】');
     return tags.join('\n');
   }
 
