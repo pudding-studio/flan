@@ -11,7 +11,7 @@ import '../models/character/start_scenario.dart';
 import '../models/character/character_book_folder.dart';
 
 class DefaultSeederService {
-  static const String _chatPromptsSeededKey = 'defaults_chat_prompts_seeded_v1';
+  static const String _chatPromptsSeededKey = 'defaults_chat_prompts_seeded_v2';
   static const String _charactersSeededKey = 'defaults_characters_seeded_v1';
 
   final DatabaseHelper _db = DatabaseHelper.instance;
@@ -25,9 +25,9 @@ class DefaultSeederService {
     final prefs = await SharedPreferences.getInstance();
     if (prefs.getBool(_chatPromptsSeededKey) == true) return;
 
+    // Delete old defaults on version upgrade, then re-seed
     if (await _db.hasDefaultChatPrompts()) {
-      await prefs.setBool(_chatPromptsSeededKey, true);
-      return;
+      await _db.deleteDefaultChatPrompts();
     }
 
     final assetPaths = await _listAssets('assets/defaults/chat_prompts');

@@ -1478,6 +1478,36 @@ class DatabaseHelper {
     return (result.first['cnt'] as int) > 0;
   }
 
+  Future<void> deleteDefaultChatPrompts() async {
+    final db = await database;
+    final defaults = await db.query(
+      'chat_prompts',
+      columns: ['id'],
+      where: 'is_default = 1',
+    );
+    for (final row in defaults) {
+      final id = row['id'] as int;
+      await db.delete('prompt_condition_preset_values',
+          where: 'preset_id IN (SELECT id FROM prompt_condition_presets WHERE chat_prompt_id = ?)',
+          whereArgs: [id]);
+      await db.delete('prompt_condition_presets',
+          where: 'chat_prompt_id = ?', whereArgs: [id]);
+      await db.delete('prompt_condition_options',
+          where: 'condition_id IN (SELECT id FROM prompt_conditions WHERE chat_prompt_id = ?)',
+          whereArgs: [id]);
+      await db.delete('prompt_conditions',
+          where: 'chat_prompt_id = ?', whereArgs: [id]);
+      await db.delete('prompt_regex_rules',
+          where: 'chat_prompt_id = ?', whereArgs: [id]);
+      await db.delete('prompt_items',
+          where: 'chat_prompt_id = ?', whereArgs: [id]);
+      await db.delete('prompt_item_folders',
+          where: 'chat_prompt_id = ?', whereArgs: [id]);
+      await db.delete('chat_prompts',
+          where: 'id = ?', whereArgs: [id]);
+    }
+  }
+
   Future<void> setSelectedChatPrompt(int id) async {
     final db = await database;
     await db.transaction((txn) async {

@@ -77,6 +77,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   bool _showScrollButtons = false;
   List<ChatPrompt> _chatPrompts = [];
   List<Persona> _personas = [];
+  List<PromptRegexRule> _regexRules = [];
   final FocusNode _messageFocusNode = FocusNode();
 
   @override
@@ -143,6 +144,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           ? await _db.readPersonas(character.id!)
           : <Persona>[];
 
+      final regexRules = chatRoom.selectedChatPromptId != null
+          ? await _db.readPromptRegexRules(chatRoom.selectedChatPromptId!)
+          : <PromptRegexRule>[];
+
       // Load summarized message IDs and calculate threshold index
       final summarizedIds = await _autoSummaryService.getSummarizedMessageIds(widget.chatRoomId);
       int? summaryThresholdIndex;
@@ -170,6 +175,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         _summarizedMessageIds = summarizedIds;
         _chatPrompts = chatPrompts;
         _personas = personas;
+        _regexRules = regexRules;
         _isLoading = false;
       });
 
@@ -510,13 +516,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
-  String _buildEditableContent(ChatMessage message) {
-    final metadata = message.id != null ? _metadataMap[message.id!] : null;
-    if (metadata == null) return message.content;
+  String _buildDisplayContent(String content) {
+    var text = MetadataParser.removeMetadataTags(content);
+    return RegexProcessor.apply(text, _regexRules, RegexTarget.displayModify);
+  }
 
-    final tagString = metadata.toTagString();
-    if (tagString.isEmpty) return message.content;
-    return '$tagString\n${message.content}';
+  String _buildEditableContent(ChatMessage message) {
+    return message.content;
   }
 
   void _startEditMessage(ChatMessage message) {
@@ -549,13 +555,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
 
     try {
-      final cleanedContent = MetadataParser.removeMetadataTags(rawContent);
+      final cleanedContent = rawContent;
 
       if (message.role == MessageRole.assistant && message.id != null) {
         final parsed = MetadataParser.parse(rawContent);
-        final existingMetadata = _metadataMap[message.id!];
 
         if (parsed.location != null || parsed.date != null || parsed.time != null) {
+          final existingMetadata = _metadataMap[message.id!];
           final newMetadata = ChatMessageMetadata(
             chatMessageId: message.id!,
             chatRoomId: widget.chatRoomId,
@@ -570,9 +576,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           } else {
             await _db.createChatMessageMetadata(newMetadata);
           }
-        } else if (existingMetadata != null) {
-          await _db.deleteChatMessageMetadata(existingMetadata.id!);
         }
+        // Existing metadata is preserved when no tags are present in edited content
       }
 
       final tokenizerProvider = context.read<TokenizerProvider>();
@@ -641,16 +646,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     setState(() {
       _metadataMap[messageId] = finalMetadata.copyWith(id: metadataId);
     });
-
-    String messageContent = content;
-    if (MetadataParser.hasMetadataPattern(content)) {
-      messageContent = MetadataParser.removeMetadataTags(content);
-    }
-
-    final message = await _db.readChatMessage(messageId);
-    if (message != null && messageContent != content) {
-      await _db.updateChatMessage(message.copyWith(content: messageContent));
-    }
   }
 
   Future<void> _togglePin(int messageId) async {
@@ -1367,7 +1362,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 )
               else
                 MarkdownText(
-                  text: message.content,
+                  text: _buildDisplayContent(message.content),
                   baseStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
                     fontSize: viewer.fontSize,
                     height: viewer.lineHeight,

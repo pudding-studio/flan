@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../constants/ui_constants.dart';
 import '../../constants/ai_model_constants.dart';
 import '../../database/database_helper.dart';
@@ -89,6 +92,8 @@ class _PromptEditScreenState extends State<PromptEditScreen>
     if (_isEditing) {
       _loadPromptData();
     } else {
+      _initDefaultItems();
+
       // New prompt: create default preset
       _presets.add(PromptConditionPreset(
         id: _getNextPresetTempId(),
@@ -97,6 +102,43 @@ class _PromptEditScreenState extends State<PromptEditScreen>
         order: 0,
       ));
     }
+  }
+
+  Future<void> _initDefaultItems() async {
+    final jsonString = await rootBundle.loadString(
+      'assets/defaults/chat_prompts/default_roleplay.json',
+    );
+    final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
+    final prompt = ChatPrompt.fromJson(jsonData);
+
+    final folders = prompt.foldersFromJson(jsonData);
+    for (final folder in folders) {
+      final folderId = _getNextFolderTempId();
+      final items = <PromptItem>[];
+      for (final item in folder.items) {
+        final tempId = _getNextTempId();
+        final newItem = item.copyWith(id: tempId, folderId: folderId);
+        items.add(newItem);
+        _contentControllers[tempId] = TextEditingController(text: newItem.content);
+      }
+      _folders.add(PromptItemFolder(
+        id: folderId,
+        name: folder.name,
+        order: folder.order,
+        isExpanded: folder.isExpanded,
+        items: items,
+      ));
+    }
+
+    final standaloneItems = prompt.standaloneItemsFromJson(jsonData);
+    for (final item in standaloneItems) {
+      final tempId = _getNextTempId();
+      final newItem = item.copyWith(id: tempId);
+      _standaloneItems.add(newItem);
+      _contentControllers[tempId] = TextEditingController(text: newItem.content);
+    }
+
+    if (mounted) setState(() {});
   }
 
   void _loadPromptData() async {
