@@ -2338,6 +2338,46 @@ class DatabaseHelper {
     );
   }
 
+  // ==================== 통계 ====================
+
+  Future<List<Map<String, dynamic>>> getMessageStatsByDateAndModel({
+    DateTime? from,
+    DateTime? to,
+  }) async {
+    final db = await database;
+
+    String whereClause =
+        "role = 'assistant' AND usage_metadata IS NOT NULL AND model_id IS NOT NULL";
+    final whereArgs = <dynamic>[];
+
+    if (from != null) {
+      whereClause += ' AND created_at >= ?';
+      whereArgs.add(from.toIso8601String());
+    }
+    if (to != null) {
+      whereClause += ' AND created_at <= ?';
+      whereArgs.add(to.toIso8601String());
+    }
+
+    return await db.rawQuery(
+      '''
+      SELECT
+        strftime('%Y-%m-%d', created_at) as date,
+        model_id,
+        COUNT(*) as message_count,
+        SUM(COALESCE(json_extract(usage_metadata, '\$.promptTokenCount'), 0)) as prompt_tokens,
+        SUM(COALESCE(json_extract(usage_metadata, '\$.candidatesTokenCount'), 0)) as output_tokens,
+        SUM(COALESCE(json_extract(usage_metadata, '\$.cachedContentTokenCount'), 0)) as cached_tokens,
+        SUM(COALESCE(json_extract(usage_metadata, '\$.thoughtsTokenCount'), 0)) as thinking_tokens
+      FROM chat_messages
+      WHERE $whereClause
+      GROUP BY date, model_id
+      ORDER BY date DESC, model_id
+    ''',
+      whereArgs.isNotEmpty ? whereArgs : null,
+    );
+  }
+
   // ==================== 백업 및 복구 ====================
 
   Future<String> getDatabaseFilePath() async {

@@ -11,6 +11,7 @@ import 'tokenizer_screen.dart';
 import 'backup_screen.dart';
 import 'log_screen.dart';
 import 'legal_document_screen.dart';
+import 'statistics_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -202,6 +203,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const BackupScreen()),
+              );
+            },
+          ),
+          _buildListTile(
+            icon: Icons.bar_chart,
+            title: '통계',
+            subtitle: '날짜별 모델 사용량 및 비용',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const StatisticsScreen()),
               );
             },
           ),
