@@ -9,6 +9,7 @@ import '../models/chat/unified_model.dart';
 import '../models/prompt/prompt_parameters.dart';
 import '../database/database_helper.dart';
 import 'format_converter.dart';
+import 'vertex_auth_service.dart';
 
 class AiResponse {
   final String text;
@@ -49,6 +50,8 @@ class AiService {
           return await _validateOpenAIKey(apiKey);
         case 'anthropic':
           return await _validateClaudeKey(apiKey);
+        case 'vertex_ai':
+          return await VertexAuthService.validateServiceAccountJson(apiKey);
         default:
           return null;
       }
@@ -198,6 +201,20 @@ class AiService {
     String logType = 'ai',
   }) async {
     final apiKey = await getApiKey(model.apiKeyType);
+
+    // Route Vertex AI separately (same Gemini format but different auth/endpoint)
+    if (model.provider == ChatModelProvider.vertexAi) {
+      return _sendVertexAi(
+        systemPrompt: systemPrompt,
+        contents: contents,
+        modelId: model.modelId,
+        serviceAccountJson: apiKey,
+        promptParameters: promptParameters,
+        chatRoomId: chatRoomId,
+        characterId: characterId,
+        logType: logType,
+      );
+    }
 
     switch (model.apiFormat) {
       case ApiFormat.gemini:
@@ -406,6 +423,116 @@ class AiService {
       return UsageMetadata.fromJson(usage);
     } catch (e) {
       return null;
+    }
+  }
+
+  // ── Vertex AI ──
+
+  final VertexAuthService _vertexAuth = VertexAuthService();
+
+  Future<AiResponse> _sendVertexAi({
+    required String systemPrompt,
+    required List<Map<String, dynamic>> contents,
+    required String modelId,
+    required String serviceAccountJson,
+    PromptParameters? promptParameters,
+    int? chatRoomId,
+    int? characterId,
+    String logType = 'vertex_ai',
+  }) async {
+    final generationConfig = _buildGeminiGenerationConfig(promptParameters);
+
+    final requestBody = {
+      'model': modelId,
+      if (systemPrompt.isNotEmpty)
+        'systemInstruction': {
+          'parts': [
+            {'text': systemPrompt}
+          ]
+        },
+      if (generationConfig != null) 'generationConfig': generationConfig,
+      'safetySettings': _geminiSafetySettings,
+      'contents': contents,
+    };
+
+    final requestJson = jsonEncode(requestBody);
+    final startTime = DateTime.now();
+
+    try {
+      final accessToken =
+          await _vertexAuth.getAccessToken(serviceAccountJson);
+      final projectId =
+          VertexAuthService.extractProjectId(serviceAccountJson);
+      if (projectId == null) {
+        throw Exception('서비스 계정 JSON에 project_id가 없습니다');
+      }
+
+      final region = await VertexAuthService.getRegion();
+      final endpoint = VertexAuthService.buildEndpoint(
+        projectId: projectId,
+        region: region,
+        modelId: modelId,
+      );
+
+      final url = Uri.parse(endpoint);
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'Bearer $accessToken',
+        },
+        body: requestJson,
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception(
+            'API 요청 실패: ${response.statusCode} - ${response.body}');
+      }
+
+      final responseData = jsonDecode(response.body);
+      final text = _extractGeminiText(responseData);
+      final usageMetadata = _extractGeminiUsageMetadata(responseData);
+
+      if (text.isEmpty) {
+        debugPrint(
+            'Empty AI response - status: ${response.statusCode}, body: ${response.body}');
+        await _saveChatLog(
+          request: requestJson,
+          response: response.body,
+          timestamp: startTime,
+          chatRoomId: chatRoomId,
+          characterId: characterId,
+          type: logType,
+        );
+        final blockReason =
+            responseData['promptFeedback']?['blockReason'] as String?;
+        if (blockReason != null) {
+          throw Exception('AI 응답이 차단되었습니다 (사유: $blockReason)');
+        }
+        throw Exception('AI 응답을 받지 못했습니다');
+      }
+
+      await _saveChatLog(
+        request: requestJson,
+        response: response.body,
+        timestamp: startTime,
+        chatRoomId: chatRoomId,
+        characterId: characterId,
+        type: logType,
+      );
+
+      return AiResponse(
+          text: text, usageMetadata: usageMetadata, modelId: modelId);
+    } catch (e) {
+      await _saveChatLog(
+        request: requestJson,
+        response: 'Error: $e',
+        timestamp: startTime,
+        chatRoomId: chatRoomId,
+        characterId: characterId,
+        type: logType,
+      );
+      rethrow;
     }
   }
 

@@ -10,6 +10,7 @@ enum ApiFormat {
 enum ChatModelProvider {
   all('ALL'),
   googleAIStudio('Google AI Studio'),
+  vertexAi('Vertex AI'),
   openai('OpenAI'),
   anthropic('Anthropic'),
   custom('커스텀');
@@ -110,6 +111,50 @@ enum ChatModel {
   geminiFlashLite25(
     'Gemini 2.5 Flash Lite',
     ChatModelProvider.googleAIStudio,
+    'gemini-2.5-flash-lite',
+    ApiFormat.gemini,
+    ModelPricing(inputPrice: 0.10, cachedInputPrice: 0.010, outputPrice: 0.40),
+  ),
+
+  // Vertex AI models (same Gemini models via Vertex AI endpoint)
+  vertexGeminiPro31Preview(
+    'Gemini 3.1 Pro Preview',
+    ChatModelProvider.vertexAi,
+    'gemini-3.1-pro-preview',
+    ApiFormat.gemini,
+    ModelPricing(inputPrice: 2.00, cachedInputPrice: 0.20, outputPrice: 12.00),
+  ),
+  vertexGeminiPro3Preview(
+    'Gemini 3 Pro Preview',
+    ChatModelProvider.vertexAi,
+    'gemini-3-pro-preview',
+    ApiFormat.gemini,
+    ModelPricing(inputPrice: 2.00, cachedInputPrice: 0.20, outputPrice: 12.00),
+  ),
+  vertexGeminiFlash3Preview(
+    'Gemini 3 Flash Preview',
+    ChatModelProvider.vertexAi,
+    'gemini-3-flash-preview',
+    ApiFormat.gemini,
+    ModelPricing(inputPrice: 0.50, cachedInputPrice: 0.05, outputPrice: 3.00),
+  ),
+  vertexGeminiPro25(
+    'Gemini 2.5 Pro',
+    ChatModelProvider.vertexAi,
+    'gemini-2.5-pro',
+    ApiFormat.gemini,
+    ModelPricing(inputPrice: 1.25, cachedInputPrice: 0.125, outputPrice: 10.00),
+  ),
+  vertexGeminiFlash25(
+    'Gemini 2.5 Flash',
+    ChatModelProvider.vertexAi,
+    'gemini-2.5-flash',
+    ApiFormat.gemini,
+    ModelPricing(inputPrice: 0.15, cachedInputPrice: 0.015, outputPrice: 0.60, thinkingOutputPrice: 3.50),
+  ),
+  vertexGeminiFlashLite25(
+    'Gemini 2.5 Flash Lite',
+    ChatModelProvider.vertexAi,
     'gemini-2.5-flash-lite',
     ApiFormat.gemini,
     ModelPricing(inputPrice: 0.10, cachedInputPrice: 0.010, outputPrice: 0.40),

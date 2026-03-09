@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../utils/common_dialog.dart';
@@ -8,9 +10,11 @@ import '../../widgets/common/common_appbar.dart';
 import '../../widgets/common/common_filter_chip.dart';
 import '../../widgets/common/common_title_medium.dart';
 import '../../services/ai_service.dart';
+import '../../services/vertex_auth_service.dart';
 
 enum ApiKeyType {
   googleAiStudio('Google AI Studio', 'google'),
+  vertexAi('Vertex AI', 'vertex_ai'),
   openai('OpenAI', 'openai'),
   anthropic('Anthropic', 'anthropic');
   // openRouter('OpenRouter', 'openrouter');
@@ -39,6 +43,9 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
   List<String> _keys = [];
   int _activeIndex = 0;
   int? _editingIndex;
+  String _vertexRegion = 'us-central1';
+
+  bool get _isVertexAi => _selectedApiKeyType == ApiKeyType.vertexAi;
 
   @override
   void initState() {
@@ -79,6 +86,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
         }
       }
 
+      _vertexRegion = await VertexAuthService.getRegion();
       _loadKeysForType(_selectedApiKeyType);
     } catch (e) {
       if (mounted) {
@@ -284,9 +292,119 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
     });
   }
 
+  Future<void> _pickVertexAiJsonFile() async {
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.custom,
+      allowedExtensions: ['json'],
+    );
+    if (result == null || result.files.single.path == null) return;
+
+    setState(() => _isLoading = true);
+    try {
+      final file = File(result.files.single.path!);
+      final jsonString = await file.readAsString();
+
+      // Validate JSON structure
+      final validationError =
+          await VertexAuthService.validateServiceAccountJson(jsonString);
+      if (validationError != null) {
+        if (mounted) {
+          await CommonDialog.showInfo(
+            context: context,
+            title: '서비스 계정 검증 실패',
+            content: validationError,
+          );
+        }
+        return;
+      }
+
+      if (_editingIndex != null) {
+        _keys[_editingIndex!] = jsonString;
+        if (_keys.length == 1) _activeIndex = 0;
+      } else {
+        _keys.add(jsonString);
+        if (_keys.length == 1) _activeIndex = 0;
+      }
+
+      await _saveKeys();
+
+      _editingIndex = null;
+      _apiKeyController.clear();
+
+      if (mounted) {
+        final email = VertexAuthService.extractClientEmail(jsonString) ?? '';
+        CommonDialog.showSnackBar(
+          context: context,
+          message: 'Vertex AI 서비스 계정이 등록되었습니다 ($email)',
+        );
+        setState(() {});
+      }
+    } catch (e) {
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: 'JSON 파일 읽기 실패: $e',
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  String _vertexAiKeyLabel(String jsonString) {
+    final projectId = VertexAuthService.extractProjectId(jsonString);
+    final email = VertexAuthService.extractClientEmail(jsonString);
+    if (projectId != null && email != null) {
+      return '$projectId\n$email';
+    }
+    return '(서비스 계정 JSON)';
+  }
+
   String _obscureKey(String key) {
     if (key.length <= 8) return '•' * key.length;
     return '${key.substring(0, 4)}${'•' * (key.length - 8)}${key.substring(key.length - 4)}';
+  }
+
+  Widget _buildVertexAiRegionSelector() {
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.location_on_outlined,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                const SizedBox(width: 8),
+                const CommonTitleMedium(text: '리전'),
+              ],
+            ),
+            const SizedBox(height: 12),
+            DropdownButtonFormField<String>(
+              value: _vertexRegion,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                contentPadding:
+                    EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              items: VertexAuthService.availableRegions
+                  .map((r) => DropdownMenuItem(value: r, child: Text(r)))
+                  .toList(),
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() => _vertexRegion = value);
+                  VertexAuthService.setRegion(value);
+                }
+              },
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildApiKeyTypeSelector(BuildContext context) {
@@ -370,7 +488,9 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
                                   ),
                         ),
                         Text(
-                          _obscureKey(_keys[index]),
+                          _isVertexAi
+                              ? _vertexAiKeyLabel(_keys[index])
+                              : _obscureKey(_keys[index]),
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
                                     fontFamily: 'monospace',
@@ -379,6 +499,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
                                         .onSurfaceVariant,
                                   ),
                           overflow: TextOverflow.ellipsis,
+                          maxLines: _isVertexAi ? 2 : 1,
                         ),
                       ],
                     ),
@@ -439,7 +560,8 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
                             const SizedBox(height: 12),
                             Text(
                               'AI 모델을 사용하기 위해 API 키가 필요합니다.\n'
-                              '각 제공사별로 여러 개의 API 키를 등록할 수 있습니다.',
+                              '각 제공사별로 여러 개의 API 키를 등록할 수 있습니다.\n'
+                              'Vertex AI는 서비스 계정 JSON 파일이 필요합니다.',
                               style: Theme.of(context)
                                   .textTheme
                                   .bodyMedium
@@ -458,48 +580,73 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
                     const SizedBox(height: 16),
                     _buildKeyList(),
                     const SizedBox(height: 16),
-                    CommonCustomTextField(
-                      controller: _apiKeyController,
-                      label: _editingIndex != null
-                          ? 'Key ${_editingIndex! + 1} 수정'
-                          : '새 API 키',
-                      helpText:
-                          '${_selectedApiKeyType.displayName}에서 발급받은 API 키를 입력해주세요.',
-                      hintText: 'API 키를 입력해주세요',
-                      maxLines: 1,
-                      obscureText: true,
-                      enableObscureToggle: true,
-                      validator: (value) {
-                        if (value == null || value.trim().isEmpty) {
-                          return 'API 키를 입력해주세요';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        if (_editingIndex != null) ...[
-                          Expanded(
-                            child: CommonButton.outlined(
-                              onPressed: _cancelEditing,
-                              icon: Icons.close,
-                              label: '취소',
-                            ),
-                          ),
-                          const SizedBox(width: 12),
-                        ],
-                        Expanded(
-                          child: CommonButton.filled(
-                            onPressed: _isLoading ? null : _saveOrUpdateKey,
-                            icon: _editingIndex != null
-                                ? Icons.save
-                                : Icons.add,
-                            label: _editingIndex != null ? '저장' : '키 추가',
-                          ),
+                    if (_isVertexAi) ...[
+                      _buildVertexAiRegionSelector(),
+                      const SizedBox(height: 16),
+                      CommonButton.filled(
+                        onPressed:
+                            _isLoading ? null : _pickVertexAiJsonFile,
+                        icon: _editingIndex != null
+                            ? Icons.refresh
+                            : Icons.upload_file,
+                        label: _editingIndex != null
+                            ? 'JSON 파일 교체'
+                            : 'JSON 파일 가져오기',
+                      ),
+                      if (_editingIndex != null) ...[
+                        const SizedBox(height: 8),
+                        CommonButton.outlined(
+                          onPressed: _cancelEditing,
+                          icon: Icons.close,
+                          label: '취소',
                         ),
                       ],
-                    ),
+                    ] else ...[
+                      CommonCustomTextField(
+                        controller: _apiKeyController,
+                        label: _editingIndex != null
+                            ? 'Key ${_editingIndex! + 1} 수정'
+                            : '새 API 키',
+                        helpText:
+                            '${_selectedApiKeyType.displayName}에서 발급받은 API 키를 입력해주세요.',
+                        hintText: 'API 키를 입력해주세요',
+                        maxLines: 1,
+                        obscureText: true,
+                        enableObscureToggle: true,
+                        validator: (value) {
+                          if (value == null || value.trim().isEmpty) {
+                            return 'API 키를 입력해주세요';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      Row(
+                        children: [
+                          if (_editingIndex != null) ...[
+                            Expanded(
+                              child: CommonButton.outlined(
+                                onPressed: _cancelEditing,
+                                icon: Icons.close,
+                                label: '취소',
+                              ),
+                            ),
+                            const SizedBox(width: 12),
+                          ],
+                          Expanded(
+                            child: CommonButton.filled(
+                              onPressed:
+                                  _isLoading ? null : _saveOrUpdateKey,
+                              icon: _editingIndex != null
+                                  ? Icons.save
+                                  : Icons.add,
+                              label:
+                                  _editingIndex != null ? '저장' : '키 추가',
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),

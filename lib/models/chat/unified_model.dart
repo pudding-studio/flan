@@ -50,6 +50,8 @@ class UnifiedModel {
     switch (provider) {
       case ChatModelProvider.googleAIStudio:
         return 'google';
+      case ChatModelProvider.vertexAi:
+        return 'vertex_ai';
       case ChatModelProvider.openai:
         return 'openai';
       case ChatModelProvider.anthropic:
