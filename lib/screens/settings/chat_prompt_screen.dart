@@ -9,6 +9,7 @@ import '../../models/prompt/chat_prompt.dart';
 import '../../utils/common_dialog.dart';
 import '../../utils/silly_tavern_preset_converter.dart';
 import '../../widgets/common/common_appbar.dart';
+import '../../widgets/common/common_fab.dart';
 import '../../widgets/settings/settings_prompt_list_item.dart';
 import 'prompt_edit_screen.dart';
 
@@ -547,10 +548,8 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
                     );
                   },
                 ),
-      floatingActionButton: FloatingActionButton(
+      floatingActionButton: CommonFab(
         onPressed: () => _createNewPrompt(),
-        elevation: 0,
-        child: const Icon(Icons.add),
       ),
     );
   }

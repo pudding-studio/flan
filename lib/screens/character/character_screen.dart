@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:archive/archive.dart';
+import '../../widgets/common/common_fab.dart';
 import '../../providers/theme_provider.dart';
 import '../../database/database_helper.dart';
 import '../../models/character/character.dart';
@@ -951,7 +952,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
           ),
         ],
       ),
-      floatingActionButton: _isEditMode ? null : FloatingActionButton(
+      floatingActionButton: _isEditMode ? null : CommonFab(
         onPressed: () async {
           final result = await Navigator.push<bool>(
             context,
@@ -963,8 +964,6 @@ class _CharacterScreenState extends State<CharacterScreen> {
             _loadCharacters();
           }
         },
-        elevation: 4,
-        child: const Icon(Icons.add),
       ),
     );
   }
