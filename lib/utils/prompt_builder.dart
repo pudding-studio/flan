@@ -332,11 +332,11 @@ class PromptBuilder {
   }
 
   static String replaceKeywords(String text, Map<String, String> keywords) {
-    var result = stripComments(text);
+    var result = text;
     for (final entry in keywords.entries) {
       result = result.replaceAll('{{${entry.key}}}', entry.value);
     }
-    return result;
+    return stripComments(result);
   }
 
   /// Strips /* ... */ block comments from text before sending to AI.
