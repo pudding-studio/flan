@@ -143,11 +143,12 @@ class ChatModelScreen extends StatelessWidget {
     return ListTile(
       dense: true,
       title: Text(label, style: Theme.of(context).textTheme.bodySmall),
-      trailing: Text(
+      subtitle: Text(
         value,
         style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
             ),
+        overflow: TextOverflow.ellipsis,
       ),
     );
   }

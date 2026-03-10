@@ -26,8 +26,8 @@ class AiResponse {
 class AiService {
   static const String _geminiBaseUrl =
       'https://generativelanguage.googleapis.com/v1beta/models';
-  static const String _openaiBaseUrl = 'https://api.openai.com';
-  static const String _claudeBaseUrl = 'https://api.anthropic.com';
+  static const String _openaiBaseUrl = 'https://api.openai.com/v1';
+  static const String _claudeBaseUrl = 'https://api.anthropic.com/v1';
 
   final DatabaseHelper _db = DatabaseHelper.instance;
 
@@ -114,7 +114,7 @@ class AiService {
   }
 
   static Future<String?> _validateOpenAIKey(String apiKey) async {
-    final url = Uri.parse('$_openaiBaseUrl/v1/models');
+    final url = Uri.parse('$_openaiBaseUrl/models');
     final response = await http.get(
       url,
       headers: {'Authorization': 'Bearer $apiKey'},
@@ -127,7 +127,7 @@ class AiService {
   }
 
   static Future<String?> _validateClaudeKey(String apiKey) async {
-    final url = Uri.parse('$_claudeBaseUrl/v1/messages');
+    final url = Uri.parse('$_claudeBaseUrl/messages');
     final response = await http.post(
       url,
       headers: {
@@ -204,14 +204,11 @@ class AiService {
         ? model.apiKey!
         : await getApiKey(model.apiKeyType);
 
-    // Normalize base URL: strip trailing slash and /v1
+    // Normalize base URL: strip trailing slash only
     String normalizeBaseUrl(String url) {
       var u = url.trimRight();
       while (u.endsWith('/')) {
         u = u.substring(0, u.length - 1);
-      }
-      if (u.endsWith('/v1')) {
-        u = u.substring(0, u.length - 3);
       }
       return u;
     }
@@ -299,13 +296,15 @@ class AiService {
 
     final requestJson = jsonEncode(requestBody);
     final startTime = DateTime.now();
+    final url = Uri.parse(
+        '$_geminiBaseUrl/$modelId:generateContent?key=$apiKey');
+    final reqHeaders = {'Content-Type': 'application/json'};
+    final fullRequest = _buildFullRequest(url, reqHeaders, requestJson);
 
     try {
-      final url = Uri.parse(
-          '$_geminiBaseUrl/$modelId:generateContent?key=$apiKey');
       final response = await http.post(
         url,
-        headers: {'Content-Type': 'application/json'},
+        headers: reqHeaders,
         body: requestJson,
       );
 
@@ -322,7 +321,7 @@ class AiService {
         debugPrint(
             'Empty AI response - status: ${response.statusCode}, body: ${response.body}');
         await _saveChatLog(
-          request: requestJson,
+          request: fullRequest,
           response: response.body,
           timestamp: startTime,
           chatRoomId: chatRoomId,
@@ -338,7 +337,7 @@ class AiService {
       }
 
       await _saveChatLog(
-        request: requestJson,
+        request: fullRequest,
         response: response.body,
         timestamp: startTime,
         chatRoomId: chatRoomId,
@@ -350,7 +349,7 @@ class AiService {
           text: text, usageMetadata: usageMetadata, modelId: modelId);
     } catch (e) {
       await _saveChatLog(
-        request: requestJson,
+        request: fullRequest,
         response: 'Error: $e',
         timestamp: startTime,
         chatRoomId: chatRoomId,
@@ -472,6 +471,7 @@ class AiService {
 
     final requestJson = jsonEncode(requestBody);
     final startTime = DateTime.now();
+    String fullRequest = requestJson;
 
     try {
       final accessToken =
@@ -490,12 +490,15 @@ class AiService {
       );
 
       final url = Uri.parse(endpoint);
+      final reqHeaders = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $accessToken',
+      };
+      fullRequest = _buildFullRequest(url, reqHeaders, requestJson);
+
       final response = await http.post(
         url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $accessToken',
-        },
+        headers: reqHeaders,
         body: requestJson,
       );
 
@@ -512,7 +515,7 @@ class AiService {
         debugPrint(
             'Empty AI response - status: ${response.statusCode}, body: ${response.body}');
         await _saveChatLog(
-          request: requestJson,
+          request: fullRequest,
           response: response.body,
           timestamp: startTime,
           chatRoomId: chatRoomId,
@@ -528,7 +531,7 @@ class AiService {
       }
 
       await _saveChatLog(
-        request: requestJson,
+        request: fullRequest,
         response: response.body,
         timestamp: startTime,
         chatRoomId: chatRoomId,
@@ -540,7 +543,7 @@ class AiService {
           text: text, usageMetadata: usageMetadata, modelId: modelId);
     } catch (e) {
       await _saveChatLog(
-        request: requestJson,
+        request: fullRequest,
         response: 'Error: $e',
         timestamp: startTime,
         chatRoomId: chatRoomId,
@@ -598,15 +601,17 @@ class AiService {
 
     final requestJson = jsonEncode(requestBody);
     final startTime = DateTime.now();
+    final url = Uri.parse('$baseUrl/chat/completions');
+    final reqHeaders = {
+      'Content-Type': 'application/json',
+      'Authorization': 'Bearer $apiKey',
+    };
+    final fullRequest = _buildFullRequest(url, reqHeaders, requestJson);
 
     try {
-      final url = Uri.parse('$baseUrl/v1/chat/completions');
       final response = await http.post(
         url,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': 'Bearer $apiKey',
-        },
+        headers: reqHeaders,
         body: requestJson,
       );
 
@@ -623,7 +628,7 @@ class AiService {
         debugPrint(
             'Empty AI response - status: ${response.statusCode}, body: ${response.body}');
         await _saveChatLog(
-          request: requestJson,
+          request: fullRequest,
           response: response.body,
           timestamp: startTime,
           chatRoomId: chatRoomId,
@@ -634,7 +639,7 @@ class AiService {
       }
 
       await _saveChatLog(
-        request: requestJson,
+        request: fullRequest,
         response: response.body,
         timestamp: startTime,
         chatRoomId: chatRoomId,
@@ -646,7 +651,7 @@ class AiService {
           text: text, usageMetadata: usageMetadata, modelId: modelId);
     } catch (e) {
       await _saveChatLog(
-        request: requestJson,
+        request: fullRequest,
         response: 'Error: $e',
         timestamp: startTime,
         chatRoomId: chatRoomId,
@@ -730,21 +735,22 @@ class AiService {
 
     final requestJson = jsonEncode(requestBody);
     final startTime = DateTime.now();
+    final url = Uri.parse('$baseUrl/messages');
+    final reqHeaders = <String, String>{
+      'Content-Type': 'application/json',
+    };
+    if (useBearerAuth) {
+      reqHeaders['Authorization'] = 'Bearer $apiKey';
+    } else {
+      reqHeaders['x-api-key'] = apiKey;
+      reqHeaders['anthropic-version'] = '2023-06-01';
+    }
+    final fullRequest = _buildFullRequest(url, reqHeaders, requestJson);
 
     try {
-      final url = Uri.parse('$baseUrl/v1/messages');
-      final headers = <String, String>{
-        'Content-Type': 'application/json',
-      };
-      if (useBearerAuth) {
-        headers['Authorization'] = 'Bearer $apiKey';
-      } else {
-        headers['x-api-key'] = apiKey;
-        headers['anthropic-version'] = '2023-06-01';
-      }
       final response = await http.post(
         url,
-        headers: headers,
+        headers: reqHeaders,
         body: requestJson,
       );
 
@@ -761,7 +767,7 @@ class AiService {
         debugPrint(
             'Empty AI response - status: ${response.statusCode}, body: ${response.body}');
         await _saveChatLog(
-          request: requestJson,
+          request: fullRequest,
           response: response.body,
           timestamp: startTime,
           chatRoomId: chatRoomId,
@@ -772,7 +778,7 @@ class AiService {
       }
 
       await _saveChatLog(
-        request: requestJson,
+        request: fullRequest,
         response: response.body,
         timestamp: startTime,
         chatRoomId: chatRoomId,
@@ -784,7 +790,7 @@ class AiService {
           text: text, usageMetadata: usageMetadata, modelId: modelId);
     } catch (e) {
       await _saveChatLog(
-        request: requestJson,
+        request: fullRequest,
         response: 'Error: $e',
         timestamp: startTime,
         chatRoomId: chatRoomId,
@@ -829,6 +835,24 @@ class AiService {
   }
 
   // ── Chat log ──
+
+  String _buildFullRequest(Uri url, Map<String, String> headers, String body) {
+    final buf = StringBuffer();
+    buf.writeln('POST ${url.toString()}');
+    buf.writeln();
+    for (final entry in headers.entries) {
+      final lower = entry.key.toLowerCase();
+      if (lower == 'authorization' || lower == 'x-api-key') {
+        final v = entry.value;
+        buf.writeln('${entry.key}: ${v.substring(0, (v.length * 0.3).round().clamp(0, 20))}...');
+      } else {
+        buf.writeln('${entry.key}: ${entry.value}');
+      }
+    }
+    buf.writeln();
+    buf.write(body);
+    return buf.toString();
+  }
 
   Future<void> _saveChatLog({
     required String request,
