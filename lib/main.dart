@@ -14,6 +14,7 @@ import 'providers/theme_provider.dart';
 import 'providers/chat_model_provider.dart';
 import 'providers/tokenizer_provider.dart';
 import 'providers/viewer_settings_provider.dart';
+import 'database/database_helper.dart';
 import 'services/default_seeder_service.dart';
 
 void main() async {
@@ -29,6 +30,9 @@ void main() async {
 
     // Seed default data on first launch
     await DefaultSeederService().seedAllDefaults();
+
+    // Delete API logs older than 7 days
+    await DatabaseHelper.instance.deleteOldChatLogs();
 
     runApp(
       MultiProvider(

@@ -5,6 +5,12 @@ import '../../models/chat/chat_log.dart';
 import '../../database/database_helper.dart';
 import '../../utils/common_dialog.dart';
 import '../../widgets/common/common_appbar.dart';
+import '../../widgets/common/common_info_box.dart';
+
+String _formatTimestamp(DateTime timestamp) {
+  return '${timestamp.year}-${timestamp.month.toString().padLeft(2, '0')}-${timestamp.day.toString().padLeft(2, '0')} '
+      '${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}:${timestamp.second.toString().padLeft(2, '0')}';
+}
 
 class LogScreen extends StatefulWidget {
   const LogScreen({super.key});
@@ -114,11 +120,6 @@ class _LogScreenState extends State<LogScreen> {
     );
   }
 
-  String _formatTimestamp(DateTime timestamp) {
-    return '${timestamp.year}-${timestamp.month.toString().padLeft(2, '0')}-${timestamp.day.toString().padLeft(2, '0')} '
-        '${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}:${timestamp.second.toString().padLeft(2, '0')}';
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -135,65 +136,77 @@ class _LogScreenState extends State<LogScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _logs.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.history,
-                        size: 64,
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        '로그가 없습니다',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                      ),
-                    ],
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  child: CommonInfoBox(
+                    message: 'API 요청/응답 로그를 확인할 수 있습니다.\n7일이 지난 로그는 자동으로 삭제됩니다.',
                   ),
-                )
-              : ListView.separated(
-                  itemCount: _logs.length,
-                  separatorBuilder: (context, index) => const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final log = _logs[index];
-                    final isAutoSummary = log.type == 'auto_summary';
-                    return ListTile(
-                      leading: isAutoSummary
-                          ? Icon(
-                              Icons.summarize,
-                              color: Theme.of(context).colorScheme.tertiary,
-                              size: 20,
-                            )
-                          : null,
-                      title: Text(
-                        _formatTimestamp(log.timestamp),
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w500,
-                              color: isAutoSummary
-                                  ? Theme.of(context).colorScheme.tertiary
-                                  : null,
-                            ),
-                      ),
-                      subtitle: Text(
-                        isAutoSummary ? '자동 요약' : 'Type: ${log.type}',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: isAutoSummary
-                                  ? Theme.of(context).colorScheme.tertiary
-                                  : null,
-                            ),
-                      ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete_outline),
-                        onPressed: () => _deleteLog(log.id!),
-                      ),
-                      onTap: () => _showLogDetail(log),
-                    );
-                  },
                 ),
+                Expanded(
+                  child: _logs.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.history,
+                                size: 64,
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                '로그가 없습니다',
+                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.separated(
+                          itemCount: _logs.length,
+                          separatorBuilder: (context, index) => const Divider(height: 1),
+                          itemBuilder: (context, index) {
+                            final log = _logs[index];
+                            final isAutoSummary = log.type == 'auto_summary';
+                            return ListTile(
+                              leading: isAutoSummary
+                                  ? Icon(
+                                      Icons.summarize,
+                                      color: Theme.of(context).colorScheme.tertiary,
+                                      size: 20,
+                                    )
+                                  : null,
+                              title: Text(
+                                _formatTimestamp(log.timestamp),
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.w500,
+                                      color: isAutoSummary
+                                          ? Theme.of(context).colorScheme.tertiary
+                                          : null,
+                                    ),
+                              ),
+                              subtitle: Text(
+                                isAutoSummary ? '자동 요약' : 'Type: ${log.type}',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: isAutoSummary
+                                          ? Theme.of(context).colorScheme.tertiary
+                                          : null,
+                                    ),
+                              ),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.delete_outline),
+                                onPressed: () => _deleteLog(log.id!),
+                              ),
+                              onTap: () => _showLogDetail(log),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
     );
   }
 }
@@ -473,8 +486,4 @@ class _LogDetailSheetState extends State<_LogDetailSheet> {
     );
   }
 
-  String _formatTimestamp(DateTime timestamp) {
-    return '${timestamp.year}-${timestamp.month.toString().padLeft(2, '0')}-${timestamp.day.toString().padLeft(2, '0')} '
-        '${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}:${timestamp.second.toString().padLeft(2, '0')}';
-  }
 }

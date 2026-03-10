@@ -8,6 +8,7 @@ import '../../widgets/common/common_button.dart';
 import '../../widgets/common/common_custom_text_field.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../../widgets/common/common_filter_chip.dart';
+import '../../widgets/common/common_settings.dart';
 import '../../widgets/common/common_title_medium.dart';
 import '../../services/ai_service.dart';
 import '../../services/vertex_auth_service.dart';
@@ -540,40 +541,11 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Card(
-                      child: Padding(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Icon(
-                                  Icons.info_outline,
-                                  size: 20,
-                                  color: Theme.of(context).colorScheme.primary,
-                                ),
-                                const SizedBox(width: 8),
-                                const CommonTitleMedium(text: 'API 키 정보'),
-                              ],
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              'AI 모델을 사용하기 위해 API 키가 필요합니다.\n'
-                              '각 제공사별로 여러 개의 API 키를 등록할 수 있습니다.\n'
-                              'Vertex AI는 서비스 계정 JSON 파일이 필요합니다.',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodyMedium
-                                  ?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant,
-                                  ),
-                            ),
-                          ],
-                        ),
-                      ),
+                    const CommonSettingsInfoCard(
+                      title: 'API 키 정보',
+                      description: 'AI 모델을 사용하기 위해 API 키가 필요합니다.\n'
+                          '각 제공사별로 여러 개의 API 키를 등록할 수 있습니다.\n'
+                          'Vertex AI는 서비스 계정 JSON 파일이 필요합니다.',
                     ),
                     const SizedBox(height: 24),
                     _buildApiKeyTypeSelector(context),

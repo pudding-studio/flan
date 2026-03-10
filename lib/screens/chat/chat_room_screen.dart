@@ -29,6 +29,7 @@ import '../../models/chat/chat_model.dart';
 import '../../models/chat/unified_model.dart';
 import '../../utils/metadata_parser.dart';
 import '../../widgets/common/common_appbar.dart';
+import '../../widgets/common/common_settings.dart';
 import '../../widgets/common/common_edit_text.dart';
 import '../../providers/chat_model_provider.dart';
 import '../../providers/viewer_settings_provider.dart';
@@ -1104,74 +1105,19 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   Widget _buildWarningCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.warning_amber_rounded,
-                  size: 20,
-                  color: Theme.of(context).colorScheme.error,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '주의',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              '모든 AI 응답은 자동 생성되며, 편향적이거나 부정확할 수 있습니다.',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
+    return CommonSettingsInfoCard(
+      icon: Icons.warning_amber_rounded,
+      iconColor: Theme.of(context).colorScheme.error,
+      title: '주의',
+      description: '모든 AI 응답은 자동 생성되며, 편향적이거나 부정확할 수 있습니다.',
     );
   }
 
   Widget _buildStartSettingCard() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.settings_outlined,
-                  size: 20,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '시작 설정',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              _startScenario!.startSetting!,
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            ),
-          ],
-        ),
-      ),
+    return CommonSettingsInfoCard(
+      icon: Icons.settings_outlined,
+      title: '시작 설정',
+      description: _startScenario!.startSetting!,
     );
   }
 

@@ -2111,6 +2111,16 @@ class DatabaseHelper {
     return await db.delete('chat_logs');
   }
 
+  Future<int> deleteOldChatLogs() async {
+    final db = await database;
+    final cutoff = DateTime.now().subtract(const Duration(days: 7));
+    return await db.delete(
+      'chat_logs',
+      where: 'timestamp < ?',
+      whereArgs: [cutoff.toIso8601String()],
+    );
+  }
+
   // ==================== 채팅 메시지 메타데이터 CRUD ====================
 
   Future<int> createChatMessageMetadata(ChatMessageMetadata metadata) async {

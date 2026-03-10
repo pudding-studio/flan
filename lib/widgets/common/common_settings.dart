@@ -5,12 +5,14 @@ class CommonSettingsInfoCard extends StatelessWidget {
   final String title;
   final String description;
   final IconData icon;
+  final Color? iconColor;
 
   const CommonSettingsInfoCard({
     super.key,
     required this.title,
     required this.description,
     this.icon = Icons.info_outline,
+    this.iconColor,
   });
 
   @override
@@ -26,7 +28,7 @@ class CommonSettingsInfoCard extends StatelessWidget {
                 Icon(
                   icon,
                   size: 20,
-                  color: Theme.of(context).colorScheme.primary,
+                  color: iconColor ?? Theme.of(context).colorScheme.primary,
                 ),
                 const SizedBox(width: 8),
                 Text(
