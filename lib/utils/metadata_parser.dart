@@ -131,28 +131,17 @@ class MetadataParser {
     return false;
   }
 
-  static bool hasMetadataPattern(String content) {
-    return _locationPattern.hasMatch(content) ||
-        _datePattern.hasMatch(content) ||
-        _timePattern.hasMatch(content) ||
-        _pinPattern.hasMatch(content);
-  }
+  static final _bracketTagLinePattern = RegExp(r'^【[^】]*】\s*\n?', multiLine: true);
+  static final _bracketTagPattern = RegExp(r'【[^】]*】');
 
-  static final _locationLinePattern = RegExp(r'^【📍\|[^】]*】\s*\n?', multiLine: true);
-  static final _dateLinePattern = RegExp(r'^【📅\|[^】]*】\s*\n?', multiLine: true);
-  static final _timeLinePattern = RegExp(r'^【🕰\|[^】]*】\s*\n?', multiLine: true);
-  static final _pinLinePattern = RegExp(r'^【📌\|[^】]*】\s*\n?', multiLine: true, caseSensitive: false);
+  static bool hasMetadataPattern(String content) {
+    return _bracketTagPattern.hasMatch(content);
+  }
 
   static String removeMetadataTags(String content) {
     var result = content
-        .replaceAll(_locationLinePattern, '')
-        .replaceAll(_dateLinePattern, '')
-        .replaceAll(_timeLinePattern, '')
-        .replaceAll(_pinLinePattern, '')
-        .replaceAll(_locationPattern, '')
-        .replaceAll(_datePattern, '')
-        .replaceAll(_timePattern, '')
-        .replaceAll(_pinPattern, '');
+        .replaceAll(_bracketTagLinePattern, '')
+        .replaceAll(_bracketTagPattern, '');
     result = result.replaceAll(RegExp(r'^\n+'), '');
     return result.trim();
   }
