@@ -256,16 +256,30 @@ class PromptBuilder {
     List<ChatSummary>? summaries,
     Map<int, ChatMessageMetadata>? summaryMetadataMap,
   }) {
-    return {
+    // Phase 1: identity keywords that other values may reference
+    final baseKeywords = {
       'char': character.name,
-      'char_description': character.description ?? '',
       'user': persona?.name ?? '',
-      'user_description': persona?.content ?? '',
-      'character_book': _buildCharacterBookText(activeCharacterBooks),
-      'start_setting': startScenario?.startSetting ?? '',
-      'start_message': startScenario?.startMessage ?? '',
-      'chat_memo': chatRoom?.memo ?? '',
-      'chat_historys': _buildChatHistorysText(summaries, summaryMetadataMap),
+    };
+
+    // Phase 2: build derived values, pre-applying base keywords
+    String resolve(String text) {
+      var result = text;
+      for (final entry in baseKeywords.entries) {
+        result = result.replaceAll('{{${entry.key}}}', entry.value);
+      }
+      return result;
+    }
+
+    return {
+      ...baseKeywords,
+      'char_description': resolve(character.description ?? ''),
+      'user_description': resolve(persona?.content ?? ''),
+      'character_book': resolve(_buildCharacterBookText(activeCharacterBooks)),
+      'start_setting': resolve(startScenario?.startSetting ?? ''),
+      'start_message': resolve(startScenario?.startMessage ?? ''),
+      'chat_memo': resolve(chatRoom?.memo ?? ''),
+      'chat_historys': resolve(_buildChatHistorysText(summaries, summaryMetadataMap)),
     };
   }
 
