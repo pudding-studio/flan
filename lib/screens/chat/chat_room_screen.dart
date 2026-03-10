@@ -495,14 +495,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         SnackBar(content: Text('메시지 전송 중 오류가 발생했습니다: $e')),
       );
     } finally {
-      final wasScrolledUp = _showScrollButtons;
-      await _loadChatData(showLoading: false);
-      if (mounted) {
-        setState(() {
-          _sendingPhase = SendingPhase.none;
-          if (wasScrolledUp) _hasNewMessage = true;
-        });
-      }
+      await _finishSending();
     }
   }
 
@@ -687,6 +680,17 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
+  Future<void> _finishSending() async {
+    final wasScrolledUp = _showScrollButtons;
+    await _loadChatData(showLoading: false);
+    if (mounted) {
+      setState(() {
+        _sendingPhase = SendingPhase.none;
+        if (wasScrolledUp) _hasNewMessage = true;
+      });
+    }
+  }
+
   Future<void> _onModelChanged(UnifiedModel model) async {
     final provider = context.read<ChatModelSettingsProvider>();
     await provider.setModel(model);
@@ -836,14 +840,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         SnackBar(content: Text('메시지 재전송 중 오류가 발생했습니다: $e')),
       );
     } finally {
-      final wasScrolledUp = _showScrollButtons;
-      await _loadChatData(showLoading: false);
-      if (mounted) {
-        setState(() {
-          _sendingPhase = SendingPhase.none;
-          if (wasScrolledUp) _hasNewMessage = true;
-        });
-      }
+      await _finishSending();
     }
   }
 
@@ -1059,14 +1056,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         SnackBar(content: Text('메시지 재생성 중 오류가 발생했습니다: $e')),
       );
     } finally {
-      final wasScrolledUp = _showScrollButtons;
-      await _loadChatData(showLoading: false);
-      if (mounted) {
-        setState(() {
-          _sendingPhase = SendingPhase.none;
-          if (wasScrolledUp) _hasNewMessage = true;
-        });
-      }
+      await _finishSending();
     }
   }
 

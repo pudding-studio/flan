@@ -13,6 +13,7 @@ import '../../../models/prompt/prompt_condition.dart';
 import '../../../models/prompt/prompt_condition_option.dart';
 import '../../../models/prompt/prompt_condition_preset.dart';
 import '../../../models/prompt/prompt_condition_preset_value.dart';
+import '../../../models/chat/chat_model.dart';
 import '../../../providers/chat_model_provider.dart';
 import '../../../services/auto_summary_service.dart';
 import '../../../utils/common_dialog.dart';
@@ -588,6 +589,12 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
 
   Widget _buildChatSettings() {
     final modelProvider = context.watch<ChatModelSettingsProvider>();
+    final selectableProviders = ChatModelProvider.values
+        .where((p) => p != ChatModelProvider.all)
+        .toList();
+    final effectiveProvider = modelProvider.selectedProvider == ChatModelProvider.all
+        ? modelProvider.selectedModel.provider
+        : modelProvider.selectedProvider;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -597,6 +604,24 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
           style: _sectionHeaderStyle,
         ),
         const SizedBox(height: 12),
+        _buildVerticalSettingRow(
+          label: '제조사',
+          child: CommonDropdownButton<ChatModelProvider>(
+            value: effectiveProvider,
+            items: selectableProviders,
+            onChanged: (provider) async {
+              if (provider != null) {
+                final settingsProvider = context.read<ChatModelSettingsProvider>();
+                await settingsProvider.setProvider(provider);
+                if (!mounted) return;
+                widget.onModelChanged(settingsProvider.selectedModel);
+              }
+            },
+            labelBuilder: (provider) => provider.displayName,
+            size: CommonDropdownButtonSize.xsmall,
+          ),
+        ),
+        const SizedBox(height: 8),
         _buildVerticalSettingRow(
           label: '채팅 모델',
           child: CommonDropdownButton<UnifiedModel>(
