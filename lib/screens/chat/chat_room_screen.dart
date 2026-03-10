@@ -534,6 +534,67 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     return RegexProcessor.apply(text, _regexRules, RegexTarget.displayModify);
   }
 
+  Widget _buildCharacterCard(CharacterTag tag) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final accentColor = tag.isMain ? colorScheme.primary : colorScheme.tertiary;
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      decoration: BoxDecoration(
+        color: accentColor.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: accentColor, width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            tag.name,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: accentColor,
+            ),
+          ),
+          if (tag.outfit != null) ...[
+            const SizedBox(height: 2),
+            Text.rich(
+              TextSpan(children: [
+                TextSpan(
+                  text: '의상 ',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface),
+                ),
+                TextSpan(
+                  text: tag.outfit,
+                  style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
+                ),
+              ]),
+            ),
+          ],
+          if (tag.memo != null) ...[
+            const SizedBox(height: 2),
+            Text.rich(
+              TextSpan(children: [
+                TextSpan(
+                  text: '메모 ',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold,
+                      color: colorScheme.onSurface),
+                ),
+                TextSpan(
+                  text: tag.memo,
+                  style: TextStyle(fontSize: 12, color: colorScheme.onSurface),
+                ),
+              ]),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   String _buildEditableContent(ChatMessage message) {
     return message.content;
   }
@@ -1329,7 +1390,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   size: CommonEditTextSize.small,
                   maxLines: null,
                 )
-              else
+              else ...[
                 MarkdownText(
                   text: _buildDisplayContent(message.content),
                   baseStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
@@ -1339,6 +1400,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   textAlign: viewer.textAlign,
                   paragraphSpacing: viewer.paragraphSpacing,
                 ),
+                if (MetadataParser.parseCharacterTags(message.content).isNotEmpty)
+                  const SizedBox(height: 4),
+                ...MetadataParser.parseCharacterTags(message.content)
+                    .map(_buildCharacterCard),
+              ],
               const SizedBox(height: 0),
               Row(
                 mainAxisAlignment: MainAxisAlignment.end,

@@ -1,10 +1,45 @@
 import '../models/chat/chat_message_metadata.dart';
 
+class CharacterTag {
+  final bool isMain; // 👤 = main, 👥 = sub
+  final String name;
+  final String? outfit;
+  final String? memo;
+
+  const CharacterTag({
+    required this.isMain,
+    required this.name,
+    this.outfit,
+    this.memo,
+  });
+}
+
 class MetadataParser {
   static final _locationPattern = RegExp(r'【📍\|([^】]*)】');
   static final _datePattern = RegExp(r'【📅\|([^】]*)】');
   static final _timePattern = RegExp(r'【🕰\|([^】]*)】');
   static final _pinPattern = RegExp(r'【📌\|([^】]*)】', caseSensitive: false);
+  static final _characterPattern = RegExp(r'【(👤|👥)\|([^】]*)】');
+
+  static List<CharacterTag> parseCharacterTags(String content) {
+    final matches = _characterPattern.allMatches(content);
+    return matches.map((m) {
+      final isMain = m.group(1) == '👤';
+      final parts = m.group(2)!.split('|');
+      final name = parts[0];
+      String? outfit;
+      String? memo;
+      for (var i = 1; i < parts.length; i++) {
+        final part = parts[i];
+        if (part.startsWith('👔:')) {
+          outfit = part.substring(3);
+        } else if (part.startsWith('📝:')) {
+          memo = part.substring(3);
+        }
+      }
+      return CharacterTag(isMain: isMain, name: name, outfit: outfit, memo: memo);
+    }).toList();
+  }
 
   static ({String? location, String? date, String? time}) parse(String content) {
     final locationMatch = _locationPattern.firstMatch(content);
