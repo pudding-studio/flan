@@ -299,4 +299,17 @@ enum ChatModel {
     }
     return null;
   }
+
+  /// Resolve a ChatModel from a stored value (enum name or legacy modelId).
+  static ChatModel resolveFromStoredValue(String storedValue) {
+    // Try enum name first
+    for (final model in ChatModel.values) {
+      if (model.name == storedValue) return model;
+    }
+    // Fallback: legacy modelId lookup (returns first match)
+    for (final model in ChatModel.values) {
+      if (model.modelId == storedValue) return model;
+    }
+    return ChatModel.geminiFlash3Preview;
+  }
 }

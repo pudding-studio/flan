@@ -439,13 +439,9 @@ class AutoSummaryService {
     return buffer.toString().trim();
   }
 
-  UnifiedModel _resolveModel(String modelId) {
-    final builtIn = ChatModel.fromModelId(modelId);
-    if (builtIn != null) {
-      return UnifiedModel.fromChatModel(builtIn);
-    }
-    // Fallback: treat as Gemini model (backward compatible with existing summary settings)
-    return UnifiedModel.fromChatModel(ChatModel.geminiFlash3Preview);
+  UnifiedModel _resolveModel(String storedValue) {
+    final resolved = ChatModel.resolveFromStoredValue(storedValue);
+    return UnifiedModel.fromChatModel(resolved);
   }
 
   Future<List<ChatMessageMetadata>> getChatMessageMetadataList(

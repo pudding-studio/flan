@@ -33,7 +33,7 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
   late TabController _tabController;
 
   bool _isEnabled = true;
-  String _selectedModel = ChatModel.geminiFlash3Preview.modelId;
+  ChatModel _selectedModel = ChatModel.geminiFlash3Preview;
   late TextEditingController _tokenThresholdController;
   AutoSummarySettings? _existingSettings;
   bool _isLoading = true;
@@ -66,57 +66,63 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
   }
 
   Future<void> _loadSettings() async {
-    if (widget.chatRoomId == 0) {
-      final prefs = await SharedPreferences.getInstance();
-      _pinMode = prefs.getString('default_pin_mode') ?? 'auto';
-      _autoPinByDate = prefs.getBool('default_auto_pin_by_date') ?? false;
-      _autoPinByLocation = prefs.getBool('default_auto_pin_by_location') ?? false;
-      _autoPinByAi = prefs.getBool('default_auto_pin_by_ai') ?? true;
-      final msgCount = prefs.getInt('default_auto_pin_by_message_count');
-      _autoPinByMessageCountEnabled = msgCount != null;
-      _autoPinByMessageCountController.text = msgCount?.toString() ?? '10';
-    }
-
-    final settings = await _db.getAutoSummarySettings(widget.chatRoomId);
-    if (settings != null) {
-      _existingSettings = settings;
-      final isValidModel =
-          ChatModel.values.any((m) => m.modelId == settings.summaryModel);
-
-      List<SummaryPromptItem> promptItems;
-      if (settings.summaryPromptItems != null &&
-          settings.summaryPromptItems!.isNotEmpty) {
-        promptItems =
-            SummaryPromptItem.listFromJson(settings.summaryPromptItems);
-      } else {
-        promptItems = await SummaryPromptItem.loadDefaultItems();
+    try {
+      if (widget.chatRoomId == 0) {
+        final prefs = await SharedPreferences.getInstance();
+        _pinMode = prefs.getString('default_pin_mode') ?? 'auto';
+        _autoPinByDate = prefs.getBool('default_auto_pin_by_date') ?? false;
+        _autoPinByLocation = prefs.getBool('default_auto_pin_by_location') ?? false;
+        _autoPinByAi = prefs.getBool('default_auto_pin_by_ai') ?? true;
+        final msgCount = prefs.getInt('default_auto_pin_by_message_count');
+        _autoPinByMessageCountEnabled = msgCount != null;
+        _autoPinByMessageCountController.text = msgCount?.toString() ?? '10';
       }
 
-      setState(() {
-        _isEnabled = settings.isEnabled;
-        _selectedModel = isValidModel
-            ? settings.summaryModel
-            : ChatModel.geminiFlash3Preview.modelId;
-        _tokenThresholdController.text = settings.tokenThreshold.toString();
+      final settings = await _db.getAutoSummarySettings(widget.chatRoomId);
+      if (settings != null) {
+        _existingSettings = settings;
+        final resolvedModel = ChatModel.resolveFromStoredValue(settings.summaryModel);
 
-        if (settings.parameters != null && settings.parameters!.isNotEmpty) {
-          _parameters =
-              PromptParameters.fromJson(jsonDecode(settings.parameters!));
+        List<SummaryPromptItem> promptItems;
+        if (settings.summaryPromptItems != null &&
+            settings.summaryPromptItems!.isNotEmpty) {
+          promptItems =
+              SummaryPromptItem.listFromJson(settings.summaryPromptItems);
+        } else {
+          promptItems = await SummaryPromptItem.loadDefaultItems();
         }
-        _maxOutputTokensController.text =
-            _parameters.maxOutputTokens?.toString() ?? '';
 
-        _promptItems = promptItems;
-        _buildContentControllers();
-        _isLoading = false;
-      });
-    } else {
-      final promptItems = await SummaryPromptItem.loadDefaultItems();
-      setState(() {
-        _promptItems = promptItems;
-        _buildContentControllers();
-        _isLoading = false;
-      });
+        setState(() {
+          _isEnabled = settings.isEnabled;
+          _selectedModel = resolvedModel;
+          _tokenThresholdController.text = settings.tokenThreshold.toString();
+
+          if (settings.parameters != null && settings.parameters!.isNotEmpty) {
+            _parameters =
+                PromptParameters.fromJson(jsonDecode(settings.parameters!));
+          }
+          _maxOutputTokensController.text =
+              _parameters.maxOutputTokens?.toString() ?? '';
+
+          _promptItems = promptItems;
+          _buildContentControllers();
+          _isLoading = false;
+        });
+      } else {
+        final promptItems = await SummaryPromptItem.loadDefaultItems();
+        setState(() {
+          _promptItems = promptItems;
+          _buildContentControllers();
+          _isLoading = false;
+        });
+      }
+    } catch (e) {
+      debugPrint('AutoSummaryScreen _loadSettings error: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+        });
+      }
     }
   }
 
@@ -142,7 +148,7 @@ _syncContentFromControllers();
       id: _existingSettings?.id,
       chatRoomId: widget.chatRoomId,
       isEnabled: _isEnabled,
-      summaryModel: _selectedModel,
+      summaryModel: _selectedModel.name,
       tokenThreshold:
           int.tryParse(_tokenThresholdController.text) ?? 5000,
       summaryPrompt: '',
@@ -342,23 +348,30 @@ _syncContentFromControllers();
           _buildListTile(
             icon: Icons.psychology,
             title: '자동요약 모델',
-            trailing: DropdownButton<String>(
-              value: _selectedModel,
-              underline: const SizedBox(),
-              borderRadius: BorderRadius.circular(16),
-              items: ChatModel.values
-                  .map((model) => DropdownMenuItem(
-                        value: model.modelId,
-                        child: Text(model.displayName),
-                      ))
-                  .toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() {
-                    _selectedModel = value;
-                  });
-                }
-              },
+            trailing: SizedBox(
+              width: 180,
+              child: DropdownButton<ChatModel>(
+                value: _selectedModel,
+                isExpanded: true,
+                underline: const SizedBox(),
+                borderRadius: BorderRadius.circular(16),
+                items: ChatModel.values
+                    .map((model) => DropdownMenuItem(
+                          value: model,
+                          child: Text(
+                            '${model.displayName} (${model.provider.displayName})',
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ))
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    setState(() {
+                      _selectedModel = value;
+                    });
+                  }
+                },
+              ),
             ),
           ),
           const Divider(),
