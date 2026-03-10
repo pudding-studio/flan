@@ -75,6 +75,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   Set<int> _summarizedMessageIds = {};
   bool _showBottomPanel = false;
   bool _showScrollButtons = false;
+  bool _hasNewMessage = false;
   List<ChatPrompt> _chatPrompts = [];
   List<Persona> _personas = [];
   List<PromptRegexRule> _regexRules = [];
@@ -92,8 +93,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final show = _scrollController.hasClients &&
         _scrollController.position.maxScrollExtent > 0 &&
         _scrollController.offset > 200;
-    if (show != _showScrollButtons) {
-      setState(() => _showScrollButtons = show);
+    if (show != _showScrollButtons || (!show && _hasNewMessage)) {
+      setState(() {
+        _showScrollButtons = show;
+        if (!show) _hasNewMessage = false;
+      });
     }
   }
 
@@ -116,8 +120,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     super.dispose();
   }
 
-  Future<void> _loadChatData() async {
-    if (mounted) setState(() => _isLoading = true);
+  Future<void> _loadChatData({bool showLoading = true}) async {
+    if (showLoading && mounted) setState(() => _isLoading = true);
 
     try {
       final chatRoom = await _db.readChatRoom(widget.chatRoomId);
@@ -164,6 +168,17 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       }
 
       if (!mounted) return;
+
+      // Restore per-room model selection
+      if (chatRoom.selectedModelId != null) {
+        final modelProvider = context.read<ChatModelSettingsProvider>();
+        final savedId = chatRoom.selectedModelId!;
+        final available = modelProvider.availableModels;
+        final match = available.where((m) => m.id == savedId);
+        if (match.isNotEmpty && modelProvider.selectedModel.id != savedId) {
+          await modelProvider.setModel(match.first);
+        }
+      }
       setState(() {
         _chatRoom = chatRoom;
         _character = character;
@@ -480,9 +495,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         SnackBar(content: Text('메시지 전송 중 오류가 발생했습니다: $e')),
       );
     } finally {
-      await _loadChatData();
+      final wasScrolledUp = _showScrollButtons;
+      await _loadChatData(showLoading: false);
       if (mounted) {
-        setState(() => _sendingPhase = SendingPhase.none);
+        setState(() {
+          _sendingPhase = SendingPhase.none;
+          if (wasScrolledUp) _hasNewMessage = true;
+        });
       }
     }
   }
@@ -671,6 +690,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   Future<void> _onModelChanged(UnifiedModel model) async {
     final provider = context.read<ChatModelSettingsProvider>();
     await provider.setModel(model);
+
+    if (_chatRoom != null) {
+      final updated = _chatRoom!.copyWith(selectedModelId: model.id);
+      await _db.updateChatRoom(updated);
+      _chatRoom = updated;
+    }
   }
 
   Future<void> _onPromptChanged(int? promptId) async {
@@ -811,9 +836,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         SnackBar(content: Text('메시지 재전송 중 오류가 발생했습니다: $e')),
       );
     } finally {
-      await _loadChatData();
+      final wasScrolledUp = _showScrollButtons;
+      await _loadChatData(showLoading: false);
       if (mounted) {
-        setState(() => _sendingPhase = SendingPhase.none);
+        setState(() {
+          _sendingPhase = SendingPhase.none;
+          if (wasScrolledUp) _hasNewMessage = true;
+        });
       }
     }
   }
@@ -1023,7 +1052,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       // 채팅방 토큰 합산 업데이트
       await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
-      await _loadChatData();
     } catch (e) {
       debugPrint('Error regenerating message: $e');
       if (!mounted) return;
@@ -1031,8 +1059,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         SnackBar(content: Text('메시지 재생성 중 오류가 발생했습니다: $e')),
       );
     } finally {
+      final wasScrolledUp = _showScrollButtons;
+      await _loadChatData(showLoading: false);
       if (mounted) {
-        setState(() => _sendingPhase = SendingPhase.none);
+        setState(() {
+          _sendingPhase = SendingPhase.none;
+          if (wasScrolledUp) _hasNewMessage = true;
+        });
       }
     }
   }
@@ -1581,7 +1614,60 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     },
                   ),
                 ),
-                if (_showScrollButtons)
+                if (_hasNewMessage)
+                  Positioned.fill(
+                    child: Align(
+                      alignment: Alignment.bottomCenter,
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(20),
+                          onTap: () {
+                            _scrollController.animateTo(
+                              0,
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeOut,
+                            );
+                            setState(() => _hasNewMessage = false);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                            decoration: BoxDecoration(
+                              color: Theme.of(context).colorScheme.primary,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withValues(alpha: 0.2),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Text(
+                                  '새로운 메시지',
+                                  style: TextStyle(
+                                    color: Theme.of(context).colorScheme.onPrimary,
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Icon(
+                                  Icons.keyboard_arrow_down,
+                                  color: Theme.of(context).colorScheme.onPrimary,
+                                  size: 20,
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  )
+                else if (_showScrollButtons)
                   Positioned(
                     right: 12,
                     bottom: 12,

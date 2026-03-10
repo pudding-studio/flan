@@ -39,7 +39,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 38,
+      version: 39,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -342,6 +342,7 @@ class DatabaseHelper {
         auto_pin_by_ai INTEGER NOT NULL DEFAULT 0,
         auto_pin_by_message_count INTEGER,
         selected_condition_preset_id INTEGER,
+        selected_model_id TEXT,
         created_at $textType,
         updated_at $textType,
         FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE,
@@ -1100,6 +1101,12 @@ class DatabaseHelper {
     if (oldVersion < 38) {
       await db.execute('''
         ALTER TABLE chat_rooms ADD COLUMN selected_condition_preset_id INTEGER
+      ''');
+    }
+
+    if (oldVersion < 39) {
+      await db.execute('''
+        ALTER TABLE chat_rooms ADD COLUMN selected_model_id TEXT
       ''');
     }
   }
