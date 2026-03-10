@@ -200,7 +200,21 @@ class AiService {
     int? characterId,
     String logType = 'ai',
   }) async {
-    final apiKey = await getApiKey(model.apiKeyType);
+    final apiKey = (model.apiKey != null && model.apiKey!.isNotEmpty)
+        ? model.apiKey!
+        : await getApiKey(model.apiKeyType);
+
+    // Normalize base URL: strip trailing slash and /v1
+    String normalizeBaseUrl(String url) {
+      var u = url.trimRight();
+      while (u.endsWith('/')) {
+        u = u.substring(0, u.length - 1);
+      }
+      if (u.endsWith('/v1')) {
+        u = u.substring(0, u.length - 3);
+      }
+      return u;
+    }
 
     // Route Vertex AI separately (same Gemini format but different auth/endpoint)
     if (model.provider == ChatModelProvider.vertexAi) {
@@ -234,7 +248,7 @@ class AiService {
           contents: contents,
           modelId: model.modelId,
           apiKey: apiKey,
-          baseUrl: model.baseUrl ?? _openaiBaseUrl,
+          baseUrl: normalizeBaseUrl(model.baseUrl ?? _openaiBaseUrl),
           promptParameters: promptParameters,
           chatRoomId: chatRoomId,
           characterId: characterId,
@@ -246,7 +260,8 @@ class AiService {
           contents: contents,
           modelId: model.modelId,
           apiKey: apiKey,
-          baseUrl: model.baseUrl ?? _claudeBaseUrl,
+          baseUrl: normalizeBaseUrl(model.baseUrl ?? _claudeBaseUrl),
+          useBearerAuth: model.isCustom,
           promptParameters: promptParameters,
           chatRoomId: chatRoomId,
           characterId: characterId,
@@ -678,6 +693,7 @@ class AiService {
     required String modelId,
     required String apiKey,
     required String baseUrl,
+    bool useBearerAuth = false,
     PromptParameters? promptParameters,
     int? chatRoomId,
     int? characterId,
@@ -717,13 +733,18 @@ class AiService {
 
     try {
       final url = Uri.parse('$baseUrl/v1/messages');
+      final headers = <String, String>{
+        'Content-Type': 'application/json',
+      };
+      if (useBearerAuth) {
+        headers['Authorization'] = 'Bearer $apiKey';
+      } else {
+        headers['x-api-key'] = apiKey;
+        headers['anthropic-version'] = '2023-06-01';
+      }
       final response = await http.post(
         url,
-        headers: {
-          'Content-Type': 'application/json',
-          'x-api-key': apiKey,
-          'anthropic-version': '2023-06-01',
-        },
+        headers: headers,
         body: requestJson,
       );
 

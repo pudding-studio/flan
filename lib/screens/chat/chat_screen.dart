@@ -30,11 +30,13 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _loadChatRooms() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
 
     try {
       final summaries = await _db.readChatRoomSummaries();
 
+      if (!mounted) return;
       setState(() {
         _chatRooms = summaries;
         _sortChatRooms();
@@ -42,6 +44,7 @@ class _ChatScreenState extends State<ChatScreen> {
       });
     } catch (e) {
       debugPrint('Error loading chat rooms: $e');
+      if (!mounted) return;
       setState(() => _isLoading = false);
     }
   }

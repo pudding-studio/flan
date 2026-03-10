@@ -10,6 +10,7 @@ class UnifiedModel {
   final ModelPricing pricing;
   final String? baseUrl;
   final String apiKeyType;
+  final String? apiKey;
   final bool isCustom;
 
   const UnifiedModel({
@@ -21,6 +22,7 @@ class UnifiedModel {
     required this.pricing,
     this.baseUrl,
     required this.apiKeyType,
+    this.apiKey,
     this.isCustom = false,
   });
 
@@ -43,6 +45,7 @@ class UnifiedModel {
         pricing: model.pricing,
         baseUrl: model.baseUrl,
         apiKeyType: model.apiKeyType,
+        apiKey: model.apiKey,
         isCustom: true,
       );
 

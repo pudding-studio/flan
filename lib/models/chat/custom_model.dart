@@ -7,8 +7,8 @@ class CustomModel {
   final String displayName;
   final String modelId;
   final ApiFormat apiFormat;
-  final String? baseUrl;
-  final String apiKeyType;
+  final String baseUrl;
+  final String apiKey;
   final ModelPricing pricing;
 
   const CustomModel({
@@ -16,10 +16,13 @@ class CustomModel {
     required this.displayName,
     required this.modelId,
     this.apiFormat = ApiFormat.openai,
-    this.baseUrl,
-    this.apiKeyType = 'openai',
+    required this.baseUrl,
+    required this.apiKey,
     this.pricing = const ModelPricing.zero(),
   });
+
+  /// Backward-compatible apiKeyType for UnifiedModel
+  String get apiKeyType => 'custom';
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -27,7 +30,7 @@ class CustomModel {
         'modelId': modelId,
         'apiFormat': apiFormat.name,
         'baseUrl': baseUrl,
-        'apiKeyType': apiKeyType,
+        'apiKey': apiKey,
         'pricing': pricing.toJson(),
       };
 
@@ -39,8 +42,8 @@ class CustomModel {
           (f) => f.name == json['apiFormat'],
           orElse: () => ApiFormat.openai,
         ),
-        baseUrl: json['baseUrl'] as String?,
-        apiKeyType: json['apiKeyType'] as String? ?? 'openai',
+        baseUrl: json['baseUrl'] as String? ?? '',
+        apiKey: json['apiKey'] as String? ?? '',
         pricing: json['pricing'] != null
             ? ModelPricing.fromJson(json['pricing'] as Map<String, dynamic>)
             : const ModelPricing.zero(),
@@ -51,7 +54,7 @@ class CustomModel {
     String? modelId,
     ApiFormat? apiFormat,
     String? baseUrl,
-    String? apiKeyType,
+    String? apiKey,
     ModelPricing? pricing,
   }) =>
       CustomModel(
@@ -60,7 +63,7 @@ class CustomModel {
         modelId: modelId ?? this.modelId,
         apiFormat: apiFormat ?? this.apiFormat,
         baseUrl: baseUrl ?? this.baseUrl,
-        apiKeyType: apiKeyType ?? this.apiKeyType,
+        apiKey: apiKey ?? this.apiKey,
         pricing: pricing ?? this.pricing,
       );
 }

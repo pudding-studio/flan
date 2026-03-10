@@ -3,7 +3,6 @@ import 'package:provider/provider.dart';
 import '../../models/chat/chat_model.dart';
 import '../../models/chat/custom_model.dart';
 import '../../providers/chat_model_provider.dart';
-import '../../screens/settings/api_key_screen.dart';
 import '../../utils/common_dialog.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../../widgets/common/common_button.dart';
@@ -141,19 +140,38 @@ class _CustomModelEditorScreenState extends State<_CustomModelEditorScreen> {
   late TextEditingController _nameController;
   late TextEditingController _modelIdController;
   late TextEditingController _baseUrlController;
+  late TextEditingController _apiKeyController;
   ApiFormat _apiFormat = ApiFormat.openai;
-  String _apiKeyType = 'openai';
+  late TextEditingController _inputPriceController;
+  late TextEditingController _outputPriceController;
+  late TextEditingController _cachedInputPriceController;
 
   bool get _isEditing => widget.model != null;
 
   @override
   void initState() {
     super.initState();
-    _nameController = TextEditingController(text: widget.model?.displayName ?? '');
-    _modelIdController = TextEditingController(text: widget.model?.modelId ?? '');
-    _baseUrlController = TextEditingController(text: widget.model?.baseUrl ?? '');
-    _apiFormat = widget.model?.apiFormat ?? ApiFormat.openai;
-    _apiKeyType = widget.model?.apiKeyType ?? 'openai';
+    final model = widget.model;
+    _nameController = TextEditingController(text: model?.displayName ?? '');
+    _modelIdController = TextEditingController(text: model?.modelId ?? '');
+    _baseUrlController = TextEditingController(text: model?.baseUrl ?? '');
+    _apiKeyController = TextEditingController(text: model?.apiKey ?? '');
+    _apiFormat = model?.apiFormat ?? ApiFormat.openai;
+    _inputPriceController = TextEditingController(
+      text: model != null && model.pricing.inputPrice > 0
+          ? model.pricing.inputPrice.toString()
+          : '',
+    );
+    _outputPriceController = TextEditingController(
+      text: model != null && model.pricing.outputPrice > 0
+          ? model.pricing.outputPrice.toString()
+          : '',
+    );
+    _cachedInputPriceController = TextEditingController(
+      text: model != null && model.pricing.cachedInputPrice > 0
+          ? model.pricing.cachedInputPrice.toString()
+          : '',
+    );
   }
 
   @override
@@ -161,6 +179,10 @@ class _CustomModelEditorScreenState extends State<_CustomModelEditorScreen> {
     _nameController.dispose();
     _modelIdController.dispose();
     _baseUrlController.dispose();
+    _apiKeyController.dispose();
+    _inputPriceController.dispose();
+    _outputPriceController.dispose();
+    _cachedInputPriceController.dispose();
     super.dispose();
   }
 
@@ -168,15 +190,26 @@ class _CustomModelEditorScreenState extends State<_CustomModelEditorScreen> {
     if (!_formKey.currentState!.validate()) return;
 
     final provider = context.read<ChatModelSettingsProvider>();
-    final baseUrl = _baseUrlController.text.trim();
+
+    final inputPrice =
+        double.tryParse(_inputPriceController.text.trim()) ?? 0;
+    final outputPrice =
+        double.tryParse(_outputPriceController.text.trim()) ?? 0;
+    final cachedInputPrice =
+        double.tryParse(_cachedInputPriceController.text.trim()) ?? 0;
 
     final model = CustomModel(
       id: widget.model?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
       displayName: _nameController.text.trim(),
       modelId: _modelIdController.text.trim(),
       apiFormat: _apiFormat,
-      baseUrl: baseUrl.isEmpty ? null : baseUrl,
-      apiKeyType: _apiKeyType,
+      baseUrl: _baseUrlController.text.trim(),
+      apiKey: _apiKeyController.text.trim(),
+      pricing: ModelPricing(
+        inputPrice: inputPrice,
+        outputPrice: outputPrice,
+        cachedInputPrice: cachedInputPrice,
+      ),
     );
 
     if (_isEditing) {
@@ -221,6 +254,33 @@ class _CustomModelEditorScreenState extends State<_CustomModelEditorScreen> {
               ),
               const SizedBox(height: 16),
               CommonCustomTextField(
+                controller: _baseUrlController,
+                label: 'Base URL',
+                hintText: '예: https://openrouter.ai/api',
+                maxLines: 1,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'Base URL을 입력해주세요';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              CommonCustomTextField(
+                controller: _apiKeyController,
+                label: 'API Key',
+                hintText: 'sk-...',
+                maxLines: 1,
+                obscureText: true,
+                validator: (value) {
+                  if (value == null || value.trim().isEmpty) {
+                    return 'API Key를 입력해주세요';
+                  }
+                  return null;
+                },
+              ),
+              const SizedBox(height: 16),
+              CommonCustomTextField(
                 controller: _modelIdController,
                 label: '모델 ID',
                 helpText: 'API 요청에 사용되는 모델 식별자',
@@ -239,43 +299,55 @@ class _CustomModelEditorScreenState extends State<_CustomModelEditorScreen> {
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: ApiFormat.values.map((format) {
+                children: [ApiFormat.openai, ApiFormat.claude].map((format) {
                   return CommonFilterChip(
                     label: format.displayName,
                     selected: _apiFormat == format,
                     onSelected: (selected) {
-                      if (selected) {
-                        setState(() => _apiFormat = format);
-                      }
+                      if (selected) setState(() => _apiFormat = format);
                     },
                   );
                 }).toList(),
               ),
               const SizedBox(height: 24),
-              const CommonTitleMedium(text: 'API 키'),
-              const SizedBox(height: 8),
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: ApiKeyType.values.map((type) {
-                  return CommonFilterChip(
-                    label: type.displayName,
-                    selected: _apiKeyType == type.prefsKey,
-                    onSelected: (selected) {
-                      if (selected) {
-                        setState(() => _apiKeyType = type.prefsKey);
-                      }
-                    },
-                  );
-                }).toList(),
+              const CommonTitleMedium(text: '가격 (선택)'),
+              const SizedBox(height: 4),
+              Text(
+                '1M 토큰당 USD',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
               ),
-              const SizedBox(height: 24),
-              CommonCustomTextField(
-                controller: _baseUrlController,
-                label: 'Base URL (선택)',
-                helpText: '비워두면 기본 엔드포인트 사용',
-                hintText: '예: https://openrouter.ai/api',
-                maxLines: 1,
+              const SizedBox(height: 12),
+              Row(
+                children: [
+                  Expanded(
+                    child: CommonCustomTextField(
+                      controller: _inputPriceController,
+                      label: 'Input',
+                      hintText: '0.00',
+                      maxLines: 1,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: CommonCustomTextField(
+                      controller: _outputPriceController,
+                      label: 'Output',
+                      hintText: '0.00',
+                      maxLines: 1,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: CommonCustomTextField(
+                      controller: _cachedInputPriceController,
+                      label: 'Cached',
+                      hintText: '0.00',
+                      maxLines: 1,
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 32),
               CommonButton.filled(
