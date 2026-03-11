@@ -8,6 +8,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../../constants/ui_constants.dart';
 import '../../database/database_helper.dart';
 import '../../models/chat/chat_model.dart';
+import '../../models/chat/custom_model.dart';
+import '../../models/chat/unified_model.dart';
 import '../../models/chat/auto_summary_settings.dart';
 import '../../models/chat/summary_prompt_item.dart';
 import '../../models/prompt/prompt_parameters.dart';
@@ -37,7 +39,9 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
   late TabController _tabController;
 
   bool _isEnabled = true;
-  ChatModel _selectedModel = ChatModel.geminiFlash3Preview;
+  ChatModelProvider _selectedProvider = ChatModelProvider.googleAIStudio;
+  UnifiedModel _selectedModel = UnifiedModel.fromChatModel(ChatModel.geminiFlash3Preview);
+  List<CustomModel> _customModels = [];
   late TextEditingController _tokenThresholdController;
   AutoSummarySettings? _existingSettings;
   bool _isLoading = true;
@@ -82,10 +86,23 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
         _autoPinByMessageCountController.text = msgCount?.toString() ?? '10';
       }
 
+      _customModels = await CustomModelRepository.loadAll();
+
       final settings = await _db.getAutoSummarySettings(widget.chatRoomId);
       if (settings != null) {
         _existingSettings = settings;
-        final resolvedModel = ChatModel.resolveFromStoredValue(settings.summaryModel);
+        final UnifiedModel resolvedModel;
+        if (settings.summaryModel.startsWith('custom:')) {
+          final customId = settings.summaryModel.replaceFirst('custom:', '');
+          final custom = _customModels.where((m) => m.id == customId).firstOrNull;
+          resolvedModel = custom != null
+              ? UnifiedModel.fromCustomModel(custom)
+              : UnifiedModel.fromChatModel(ChatModel.geminiFlash3Preview);
+        } else {
+          resolvedModel = UnifiedModel.fromChatModel(
+            ChatModel.resolveFromStoredValue(settings.summaryModel),
+          );
+        }
 
         List<SummaryPromptItem> promptItems;
         if (settings.summaryPromptItems != null &&
@@ -99,6 +116,7 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
         setState(() {
           _isEnabled = settings.isEnabled;
           _selectedModel = resolvedModel;
+          _selectedProvider = resolvedModel.provider;
           _tokenThresholdController.text = settings.tokenThreshold.toString();
 
           if (settings.parameters != null && settings.parameters!.isNotEmpty) {
@@ -152,7 +170,7 @@ _syncContentFromControllers();
       id: _existingSettings?.id,
       chatRoomId: widget.chatRoomId,
       isEnabled: _isEnabled,
-      summaryModel: _selectedModel.name,
+      summaryModel: _selectedModel.id,
       tokenThreshold:
           int.tryParse(_tokenThresholdController.text) ?? 5000,
       summaryPrompt: '',
@@ -477,31 +495,34 @@ _syncContentFromControllers();
         if (_isEnabled) ...[
           const Divider(),
           _buildSectionHeader('요약 모델'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-            child: DropdownButton<ChatModel>(
-              value: _selectedModel,
-              isExpanded: true,
+          _buildListTile(
+            icon: Icons.business,
+            title: '제조사',
+            trailing: DropdownButton<ChatModelProvider>(
+              value: _selectedProvider,
               underline: const SizedBox(),
               borderRadius: BorderRadius.circular(16),
-              items: ChatModel.values
-                  .map((model) => DropdownMenuItem(
-                        value: model,
-                        child: Text(
-                          '${model.displayName} (${model.provider.displayName})',
-                          overflow: TextOverflow.ellipsis,
-                        ),
+              items: ChatModelProvider.values
+                  .where((p) => p != ChatModelProvider.all)
+                  .map((p) => DropdownMenuItem(
+                        value: p,
+                        child: Text(p.displayName),
                       ))
                   .toList(),
               onChanged: (value) {
                 if (value != null) {
+                  final models = UnifiedModel.getByProvider(value, _customModels);
                   setState(() {
-                    _selectedModel = value;
+                    _selectedProvider = value;
+                    if (models.isNotEmpty) {
+                      _selectedModel = models.first;
+                    }
                   });
                 }
               },
             ),
           ),
+          _buildModelDropdown(),
           const Divider(),
           _buildSectionHeader('자동 요약 시작 조건'),
           Padding(
@@ -977,6 +998,53 @@ _syncContentFromControllers();
       case SummaryPromptRole.summary:
         return Icons.summarize_outlined;
     }
+  }
+
+  Widget _buildModelDropdown() {
+    final models = UnifiedModel.getByProvider(_selectedProvider, _customModels);
+    final currentValid = models.contains(_selectedModel);
+    final effectiveModel = currentValid
+        ? _selectedModel
+        : (models.isNotEmpty ? models.first : null);
+
+    if (models.isEmpty) {
+      return _buildListTile(
+        icon: Icons.psychology,
+        title: '모델',
+        trailing: Text(
+          '모델 없음',
+          style: TextStyle(
+            color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
+          ),
+        ),
+      );
+    }
+
+    return _buildListTile(
+      icon: Icons.psychology,
+      title: '모델',
+      trailing: DropdownButton<UnifiedModel>(
+        value: effectiveModel,
+        underline: const SizedBox(),
+        borderRadius: BorderRadius.circular(16),
+        items: models
+            .map((m) => DropdownMenuItem(
+                  value: m,
+                  child: Text(
+                    m.displayName,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ))
+            .toList(),
+        onChanged: (value) {
+          if (value != null) {
+            setState(() {
+              _selectedModel = value;
+            });
+          }
+        },
+      ),
+    );
   }
 
   // ==================== Common Widgets ====================

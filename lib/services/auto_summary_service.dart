@@ -9,6 +9,7 @@ import '../models/chat/chat_summary.dart';
 import '../models/chat/chat_message.dart';
 import '../models/chat/chat_message_metadata.dart';
 import '../models/chat/summary_prompt_item.dart';
+import '../models/chat/custom_model.dart';
 import '../models/chat/unified_model.dart';
 import '../models/prompt/prompt_parameters.dart';
 import '../utils/prompt_builder.dart';
@@ -155,7 +156,7 @@ class AutoSummaryService {
           ];
         }
 
-        final summaryModel = _resolveModel(settings.summaryModel);
+        final summaryModel = await _resolveModel(settings.summaryModel);
         final response = await _aiService.sendMessage(
           systemPrompt: systemPrompt,
           contents: contents,
@@ -356,7 +357,7 @@ class AutoSummaryService {
 
     _log('Regenerating summary #${summary.id} for range [${summary.startPinMessageId} → ${summary.endPinMessageId}]');
 
-    final summaryModel = _resolveModel(settings.summaryModel);
+    final summaryModel = await _resolveModel(settings.summaryModel);
     final response = await _aiService.sendMessage(
       systemPrompt: systemPrompt,
       contents: contents,
@@ -429,17 +430,37 @@ class AutoSummaryService {
     return allMessages.sublist(from, endIdx + 1);
   }
 
+  static const _englishDays = ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'];
+
   String _buildConversationText(List<ChatMessage> messages) {
     final buffer = StringBuffer();
     for (final message in messages) {
-      final roleLabel = message.role == MessageRole.user ? 'User' : 'Assistant';
-      buffer.writeln('$roleLabel: ${message.content}');
-      buffer.writeln();
+      final msgId = message.id ?? 0;
+      final dt = message.createdAt;
+      final day = _englishDays[dt.weekday - 1];
+      final period = dt.hour < 12 ? 'Day' : 'Night';
+      final dateStr = '${dt.year}/${dt.month.toString().padLeft(2, '0')}/${dt.day.toString().padLeft(2, '0')} ($day), ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}($period)';
+      final cleanContent = _stripMetadataTags(message.content);
+      buffer.writeln('<msg$msgId Datetime=$dateStr>');
+      buffer.writeln(cleanContent);
+      buffer.writeln('</msg$msgId>');
     }
     return buffer.toString().trim();
   }
 
-  UnifiedModel _resolveModel(String storedValue) {
+  String _stripMetadataTags(String text) {
+    return text.replaceAll(RegExp(r'【[^】]*】'), '').trim();
+  }
+
+  Future<UnifiedModel> _resolveModel(String storedValue) async {
+    if (storedValue.startsWith('custom:')) {
+      final customId = storedValue.replaceFirst('custom:', '');
+      final customModels = await CustomModelRepository.loadAll();
+      final custom = customModels.where((m) => m.id == customId).firstOrNull;
+      if (custom != null) {
+        return UnifiedModel.fromCustomModel(custom);
+      }
+    }
     final resolved = ChatModel.resolveFromStoredValue(storedValue);
     return UnifiedModel.fromChatModel(resolved);
   }
