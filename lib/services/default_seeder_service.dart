@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter/services.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../database/database_helper.dart';
@@ -11,25 +12,30 @@ import '../models/character/start_scenario.dart';
 import '../models/character/character_book_folder.dart';
 
 class DefaultSeederService {
-  static const String _chatPromptsSeededKey = 'defaults_chat_prompts_seeded_v4';
-  static const String _charactersSeededKey = 'defaults_characters_seeded_v1';
+  static const String _seededAppVersionKey = 'defaults_seeded_app_version';
 
   final DatabaseHelper _db = DatabaseHelper.instance;
 
   Future<void> seedAllDefaults() async {
+    final prefs = await SharedPreferences.getInstance();
+    final packageInfo = await PackageInfo.fromPlatform();
+    final currentVersion = '${packageInfo.version}+${packageInfo.buildNumber}';
+    final seededVersion = prefs.getString(_seededAppVersionKey);
+
+    if (seededVersion == currentVersion) return;
+
     await seedDefaultChatPrompts();
     await seedDefaultCharacters();
+
+    await prefs.setString(_seededAppVersionKey, currentVersion);
   }
 
   Future<void> seedDefaultChatPrompts() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool(_chatPromptsSeededKey) == true) return;
-
     // Check if user already has a non-default prompt selected
     final selectedPrompt = await _db.readSelectedChatPrompt();
     final hasUserSelection = selectedPrompt != null && !selectedPrompt.isDefault;
 
-    // Delete old defaults on version upgrade, then re-seed
+    // Delete and re-seed defaults
     if (await _db.hasDefaultChatPrompts()) {
       await _db.deleteDefaultChatPrompts();
     }
@@ -43,8 +49,6 @@ class DefaultSeederService {
           !hasUserSelection && assetPath.contains('[Gemini] Flan');
       await _seedSingleChatPrompt(jsonData, isDefaultSelected);
     }
-
-    await prefs.setBool(_chatPromptsSeededKey, true);
   }
 
   Future<void> _seedSingleChatPrompt(
@@ -55,84 +59,10 @@ class DefaultSeederService {
       isDefault: true,
       isSelected: autoSelect,
     );
-    final promptId = await _db.createChatPrompt(prompt);
-
-    if (jsonData.containsKey('folders')) {
-      final folders = prompt.foldersFromJson(jsonData);
-      for (final folder in folders) {
-        final folderId = await _db.createPromptItemFolder(
-          folder.copyWith(id: null, chatPromptId: promptId),
-        );
-        for (int i = 0; i < folder.items.length; i++) {
-          await _db.createPromptItem(
-            folder.items[i].copyWithNullableFolderId(
-              id: null,
-              chatPromptId: promptId,
-              folderId: folderId,
-              order: i,
-            ),
-          );
-        }
-      }
-
-      final standaloneItems = prompt.standaloneItemsFromJson(jsonData);
-      for (int i = 0; i < standaloneItems.length; i++) {
-        await _db.createPromptItem(
-          standaloneItems[i].copyWithNullableFolderId(
-            id: null,
-            chatPromptId: promptId,
-            folderId: null,
-            order: i,
-          ),
-        );
-      }
-    }
-
-    // Seed conditions
-    final conditions = prompt.conditionsFromJson(jsonData);
-    final conditionIdMap = <int, int>{};
-    for (int i = 0; i < conditions.length; i++) {
-      final oldId = conditions[i].id;
-      final newConditionId = await _db.createPromptCondition(
-        conditions[i].copyWith(id: null, chatPromptId: promptId, order: i),
-      );
-      if (oldId != null) conditionIdMap[oldId] = newConditionId;
-      for (int j = 0; j < conditions[i].options.length; j++) {
-        await _db.createPromptConditionOption(
-          conditions[i].options[j].copyWith(
-            id: null,
-            conditionId: newConditionId,
-            order: j,
-          ),
-        );
-      }
-    }
-
-    // Seed condition presets
-    final conditionPresets = prompt.conditionPresetsFromJson(jsonData);
-    for (int i = 0; i < conditionPresets.length; i++) {
-      final newPresetId = await _db.createPromptConditionPreset(
-        conditionPresets[i].copyWith(id: null, chatPromptId: promptId, order: i),
-      );
-      for (final value in conditionPresets[i].values) {
-        final remappedConditionId = value.conditionId != null
-            ? conditionIdMap[value.conditionId!]
-            : null;
-        await _db.createPromptConditionPresetValue(
-          value.copyWith(
-            id: null,
-            presetId: newPresetId,
-            conditionId: remappedConditionId,
-          ),
-        );
-      }
-    }
+    await _db.insertChatPromptFromJson(prompt, jsonData);
   }
 
   Future<void> seedDefaultCharacters() async {
-    final prefs = await SharedPreferences.getInstance();
-    if (prefs.getBool(_charactersSeededKey) == true) return;
-
     final assetPaths = await _listAssets('assets/defaults/characters');
 
     for (final assetPath in assetPaths) {
@@ -140,8 +70,6 @@ class DefaultSeederService {
       final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
       await _seedSingleCharacter(jsonData);
     }
-
-    await prefs.setBool(_charactersSeededKey, true);
   }
 
   Future<void> _seedSingleCharacter(Map<String, dynamic> jsonData) async {

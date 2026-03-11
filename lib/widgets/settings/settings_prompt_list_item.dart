@@ -10,6 +10,7 @@ class SettingsPromptListItem extends StatelessWidget {
   final VoidCallback? onEdit;
   final VoidCallback? onExport;
   final VoidCallback? onCopy;
+  final VoidCallback? onReset;
   final VoidCallback? onRadioTap;
 
   const SettingsPromptListItem({
@@ -23,6 +24,7 @@ class SettingsPromptListItem extends StatelessWidget {
     this.onEdit,
     this.onExport,
     this.onCopy,
+    this.onReset,
     this.onRadioTap,
   });
 
@@ -153,6 +155,18 @@ class SettingsPromptListItem extends StatelessWidget {
                       ],
                     ),
                   ),
+                  if (isDefault)
+                    PopupMenuItem<String>(
+                      value: 'reset',
+                      onTap: onReset,
+                      child: const Row(
+                        children: [
+                          Icon(Icons.restart_alt_outlined, size: 20),
+                          SizedBox(width: 12),
+                          Text('초기화'),
+                        ],
+                      ),
+                    ),
                   if (!isDefault)
                     PopupMenuItem<String>(
                       value: 'export',

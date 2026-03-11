@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 import '../../database/database_helper.dart';
 import '../../models/prompt/chat_prompt.dart';
 import '../../utils/common_dialog.dart';
+import '../../services/default_seeder_service.dart';
 import '../../utils/silly_tavern_preset_converter.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../../widgets/common/common_fab.dart';
@@ -176,28 +177,45 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
       );
       final newPromptId = await _db.createChatPrompt(duplicatedPrompt);
 
+      // Copy conditions first to build ID remap
+      final conditionIdMap = await _copyConditions(sourcePrompt.id!, newPromptId);
+
       for (final folder in folders) {
         final newFolderId = await _db.createPromptItemFolder(
           folder.copyWith(id: null, chatPromptId: newPromptId),
         );
         for (int i = 0; i < folder.items.length; i++) {
+          final item = folder.items[i];
+          final remappedConditionId = item.conditionId != null
+              ? conditionIdMap[item.conditionId!]
+              : null;
           await _db.createPromptItem(
-            folder.items[i].copyWithNullableFolderId(
+            item.copyWithNullableFolderId(
               id: null,
               chatPromptId: newPromptId,
               folderId: newFolderId,
               order: i,
+              enableMode: item.enableMode,
+              conditionId: remappedConditionId,
+              conditionValue: item.conditionValue,
             ),
           );
         }
       }
       for (int i = 0; i < standaloneItems.length; i++) {
+        final item = standaloneItems[i];
+        final remappedConditionId = item.conditionId != null
+            ? conditionIdMap[item.conditionId!]
+            : null;
         await _db.createPromptItem(
-          standaloneItems[i].copyWithNullableFolderId(
+          item.copyWithNullableFolderId(
             id: null,
             chatPromptId: newPromptId,
             folderId: null,
             order: i,
+            enableMode: item.enableMode,
+            conditionId: remappedConditionId,
+            conditionValue: item.conditionValue,
           ),
         );
       }
@@ -212,8 +230,6 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
           ),
         );
       }
-
-      await _copyConditions(sourcePrompt.id!, newPromptId);
 
       await _loadPrompts();
       if (mounted) {
@@ -248,28 +264,45 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
       );
       final newPromptId = await _db.createChatPrompt(forkedPrompt);
 
+      // Copy conditions first to build ID remap
+      final conditionIdMap = await _copyConditions(sourcePrompt.id!, newPromptId);
+
       for (final folder in folders) {
         final newFolderId = await _db.createPromptItemFolder(
           folder.copyWith(id: null, chatPromptId: newPromptId),
         );
         for (int i = 0; i < folder.items.length; i++) {
+          final item = folder.items[i];
+          final remappedConditionId = item.conditionId != null
+              ? conditionIdMap[item.conditionId!]
+              : null;
           await _db.createPromptItem(
-            folder.items[i].copyWithNullableFolderId(
+            item.copyWithNullableFolderId(
               id: null,
               chatPromptId: newPromptId,
               folderId: newFolderId,
               order: i,
+              enableMode: item.enableMode,
+              conditionId: remappedConditionId,
+              conditionValue: item.conditionValue,
             ),
           );
         }
       }
       for (int i = 0; i < standaloneItems.length; i++) {
+        final item = standaloneItems[i];
+        final remappedConditionId = item.conditionId != null
+            ? conditionIdMap[item.conditionId!]
+            : null;
         await _db.createPromptItem(
-          standaloneItems[i].copyWithNullableFolderId(
+          item.copyWithNullableFolderId(
             id: null,
             chatPromptId: newPromptId,
             folderId: null,
             order: i,
+            enableMode: item.enableMode,
+            conditionId: remappedConditionId,
+            conditionValue: item.conditionValue,
           ),
         );
       }
@@ -286,8 +319,6 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
         );
       }
 
-      await _copyConditions(sourcePrompt.id!, newPromptId);
-
       final forkedWithId = await _db.readChatPrompt(newPromptId);
       if (mounted && forkedWithId != null) {
         _navigateToEdit(forkedWithId);
@@ -302,7 +333,7 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
     }
   }
 
-  Future<void> _copyConditions(int sourcePromptId, int newPromptId) async {
+  Future<Map<int, int>> _copyConditions(int sourcePromptId, int newPromptId) async {
     final conditions = await _db.readPromptConditions(sourcePromptId);
     final conditionIdMap = <int, int>{};
     for (int i = 0; i < conditions.length; i++) {
@@ -335,6 +366,38 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
             presetId: newPresetId,
             conditionId: remappedConditionId,
           ),
+        );
+      }
+    }
+
+    return conditionIdMap;
+  }
+
+  Future<void> _resetDefaultPrompts() async {
+    final confirm = await CommonDialog.showConfirmation(
+      context: context,
+      title: '초기화',
+      content: '모든 기본 프롬프트를 초기 상태로 되돌리시겠습니까?',
+      confirmText: '초기화',
+      isDestructive: true,
+    );
+    if (confirm != true) return;
+
+    try {
+      await DefaultSeederService().seedDefaultChatPrompts();
+
+      await _loadPrompts();
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '기본 프롬프트가 초기화되었습니다',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '기본 프롬프트 초기화에 실패했습니다: $e',
         );
       }
     }
@@ -434,99 +497,7 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
       }
 
       final prompt = ChatPrompt.fromJson(normalizedData);
-      final promptId = await _db.createChatPrompt(prompt);
-
-      if (normalizedData.containsKey('folders') || normalizedData.containsKey('standaloneItems')) {
-        final folders = prompt.foldersFromJson(normalizedData);
-        for (final folder in folders) {
-          final folderId = await _db.createPromptItemFolder(
-            folder.copyWith(id: null, chatPromptId: promptId),
-          );
-          for (int i = 0; i < folder.items.length; i++) {
-            await _db.createPromptItem(
-              folder.items[i].copyWithNullableFolderId(
-                id: null,
-                chatPromptId: promptId,
-                folderId: folderId,
-                order: i,
-              ),
-            );
-          }
-        }
-        final standaloneItems = prompt.standaloneItemsFromJson(normalizedData);
-        for (int i = 0; i < standaloneItems.length; i++) {
-          await _db.createPromptItem(
-            standaloneItems[i].copyWithNullableFolderId(
-              id: null,
-              chatPromptId: promptId,
-              folderId: null,
-              order: i,
-            ),
-          );
-        }
-      } else {
-        for (int i = 0; i < prompt.items.length; i++) {
-          await _db.createPromptItem(
-            prompt.items[i].copyWith(
-              id: null,
-              chatPromptId: promptId,
-              order: i,
-            ),
-          );
-        }
-      }
-
-      // Import regex rules
-      final regexRules = prompt.regexRulesFromJson(normalizedData);
-      for (int i = 0; i < regexRules.length; i++) {
-        await _db.createPromptRegexRule(
-          regexRules[i].copyWith(
-            id: null,
-            chatPromptId: promptId,
-            order: i,
-          ),
-        );
-      }
-
-      // Import conditions and remap IDs
-      final conditions = prompt.conditionsFromJson(normalizedData);
-      final conditionIdMap = <int, int>{};
-      for (int i = 0; i < conditions.length; i++) {
-        final oldId = conditions[i].id;
-        final newConditionId = await _db.createPromptCondition(
-          conditions[i].copyWith(id: null, chatPromptId: promptId, order: i),
-        );
-        if (oldId != null) conditionIdMap[oldId] = newConditionId;
-        for (int j = 0; j < conditions[i].options.length; j++) {
-          await _db.createPromptConditionOption(
-            conditions[i].options[j].copyWith(
-              id: null,
-              conditionId: newConditionId,
-              order: j,
-            ),
-          );
-        }
-      }
-
-      // Import condition presets
-      final conditionPresets = prompt.conditionPresetsFromJson(normalizedData);
-      for (int i = 0; i < conditionPresets.length; i++) {
-        final newPresetId = await _db.createPromptConditionPreset(
-          conditionPresets[i].copyWith(id: null, chatPromptId: promptId, order: i),
-        );
-        for (final value in conditionPresets[i].values) {
-          final remappedConditionId = value.conditionId != null
-              ? conditionIdMap[value.conditionId!]
-              : null;
-          await _db.createPromptConditionPresetValue(
-            value.copyWith(
-              id: null,
-              presetId: newPresetId,
-              conditionId: remappedConditionId,
-            ),
-          );
-        }
-      }
+      await _db.insertChatPromptFromJson(prompt, normalizedData);
 
       await _loadPrompts();
 
@@ -639,6 +610,7 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
                         onTap: prompt.isDefault ? null : () => _navigateToEdit(prompt),
                         onEdit: prompt.isDefault ? null : () => _navigateToEdit(prompt),
                         onCopy: () => _duplicatePrompt(prompt),
+                        onReset: prompt.isDefault ? () => _resetDefaultPrompts() : null,
                         onExport: () => _exportPrompt(prompt),
                         onDelete: prompt.isDefault
                             ? null

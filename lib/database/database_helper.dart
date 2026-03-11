@@ -1485,6 +1485,28 @@ class DatabaseHelper {
     return (result.first['cnt'] as int) > 0;
   }
 
+  Future<void> deleteChatPromptWithRelations(int id) async {
+    final db = await database;
+    await db.delete('prompt_condition_preset_values',
+        where: 'preset_id IN (SELECT id FROM prompt_condition_presets WHERE chat_prompt_id = ?)',
+        whereArgs: [id]);
+    await db.delete('prompt_condition_presets',
+        where: 'chat_prompt_id = ?', whereArgs: [id]);
+    await db.delete('prompt_condition_options',
+        where: 'condition_id IN (SELECT id FROM prompt_conditions WHERE chat_prompt_id = ?)',
+        whereArgs: [id]);
+    await db.delete('prompt_conditions',
+        where: 'chat_prompt_id = ?', whereArgs: [id]);
+    await db.delete('prompt_regex_rules',
+        where: 'chat_prompt_id = ?', whereArgs: [id]);
+    await db.delete('prompt_items',
+        where: 'chat_prompt_id = ?', whereArgs: [id]);
+    await db.delete('prompt_item_folders',
+        where: 'chat_prompt_id = ?', whereArgs: [id]);
+    await db.delete('chat_prompts',
+        where: 'id = ?', whereArgs: [id]);
+  }
+
   Future<void> deleteDefaultChatPrompts() async {
     final db = await database;
     final defaults = await db.query(
@@ -1493,25 +1515,7 @@ class DatabaseHelper {
       where: 'is_default = 1',
     );
     for (final row in defaults) {
-      final id = row['id'] as int;
-      await db.delete('prompt_condition_preset_values',
-          where: 'preset_id IN (SELECT id FROM prompt_condition_presets WHERE chat_prompt_id = ?)',
-          whereArgs: [id]);
-      await db.delete('prompt_condition_presets',
-          where: 'chat_prompt_id = ?', whereArgs: [id]);
-      await db.delete('prompt_condition_options',
-          where: 'condition_id IN (SELECT id FROM prompt_conditions WHERE chat_prompt_id = ?)',
-          whereArgs: [id]);
-      await db.delete('prompt_conditions',
-          where: 'chat_prompt_id = ?', whereArgs: [id]);
-      await db.delete('prompt_regex_rules',
-          where: 'chat_prompt_id = ?', whereArgs: [id]);
-      await db.delete('prompt_items',
-          where: 'chat_prompt_id = ?', whereArgs: [id]);
-      await db.delete('prompt_item_folders',
-          where: 'chat_prompt_id = ?', whereArgs: [id]);
-      await db.delete('chat_prompts',
-          where: 'id = ?', whereArgs: [id]);
+      await deleteChatPromptWithRelations(row['id'] as int);
     }
   }
 
@@ -2412,6 +2416,134 @@ class DatabaseHelper {
   Future<void> reopenDatabase() async {
     await closeDatabase();
     _database = await _initDB('flan.db');
+  }
+
+  // ==================== 프롬프트 JSON 임포트 ====================
+
+  /// Insert a full chat prompt from JSON data (conditions, items, presets, regex rules).
+  /// Used by both default seeder and user import.
+  Future<int> insertChatPromptFromJson(
+    ChatPrompt prompt,
+    Map<String, dynamic> jsonData,
+  ) async {
+    final promptId = await createChatPrompt(prompt);
+
+    // Conditions first to build ID remap
+    final conditions = prompt.conditionsFromJson(jsonData);
+    final conditionIdMap = <int, int>{};
+    for (int i = 0; i < conditions.length; i++) {
+      final oldId = conditions[i].id;
+      final newConditionId = await createPromptCondition(
+        conditions[i].copyWith(id: null, chatPromptId: promptId, order: i),
+      );
+      if (oldId != null) conditionIdMap[oldId] = newConditionId;
+      for (int j = 0; j < conditions[i].options.length; j++) {
+        await createPromptConditionOption(
+          conditions[i].options[j].copyWith(
+            id: null,
+            conditionId: newConditionId,
+            order: j,
+          ),
+        );
+      }
+    }
+
+    // Folders and items
+    if (jsonData.containsKey('folders') || jsonData.containsKey('standaloneItems')) {
+      final folders = prompt.foldersFromJson(jsonData);
+      for (final folder in folders) {
+        final folderId = await createPromptItemFolder(
+          folder.copyWith(id: null, chatPromptId: promptId),
+        );
+        for (int i = 0; i < folder.items.length; i++) {
+          final item = folder.items[i];
+          final remappedConditionId = item.conditionId != null
+              ? conditionIdMap[item.conditionId!]
+              : null;
+          await createPromptItem(
+            item.copyWithNullableFolderId(
+              id: null,
+              chatPromptId: promptId,
+              folderId: folderId,
+              order: i,
+              enableMode: item.enableMode,
+              conditionId: remappedConditionId,
+              conditionValue: item.conditionValue,
+            ),
+          );
+        }
+      }
+      final standaloneItems = prompt.standaloneItemsFromJson(jsonData);
+      for (int i = 0; i < standaloneItems.length; i++) {
+        final item = standaloneItems[i];
+        final remappedConditionId = item.conditionId != null
+            ? conditionIdMap[item.conditionId!]
+            : null;
+        await createPromptItem(
+          item.copyWithNullableFolderId(
+            id: null,
+            chatPromptId: promptId,
+            folderId: null,
+            order: i,
+            enableMode: item.enableMode,
+            conditionId: remappedConditionId,
+            conditionValue: item.conditionValue,
+          ),
+        );
+      }
+    } else {
+      for (int i = 0; i < prompt.items.length; i++) {
+        final item = prompt.items[i];
+        final remappedConditionId = item.conditionId != null
+            ? conditionIdMap[item.conditionId!]
+            : null;
+        await createPromptItem(
+          item.copyWithNullableCondition(
+            enableMode: item.enableMode,
+            conditionId: remappedConditionId,
+            conditionValue: item.conditionValue,
+          ).copyWith(
+            id: null,
+            chatPromptId: promptId,
+            order: i,
+          ),
+        );
+      }
+    }
+
+    // Regex rules
+    final regexRules = prompt.regexRulesFromJson(jsonData);
+    for (int i = 0; i < regexRules.length; i++) {
+      await createPromptRegexRule(
+        regexRules[i].copyWith(
+          id: null,
+          chatPromptId: promptId,
+          order: i,
+        ),
+      );
+    }
+
+    // Condition presets
+    final conditionPresets = prompt.conditionPresetsFromJson(jsonData);
+    for (int i = 0; i < conditionPresets.length; i++) {
+      final newPresetId = await createPromptConditionPreset(
+        conditionPresets[i].copyWith(id: null, chatPromptId: promptId, order: i),
+      );
+      for (final value in conditionPresets[i].values) {
+        final remappedConditionId = value.conditionId != null
+            ? conditionIdMap[value.conditionId!]
+            : null;
+        await createPromptConditionPresetValue(
+          value.copyWith(
+            id: null,
+            presetId: newPresetId,
+            conditionId: remappedConditionId,
+          ),
+        );
+      }
+    }
+
+    return promptId;
   }
 
   // ==================== 유틸리티 ====================
