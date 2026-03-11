@@ -299,6 +299,39 @@ _syncContentFromControllers();
     }
   }
 
+  Future<void> _resetToDefaultPrompt() async {
+    final confirm = await CommonDialog.showConfirmation(
+      context: context,
+      title: '초기화',
+      content: '요약 프롬프트를 최신 기본 프롬프트로 되돌리시겠습니까?',
+      confirmText: '초기화',
+      isDestructive: true,
+    );
+    if (confirm != true) return;
+
+    try {
+      final defaultItems = await SummaryPromptItem.loadDefaultItems();
+      setState(() {
+        _promptItems = defaultItems;
+        _buildContentControllers();
+      });
+
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '요약 프롬프트가 초기화되었습니다',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '요약 프롬프트 초기화에 실패했습니다: $e',
+        );
+      }
+    }
+  }
+
   Future<void> _importSummaryPrompt() async {
     try {
       final result = await FilePicker.platform.pickFiles(
@@ -721,6 +754,12 @@ _syncContentFromControllers();
                 ),
               ),
               const SizedBox(width: 8),
+              IconButton.outlined(
+                onPressed: _resetToDefaultPrompt,
+                icon: const Icon(Icons.refresh, size: 20),
+                tooltip: '기본 프롬프트로 초기화',
+              ),
+              const SizedBox(width: 4),
               IconButton.outlined(
                 onPressed: _importSummaryPrompt,
                 icon: const Icon(Icons.file_download_outlined, size: 20),
