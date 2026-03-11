@@ -495,11 +495,11 @@ _syncContentFromControllers();
         if (_isEnabled) ...[
           const Divider(),
           _buildSectionHeader('요약 모델'),
-          _buildListTile(
-            icon: Icons.business,
-            title: '제조사',
-            trailing: DropdownButton<ChatModelProvider>(
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: DropdownButton<ChatModelProvider>(
               value: _selectedProvider,
+              isExpanded: true,
               underline: const SizedBox(),
               borderRadius: BorderRadius.circular(16),
               items: ChatModelProvider.values
@@ -1008,10 +1008,9 @@ _syncContentFromControllers();
         : (models.isNotEmpty ? models.first : null);
 
     if (models.isEmpty) {
-      return _buildListTile(
-        icon: Icons.psychology,
-        title: '모델',
-        trailing: Text(
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+        child: Text(
           '모델 없음',
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
@@ -1020,11 +1019,11 @@ _syncContentFromControllers();
       );
     }
 
-    return _buildListTile(
-      icon: Icons.psychology,
-      title: '모델',
-      trailing: DropdownButton<UnifiedModel>(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      child: DropdownButton<UnifiedModel>(
         value: effectiveModel,
+        isExpanded: true,
         underline: const SizedBox(),
         borderRadius: BorderRadius.circular(16),
         items: models
