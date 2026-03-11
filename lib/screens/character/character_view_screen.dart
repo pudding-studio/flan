@@ -17,6 +17,7 @@ import '../../widgets/chat/chat_room_card.dart';
 import '../../utils/common_dialog.dart';
 import '../../widgets/common/common_dropdown_button.dart';
 import '../../widgets/common/common_edit_text.dart';
+import '../../utils/metadata_parser.dart';
 
 class CharacterViewScreen extends StatefulWidget {
   final int characterId;
@@ -699,7 +700,9 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
                 },
                 child: ChatRoomCard(
                   title: data.chatRoom.name,
-                  lastMessage: data.lastMessage?.content ?? '메시지가 없습니다',
+                  lastMessage: data.lastMessage != null
+                      ? MetadataParser.removeMetadataTags(data.lastMessage!.content)
+                      : '메시지가 없습니다',
                   date: _formatDate(data.chatRoom.updatedAt),
                   imageData: data.coverImage?.imageData,
                   messageCount: data.messageCount,

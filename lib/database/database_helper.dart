@@ -20,6 +20,7 @@ import '../models/chat/chat_message_metadata.dart';
 import '../models/chat/auto_summary_settings.dart';
 import '../models/chat/chat_room_summary.dart';
 import '../models/chat/chat_summary.dart';
+import '../utils/metadata_parser.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance = DatabaseHelper._init();
@@ -1946,6 +1947,25 @@ class DatabaseHelper {
     return ChatMessage.fromMap(result.first);
   }
 
+  /// Returns the last message whose content is not empty after removing metadata tags.
+  Future<ChatMessage?> readLastDisplayableChatMessage(int chatRoomId) async {
+    final db = await database;
+    final result = await db.query(
+      'chat_messages',
+      where: 'chat_room_id = ?',
+      whereArgs: [chatRoomId],
+      orderBy: 'created_at DESC',
+      limit: 20,
+    );
+    if (result.isEmpty) return null;
+    for (final map in result) {
+      final message = ChatMessage.fromMap(map);
+      final displayContent = MetadataParser.removeMetadataTags(message.content);
+      if (displayContent.isNotEmpty) return message;
+    }
+    return ChatMessage.fromMap(result.first);
+  }
+
   Future<int> countAssistantMessages(int chatRoomId) async {
     final db = await database;
     final result = await db.rawQuery(
@@ -1978,7 +1998,7 @@ class DatabaseHelper {
       final results = await Future.wait([
         readCharacter(chatRoom.characterId),
         readCoverImages(chatRoom.characterId),
-        readLastChatMessage(chatRoom.id!),
+        readLastDisplayableChatMessage(chatRoom.id!),
         countAssistantMessages(chatRoom.id!),
       ]);
 
