@@ -47,12 +47,12 @@ class GeminiService {
     final modelString = prefs.getString('chat_model');
 
     if (modelString == null) {
-      return 'gemini-3-pro-preview';
+      return 'gemini-3-flash-preview';
     }
 
     switch (modelString) {
       case 'geminiPro3Preview':
-        return 'gemini-3-pro-preview';
+        return 'gemini-3.1-pro-preview';
       case 'geminiFlash3Preview':
         return 'gemini-3-flash-preview';
       case 'geminiPro25':
@@ -62,7 +62,7 @@ class GeminiService {
       case 'geminiFlashLite25':
         return 'gemini-2.5-flash-lite';
       default:
-        return 'gemini-3-pro-preview';
+        return 'gemini-3-flash-preview';
     }
   }
 

@@ -80,13 +80,6 @@ enum ChatModel {
     ApiFormat.gemini,
     ModelPricing(inputPrice: 2.00, cachedInputPrice: 0.20, outputPrice: 12.00),
   ),
-  geminiPro3Preview(
-    'Gemini 3 Pro Preview',
-    ChatModelProvider.googleAIStudio,
-    'gemini-3-pro-preview',
-    ApiFormat.gemini,
-    ModelPricing(inputPrice: 2.00, cachedInputPrice: 0.20, outputPrice: 12.00),
-  ),
   geminiFlash3Preview(
     'Gemini 3 Flash Preview',
     ChatModelProvider.googleAIStudio,
@@ -121,13 +114,6 @@ enum ChatModel {
     'Gemini 3.1 Pro Preview',
     ChatModelProvider.vertexAi,
     'gemini-3.1-pro-preview',
-    ApiFormat.gemini,
-    ModelPricing(inputPrice: 2.00, cachedInputPrice: 0.20, outputPrice: 12.00),
-  ),
-  vertexGeminiPro3Preview(
-    'Gemini 3 Pro Preview',
-    ChatModelProvider.vertexAi,
-    'gemini-3-pro-preview',
     ApiFormat.gemini,
     ModelPricing(inputPrice: 2.00, cachedInputPrice: 0.20, outputPrice: 12.00),
   ),
@@ -309,6 +295,13 @@ enum ChatModel {
     // Fallback: legacy modelId lookup (returns first match)
     for (final model in ChatModel.values) {
       if (model.modelId == storedValue) return model;
+    }
+    // Legacy: geminiPro3Preview → redirect to 3.1 Pro Preview
+    if (storedValue == 'geminiPro3Preview' || storedValue == 'gemini-3-pro-preview') {
+      return ChatModel.geminiPro31Preview;
+    }
+    if (storedValue == 'vertexGeminiPro3Preview') {
+      return ChatModel.vertexGeminiPro31Preview;
     }
     return ChatModel.geminiFlash3Preview;
   }

@@ -243,7 +243,7 @@ class _LogDetailSheetState extends State<_LogDetailSheet> {
         case 'gemini-3.1-pro-preview':
           return 'Gemini 3.1 Pro Preview';
         case 'gemini-3-pro-preview':
-          return 'Gemini 3 Pro Preview';
+          return 'Gemini 3 Pro Preview (종료됨)';
         case 'gemini-3-flash-preview':
           return 'Gemini 3 Flash Preview';
         case 'gemini-2.5-pro':

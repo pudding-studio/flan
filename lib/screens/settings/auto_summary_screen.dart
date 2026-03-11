@@ -1,6 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../constants/ui_constants.dart';
 import '../../database/database_helper.dart';
@@ -8,6 +11,7 @@ import '../../models/chat/chat_model.dart';
 import '../../models/chat/auto_summary_settings.dart';
 import '../../models/chat/summary_prompt_item.dart';
 import '../../models/prompt/prompt_parameters.dart';
+import '../../utils/common_dialog.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../../widgets/common/common_edit_text.dart';
 import '../../widgets/common/common_editable_expandable_item.dart';
@@ -248,6 +252,101 @@ _syncContentFromControllers();
     });
   }
 
+  Future<void> _exportSummaryPrompt() async {
+    try {
+      _syncContentFromControllers();
+
+      final jsonList = _promptItems.map((e) => e.toJson()).toList();
+      final jsonString =
+          const JsonEncoder.withIndent('  ').convert(jsonList);
+      const fileName = 'summary_prompt.json';
+
+      if (Platform.isAndroid) {
+        const platform = MethodChannel('com.flanapp.flan/file_saver');
+        final result = await platform.invokeMethod('saveToDownloads', {
+          'fileName': fileName,
+          'content': jsonString,
+        });
+
+        if (mounted) {
+          CommonDialog.showSnackBar(
+            context: context,
+            message: result == true
+                ? 'Download/$fileName에 저장되었습니다'
+                : '저장에 실패했습니다',
+          );
+        }
+      } else if (Platform.isIOS) {
+        final directory = await getApplicationDocumentsDirectory();
+        final filePath = '${directory.path}/$fileName';
+        final file = File(filePath);
+        await file.writeAsString(jsonString);
+
+        if (mounted) {
+          CommonDialog.showSnackBar(
+            context: context,
+            message: '$filePath에 저장되었습니다',
+          );
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '요약 프롬프트 내보내기 실패: $e',
+        );
+      }
+    }
+  }
+
+  Future<void> _importSummaryPrompt() async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
+
+      if (result == null || result.files.isEmpty) return;
+
+      final file = File(result.files.single.path!);
+      final jsonString = await file.readAsString();
+      final decoded = jsonDecode(jsonString);
+
+      final List<dynamic> jsonList;
+      if (decoded is List) {
+        jsonList = decoded;
+      } else {
+        throw const FormatException('올바른 요약 프롬프트 형식이 아닙니다');
+      }
+
+      final items =
+          jsonList.map((e) => SummaryPromptItem.fromJson(e)).toList();
+
+      if (items.isEmpty) {
+        throw const FormatException('프롬프트 항목이 비어있습니다');
+      }
+
+      setState(() {
+        _promptItems = items;
+        _buildContentControllers();
+      });
+
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '요약 프롬프트를 가져왔습니다',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '요약 프롬프트 가져오기 실패: $e',
+        );
+      }
+    }
+  }
+
   @override
   void dispose() {
     _tabController.dispose();
@@ -345,33 +444,29 @@ _syncContentFromControllers();
         if (_isEnabled) ...[
           const Divider(),
           _buildSectionHeader('요약 모델'),
-          _buildListTile(
-            icon: Icons.psychology,
-            title: '자동요약 모델',
-            trailing: SizedBox(
-              width: 180,
-              child: DropdownButton<ChatModel>(
-                value: _selectedModel,
-                isExpanded: true,
-                underline: const SizedBox(),
-                borderRadius: BorderRadius.circular(16),
-                items: ChatModel.values
-                    .map((model) => DropdownMenuItem(
-                          value: model,
-                          child: Text(
-                            '${model.displayName} (${model.provider.displayName})',
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ))
-                    .toList(),
-                onChanged: (value) {
-                  if (value != null) {
-                    setState(() {
-                      _selectedModel = value;
-                    });
-                  }
-                },
-              ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: DropdownButton<ChatModel>(
+              value: _selectedModel,
+              isExpanded: true,
+              underline: const SizedBox(),
+              borderRadius: BorderRadius.circular(16),
+              items: ChatModel.values
+                  .map((model) => DropdownMenuItem(
+                        value: model,
+                        child: Text(
+                          '${model.displayName} (${model.provider.displayName})',
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ))
+                  .toList(),
+              onChanged: (value) {
+                if (value != null) {
+                  setState(() {
+                    _selectedModel = value;
+                  });
+                }
+              },
             ),
           ),
           const Divider(),
@@ -616,13 +711,28 @@ _syncContentFromControllers();
                   ),
           ),
           const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton.icon(
-              onPressed: _addPromptItem,
-              icon: const Icon(Icons.add, size: 18),
-              label: const Text('항목 추가'),
-            ),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _addPromptItem,
+                  icon: const Icon(Icons.add, size: 18),
+                  label: const Text('항목 추가'),
+                ),
+              ),
+              const SizedBox(width: 8),
+              IconButton.outlined(
+                onPressed: _importSummaryPrompt,
+                icon: const Icon(Icons.file_download_outlined, size: 20),
+                tooltip: '가져오기',
+              ),
+              const SizedBox(width: 4),
+              IconButton.outlined(
+                onPressed: _exportSummaryPrompt,
+                icon: const Icon(Icons.file_upload_outlined, size: 20),
+                tooltip: '내보내기',
+              ),
+            ],
           ),
         ],
       ),

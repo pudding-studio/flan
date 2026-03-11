@@ -10,7 +10,7 @@ class ChatModelSettingsProvider extends ChangeNotifier {
 
   ChatModelProvider _selectedProvider = ChatModelProvider.all;
   UnifiedModel _selectedModel =
-      UnifiedModel.fromChatModel(ChatModel.geminiPro3Preview);
+      UnifiedModel.fromChatModel(ChatModel.geminiPro31Preview);
   List<CustomModel> _customModels = [];
 
   ChatModelProvider get selectedProvider => _selectedProvider;
@@ -101,7 +101,7 @@ class ChatModelSettingsProvider extends ChangeNotifier {
 
   Future<void> deleteCustomModel(String id) async {
     if (_selectedModel.isCustom && _selectedModel.id == 'custom:$id') {
-      _selectedModel = UnifiedModel.fromChatModel(ChatModel.geminiPro3Preview);
+      _selectedModel = UnifiedModel.fromChatModel(ChatModel.geminiPro31Preview);
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_modelKey, _selectedModel.id);
     }
