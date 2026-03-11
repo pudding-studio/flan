@@ -36,12 +36,11 @@ class ChatModelScreen extends StatelessWidget {
           return ListView(
             children: [
               _buildSectionHeader(context, '제조사'),
-              _buildListTile(
-                context: context,
-                icon: Icons.business,
-                title: '제조사',
-                trailing: DropdownButton<ChatModelProvider>(
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: DropdownButton<ChatModelProvider>(
                   value: provider.selectedProvider,
+                  isExpanded: true,
                   underline: const SizedBox(),
                   borderRadius: BorderRadius.circular(16),
                   items: ChatModelProvider.values
@@ -59,14 +58,13 @@ class ChatModelScreen extends StatelessWidget {
               ),
               const Divider(),
               _buildSectionHeader(context, '사용 모델'),
-              _buildListTile(
-                context: context,
-                icon: Icons.psychology,
-                title: '모델',
-                trailing: DropdownButton<UnifiedModel>(
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: DropdownButton<UnifiedModel>(
                   value: availableModels.contains(provider.selectedModel)
                       ? provider.selectedModel
                       : (availableModels.isNotEmpty ? availableModels.first : null),
+                  isExpanded: true,
                   underline: const SizedBox(),
                   borderRadius: BorderRadius.circular(16),
                   items: availableModels
@@ -126,20 +124,7 @@ class ChatModelScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildListTile({
-    required BuildContext context,
-    required IconData icon,
-    required String title,
-    Widget? trailing,
-  }) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      trailing: trailing,
-    );
-  }
-
-  Widget _buildInfoTile(BuildContext context, String label, String value) {
+Widget _buildInfoTile(BuildContext context, String label, String value) {
     return ListTile(
       dense: true,
       title: Text(label, style: Theme.of(context).textTheme.bodySmall),
