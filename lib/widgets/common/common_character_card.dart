@@ -3,8 +3,9 @@ import '../../utils/metadata_parser.dart';
 
 class CommonCharacterCard extends StatelessWidget {
   final CharacterTag tag;
+  final double? fontSize;
 
-  const CommonCharacterCard({super.key, required this.tag});
+  const CommonCharacterCard({super.key, required this.tag, this.fontSize});
 
   @override
   Widget build(BuildContext context) {
@@ -26,7 +27,7 @@ class CommonCharacterCard extends StatelessWidget {
           Text(
             tag.name,
             style: TextStyle(
-              fontSize: 16,
+              fontSize: fontSize ?? 16,
               fontWeight: FontWeight.bold,
               color: accentColor,
             ),

@@ -1344,7 +1344,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 if (MetadataParser.parseCharacterTags(message.content).isNotEmpty)
                   const SizedBox(height: 4),
                 ...MetadataParser.parseCharacterTags(message.content)
-                    .map((tag) => CommonCharacterCard(tag: tag)),
+                    .map((tag) => CommonCharacterCard(tag: tag, fontSize: viewer.fontSize)),
               ],
               const SizedBox(height: 0),
               Row(
