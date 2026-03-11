@@ -1432,7 +1432,7 @@ class DatabaseHelper {
 
     if (maps.isNotEmpty) {
       final prompt = ChatPrompt.fromMap(maps.first);
-      final items = await readPromptItemsByChatPrompt(id);
+      final items = await readOrderedPromptItems(id);
       return prompt.copyWith(items: items);
     }
     return null;
@@ -1445,7 +1445,7 @@ class DatabaseHelper {
     final prompts = result.map((map) => ChatPrompt.fromMap(map)).toList();
 
     for (var prompt in prompts) {
-      final items = await readPromptItemsByChatPrompt(prompt.id!);
+      final items = await readOrderedPromptItems(prompt.id!);
       prompt.items.addAll(items);
     }
 
@@ -1607,6 +1607,36 @@ class DatabaseHelper {
       orderBy: orderBy,
     );
     return result.map((map) => PromptItem.fromMap(map)).toList();
+  }
+
+  /// Load prompt items in correct display order:
+  /// standalone items and folders interleaved by order,
+  /// with folder children expanded in place.
+  Future<List<PromptItem>> readOrderedPromptItems(int chatPromptId) async {
+    final standaloneItems = await readStandalonePromptItems(chatPromptId);
+    final folders = await readPromptItemFolders(chatPromptId);
+
+    // Load children for each folder
+    for (final folder in folders) {
+      folder.items.addAll(await readPromptItemsByFolder(folder.id!));
+    }
+
+    // Merge standalone items and folders by order, expanding folders in place
+    final result = <PromptItem>[];
+    int si = 0, fi = 0;
+
+    while (si < standaloneItems.length || fi < folders.length) {
+      final hasStandalone = si < standaloneItems.length;
+      final hasFolder = fi < folders.length;
+
+      if (hasStandalone && (!hasFolder || standaloneItems[si].order <= folders[fi].order)) {
+        result.add(standaloneItems[si++]);
+      } else {
+        result.addAll(folders[fi++].items);
+      }
+    }
+
+    return result;
   }
 
   Future<List<PromptItem>> readPromptItemsByFolder(int folderId) async {

@@ -49,7 +49,6 @@ class PromptBuilder {
         if (item.role != PromptRole.system || !isItemActive(item, states)) continue;
 
         final replaced = replaceKeywords(item.content, keywords);
-        buffer.writeln('## ${item.name ?? item.role.displayName}');
         buffer.writeln(replaced);
         buffer.writeln();
       }
