@@ -39,6 +39,31 @@ class PromptConditionPreset {
     };
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'chatPromptId': chatPromptId,
+      'name': name,
+      'isDefault': isDefault,
+      'order': order,
+      'values': values.map((v) => v.toJson()).toList(),
+    };
+  }
+
+  factory PromptConditionPreset.fromJson(Map<String, dynamic> json) {
+    return PromptConditionPreset(
+      id: json['id'] as int?,
+      chatPromptId: json['chatPromptId'] as int?,
+      name: json['name'] as String? ?? '기본',
+      isDefault: json['isDefault'] as bool? ?? false,
+      order: json['order'] as int? ?? 0,
+      values: (json['values'] as List<dynamic>?)
+              ?.map((v) => PromptConditionPresetValue.fromJson(v as Map<String, dynamic>))
+              .toList() ??
+          [],
+    );
+  }
+
   PromptConditionPreset copyWith({
     int? id,
     int? chatPromptId,

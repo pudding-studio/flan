@@ -11,7 +11,7 @@ import '../models/character/start_scenario.dart';
 import '../models/character/character_book_folder.dart';
 
 class DefaultSeederService {
-  static const String _chatPromptsSeededKey = 'defaults_chat_prompts_seeded_v2';
+  static const String _chatPromptsSeededKey = 'defaults_chat_prompts_seeded_v4';
   static const String _charactersSeededKey = 'defaults_characters_seeded_v1';
 
   final DatabaseHelper _db = DatabaseHelper.instance;
@@ -25,6 +25,10 @@ class DefaultSeederService {
     final prefs = await SharedPreferences.getInstance();
     if (prefs.getBool(_chatPromptsSeededKey) == true) return;
 
+    // Check if user already has a non-default prompt selected
+    final selectedPrompt = await _db.readSelectedChatPrompt();
+    final hasUserSelection = selectedPrompt != null && !selectedPrompt.isDefault;
+
     // Delete old defaults on version upgrade, then re-seed
     if (await _db.hasDefaultChatPrompts()) {
       await _db.deleteDefaultChatPrompts();
@@ -32,12 +36,12 @@ class DefaultSeederService {
 
     final assetPaths = await _listAssets('assets/defaults/chat_prompts');
 
-    bool isFirst = true;
     for (final assetPath in assetPaths) {
       final jsonString = await rootBundle.loadString(assetPath);
       final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
-      await _seedSingleChatPrompt(jsonData, isFirst);
-      isFirst = false;
+      final isDefaultSelected =
+          !hasUserSelection && assetPath.contains('[Gemini] Flan');
+      await _seedSingleChatPrompt(jsonData, isDefaultSelected);
     }
 
     await prefs.setBool(_chatPromptsSeededKey, true);
@@ -79,6 +83,46 @@ class DefaultSeederService {
             chatPromptId: promptId,
             folderId: null,
             order: i,
+          ),
+        );
+      }
+    }
+
+    // Seed conditions
+    final conditions = prompt.conditionsFromJson(jsonData);
+    final conditionIdMap = <int, int>{};
+    for (int i = 0; i < conditions.length; i++) {
+      final oldId = conditions[i].id;
+      final newConditionId = await _db.createPromptCondition(
+        conditions[i].copyWith(id: null, chatPromptId: promptId, order: i),
+      );
+      if (oldId != null) conditionIdMap[oldId] = newConditionId;
+      for (int j = 0; j < conditions[i].options.length; j++) {
+        await _db.createPromptConditionOption(
+          conditions[i].options[j].copyWith(
+            id: null,
+            conditionId: newConditionId,
+            order: j,
+          ),
+        );
+      }
+    }
+
+    // Seed condition presets
+    final conditionPresets = prompt.conditionPresetsFromJson(jsonData);
+    for (int i = 0; i < conditionPresets.length; i++) {
+      final newPresetId = await _db.createPromptConditionPreset(
+        conditionPresets[i].copyWith(id: null, chatPromptId: promptId, order: i),
+      );
+      for (final value in conditionPresets[i].values) {
+        final remappedConditionId = value.conditionId != null
+            ? conditionIdMap[value.conditionId!]
+            : null;
+        await _db.createPromptConditionPresetValue(
+          value.copyWith(
+            id: null,
+            presetId: newPresetId,
+            conditionId: remappedConditionId,
           ),
         );
       }

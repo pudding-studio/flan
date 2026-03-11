@@ -68,6 +68,33 @@ class PromptCondition {
     };
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'chatPromptId': chatPromptId,
+      'name': name,
+      'type': type.dbValue,
+      'variableName': variableName,
+      'order': order,
+      'options': options.map((o) => o.toJson()).toList(),
+    };
+  }
+
+  factory PromptCondition.fromJson(Map<String, dynamic> json) {
+    return PromptCondition(
+      id: json['id'] as int?,
+      chatPromptId: json['chatPromptId'] as int?,
+      name: json['name'] as String? ?? '',
+      type: ConditionType.fromDbValue(json['type'] as String? ?? 'toggle'),
+      variableName: json['variableName'] as String?,
+      order: json['order'] as int? ?? 0,
+      options: (json['options'] as List<dynamic>?)
+              ?.map((o) => PromptConditionOption.fromJson(o as Map<String, dynamic>))
+              .toList() ??
+          [],
+    );
+  }
+
   PromptCondition copyWith({
     int? id,
     int? chatPromptId,

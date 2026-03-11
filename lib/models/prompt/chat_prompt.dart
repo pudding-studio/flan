@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'prompt_condition.dart';
+import 'prompt_condition_preset.dart';
 import 'prompt_item.dart';
 import 'prompt_item_folder.dart';
 import 'prompt_parameters.dart';
@@ -99,6 +101,8 @@ class ChatPrompt {
     List<PromptItemFolder>? folders,
     List<PromptItem>? standaloneItems,
     List<PromptRegexRule>? regexRules,
+    List<PromptCondition>? conditions,
+    List<PromptConditionPreset>? conditionPresets,
   }) {
     return {
       'name': name,
@@ -108,6 +112,8 @@ class ChatPrompt {
       'folders': folders?.map((f) => f.toJson()).toList(),
       'standaloneItems': standaloneItems?.map((item) => item.toJson()).toList(),
       'regexRules': regexRules?.map((r) => r.toJson()).toList(),
+      'conditions': conditions?.map((c) => c.toJson()).toList(),
+      'conditionPresets': conditionPresets?.map((p) => p.toJson()).toList(),
     };
   }
 
@@ -142,6 +148,20 @@ class ChatPrompt {
   List<PromptRegexRule> regexRulesFromJson(Map<String, dynamic> json) {
     return (json['regexRules'] as List<dynamic>?)
             ?.map((r) => PromptRegexRule.fromJson(r as Map<String, dynamic>))
+            .toList() ??
+        [];
+  }
+
+  List<PromptCondition> conditionsFromJson(Map<String, dynamic> json) {
+    return (json['conditions'] as List<dynamic>?)
+            ?.map((c) => PromptCondition.fromJson(c as Map<String, dynamic>))
+            .toList() ??
+        [];
+  }
+
+  List<PromptConditionPreset> conditionPresetsFromJson(Map<String, dynamic> json) {
+    return (json['conditionPresets'] as List<dynamic>?)
+            ?.map((p) => PromptConditionPreset.fromJson(p as Map<String, dynamic>))
             .toList() ??
         [];
   }

@@ -35,6 +35,26 @@ class PromptConditionPresetValue {
     };
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'presetId': presetId,
+      'conditionId': conditionId,
+      'value': value,
+      'customValue': customValue,
+    };
+  }
+
+  factory PromptConditionPresetValue.fromJson(Map<String, dynamic> json) {
+    return PromptConditionPresetValue(
+      id: json['id'] as int?,
+      presetId: json['presetId'] as int?,
+      conditionId: json['conditionId'] as int?,
+      value: json['value'] as String? ?? '',
+      customValue: json['customValue'] as String?,
+    );
+  }
+
   PromptConditionPresetValue copyWith({
     int? id,
     int? presetId,

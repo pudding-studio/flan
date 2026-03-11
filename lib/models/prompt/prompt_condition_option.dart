@@ -29,6 +29,24 @@ class PromptConditionOption {
     };
   }
 
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'conditionId': conditionId,
+      'name': name,
+      'order': order,
+    };
+  }
+
+  factory PromptConditionOption.fromJson(Map<String, dynamic> json) {
+    return PromptConditionOption(
+      id: json['id'] as int?,
+      conditionId: json['conditionId'] as int?,
+      name: json['name'] as String? ?? '',
+      order: json['order'] as int? ?? 0,
+    );
+  }
+
   PromptConditionOption copyWith({
     int? id,
     int? conditionId,

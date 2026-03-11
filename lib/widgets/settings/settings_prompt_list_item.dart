@@ -30,19 +30,7 @@ class SettingsPromptListItem extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 5.0),
-      child: Container(
-        decoration: isDefault
-            ? BoxDecoration(
-                border: Border(
-                  left: BorderSide(
-                    color: Theme.of(context).colorScheme.primary,
-                    width: 3,
-                  ),
-                ),
-              )
-            : null,
-        padding: isDefault ? const EdgeInsets.only(left: 8) : null,
-        child: Stack(
+      child: Stack(
           clipBehavior: Clip.none,
           children: [
             GestureDetector(
@@ -165,17 +153,18 @@ class SettingsPromptListItem extends StatelessWidget {
                       ],
                     ),
                   ),
-                  PopupMenuItem<String>(
-                    value: 'export',
-                    onTap: onExport,
-                    child: const Row(
-                      children: [
-                        Icon(Icons.upload_outlined, size: 20),
-                        SizedBox(width: 12),
-                        Text('내보내기'),
-                      ],
+                  if (!isDefault)
+                    PopupMenuItem<String>(
+                      value: 'export',
+                      onTap: onExport,
+                      child: const Row(
+                        children: [
+                          Icon(Icons.upload_outlined, size: 20),
+                          SizedBox(width: 12),
+                          Text('내보내기'),
+                        ],
+                      ),
                     ),
-                  ),
                   if (!isDefault)
                     PopupMenuItem<String>(
                       value: 'delete',
@@ -192,7 +181,6 @@ class SettingsPromptListItem extends StatelessWidget {
               ),
             ),
           ],
-        ),
       ),
     );
   }

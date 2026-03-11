@@ -213,6 +213,8 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
         );
       }
 
+      await _copyConditions(sourcePrompt.id!, newPromptId);
+
       await _loadPrompts();
       if (mounted) {
         CommonDialog.showSnackBar(
@@ -284,6 +286,8 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
         );
       }
 
+      await _copyConditions(sourcePrompt.id!, newPromptId);
+
       final forkedWithId = await _db.readChatPrompt(newPromptId);
       if (mounted && forkedWithId != null) {
         _navigateToEdit(forkedWithId);
@@ -298,6 +302,44 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
     }
   }
 
+  Future<void> _copyConditions(int sourcePromptId, int newPromptId) async {
+    final conditions = await _db.readPromptConditions(sourcePromptId);
+    final conditionIdMap = <int, int>{};
+    for (int i = 0; i < conditions.length; i++) {
+      final oldId = conditions[i].id;
+      final options = await _db.readPromptConditionOptions(oldId!);
+      final newConditionId = await _db.createPromptCondition(
+        conditions[i].copyWith(id: null, chatPromptId: newPromptId, order: i),
+      );
+      conditionIdMap[oldId] = newConditionId;
+      for (int j = 0; j < options.length; j++) {
+        await _db.createPromptConditionOption(
+          options[j].copyWith(id: null, conditionId: newConditionId, order: j),
+        );
+      }
+    }
+
+    final presets = await _db.readPromptConditionPresets(sourcePromptId);
+    for (int i = 0; i < presets.length; i++) {
+      final newPresetId = await _db.createPromptConditionPreset(
+        presets[i].copyWith(id: null, chatPromptId: newPromptId, order: i),
+      );
+      final values = await _db.readPromptConditionPresetValues(presets[i].id!);
+      for (final value in values) {
+        final remappedConditionId = value.conditionId != null
+            ? conditionIdMap[value.conditionId!]
+            : null;
+        await _db.createPromptConditionPresetValue(
+          value.copyWith(
+            id: null,
+            presetId: newPresetId,
+            conditionId: remappedConditionId,
+          ),
+        );
+      }
+    }
+  }
+
   Future<void> _exportPrompt(ChatPrompt prompt) async {
     try {
       final folders = await _db.readPromptItemFolders(prompt.id!);
@@ -307,8 +349,25 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
       final standaloneItems = await _db.readStandalonePromptItems(prompt.id!);
       final regexRules = await _db.readPromptRegexRules(prompt.id!);
 
+      final conditions = await _db.readPromptConditions(prompt.id!);
+      for (final condition in conditions) {
+        final options = await _db.readPromptConditionOptions(condition.id!);
+        condition.options.addAll(options);
+      }
+      final conditionPresets = await _db.readPromptConditionPresets(prompt.id!);
+      for (final preset in conditionPresets) {
+        final values = await _db.readPromptConditionPresetValues(preset.id!);
+        preset.values.addAll(values);
+      }
+
       final jsonString = const JsonEncoder.withIndent('  ').convert(
-        prompt.toJson(folders: folders, standaloneItems: standaloneItems, regexRules: regexRules),
+        prompt.toJson(
+          folders: folders,
+          standaloneItems: standaloneItems,
+          regexRules: regexRules,
+          conditions: conditions,
+          conditionPresets: conditionPresets,
+        ),
       );
       final fileName = '${prompt.name}.json';
 
@@ -429,6 +488,46 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
         );
       }
 
+      // Import conditions and remap IDs
+      final conditions = prompt.conditionsFromJson(normalizedData);
+      final conditionIdMap = <int, int>{};
+      for (int i = 0; i < conditions.length; i++) {
+        final oldId = conditions[i].id;
+        final newConditionId = await _db.createPromptCondition(
+          conditions[i].copyWith(id: null, chatPromptId: promptId, order: i),
+        );
+        if (oldId != null) conditionIdMap[oldId] = newConditionId;
+        for (int j = 0; j < conditions[i].options.length; j++) {
+          await _db.createPromptConditionOption(
+            conditions[i].options[j].copyWith(
+              id: null,
+              conditionId: newConditionId,
+              order: j,
+            ),
+          );
+        }
+      }
+
+      // Import condition presets
+      final conditionPresets = prompt.conditionPresetsFromJson(normalizedData);
+      for (int i = 0; i < conditionPresets.length; i++) {
+        final newPresetId = await _db.createPromptConditionPreset(
+          conditionPresets[i].copyWith(id: null, chatPromptId: promptId, order: i),
+        );
+        for (final value in conditionPresets[i].values) {
+          final remappedConditionId = value.conditionId != null
+              ? conditionIdMap[value.conditionId!]
+              : null;
+          await _db.createPromptConditionPresetValue(
+            value.copyWith(
+              id: null,
+              presetId: newPresetId,
+              conditionId: remappedConditionId,
+            ),
+          );
+        }
+      }
+
       await _loadPrompts();
 
       if (mounted) {
@@ -537,7 +636,7 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
                         isSelected: prompt.isSelected,
                         isDefault: prompt.isDefault,
                         onRadioTap: () => _selectPrompt(prompt.id!),
-                        onTap: () => _navigateToEdit(prompt),
+                        onTap: prompt.isDefault ? null : () => _navigateToEdit(prompt),
                         onEdit: prompt.isDefault ? null : () => _navigateToEdit(prompt),
                         onCopy: () => _duplicatePrompt(prompt),
                         onExport: () => _exportPrompt(prompt),
