@@ -233,31 +233,8 @@ class _LogDetailSheetState extends State<_LogDetailSheet> {
     }
   }
 
-  String _extractModelId() {
-    try {
-      final data = jsonDecode(widget.log.request);
-      final modelId = data['model'] as String?;
-      if (modelId == null) return 'Gemini API';
-
-      switch (modelId) {
-        case 'gemini-3.1-pro-preview':
-          return 'Gemini 3.1 Pro Preview';
-        case 'gemini-3-pro-preview':
-          return 'Gemini 3 Pro Preview (종료됨)';
-        case 'gemini-3-flash-preview':
-          return 'Gemini 3 Flash Preview';
-        case 'gemini-2.5-pro':
-          return 'Gemini 2.5 Pro';
-        case 'gemini-2.5-flash':
-          return 'Gemini 2.5 Flash';
-        case 'gemini-2.5-flash-lite':
-          return 'Gemini 2.5 Flash Lite';
-        default:
-          return modelId;
-      }
-    } catch (e) {
-      return 'Unknown';
-    }
+  String _getModelName() {
+    return widget.log.modelName ?? widget.log.type;
   }
 
   void _copyToClipboard(String text) {
@@ -343,7 +320,7 @@ class _LogDetailSheetState extends State<_LogDetailSheet> {
             const SizedBox(height: 12),
             _buildInfoRow('시간', _formatTimestamp(widget.log.timestamp)),
             _buildInfoRow('타입', widget.log.type),
-            _buildInfoRow('모델', _extractModelId()),
+            _buildInfoRow('모델', _getModelName()),
             if (widget.log.chatRoomId != null)
               _buildInfoRow('채팅방 ID', widget.log.chatRoomId.toString()),
             if (widget.log.characterId != null)

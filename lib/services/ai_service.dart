@@ -219,6 +219,7 @@ class AiService {
         systemPrompt: systemPrompt,
         contents: contents,
         modelId: model.modelId,
+        modelName: model.displayName,
         serviceAccountJson: apiKey,
         promptParameters: promptParameters,
         chatRoomId: chatRoomId,
@@ -233,6 +234,7 @@ class AiService {
           systemPrompt: systemPrompt,
           contents: contents,
           modelId: model.modelId,
+          modelName: model.displayName,
           apiKey: apiKey,
           promptParameters: promptParameters,
           chatRoomId: chatRoomId,
@@ -244,6 +246,7 @@ class AiService {
           systemPrompt: systemPrompt,
           contents: contents,
           modelId: model.modelId,
+          modelName: model.displayName,
           apiKey: apiKey,
           baseUrl: normalizeBaseUrl(model.baseUrl ?? _openaiBaseUrl),
           promptParameters: promptParameters,
@@ -256,6 +259,7 @@ class AiService {
           systemPrompt: systemPrompt,
           contents: contents,
           modelId: model.modelId,
+          modelName: model.displayName,
           apiKey: apiKey,
           baseUrl: normalizeBaseUrl(model.baseUrl ?? _claudeBaseUrl),
           useBearerAuth: model.isCustom,
@@ -274,6 +278,7 @@ class AiService {
     required List<Map<String, dynamic>> contents,
     required String modelId,
     required String apiKey,
+    String? modelName,
     PromptParameters? promptParameters,
     int? chatRoomId,
     int? characterId,
@@ -327,6 +332,7 @@ class AiService {
           chatRoomId: chatRoomId,
           characterId: characterId,
           type: logType,
+          modelName: modelName,
         );
         final blockReason =
             responseData['promptFeedback']?['blockReason'] as String?;
@@ -343,6 +349,7 @@ class AiService {
         chatRoomId: chatRoomId,
         characterId: characterId,
         type: logType,
+        modelName: modelName,
       );
 
       return AiResponse(
@@ -355,6 +362,7 @@ class AiService {
         chatRoomId: chatRoomId,
         characterId: characterId,
         type: logType,
+        modelName: modelName,
       );
       rethrow;
     }
@@ -449,6 +457,7 @@ class AiService {
     required List<Map<String, dynamic>> contents,
     required String modelId,
     required String serviceAccountJson,
+    String? modelName,
     PromptParameters? promptParameters,
     int? chatRoomId,
     int? characterId,
@@ -521,6 +530,7 @@ class AiService {
           chatRoomId: chatRoomId,
           characterId: characterId,
           type: logType,
+          modelName: modelName,
         );
         final blockReason =
             responseData['promptFeedback']?['blockReason'] as String?;
@@ -537,6 +547,7 @@ class AiService {
         chatRoomId: chatRoomId,
         characterId: characterId,
         type: logType,
+        modelName: modelName,
       );
 
       return AiResponse(
@@ -549,6 +560,7 @@ class AiService {
         chatRoomId: chatRoomId,
         characterId: characterId,
         type: logType,
+        modelName: modelName,
       );
       rethrow;
     }
@@ -562,6 +574,7 @@ class AiService {
     required String modelId,
     required String apiKey,
     required String baseUrl,
+    String? modelName,
     PromptParameters? promptParameters,
     int? chatRoomId,
     int? characterId,
@@ -634,6 +647,7 @@ class AiService {
           chatRoomId: chatRoomId,
           characterId: characterId,
           type: logType,
+          modelName: modelName,
         );
         throw Exception('AI 응답을 받지 못했습니다');
       }
@@ -645,6 +659,7 @@ class AiService {
         chatRoomId: chatRoomId,
         characterId: characterId,
         type: logType,
+        modelName: modelName,
       );
 
       return AiResponse(
@@ -657,6 +672,7 @@ class AiService {
         chatRoomId: chatRoomId,
         characterId: characterId,
         type: logType,
+        modelName: modelName,
       );
       rethrow;
     }
@@ -699,6 +715,7 @@ class AiService {
     required String apiKey,
     required String baseUrl,
     bool useBearerAuth = false,
+    String? modelName,
     PromptParameters? promptParameters,
     int? chatRoomId,
     int? characterId,
@@ -773,6 +790,7 @@ class AiService {
           chatRoomId: chatRoomId,
           characterId: characterId,
           type: logType,
+          modelName: modelName,
         );
         throw Exception('AI 응답을 받지 못했습니다');
       }
@@ -784,6 +802,7 @@ class AiService {
         chatRoomId: chatRoomId,
         characterId: characterId,
         type: logType,
+        modelName: modelName,
       );
 
       return AiResponse(
@@ -796,6 +815,7 @@ class AiService {
         chatRoomId: chatRoomId,
         characterId: characterId,
         type: logType,
+        modelName: modelName,
       );
       rethrow;
     }
@@ -861,6 +881,7 @@ class AiService {
     int? chatRoomId,
     int? characterId,
     String type = 'ai',
+    String? modelName,
   }) async {
     try {
       final log = ChatLog(
@@ -870,6 +891,7 @@ class AiService {
         response: response,
         chatRoomId: chatRoomId,
         characterId: characterId,
+        modelName: modelName,
       );
       await _db.createChatLog(log);
     } catch (e) {

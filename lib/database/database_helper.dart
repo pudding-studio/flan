@@ -39,7 +39,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 39,
+      version: 40,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -388,6 +388,7 @@ class DatabaseHelper {
         response $textType,
         chat_room_id INTEGER,
         character_id INTEGER,
+        model_name TEXT,
         FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE,
         FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE
       )
@@ -1107,6 +1108,12 @@ class DatabaseHelper {
     if (oldVersion < 39) {
       await db.execute('''
         ALTER TABLE chat_rooms ADD COLUMN selected_model_id TEXT
+      ''');
+    }
+
+    if (oldVersion < 40) {
+      await db.execute('''
+        ALTER TABLE chat_logs ADD COLUMN model_name TEXT
       ''');
     }
   }
@@ -2083,7 +2090,7 @@ class DatabaseHelper {
   }
 
   static const _chatLogListColumns = [
-    'id', 'timestamp', 'type', 'chat_room_id', 'character_id',
+    'id', 'timestamp', 'type', 'chat_room_id', 'character_id', 'model_name',
   ];
 
   Future<List<ChatLog>> readAllChatLogs() async {
