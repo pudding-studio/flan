@@ -252,8 +252,10 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
         pinMode: prefs.getString('default_pin_mode') ?? 'auto',
         autoPinByDate: prefs.getBool('default_auto_pin_by_date') ?? false,
         autoPinByLocation: prefs.getBool('default_auto_pin_by_location') ?? false,
-        autoPinByAi: prefs.getBool('default_auto_pin_by_ai') ?? true,
-        autoPinByMessageCount: prefs.getInt('default_auto_pin_by_message_count'),
+        autoPinByAi: prefs.getBool('default_auto_pin_by_ai') ?? false,
+        autoPinByMessageCount: prefs.getBool('default_auto_pin_by_message_count_enabled') ?? true
+            ? (prefs.getInt('default_auto_pin_by_message_count') ?? 10)
+            : null,
       );
 
       final chatRoomId = await _db.createChatRoom(chatRoom);

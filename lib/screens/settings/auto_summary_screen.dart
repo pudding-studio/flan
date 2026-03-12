@@ -47,16 +47,19 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
   bool _isLoading = true;
 
   // Parameters
-  PromptParameters _parameters = const PromptParameters();
-  final _maxOutputTokensController = TextEditingController();
+  PromptParameters _parameters = const PromptParameters(
+    maxOutputTokens: 10000,
+    temperature: 1.0,
+  );
+  final _maxOutputTokensController = TextEditingController(text: '10000');
 
   // Pin defaults (global only)
   String _pinMode = 'auto';
   bool _autoPinByDate = false;
   bool _autoPinByLocation = false;
-  bool _autoPinByAi = true;
-  bool _autoPinByMessageCountEnabled = false;
-  final _autoPinByMessageCountController = TextEditingController();
+  bool _autoPinByAi = false;
+  bool _autoPinByMessageCountEnabled = true;
+  final _autoPinByMessageCountController = TextEditingController(text: '10');
 
   // Drag state
   bool _isDragging = false;
@@ -80,9 +83,10 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
         _pinMode = prefs.getString('default_pin_mode') ?? 'auto';
         _autoPinByDate = prefs.getBool('default_auto_pin_by_date') ?? false;
         _autoPinByLocation = prefs.getBool('default_auto_pin_by_location') ?? false;
-        _autoPinByAi = prefs.getBool('default_auto_pin_by_ai') ?? true;
+        _autoPinByAi = prefs.getBool('default_auto_pin_by_ai') ?? false;
         final msgCount = prefs.getInt('default_auto_pin_by_message_count');
-        _autoPinByMessageCountEnabled = msgCount != null;
+        _autoPinByMessageCountEnabled =
+            prefs.getBool('default_auto_pin_by_message_count_enabled') ?? true;
         _autoPinByMessageCountController.text = msgCount?.toString() ?? '10';
       }
 
@@ -190,6 +194,8 @@ _syncContentFromControllers();
       await prefs.setBool('default_auto_pin_by_date', _autoPinByDate);
       await prefs.setBool('default_auto_pin_by_location', _autoPinByLocation);
       await prefs.setBool('default_auto_pin_by_ai', _autoPinByAi);
+      await prefs.setBool(
+          'default_auto_pin_by_message_count_enabled', _autoPinByMessageCountEnabled);
       if (_autoPinByMessageCountEnabled) {
         final msgCount = int.tryParse(_autoPinByMessageCountController.text);
         if (msgCount != null && msgCount > 0) {
