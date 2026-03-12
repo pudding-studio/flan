@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -6,7 +6,9 @@ import 'package:image_picker/image_picker.dart';
 import '../../../constants/ui_constants.dart';
 import '../../../models/character/cover_image.dart';
 import '../../../utils/common_dialog.dart';
-import '../../../widgets/label_with_help.dart';
+import '../../../utils/image_processor.dart';
+import '../../../widgets/common/common_button.dart';
+import '../../../widgets/common/common_title_medium.dart';
 
 class CoverImageTab extends StatefulWidget {
   final List<CoverImage> coverImages;
@@ -56,23 +58,33 @@ class _CoverImageTabState extends State<CoverImageTab> {
     );
 
     if (image != null) {
-      setState(() {
-        final newCoverImage = CoverImage(
-          id: _getNextTempId(),
-          characterId: -1, // Will be set when saving
-          name: '표지 ${widget.coverImages.length + 1}',
-          order: widget.coverImages.length,
-          imagePath: image.path,
-          isExpanded: true,
-        );
-        widget.coverImages.add(newCoverImage);
+      try {
+        final Uint8List imageData = await ImageProcessor.processToWebp512(image.path);
 
-        // 첫 번째 표지를 자동으로 선택
-        if (widget.coverImages.length == 1) {
-          widget.onSelectedCoverImageChanged(newCoverImage.id);
-        }
-      });
-      _notifyUpdate();
+        setState(() {
+          final newCoverImage = CoverImage(
+            id: _getNextTempId(),
+            characterId: -1, // Will be set when saving
+            name: '표지 ${widget.coverImages.length + 1}',
+            order: widget.coverImages.length,
+            imageData: imageData,
+            isExpanded: true,
+          );
+          widget.coverImages.add(newCoverImage);
+
+          // 첫 번째 표지를 자동으로 선택
+          if (widget.coverImages.length == 1) {
+            widget.onSelectedCoverImageChanged(newCoverImage.id);
+          }
+        });
+        _notifyUpdate();
+      } catch (e) {
+        if (!mounted) return;
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '이미지 처리 중 오류가 발생했습니다: $e',
+        );
+      }
     }
   }
 
@@ -135,8 +147,8 @@ class _CoverImageTabState extends State<CoverImageTab> {
         children: [
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 5),
-            child: LabelWithHelp(
-              label: '표지',
+            child: CommonTitleMedium(
+              text: '표지',
               helpMessage: '캐릭터의 표지 이미지를 추가할 수 있습니다.',
             ),
           ),
@@ -156,13 +168,10 @@ class _CoverImageTabState extends State<CoverImageTab> {
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            child: FilledButton.icon(
+            child: CommonButton.filled(
               onPressed: _addCoverImage,
-              icon: const Icon(Icons.add),
-              label: const Text('표지 이미지 추가'),
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
+              icon: Icons.add,
+              label: '표지 이미지 추가',
             ),
           ),
         ],
@@ -248,14 +257,14 @@ class _CoverImageTabState extends State<CoverImageTab> {
               ),
             ),
           ),
-          if (coverImage.isExpanded && coverImage.imagePath != null) ...[
+          if (coverImage.isExpanded && coverImage.imageData != null) ...[
             const Divider(height: 1),
             Padding(
               padding: const EdgeInsets.all(12),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.file(
-                  File(coverImage.imagePath!),
+                child: Image.memory(
+                  coverImage.imageData!,
                   fit: BoxFit.cover,
                   errorBuilder: (context, error, stackTrace) {
                     return Container(

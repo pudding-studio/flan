@@ -1,22 +1,53 @@
+import 'dart:async';
+
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
+import 'firebase_options.dart';
 import 'theme/app_theme.dart';
 import 'screens/character/character_screen.dart';
 import 'screens/chat/chat_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'providers/theme_provider.dart';
 import 'providers/chat_model_provider.dart';
+import 'providers/tokenizer_provider.dart';
+import 'providers/viewer_settings_provider.dart';
+import 'database/database_helper.dart';
+import 'services/default_seeder_service.dart';
 
-void main() {
-  runApp(
-    MultiProvider(
-      providers: [
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
-        ChangeNotifierProvider(create: (_) => ChatModelSettingsProvider()),
-      ],
-      child: const MyApp(),
-    ),
-  );
+void main() async {
+  runZonedGuarded<Future<void>>(() async {
+    WidgetsFlutterBinding.ensureInitialized();
+
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
+    // Crashlytics 설정
+    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+
+    // Seed default data on first launch
+    await DefaultSeederService().seedAllDefaults();
+
+    // Delete API logs older than 7 days
+    await DatabaseHelper.instance.deleteOldChatLogs();
+
+    runApp(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider(create: (_) => ThemeProvider()),
+          ChangeNotifierProvider(create: (_) => ChatModelSettingsProvider()),
+          ChangeNotifierProvider(create: (_) => TokenizerProvider()),
+          ChangeNotifierProvider(create: (_) => ViewerSettingsProvider()),
+        ],
+        child: const MyApp(),
+      ),
+    );
+  }, (error, stack) {
+    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+  });
 }
 
 class MyApp extends StatelessWidget {
@@ -28,8 +59,15 @@ class MyApp extends StatelessWidget {
       builder: (context, themeProvider, child) {
         return MaterialApp(
           title: 'Flan',
-          theme: AppTheme.lightTheme,
-          darkTheme: AppTheme.darkTheme,
+          debugShowCheckedModeBanner: false,
+          theme: AppTheme.getTheme(
+            seedColor: themeProvider.seedColor,
+            brightness: Brightness.light,
+          ),
+          darkTheme: AppTheme.getTheme(
+            seedColor: themeProvider.seedColor,
+            brightness: Brightness.dark,
+          ),
           themeMode: themeProvider.themeMode,
           home: const MainScreen(),
         );

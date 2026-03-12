@@ -1,14 +1,35 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
-import '../models/chat/chat_message.dart';
 import '../models/chat/chat_log.dart';
+import '../models/chat/chat_message.dart';
 import '../models/prompt/prompt_parameters.dart';
 import '../database/database_helper.dart';
+
+class GeminiResponse {
+  final String text;
+  final UsageMetadata? usageMetadata;
+  final String? modelId;
+
+  const GeminiResponse({
+    required this.text,
+    this.usageMetadata,
+    this.modelId,
+  });
+}
 
 class GeminiService {
   static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
   final DatabaseHelper _db = DatabaseHelper.instance;
+
+  static const List<Map<String, String>> _defaultSafetySettings = [
+    {'category': 'HARM_CATEGORY_HARASSMENT', 'threshold': 'BLOCK_NONE'},
+    {'category': 'HARM_CATEGORY_HATE_SPEECH', 'threshold': 'BLOCK_NONE'},
+    {'category': 'HARM_CATEGORY_SEXUALLY_EXPLICIT', 'threshold': 'BLOCK_NONE'},
+    {'category': 'HARM_CATEGORY_DANGEROUS_CONTENT', 'threshold': 'BLOCK_NONE'},
+    {'category': 'HARM_CATEGORY_CIVIC_INTEGRITY', 'threshold': 'BLOCK_NONE'},
+  ];
 
   Future<String> _getApiKey() async {
     final prefs = await SharedPreferences.getInstance();
@@ -26,12 +47,12 @@ class GeminiService {
     final modelString = prefs.getString('chat_model');
 
     if (modelString == null) {
-      return 'gemini-3-pro-preview';
+      return 'gemini-3-flash-preview';
     }
 
     switch (modelString) {
       case 'geminiPro3Preview':
-        return 'gemini-3-pro-preview';
+        return 'gemini-3.1-pro-preview';
       case 'geminiFlash3Preview':
         return 'gemini-3-flash-preview';
       case 'geminiPro25':
@@ -41,7 +62,7 @@ class GeminiService {
       case 'geminiFlashLite25':
         return 'gemini-2.5-flash-lite';
       default:
-        return 'gemini-3-pro-preview';
+        return 'gemini-3-flash-preview';
     }
   }
 
@@ -96,25 +117,24 @@ class GeminiService {
       }
     }
 
+    if (parameters.stopSequences != null && parameters.stopSequences!.isNotEmpty) {
+      config['stopSequences'] = parameters.stopSequences;
+    }
+
     return config.isEmpty ? null : config;
   }
 
-  Future<String> sendMessage({
+  Future<GeminiResponse> sendMessage({
     required String systemPrompt,
-    required List<ChatMessage> chatHistory,
-    required String userMessage,
+    required List<Map<String, dynamic>> contents,
     PromptParameters? promptParameters,
     int? chatRoomId,
     int? characterId,
+    String logType = 'gemini',
   }) async {
     final modelId = await _getSelectedModelId();
     final apiKey = await _getApiKey();
     final generationConfig = _buildGenerationConfig(promptParameters);
-
-    final contents = _buildContents(
-      chatHistory: chatHistory,
-      userMessage: userMessage,
-    );
 
     final requestBody = {
       'model': modelId,
@@ -125,6 +145,7 @@ class GeminiService {
           ]
         },
       if (generationConfig != null) 'generationConfig': generationConfig,
+      'safetySettings': _defaultSafetySettings,
       'contents': contents,
     };
 
@@ -145,20 +166,35 @@ class GeminiService {
 
       final responseData = jsonDecode(response.body);
       final text = _extractTextFromResponse(responseData);
+      final usageMetadata = _extractUsageMetadata(responseData);
 
       if (text.isEmpty) {
+        debugPrint('Empty AI response - status: ${response.statusCode}, body: ${response.body}');
+        await _saveChatLog(
+          request: requestJson,
+          response: response.body,
+          timestamp: startTime,
+          chatRoomId: chatRoomId,
+          characterId: characterId,
+          type: logType,
+        );
+        final blockReason = responseData['promptFeedback']?['blockReason'] as String?;
+        if (blockReason != null) {
+          throw Exception('AI 응답이 차단되었습니다 (사유: $blockReason)');
+        }
         throw Exception('AI 응답을 받지 못했습니다');
       }
 
       await _saveChatLog(
         request: requestJson,
-        response: text,
+        response: response.body,
         timestamp: startTime,
         chatRoomId: chatRoomId,
         characterId: characterId,
+        type: logType,
       );
 
-      return text;
+      return GeminiResponse(text: text, usageMetadata: usageMetadata, modelId: modelId);
     } catch (e) {
       await _saveChatLog(
         request: requestJson,
@@ -166,6 +202,7 @@ class GeminiService {
         timestamp: startTime,
         chatRoomId: chatRoomId,
         characterId: characterId,
+        type: logType,
       );
       rethrow;
     }
@@ -190,20 +227,26 @@ class GeminiService {
     }
   }
 
+  UsageMetadata? _extractUsageMetadata(Map<String, dynamic> response) {
+    try {
+      final usageMetadata = response['usageMetadata'] as Map<String, dynamic>?;
+      if (usageMetadata == null) {
+        return null;
+      }
+      return UsageMetadata.fromJson(usageMetadata);
+    } catch (e) {
+      return null;
+    }
+  }
+
   Stream<String> sendMessageStream({
     required String systemPrompt,
-    required List<ChatMessage> chatHistory,
-    required String userMessage,
+    required List<Map<String, dynamic>> contents,
     PromptParameters? promptParameters,
   }) async* {
     final modelId = await _getSelectedModelId();
     final apiKey = await _getApiKey();
     final generationConfig = _buildGenerationConfig(promptParameters);
-
-    final contents = _buildContents(
-      chatHistory: chatHistory,
-      userMessage: userMessage,
-    );
 
     final requestBody = {
       'model': modelId,
@@ -214,6 +257,7 @@ class GeminiService {
           ]
         },
       if (generationConfig != null) 'generationConfig': generationConfig,
+      'safetySettings': _defaultSafetySettings,
       'contents': contents,
     };
 
@@ -249,51 +293,18 @@ class GeminiService {
     }
   }
 
-  List<Map<String, dynamic>> _buildContents({
-    required List<ChatMessage> chatHistory,
-    required String userMessage,
-  }) {
-    final contents = <Map<String, dynamic>>[];
-
-    for (final message in chatHistory) {
-      if (message.role == MessageRole.user) {
-        contents.add({
-          'role': 'user',
-          'parts': [
-            {'text': message.content}
-          ]
-        });
-      } else if (message.role == MessageRole.assistant) {
-        contents.add({
-          'role': 'model',
-          'parts': [
-            {'text': message.content}
-          ]
-        });
-      }
-    }
-
-    contents.add({
-      'role': 'user',
-      'parts': [
-        {'text': userMessage}
-      ]
-    });
-
-    return contents;
-  }
-
   Future<void> _saveChatLog({
     required String request,
     required String response,
     required DateTime timestamp,
     int? chatRoomId,
     int? characterId,
+    String type = 'gemini',
   }) async {
     try {
       final log = ChatLog(
         timestamp: timestamp,
-        type: 'gemini',
+        type: type,
         request: request,
         response: response,
         chatRoomId: chatRoomId,

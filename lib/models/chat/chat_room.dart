@@ -5,6 +5,16 @@ class ChatRoom {
   final int? selectedChatPromptId;
   final int? selectedPersonaId;
   final int? selectedStartScenarioId;
+  final int? selectedConditionPresetId;
+  final int totalTokenCount;
+  final String memo;
+  final String summary;
+  final String pinMode; // 'auto' or 'manual'
+  final bool autoPinByDate;
+  final bool autoPinByLocation;
+  final bool autoPinByAi;
+  final int? autoPinByMessageCount;
+  final String? selectedModelId;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -15,6 +25,16 @@ class ChatRoom {
     this.selectedChatPromptId,
     this.selectedPersonaId,
     this.selectedStartScenarioId,
+    this.selectedConditionPresetId,
+    this.totalTokenCount = 0,
+    this.memo = '',
+    this.summary = '',
+    this.pinMode = 'auto',
+    this.autoPinByDate = false,
+    this.autoPinByLocation = false,
+    this.autoPinByAi = true,
+    this.autoPinByMessageCount,
+    this.selectedModelId,
     DateTime? createdAt,
     DateTime? updatedAt,
   })  : createdAt = createdAt ?? DateTime.now(),
@@ -28,6 +48,16 @@ class ChatRoom {
       selectedChatPromptId: map['selected_chat_prompt_id'] as int?,
       selectedPersonaId: map['selected_persona_id'] as int?,
       selectedStartScenarioId: map['selected_start_scenario_id'] as int?,
+      selectedConditionPresetId: map['selected_condition_preset_id'] as int?,
+      totalTokenCount: map['total_token_count'] as int? ?? 0,
+      memo: map['memo'] as String? ?? '',
+      summary: map['summary'] as String? ?? '',
+      pinMode: map['pin_mode'] as String? ?? 'auto',
+      autoPinByDate: (map['auto_pin_by_date'] as int? ?? 0) == 1,
+      autoPinByLocation: (map['auto_pin_by_location'] as int? ?? 0) == 1,
+      autoPinByAi: (map['auto_pin_by_ai'] as int? ?? 1) == 1,
+      autoPinByMessageCount: map['auto_pin_by_message_count'] as int?,
+      selectedModelId: map['selected_model_id'] as String?,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
     );
@@ -41,6 +71,16 @@ class ChatRoom {
       'selected_chat_prompt_id': selectedChatPromptId,
       'selected_persona_id': selectedPersonaId,
       'selected_start_scenario_id': selectedStartScenarioId,
+      'selected_condition_preset_id': selectedConditionPresetId,
+      'total_token_count': totalTokenCount,
+      'memo': memo,
+      'summary': summary,
+      'pin_mode': pinMode,
+      'auto_pin_by_date': autoPinByDate ? 1 : 0,
+      'auto_pin_by_location': autoPinByLocation ? 1 : 0,
+      'auto_pin_by_ai': autoPinByAi ? 1 : 0,
+      'auto_pin_by_message_count': autoPinByMessageCount,
+      'selected_model_id': selectedModelId,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -53,6 +93,16 @@ class ChatRoom {
     int? selectedChatPromptId,
     int? selectedPersonaId,
     int? selectedStartScenarioId,
+    Object? selectedConditionPresetId = _sentinel,
+    int? totalTokenCount,
+    String? memo,
+    String? summary,
+    String? pinMode,
+    bool? autoPinByDate,
+    bool? autoPinByLocation,
+    bool? autoPinByAi,
+    Object? autoPinByMessageCount = _sentinel,
+    Object? selectedModelId = _sentinel,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -63,8 +113,26 @@ class ChatRoom {
       selectedChatPromptId: selectedChatPromptId ?? this.selectedChatPromptId,
       selectedPersonaId: selectedPersonaId ?? this.selectedPersonaId,
       selectedStartScenarioId: selectedStartScenarioId ?? this.selectedStartScenarioId,
+      selectedConditionPresetId: selectedConditionPresetId == _sentinel
+          ? this.selectedConditionPresetId
+          : selectedConditionPresetId as int?,
+      totalTokenCount: totalTokenCount ?? this.totalTokenCount,
+      memo: memo ?? this.memo,
+      summary: summary ?? this.summary,
+      pinMode: pinMode ?? this.pinMode,
+      autoPinByDate: autoPinByDate ?? this.autoPinByDate,
+      autoPinByLocation: autoPinByLocation ?? this.autoPinByLocation,
+      autoPinByAi: autoPinByAi ?? this.autoPinByAi,
+      autoPinByMessageCount: autoPinByMessageCount == _sentinel
+          ? this.autoPinByMessageCount
+          : autoPinByMessageCount as int?,
+      selectedModelId: selectedModelId == _sentinel
+          ? this.selectedModelId
+          : selectedModelId as String?,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
   }
+
+  static const _sentinel = Object();
 }

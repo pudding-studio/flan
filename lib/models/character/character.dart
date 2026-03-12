@@ -1,14 +1,16 @@
+import 'dart:convert';
 import 'persona.dart';
 import 'start_scenario.dart';
-import 'lorebook_folder.dart';
+import 'character_book_folder.dart';
 import 'cover_image.dart';
 
 class Character {
   final int? id;
   final String name;
-  final String? summary;
-  final String? keywords;
-  final String? worldSetting;
+  final String? nickname;
+  final String? creatorNotes;
+  final List<String> tags;
+  final String? description;
   final int? selectedCoverImageId;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -18,24 +20,43 @@ class Character {
   Character({
     this.id,
     required this.name,
-    this.summary,
-    this.keywords,
-    this.worldSetting,
+    this.nickname,
+    this.creatorNotes,
+    List<String>? tags,
+    this.description,
     this.selectedCoverImageId,
     DateTime? createdAt,
     DateTime? updatedAt,
     this.isDraft = false,
     this.sortOrder,
-  })  : createdAt = createdAt ?? DateTime.now(),
+  })  : tags = tags ?? [],
+        createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now();
 
   factory Character.fromMap(Map<String, dynamic> map) {
+    List<String> parsedTags = [];
+    if (map['tags'] != null) {
+      final tagsData = map['tags'];
+      if (tagsData is String && tagsData.isNotEmpty) {
+        try {
+          final decoded = json.decode(tagsData);
+          if (decoded is List) {
+            parsedTags = decoded.cast<String>();
+          }
+        } catch (e) {
+          // JSON 파싱 실패 시 빈 배열 사용
+          parsedTags = [];
+        }
+      }
+    }
+
     return Character(
       id: map['id'] as int?,
       name: map['name'] as String,
-      summary: map['summary'] as String?,
-      keywords: map['keywords'] as String?,
-      worldSetting: map['world_setting'] as String?,
+      nickname: map['nickname'] as String?,
+      creatorNotes: map['creator_notes'] as String?,
+      tags: parsedTags,
+      description: map['description'] as String?,
       selectedCoverImageId: map['selected_cover_image_id'] != null
           ? int.tryParse(map['selected_cover_image_id'].toString())
           : null,
@@ -50,9 +71,10 @@ class Character {
     return {
       'id': id,
       'name': name,
-      'summary': summary,
-      'keywords': keywords,
-      'world_setting': worldSetting,
+      'nickname': nickname,
+      'creator_notes': creatorNotes,
+      'tags': json.encode(tags),
+      'description': description,
       'selected_cover_image_id': selectedCoverImageId?.toString(),
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
@@ -64,9 +86,10 @@ class Character {
   Character copyWith({
     int? id,
     String? name,
-    String? summary,
-    String? keywords,
-    String? worldSetting,
+    String? nickname,
+    String? creatorNotes,
+    List<String>? tags,
+    String? description,
     int? selectedCoverImageId,
     DateTime? createdAt,
     DateTime? updatedAt,
@@ -76,9 +99,10 @@ class Character {
     return Character(
       id: id ?? this.id,
       name: name ?? this.name,
-      summary: summary ?? this.summary,
-      keywords: keywords ?? this.keywords,
-      worldSetting: worldSetting ?? this.worldSetting,
+      nickname: nickname ?? this.nickname,
+      creatorNotes: creatorNotes ?? this.creatorNotes,
+      tags: tags ?? this.tags,
+      description: description ?? this.description,
       selectedCoverImageId: selectedCoverImageId ?? this.selectedCoverImageId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
@@ -90,16 +114,17 @@ class Character {
   Map<String, dynamic> toJson({
     List<Persona>? personas,
     List<StartScenario>? startScenarios,
-    List<LorebookFolder>? lorebookFolders,
-    List<Lorebook>? standaloneLorebooks,
+    List<CharacterBookFolder>? characterBookFolders,
+    List<CharacterBook>? standaloneCharacterBooks,
     List<CoverImage>? coverImages,
   }) {
     return {
       'format': 'flan_v1',
       'name': name,
-      'summary': summary,
-      'keywords': keywords,
-      'worldSetting': worldSetting,
+      'nickname': nickname,
+      'creatorNotes': creatorNotes,
+      'tags': tags,
+      'description': description,
       'selectedCoverImageId': selectedCoverImageId,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
@@ -107,18 +132,24 @@ class Character {
       'sortOrder': sortOrder,
       'personas': personas?.map((p) => p.toJson()).toList(),
       'startScenarios': startScenarios?.map((s) => s.toJson()).toList(),
-      'lorebookFolders': lorebookFolders?.map((f) => f.toJson()).toList(),
-      'standaloneLorebooks': standaloneLorebooks?.map((l) => l.toJson()).toList(),
+      'characterBookFolders': characterBookFolders?.map((f) => f.toJson()).toList(),
+      'standaloneCharacterBooks': standaloneCharacterBooks?.map((l) => l.toJson()).toList(),
       'coverImages': coverImages?.map((c) => c.toJson()).toList(),
     };
   }
 
   factory Character.fromJson(Map<String, dynamic> json) {
+    List<String> parsedTags = [];
+    if (json['tags'] != null) {
+      parsedTags = (json['tags'] as List).cast<String>();
+    }
+
     return Character(
       name: json['name'] as String,
-      summary: json['summary'] as String?,
-      keywords: json['keywords'] as String?,
-      worldSetting: json['worldSetting'] as String?,
+      nickname: json['nickname'] as String?,
+      creatorNotes: json['creatorNotes'] as String?,
+      tags: parsedTags,
+      description: json['description'] as String?,
       selectedCoverImageId: json['selectedCoverImageId'] as int?,
       createdAt: json['createdAt'] != null
           ? DateTime.parse(json['createdAt'] as String)

@@ -4,25 +4,26 @@ import 'package:image/image.dart' as img;
 import '../models/character/character.dart';
 import '../models/character/persona.dart';
 import '../models/character/start_scenario.dart';
-import '../models/character/lorebook_folder.dart';
+import '../models/character/character_book_folder.dart';
+import '../models/character/cover_image.dart';
+import '../utils/image_processor.dart';
 
 class CharacterCardParser {
   /// PNG 파일에서 Character Card V2/V3 메타데이터를 추출합니다
+  /// V3는 'ccv3' tEXt 청크를 우선 탐색하고, 없으면 'chara' 폴백
   static Map<String, dynamic>? extractMetadataFromPng(Uint8List pngBytes) {
     try {
       final image = img.decodeImage(pngBytes);
       if (image == null) return null;
 
-      // PNG tEXt 청크에서 'chara' 키를 찾습니다
-      String? base64Data;
+      // V3: ccv3 청크를 먼저 탐색
+      String? base64Data = _extractTextChunk(pngBytes, 'ccv3');
 
-      // image 패키지는 텍스트 청크를 직접 제공하지 않으므로
-      // PNG 파일 구조를 직접 파싱해야 합니다
-      base64Data = _extractTextChunk(pngBytes, 'chara');
+      // V2 폴백: chara 청크
+      base64Data ??= _extractTextChunk(pngBytes, 'chara');
 
       if (base64Data == null) return null;
 
-      // Base64 디코딩
       final decodedBytes = base64.decode(base64Data);
       final jsonString = utf8.decode(decodedBytes);
 
@@ -38,7 +39,6 @@ class CharacterCardParser {
       int offset = 8; // PNG 시그니처 건너뛰기
 
       while (offset < bytes.length) {
-        // 청크 길이 읽기 (4 바이트)
         if (offset + 4 > bytes.length) break;
         final length = (bytes[offset] << 24) |
             (bytes[offset + 1] << 16) |
@@ -46,12 +46,10 @@ class CharacterCardParser {
             bytes[offset + 3];
         offset += 4;
 
-        // 청크 타입 읽기 (4 바이트)
         if (offset + 4 > bytes.length) break;
         final type = String.fromCharCodes(bytes.sublist(offset, offset + 4));
         offset += 4;
 
-        // 청크 데이터 읽기
         if (offset + length > bytes.length) break;
         final data = bytes.sublist(offset, offset + length);
         offset += length;
@@ -59,20 +57,16 @@ class CharacterCardParser {
         // CRC 건너뛰기 (4 바이트)
         offset += 4;
 
-        // tEXt 청크인지 확인
         if (type == 'tEXt') {
-          // Null 종료자를 찾아 키워드 추출
           int nullIndex = data.indexOf(0);
           if (nullIndex != -1) {
             final chunkKeyword = String.fromCharCodes(data.sublist(0, nullIndex));
             if (chunkKeyword == keyword) {
-              // 키워드 다음의 텍스트 반환
               return String.fromCharCodes(data.sublist(nullIndex + 1));
             }
           }
         }
 
-        // IEND 청크에 도달하면 중단
         if (type == 'IEND') break;
       }
 
@@ -89,42 +83,63 @@ class CharacterCardParser {
     if (spec == 'chara_card_v2' || spec == 'chara_card_v3') {
       final data = cardData['data'] as Map<String, dynamic>;
 
+      List<String> tags = [];
+      if (data['tags'] != null) {
+        tags = (data['tags'] as List).map((e) => e.toString()).toList();
+      }
+
+      final description = _buildDescription(data);
+
+      // V3: nickname 필드 추출
+      String? nickname;
+      if (spec == 'chara_card_v3') {
+        nickname = data['nickname'] as String?;
+      }
+
       return Character(
         name: data['name'] as String? ?? 'Unknown',
-        summary: data['description'] as String?,
-        keywords: data['tags'] != null
-            ? (data['tags'] as List).join(', ')
-            : null,
-        worldSetting: data['scenario'] as String?,
+        nickname: nickname,
+        creatorNotes: data['creator_notes'] as String?,
+        tags: tags,
+        description: description,
         isDraft: false,
       );
     }
 
-    // 알 수 없는 형식
     throw FormatException('Unsupported character card format: $spec');
+  }
+
+  /// Character Card V2 data 필드들을 description에 태그로 구분하여 합칩니다
+  static String? _buildDescription(Map<String, dynamic> data) {
+    final parts = <String>[];
+
+    final baseDescription = (data['description'] as String?)?.trim() ?? '';
+    if (baseDescription.isNotEmpty) {
+      parts.add(baseDescription);
+    }
+
+    const tagFields = [
+      'scenario',
+      'personality',
+      'mes_example',
+      'system_prompt',
+      'post_history_instructions',
+    ];
+
+    for (final field in tagFields) {
+      final value = (data[field] as String?)?.trim() ?? '';
+      if (value.isNotEmpty) {
+        parts.add('<$field>\n$value\n</$field>');
+      }
+    }
+
+    if (parts.isEmpty) return null;
+    return parts.join('\n\n');
   }
 
   /// Character Card V2/V3에서 personas를 추출합니다
   static List<Persona> parsePersonas(
       Map<String, dynamic> cardData, int characterId) {
-    try {
-      final data = cardData['data'] as Map<String, dynamic>;
-      final personaContent = data['personality'] as String?;
-
-      if (personaContent != null && personaContent.isNotEmpty) {
-        return [
-          Persona(
-            characterId: characterId,
-            name: '기본 페르소나',
-            order: 0,
-            content: personaContent,
-          ),
-        ];
-      }
-    } catch (e) {
-      // 에러 무시
-    }
-
     return [];
   }
 
@@ -134,28 +149,61 @@ class CharacterCardParser {
     try {
       final data = cardData['data'] as Map<String, dynamic>;
       final firstMessage = data['first_mes'] as String?;
-      final scenario = data['scenario'] as String?;
+      final alternateGreetings = data['alternate_greetings'] as List?;
+      final groupOnlyGreetings = data['group_only_greetings'] as List?;
 
-      if (firstMessage != null || scenario != null) {
-        return [
-          StartScenario(
-            characterId: characterId,
-            name: '기본 시나리오',
-            order: 0,
-            startSetting: scenario,
-            startMessage: firstMessage,
-          ),
-        ];
+      final scenarios = <StartScenario>[];
+      int order = 0;
+
+      if (firstMessage != null && firstMessage.isNotEmpty) {
+        scenarios.add(StartScenario(
+          characterId: characterId,
+          name: '시작설정 ${order + 1}',
+          order: order++,
+          startSetting: null,
+          startMessage: firstMessage,
+        ));
       }
+
+      if (alternateGreetings != null) {
+        for (var greeting in alternateGreetings) {
+          if (greeting is String && greeting.isNotEmpty) {
+            scenarios.add(StartScenario(
+              characterId: characterId,
+              name: '시작설정 ${order + 1}',
+              order: order++,
+              startSetting: null,
+              startMessage: greeting,
+            ));
+          }
+        }
+      }
+
+      // V3: group_only_greetings도 시나리오로 변환
+      if (groupOnlyGreetings != null) {
+        for (var greeting in groupOnlyGreetings) {
+          if (greeting is String && greeting.isNotEmpty) {
+            scenarios.add(StartScenario(
+              characterId: characterId,
+              name: '그룹 시작설정 ${order + 1}',
+              order: order++,
+              startSetting: null,
+              startMessage: greeting,
+            ));
+          }
+        }
+      }
+
+      return scenarios;
     } catch (e) {
-      // 에러 무시
+      // Ignore parse errors
     }
 
     return [];
   }
 
-  /// Character Card V2/V3에서 lorebooks를 추출합니다
-  static List<Lorebook> parseLorebooks(
+  /// Character Card V2/V3에서 character books를 추출합니다
+  static List<CharacterBook> parseCharacterBooks(
       Map<String, dynamic> cardData, int characterId) {
     try {
       final data = cardData['data'] as Map<String, dynamic>;
@@ -168,27 +216,97 @@ class CharacterCardParser {
             final idx = entry.key;
             final item = entry.value as Map<String, dynamic>;
 
-            return Lorebook(
+            // V3: constant 필드가 true이면 항상 활성화
+            final isConstant = item['constant'] as bool? ?? false;
+            final isEnabled = item['enabled'] as bool? ?? false;
+
+            CharacterBookActivationCondition condition;
+            if (isConstant) {
+              condition = CharacterBookActivationCondition.enabled;
+            } else if (isEnabled) {
+              condition = CharacterBookActivationCondition.keyBased;
+            } else {
+              condition = CharacterBookActivationCondition.disabled;
+            }
+
+            return CharacterBook(
               characterId: characterId,
-              name: item['name'] as String? ?? 'Lorebook ${idx + 1}',
+              name: item['name'] as String? ?? 'CharacterBook ${idx + 1}',
               order: idx,
               content: item['content'] as String?,
-              activationKeys: (item['keys'] as List?)
+              keys: (item['keys'] as List?)
                   ?.map((k) => k.toString())
                   .toList() ?? [],
-              activationCondition: (item['enabled'] as bool? ?? false)
-                  ? LorebookActivationCondition.keyBased
-                  : LorebookActivationCondition.disabled,
-              deploymentOrder: item['insertion_order'] as int? ?? 0,
+              enabled: condition,
+              insertionOrder: item['insertion_order'] as int? ?? 0,
             );
           }).toList();
         }
       }
     } catch (e) {
-      // 에러 무시
+      // Ignore parse errors
     }
 
     return [];
+  }
+
+  /// V3 assets에서 icon 타입의 이미지를 CoverImage로 변환합니다
+  /// [archiveFiles]는 CHARX에서 embeded:// URI 해석 시 사용
+  static Future<List<CoverImage>> parseAssets(
+    Map<String, dynamic> cardData,
+    int characterId, {
+    Map<String, Uint8List>? archiveFiles,
+  }) async {
+    try {
+      final data = cardData['data'] as Map<String, dynamic>;
+      final assets = data['assets'] as List?;
+      if (assets == null) return [];
+
+      final coverImages = <CoverImage>[];
+      int order = 0;
+
+      for (final asset in assets) {
+        if (asset is! Map<String, dynamic>) continue;
+
+        final type = asset['type'] as String?;
+        if (type != 'icon') continue;
+
+        final uri = asset['uri'] as String?;
+        if (uri == null || uri.isEmpty || uri == 'ccdefault:') continue;
+
+        Uint8List? imageBytes;
+
+        if (uri.startsWith('data:')) {
+          // Base64 data URL
+          final commaIndex = uri.indexOf(',');
+          if (commaIndex != -1) {
+            imageBytes = base64.decode(uri.substring(commaIndex + 1));
+          }
+        } else if (uri.startsWith('embeded://') && archiveFiles != null) {
+          // CHARX embedded asset
+          final path = uri.substring('embeded://'.length);
+          imageBytes = archiveFiles[path];
+        }
+
+        if (imageBytes != null) {
+          try {
+            final processed = await ImageProcessor.processToWebp512FromBytes(imageBytes);
+            coverImages.add(CoverImage(
+              characterId: characterId,
+              name: '표지 ${order + 1}',
+              order: order++,
+              imageData: processed,
+            ));
+          } catch (_) {
+            // Skip failed image processing
+          }
+        }
+      }
+
+      return coverImages;
+    } catch (e) {
+      return [];
+    }
   }
 
   /// Character를 Character Card V2 형식으로 변환합니다
@@ -196,38 +314,67 @@ class CharacterCardParser {
     required Character character,
     List<Persona>? personas,
     List<StartScenario>? startScenarios,
-    List<Lorebook>? lorebooks,
+    List<CharacterBook>? characterBooks,
   }) {
-    final persona = personas?.isNotEmpty == true ? personas!.first : null;
-    final scenario = startScenarios?.isNotEmpty == true ? startScenarios!.first : null;
+    final sortedScenarios = startScenarios != null
+        ? (List<StartScenario>.from(startScenarios)..sort((a, b) => a.order.compareTo(b.order)))
+        : <StartScenario>[];
+
+    String firstMessage = '';
+    if (sortedScenarios.isNotEmpty) {
+      final first = sortedScenarios.first;
+      final setting = first.startSetting?.trim() ?? '';
+      final message = first.startMessage?.trim() ?? '';
+      if (setting.isNotEmpty && message.isNotEmpty) {
+        firstMessage = '$setting\n\n$message';
+      } else if (setting.isNotEmpty) {
+        firstMessage = setting;
+      } else {
+        firstMessage = message;
+      }
+    }
+
+    final alternateGreetings = sortedScenarios.length > 1
+        ? sortedScenarios.skip(1).map((s) {
+            final setting = s.startSetting?.trim() ?? '';
+            final message = s.startMessage?.trim() ?? '';
+            if (setting.isNotEmpty && message.isNotEmpty) {
+              return '$setting\n\n$message';
+            } else if (setting.isNotEmpty) {
+              return setting;
+            } else {
+              return message;
+            }
+          }).where((msg) => msg.isNotEmpty).toList()
+        : <String>[];
 
     return {
       'spec': 'chara_card_v2',
       'spec_version': '2.0',
       'data': {
         'name': character.name,
-        'description': character.summary ?? '',
-        'personality': persona?.content ?? '',
-        'scenario': scenario?.startSetting ?? character.worldSetting ?? '',
-        'first_mes': scenario?.startMessage ?? '',
+        'description': character.description ?? '',
+        'personality': '',
+        'scenario': '',
+        'first_mes': firstMessage,
         'mes_example': '',
-        'creator_notes': '',
+        'creator_notes': character.creatorNotes ?? '',
         'system_prompt': '',
         'post_history_instructions': '',
-        'alternate_greetings': [],
-        'character_book': lorebooks != null && lorebooks.isNotEmpty
+        'alternate_greetings': alternateGreetings,
+        'character_book': characterBooks != null && characterBooks.isNotEmpty
             ? {
-                'entries': lorebooks.map((l) => {
-                  'keys': l.activationKeys,
-                  'content': l.content ?? '',
+                'entries': characterBooks.map((cb) => {
+                  'keys': cb.keys,
+                  'content': cb.content ?? '',
                   'extensions': {},
-                  'enabled': l.activationCondition != LorebookActivationCondition.disabled,
-                  'insertion_order': l.deploymentOrder,
-                  'name': l.name,
+                  'enabled': cb.enabled != CharacterBookActivationCondition.disabled,
+                  'insertion_order': cb.insertionOrder,
+                  'name': cb.name,
                 }).toList(),
               }
             : null,
-        'tags': character.keywords?.split(',').map((t) => t.trim()).toList() ?? [],
+        'tags': character.tags,
         'creator': '',
         'character_version': '',
         'extensions': {},
@@ -235,23 +382,97 @@ class CharacterCardParser {
     };
   }
 
+  /// Character를 Character Card V3 형식으로 변환합니다
+  static Map<String, dynamic> toCharacterCardV3({
+    required Character character,
+    List<Persona>? personas,
+    List<StartScenario>? startScenarios,
+    List<CharacterBook>? characterBooks,
+  }) {
+    final v2 = toCharacterCardV2(
+      character: character,
+      personas: personas,
+      startScenarios: startScenarios,
+      characterBooks: characterBooks,
+    );
+
+    final data = v2['data'] as Map<String, dynamic>;
+
+    // V3 필드 추가
+    data['nickname'] = character.nickname ?? '';
+    data['group_only_greetings'] = <String>[];
+    data['creation_date'] = (character.createdAt.millisecondsSinceEpoch ~/ 1000);
+    data['modification_date'] = (character.updatedAt.millisecondsSinceEpoch ~/ 1000);
+
+    // character_book entries에 V3 필드 추가
+    if (data['character_book'] != null) {
+      final entries = (data['character_book'] as Map<String, dynamic>)['entries'] as List;
+      for (final entry in entries) {
+        final e = entry as Map<String, dynamic>;
+        e['use_regex'] = false;
+        e['constant'] = false;
+      }
+    }
+
+    return {
+      'spec': 'chara_card_v3',
+      'spec_version': '3.0',
+      'data': data,
+    };
+  }
+
   /// PNG 이미지에 Character Card 메타데이터를 임베드합니다
+  /// V3 형식일 경우 ccv3와 chara 두 청크를 모두 삽입합니다
   static Uint8List? embedMetadataInPng(
       Uint8List pngBytes, Map<String, dynamic> metadata) {
     try {
-      // JSON을 base64로 인코딩
       final jsonString = json.encode(metadata);
       final utf8Bytes = utf8.encode(jsonString);
       final base64Data = base64.encode(utf8Bytes);
 
-      // tEXt 청크 생성
-      final textChunk = _createTextChunk('chara', base64Data);
+      final spec = metadata['spec'] as String?;
+      Uint8List result = pngBytes;
 
-      // IEND 청크 앞에 tEXt 청크를 삽입
-      return _insertChunkBeforeIEND(pngBytes, textChunk);
+      if (spec == 'chara_card_v3') {
+        // V3: ccv3 청크 삽입
+        final ccv3Chunk = _createTextChunk('ccv3', base64Data);
+        result = _insertChunkBeforeIEND(result, ccv3Chunk);
+
+        // V2 호환용 chara 청크도 삽입
+        final v2Data = _convertV3ToV2Data(metadata);
+        final v2JsonString = json.encode(v2Data);
+        final v2Base64 = base64.encode(utf8.encode(v2JsonString));
+        final charaChunk = _createTextChunk('chara', v2Base64);
+        result = _insertChunkBeforeIEND(result, charaChunk);
+      } else {
+        // V2: chara 청크만 삽입
+        final textChunk = _createTextChunk('chara', base64Data);
+        result = _insertChunkBeforeIEND(result, textChunk);
+      }
+
+      return result;
     } catch (e) {
       return null;
     }
+  }
+
+  /// V3 메타데이터를 V2 호환 형식으로 변환합니다
+  static Map<String, dynamic> _convertV3ToV2Data(Map<String, dynamic> v3Data) {
+    final data = Map<String, dynamic>.from(v3Data['data'] as Map<String, dynamic>);
+    // V3 전용 필드 제거
+    data.remove('nickname');
+    data.remove('group_only_greetings');
+    data.remove('creation_date');
+    data.remove('modification_date');
+    data.remove('assets');
+    data.remove('source');
+    data.remove('creator_notes_multilingual');
+
+    return {
+      'spec': 'chara_card_v2',
+      'spec_version': '2.0',
+      'data': data,
+    };
   }
 
   /// tEXt 청크를 생성합니다
@@ -259,12 +480,10 @@ class CharacterCardParser {
     final keywordBytes = utf8.encode(keyword);
     final textBytes = utf8.encode(text);
 
-    // 길이 = 키워드 + null 종료자 + 텍스트
     final length = keywordBytes.length + 1 + textBytes.length;
 
     final chunk = BytesBuilder();
 
-    // 길이 (4 바이트, big-endian)
     chunk.add([
       (length >> 24) & 0xFF,
       (length >> 16) & 0xFF,
@@ -272,15 +491,12 @@ class CharacterCardParser {
       length & 0xFF,
     ]);
 
-    // 타입 (4 바이트)
     chunk.add(utf8.encode('tEXt'));
 
-    // 데이터 (키워드 + null + 텍스트)
     chunk.add(keywordBytes);
-    chunk.addByte(0); // null 종료자
+    chunk.addByte(0);
     chunk.add(textBytes);
 
-    // CRC 계산 (타입 + 데이터)
     final crcData = BytesBuilder();
     crcData.add(utf8.encode('tEXt'));
     crcData.add(keywordBytes);
@@ -288,7 +504,6 @@ class CharacterCardParser {
     crcData.add(textBytes);
     final crc = _calculateCrc32(crcData.toBytes());
 
-    // CRC (4 바이트, big-endian)
     chunk.add([
       (crc >> 24) & 0xFF,
       (crc >> 16) & 0xFF,
@@ -301,9 +516,8 @@ class CharacterCardParser {
 
   /// IEND 청크 앞에 새 청크를 삽입합니다
   static Uint8List _insertChunkBeforeIEND(Uint8List pngBytes, Uint8List newChunk) {
-    // IEND 청크 찾기
     int iendOffset = -1;
-    int offset = 8; // PNG 시그니처 건너뛰기
+    int offset = 8;
 
     while (offset < pngBytes.length) {
       if (offset + 4 > pngBytes.length) break;
@@ -320,12 +534,11 @@ class CharacterCardParser {
         break;
       }
 
-      offset += 12 + length; // 길이(4) + 타입(4) + 데이터(length) + CRC(4)
+      offset += 12 + length;
     }
 
     if (iendOffset == -1) return pngBytes;
 
-    // IEND 앞에 새 청크 삽입
     final result = BytesBuilder();
     result.add(pngBytes.sublist(0, iendOffset));
     result.add(newChunk);

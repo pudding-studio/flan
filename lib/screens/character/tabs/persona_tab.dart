@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import '../../../constants/ui_constants.dart';
 import '../../../models/character/persona.dart';
 import '../../../utils/common_dialog.dart';
-import '../../../widgets/editable_expandable_item.dart';
-import '../../../widgets/label_with_help.dart';
+import '../../../widgets/common/common_button.dart';
+import '../../../widgets/common/common_editable_expandable_item.dart';
+import '../../../widgets/common/common_edit_text.dart';
+import '../../../widgets/common/common_title_medium.dart';
 
 class PersonaTab extends StatefulWidget {
   final List<Persona> personas;
@@ -21,9 +23,6 @@ class PersonaTab extends StatefulWidget {
 }
 
 class _PersonaTabState extends State<PersonaTab> {
-  static const double _lorebookItemHorizontalPadding = 10.0;
-  static const double _lorebookItemVerticalPadding = 10.0;
-
   final Map<String, TextEditingController> _fieldControllers = {};
 
   int _nextTempId = -1;
@@ -44,9 +43,11 @@ class _PersonaTabState extends State<PersonaTab> {
     return _fieldControllers[key]!;
   }
 
-  void _notifyUpdate() {
+  void _notifyUpdate({bool rebuildUI = true}) {
     widget.onUpdate();
-    setState(() {});
+    if (rebuildUI) {
+      setState(() {});
+    }
   }
 
   void _addPersona() {
@@ -87,8 +88,8 @@ class _PersonaTabState extends State<PersonaTab> {
         children: [
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 5),
-            child: LabelWithHelp(
-              label: '페르소나',
+            child: CommonTitleMedium(
+              text: '페르소나',
               helpMessage: '캐릭터의 페르소나 정보를 추가할 수 있습니다.',
             ),
           ),
@@ -108,13 +109,10 @@ class _PersonaTabState extends State<PersonaTab> {
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
-            child: FilledButton.icon(
+            child: CommonButton.filled(
               onPressed: _addPersona,
-              icon: const Icon(Icons.add),
-              label: const Text('페르소나 추가'),
-              style: FilledButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 12),
-              ),
+              icon: Icons.add,
+              label: '페르소나 추가',
             ),
           ),
         ],
@@ -123,7 +121,7 @@ class _PersonaTabState extends State<PersonaTab> {
   }
 
   Widget _buildPersonaItem(Persona persona) {
-    return EditableExpandableItem(
+    return CommonEditableExpandableItem(
       key: ValueKey(persona.id),
       icon: Icon(
         Icons.person_outline,
@@ -133,6 +131,9 @@ class _PersonaTabState extends State<PersonaTab> {
       name: persona.name,
       isExpanded: persona.isExpanded,
       onToggleExpanded: () {
+        if (persona.isExpanded) {
+          FocusScope.of(context).unfocus();
+        }
         setState(() {
           persona.isExpanded = !persona.isExpanded;
         });
@@ -161,25 +162,15 @@ class _PersonaTabState extends State<PersonaTab> {
               ),
         ),
         const SizedBox(height: 2),
-        TextField(
+        CommonEditText(
           controller: controller,
-          decoration: InputDecoration(
-            hintText: '페르소나 내용을 입력해주세요',
-            hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(8),
-            ),
-            contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-            isDense: true,
-          ),
-          style: Theme.of(context).textTheme.bodySmall,
+          hintText: '페르소나 내용을 입력해주세요',
+          size: CommonEditTextSize.small,
           maxLines: null,
           minLines: 5,
-          onChanged: (value) {
+          onFocusLost: (value) {
             persona.content = value;
-            _notifyUpdate();
+            _notifyUpdate(rebuildUI: false);
           },
         ),
       ],

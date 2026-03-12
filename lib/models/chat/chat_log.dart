@@ -6,6 +6,7 @@ class ChatLog {
   final String response;
   final int? chatRoomId;
   final int? characterId;
+  final String? modelName;
 
   const ChatLog({
     this.id,
@@ -15,6 +16,7 @@ class ChatLog {
     required this.response,
     this.chatRoomId,
     this.characterId,
+    this.modelName,
   });
 
   Map<String, dynamic> toMap() {
@@ -26,6 +28,7 @@ class ChatLog {
       'response': response,
       'chat_room_id': chatRoomId,
       'character_id': characterId,
+      'model_name': modelName,
     };
   }
 
@@ -34,10 +37,11 @@ class ChatLog {
       id: map['id'] as int?,
       timestamp: DateTime.parse(map['timestamp'] as String),
       type: map['type'] as String,
-      request: map['request'] as String,
-      response: map['response'] as String,
+      request: (map['request'] as String?) ?? '',
+      response: (map['response'] as String?) ?? '',
       chatRoomId: map['chat_room_id'] as int?,
       characterId: map['character_id'] as int?,
+      modelName: map['model_name'] as String?,
     );
   }
 
@@ -49,6 +53,7 @@ class ChatLog {
     String? response,
     int? chatRoomId,
     int? characterId,
+    String? modelName,
   }) {
     return ChatLog(
       id: id ?? this.id,
@@ -58,6 +63,7 @@ class ChatLog {
       response: response ?? this.response,
       chatRoomId: chatRoomId ?? this.chatRoomId,
       characterId: characterId ?? this.characterId,
+      modelName: modelName ?? this.modelName,
     );
   }
 }

@@ -7,19 +7,23 @@ import 'package:reorderable_grid_view/reorderable_grid_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:archive/archive.dart';
+import '../../widgets/common/common_fab.dart';
 import '../../providers/theme_provider.dart';
 import '../../database/database_helper.dart';
 import '../../models/character/character.dart';
 import '../../models/character/persona.dart';
 import '../../models/character/start_scenario.dart';
-import '../../models/character/lorebook_folder.dart';
+import '../../models/character/character_book_folder.dart';
 import '../../models/character/cover_image.dart';
 import '../../utils/common_dialog.dart';
 import '../../utils/character_card_parser.dart';
+import '../../utils/image_processor.dart';
 import 'character_edit_screen.dart';
 import 'character_view_screen.dart';
-import 'widgets/character_card.dart';
-import 'widgets/character_list_item.dart';
+import '../../widgets/character/character_card.dart';
+import '../../widgets/character/character_list_item.dart';
+import '../../widgets/common/common_appbar.dart';
 
 class CharacterScreen extends StatefulWidget {
   const CharacterScreen({super.key});
@@ -44,7 +48,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
   SortMethod _sortMethod = SortMethod.createdAtDesc;
   List<Character> _characters = [];
   bool _isLoading = true;
-  Map<int, String?> _characterCoverImages = {};
+  Map<int, Uint8List?> _characterCoverImages = {};
   bool _isEditMode = false;
   final Set<int> _selectedCharacterIds = {};
 
@@ -83,7 +87,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
       final characters = await _db.readAllCharacters();
 
       // 각 캐릭터의 표지 이미지 로드
-      final coverImages = <int, String?>{};
+      final coverImages = <int, Uint8List?>{};
       for (var character in characters) {
         final images = await _db.readCoverImages(character.id!);
         if (images.isNotEmpty) {
@@ -96,7 +100,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
           } else {
             selectedImage = images.first;
           }
-          coverImages[character.id!] = selectedImage.imagePath;
+          coverImages[character.id!] = selectedImage.imageData;
         }
       }
 
@@ -232,6 +236,76 @@ class _CharacterScreenState extends State<CharacterScreen> {
     }
   }
 
+  Future<void> _duplicateCharacter(int characterId) async {
+    try {
+      final character = await _db.readCharacter(characterId);
+      if (character == null) throw Exception('캐릭터를 찾을 수 없습니다');
+
+      final personas = await _db.readPersonas(characterId);
+      final startScenarios = await _db.readStartScenarios(characterId);
+      final characterBookFolders = await _db.readCharacterBookFolders(characterId);
+      final standaloneCharacterBooks = await _db.readCharacterBooks(characterId);
+      final coverImages = await _db.readCoverImages(characterId);
+
+      for (final folder in characterBookFolders) {
+        folder.characterBooks.addAll(await _db.readCharacterBooksByFolder(folder.id!));
+      }
+
+      final newCharacterId = await _db.createCharacter(
+        Character(
+          name: '${character.name} (복사본)',
+          nickname: character.nickname,
+          creatorNotes: character.creatorNotes,
+          tags: List<String>.from(character.tags),
+          description: character.description,
+          isDraft: character.isDraft,
+        ),
+      );
+
+      for (final persona in personas) {
+        await _db.createPersona(persona.copyWith(id: null, characterId: newCharacterId));
+      }
+
+      for (final scenario in startScenarios) {
+        await _db.createStartScenario(scenario.copyWith(id: null, characterId: newCharacterId));
+      }
+
+      for (final folder in characterBookFolders) {
+        final newFolderId = await _db.createCharacterBookFolder(
+          folder.copyWith(id: null, characterId: newCharacterId),
+        );
+        for (final book in folder.characterBooks) {
+          await _db.createCharacterBook(
+            book.copyWith(id: null, characterId: newCharacterId, folderId: newFolderId),
+          );
+        }
+      }
+
+      for (final book in standaloneCharacterBooks) {
+        await _db.createCharacterBook(book.copyWith(id: null, characterId: newCharacterId));
+      }
+
+      for (final image in coverImages) {
+        await _db.createCoverImage(image.copyWith(id: null, characterId: newCharacterId));
+      }
+
+      await _loadCharacters();
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '캐릭터가 복사되었습니다',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '캐릭터 복사에 실패했습니다: $e',
+        );
+      }
+    }
+  }
+
   Future<void> _deleteCharacter(int id) async {
     final confirm = await CommonDialog.showConfirmation(
       context: context,
@@ -272,21 +346,21 @@ class _CharacterScreenState extends State<CharacterScreen> {
 
       final personas = await _db.readPersonas(characterId);
       final startScenarios = await _db.readStartScenarios(characterId);
-      final lorebookFolders = await _db.readLorebookFolders(characterId);
-      final standaloneLorebooks = await _db.readLorebooks(characterId);
+      final characterBookFolders = await _db.readCharacterBookFolders(characterId);
+      final standaloneCharacterBooks = await _db.readCharacterBooks(characterId);
       final coverImages = await _db.readCoverImages(characterId);
 
-      // 각 폴더의 로어북 로드
-      for (final folder in lorebookFolders) {
-        folder.lorebooks.addAll(await _db.readLorebooksByFolder(folder.id!));
+      // 각 폴더의 캐릭터북 로드
+      for (final folder in characterBookFolders) {
+        folder.characterBooks.addAll(await _db.readCharacterBooksByFolder(folder.id!));
       }
 
       // JSON 생성
       final jsonData = character.toJson(
         personas: personas,
         startScenarios: startScenarios,
-        lorebookFolders: lorebookFolders,
-        standaloneLorebooks: standaloneLorebooks,
+        characterBookFolders: characterBookFolders,
+        standaloneCharacterBooks: standaloneCharacterBooks,
         coverImages: coverImages,
       );
 
@@ -295,7 +369,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
 
       // 파일 저장
       if (Platform.isAndroid) {
-        const platform = MethodChannel('com.example.flan/file_saver');
+        const platform = MethodChannel('com.flanapp.flan/file_saver');
         final result = await platform.invokeMethod('saveToDownloads', {
           'fileName': fileName,
           'content': jsonString,
@@ -339,7 +413,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
-        allowedExtensions: ['json', 'png'],
+        allowedExtensions: ['json', 'png', 'charx'],
       );
 
       if (result == null || result.files.isEmpty) return;
@@ -350,8 +424,8 @@ class _CharacterScreenState extends State<CharacterScreen> {
       Character? character;
       List<Persona>? personas;
       List<StartScenario>? startScenarios;
-      List<LorebookFolder>? lorebookFolders;
-      List<Lorebook>? standaloneLorebooks;
+      List<CharacterBookFolder>? characterBookFolders;
+      List<CharacterBook>? standaloneCharacterBooks;
       List<CoverImage>? coverImages;
 
       if (extension == 'json') {
@@ -360,6 +434,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
         final jsonData = json.decode(jsonString) as Map<String, dynamic>;
 
         final format = jsonData['format'] as String?;
+        final spec = jsonData['spec'] as String?;
 
         if (format == 'flan_v1') {
           // 자체 형식
@@ -371,20 +446,27 @@ class _CharacterScreenState extends State<CharacterScreen> {
           startScenarios = (jsonData['startScenarios'] as List?)
               ?.map((s) => StartScenario.fromJson(s as Map<String, dynamic>))
               .toList();
-          lorebookFolders = (jsonData['lorebookFolders'] as List?)
-              ?.map((f) => LorebookFolder.fromJson(f as Map<String, dynamic>))
+          // 하위 호환성: 이전 키명도 지원
+          characterBookFolders = (jsonData['characterBookFolders'] as List?)
+              ?.map((f) => CharacterBookFolder.fromJson(f as Map<String, dynamic>))
+              .toList() ?? (jsonData['lorebookFolders'] as List?)
+              ?.map((f) => CharacterBookFolder.fromJson(f as Map<String, dynamic>))
               .toList();
-          standaloneLorebooks = (jsonData['standaloneLorebooks'] as List?)
-              ?.map((l) => Lorebook.fromJson(l as Map<String, dynamic>))
+          standaloneCharacterBooks = (jsonData['standaloneCharacterBooks'] as List?)
+              ?.map((l) => CharacterBook.fromJson(l as Map<String, dynamic>))
+              .toList() ?? (jsonData['standaloneLorebooks'] as List?)
+              ?.map((l) => CharacterBook.fromJson(l as Map<String, dynamic>))
               .toList();
           coverImages = (jsonData['coverImages'] as List?)
               ?.map((c) => CoverImage.fromJson(c as Map<String, dynamic>))
               .toList();
-        } else if (format == 'chara_card_v2' || format == 'chara_card_v3') {
+        } else if (spec == 'chara_card_v2' || spec == 'chara_card_v3') {
           // Character Card V2/V3 JSON 형식
           character = CharacterCardParser.parseCharacterCard(jsonData);
+          startScenarios = CharacterCardParser.parseStartScenarios(jsonData, 0);
+          standaloneCharacterBooks = CharacterCardParser.parseCharacterBooks(jsonData, 0);
         } else {
-          throw FormatException('지원하지 않는 형식입니다: $format');
+          throw FormatException('지원하지 않는 형식입니다: ${format ?? spec}');
         }
       } else if (extension == 'png') {
         // PNG 파일에서 메타데이터 추출
@@ -396,12 +478,62 @@ class _CharacterScreenState extends State<CharacterScreen> {
         }
 
         character = CharacterCardParser.parseCharacterCard(metadata);
+        startScenarios = CharacterCardParser.parseStartScenarios(metadata, 0);
+        standaloneCharacterBooks = CharacterCardParser.parseCharacterBooks(metadata, 0);
+
+        // V3 assets에서 icon 추출 시도
+        final assetCovers = await CharacterCardParser.parseAssets(metadata, 0);
+        if (assetCovers.isNotEmpty) {
+          coverImages = assetCovers;
+        } else {
+          // PNG 이미지 자체를 표지 이미지로 변환
+          try {
+            final imageData = await ImageProcessor.processToWebp512FromBytes(pngBytes);
+            coverImages = [
+              CoverImage(
+                characterId: 0,
+                name: '표지 1',
+                order: 0,
+                imageData: imageData,
+              ),
+            ];
+          } catch (_) {
+            // Image processing failure is non-critical
+          }
+        }
+      } else if (extension == 'charx') {
+        // CHARX (ZIP archive) 파일 처리
+        final archiveBytes = await file.readAsBytes();
+        final archive = ZipDecoder().decodeBytes(archiveBytes);
+
+        // card.json 찾기
+        final cardJsonFile = archive.findFile('card.json');
+        if (cardJsonFile == null) {
+          throw FormatException('CHARX 파일에서 card.json을 찾을 수 없습니다');
+        }
+
+        final jsonString = utf8.decode(cardJsonFile.content as List<int>);
+        final jsonData = json.decode(jsonString) as Map<String, dynamic>;
+
+        character = CharacterCardParser.parseCharacterCard(jsonData);
+        startScenarios = CharacterCardParser.parseStartScenarios(jsonData, 0);
+        standaloneCharacterBooks = CharacterCardParser.parseCharacterBooks(jsonData, 0);
+
+        // 아카이브 파일 맵 구성 (embeded:// URI 해석용)
+        final archiveFiles = <String, Uint8List>{};
+        for (final file in archive) {
+          if (!file.isFile) continue;
+          archiveFiles[file.name] = Uint8List.fromList(file.content as List<int>);
+        }
+
+        // V3 assets에서 이미지 추출
+        coverImages = await CharacterCardParser.parseAssets(
+          jsonData,
+          0,
+          archiveFiles: archiveFiles,
+        );
       } else {
         throw FormatException('지원하지 않는 파일 형식입니다');
-      }
-
-      if (character == null) {
-        throw Exception('캐릭터 데이터를 파싱할 수 없습니다');
       }
 
       // DB에 저장
@@ -421,23 +553,23 @@ class _CharacterScreenState extends State<CharacterScreen> {
         }
       }
 
-      if (lorebookFolders != null) {
-        for (final folder in lorebookFolders) {
-          final folderId = await _db.createLorebookFolder(
+      if (characterBookFolders != null) {
+        for (final folder in characterBookFolders) {
+          final folderId = await _db.createCharacterBookFolder(
               folder.copyWith(characterId: characterId));
 
-          // 폴더 내 로어북 저장
-          for (final lorebook in folder.lorebooks) {
-            await _db.createLorebook(
-                lorebook.copyWith(characterId: characterId, folderId: folderId));
+          // 폴더 내 캐릭터북 저장
+          for (final characterBook in folder.characterBooks) {
+            await _db.createCharacterBook(
+                characterBook.copyWith(characterId: characterId, folderId: folderId));
           }
         }
       }
 
-      if (standaloneLorebooks != null) {
-        for (final lorebook in standaloneLorebooks) {
-          await _db.createLorebook(
-              lorebook.copyWith(characterId: characterId));
+      if (standaloneCharacterBooks != null) {
+        for (final characterBook in standaloneCharacterBooks) {
+          await _db.createCharacterBook(
+              characterBook.copyWith(characterId: characterId));
         }
       }
 
@@ -487,56 +619,35 @@ class _CharacterScreenState extends State<CharacterScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
+      appBar: CommonAppBar(
         title: _isEditMode
-          ? Text('${_selectedCharacterIds.length}개 선택됨')
-          : const Text('캐릭터'),
-        leading: _isEditMode
-          ? IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: _toggleEditMode,
-            )
-          : null,
+          ? '${_selectedCharacterIds.length}개 선택됨'
+          : '캐릭터',
+        showBackButton: false,
+        showCloseButton: _isEditMode,
+        onClosePressed: _toggleEditMode,
         actions: [
           if (!_isEditMode)
-            Transform.translate(
-              offset: const Offset(8, 0),
-              child: IconButton(
-                icon: const Icon(Icons.edit_outlined),
-                onPressed: _toggleEditMode,
-                tooltip: '편집',
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                constraints: const BoxConstraints(),
-              ),
+            CommonAppBarIconButton(
+              icon: Icons.edit_outlined,
+              onPressed: _toggleEditMode,
+              tooltip: '편집',
             ),
           if (_isEditMode)
-            Transform.translate(
-              offset: const Offset(8, 0),
-              child: IconButton(
-                icon: const Icon(Icons.delete_outline),
-                onPressed: _selectedCharacterIds.isEmpty ? null : _deleteSelectedCharacters,
-                tooltip: '삭제',
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                constraints: const BoxConstraints(),
-              ),
+            CommonAppBarIconButton(
+              icon: Icons.delete_outline,
+              onPressed: _selectedCharacterIds.isEmpty ? null : _deleteSelectedCharacters,
+              tooltip: '삭제',
             ),
           if (!_isEditMode)
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert),
-            tooltip: '더보기',
-            padding: EdgeInsets.zero,
-            constraints: const BoxConstraints(),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            onSelected: (value) {
-              if (value == 'import') {
-                _importCharacter();
-              }
-            },
-            itemBuilder: (BuildContext context) {
+            CommonAppBarPopupMenuButton<String>(
+              tooltip: '더보기',
+              onSelected: (value) {
+                if (value == 'import') {
+                  _importCharacter();
+                }
+              },
+              itemBuilder: (BuildContext context) {
               return [
                 const PopupMenuItem<String>(
                   value: 'import',
@@ -689,9 +800,8 @@ class _CharacterScreenState extends State<CharacterScreen> {
                   ),
                 ),
               ];
-            },
-          ),
-          const SizedBox(width: 16),
+              },
+            ),
         ],
       ),
       body: Column(
@@ -842,7 +952,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
           ),
         ],
       ),
-      floatingActionButton: _isEditMode ? null : FloatingActionButton(
+      floatingActionButton: _isEditMode ? null : CommonFab(
         onPressed: () async {
           final result = await Navigator.push<bool>(
             context,
@@ -854,8 +964,6 @@ class _CharacterScreenState extends State<CharacterScreen> {
             _loadCharacters();
           }
         },
-        elevation: 4,
-        child: const Icon(Icons.add),
       ),
     );
   }
@@ -913,9 +1021,9 @@ class _CharacterScreenState extends State<CharacterScreen> {
       return CharacterCard(
         key: ValueKey(_characters[index].id),
         title: _characters[index].name,
-        description: _characters[index].summary ?? '',
-        tags: _characters[index].keywords?.split(',').map((e) => e.trim()).toList() ?? [],
-        imageUrl: _characterCoverImages[_characters[index].id],
+        description: _characters[index].creatorNotes ?? '',
+        tags: _characters[index].tags,
+        imageData: _characterCoverImages[_characters[index].id],
         isEditMode: _isEditMode,
         isSelected: _selectedCharacterIds.contains(_characters[index].id),
         onTap: () async {
@@ -944,6 +1052,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
             _loadCharacters();
           }
         },
+        onCopy: () => _duplicateCharacter(_characters[index].id!),
         onExport: () => _exportCharacter(_characters[index].id!),
         onDelete: () => _deleteCharacter(_characters[index].id!),
       );
@@ -1018,9 +1127,9 @@ class _CharacterScreenState extends State<CharacterScreen> {
             
             child: CharacterListItem(
               title: _characters[index].name,
-              description: _characters[index].summary ?? '',
-              tags: _characters[index].keywords?.split(',').map((e) => e.trim()).toList() ?? [],
-              imageUrl: _characterCoverImages[_characters[index].id],
+              description: _characters[index].creatorNotes ?? '',
+              tags: _characters[index].tags,
+              imageData: _characterCoverImages[_characters[index].id],
               isEditMode: _isEditMode,
               isSelected: _selectedCharacterIds.contains(_characters[index].id),
               onTap: () async {
@@ -1066,9 +1175,9 @@ class _CharacterScreenState extends State<CharacterScreen> {
           padding: const EdgeInsets.only(bottom: 16.0),
           child: CharacterListItem(
             title: _characters[index].name,
-            description: _characters[index].summary ?? '',
-            tags: _characters[index].keywords?.split(',').map((e) => e.trim()).toList() ?? [],
-            imageUrl: _characterCoverImages[_characters[index].id],
+            description: _characters[index].creatorNotes ?? '',
+            tags: _characters[index].tags,
+            imageData: _characterCoverImages[_characters[index].id],
             isEditMode: _isEditMode,
             isSelected: _selectedCharacterIds.contains(_characters[index].id),
             onTap: () async {

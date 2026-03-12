@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../widgets/common/common_appbar.dart';
 
 class LegalDocumentScreen extends StatelessWidget {
   final String title;
@@ -23,8 +24,8 @@ class LegalDocumentScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
+      appBar: CommonAppBar(
+        title: title,
       ),
       body: ListView(
         children: [

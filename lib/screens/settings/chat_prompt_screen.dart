@@ -7,7 +7,11 @@ import 'package:path_provider/path_provider.dart';
 import '../../database/database_helper.dart';
 import '../../models/prompt/chat_prompt.dart';
 import '../../utils/common_dialog.dart';
-import 'widgets/prompt_list_item.dart';
+import '../../services/default_seeder_service.dart';
+import '../../utils/silly_tavern_preset_converter.dart';
+import '../../widgets/common/common_appbar.dart';
+import '../../widgets/common/common_fab.dart';
+import '../../widgets/settings/settings_prompt_list_item.dart';
 import 'prompt_edit_screen.dart';
 
 class ChatPromptScreen extends StatefulWidget {
@@ -98,21 +102,340 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
     }
   }
 
+  Future<void> _createNewPrompt() async {
+    final defaults = _prompts.where((p) => p.isDefault).toList();
+
+    if (defaults.isEmpty) {
+      _navigateToEdit(null);
+      return;
+    }
+
+    if (defaults.length == 1) {
+      await _forkPrompt(defaults.first);
+      return;
+    }
+
+    // Multiple defaults: show selection dialog
+    final selected = await showDialog<ChatPrompt?>(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('기본 프롬프트 선택'),
+        children: [
+          ...defaults.map((prompt) =>
+            SimpleDialogOption(
+              onPressed: () => Navigator.pop(context, prompt),
+              child: ListTile(
+                leading: Icon(
+                  Icons.description_outlined,
+                  color: Theme.of(context).colorScheme.primary,
+                ),
+                title: Text(prompt.name),
+                subtitle: prompt.description != null
+                    ? Text(
+                        prompt.description!,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      )
+                    : null,
+              ),
+            ),
+          ),
+          const Divider(),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(context),
+            child: const ListTile(
+              leading: Icon(Icons.add),
+              title: Text('빈 프롬프트'),
+            ),
+          ),
+        ],
+      ),
+    );
+
+    if (!mounted) return;
+
+    if (selected != null) {
+      await _forkPrompt(selected);
+    } else {
+      _navigateToEdit(null);
+    }
+  }
+
+  Future<void> _duplicatePrompt(ChatPrompt sourcePrompt) async {
+    try {
+      final folders = await _db.readPromptItemFolders(sourcePrompt.id!);
+      for (final folder in folders) {
+        folder.items.addAll(await _db.readPromptItemsByFolder(folder.id!));
+      }
+      final standaloneItems = await _db.readStandalonePromptItems(sourcePrompt.id!);
+
+      final duplicatedPrompt = ChatPrompt(
+        name: '${sourcePrompt.name} (복사본)',
+        description: sourcePrompt.description,
+        supportedModel: sourcePrompt.supportedModel,
+        parameters: sourcePrompt.parameters,
+      );
+      final newPromptId = await _db.createChatPrompt(duplicatedPrompt);
+
+      // Copy conditions first to build ID remap
+      final conditionIdMap = await _copyConditions(sourcePrompt.id!, newPromptId);
+
+      for (final folder in folders) {
+        final newFolderId = await _db.createPromptItemFolder(
+          folder.copyWith(id: null, chatPromptId: newPromptId),
+        );
+        for (int i = 0; i < folder.items.length; i++) {
+          final item = folder.items[i];
+          final remappedConditionId = item.conditionId != null
+              ? conditionIdMap[item.conditionId!]
+              : null;
+          await _db.createPromptItem(
+            item.copyWithNullableFolderId(
+              id: null,
+              chatPromptId: newPromptId,
+              folderId: newFolderId,
+              order: i,
+              enableMode: item.enableMode,
+              conditionId: remappedConditionId,
+              conditionValue: item.conditionValue,
+            ),
+          );
+        }
+      }
+      for (int i = 0; i < standaloneItems.length; i++) {
+        final item = standaloneItems[i];
+        final remappedConditionId = item.conditionId != null
+            ? conditionIdMap[item.conditionId!]
+            : null;
+        await _db.createPromptItem(
+          item.copyWithNullableFolderId(
+            id: null,
+            chatPromptId: newPromptId,
+            folderId: null,
+            order: i,
+            enableMode: item.enableMode,
+            conditionId: remappedConditionId,
+            conditionValue: item.conditionValue,
+          ),
+        );
+      }
+
+      final regexRules = await _db.readPromptRegexRules(sourcePrompt.id!);
+      for (int i = 0; i < regexRules.length; i++) {
+        await _db.createPromptRegexRule(
+          regexRules[i].copyWith(
+            id: null,
+            chatPromptId: newPromptId,
+            order: i,
+          ),
+        );
+      }
+
+      await _loadPrompts();
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '프롬프트가 복사되었습니다',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '프롬프트 복사에 실패했습니다: $e',
+        );
+      }
+    }
+  }
+
+  Future<void> _forkPrompt(ChatPrompt sourcePrompt) async {
+    try {
+      final folders = await _db.readPromptItemFolders(sourcePrompt.id!);
+      for (final folder in folders) {
+        folder.items.addAll(await _db.readPromptItemsByFolder(folder.id!));
+      }
+      final standaloneItems = await _db.readStandalonePromptItems(sourcePrompt.id!);
+
+      final forkedPrompt = ChatPrompt(
+        name: '',
+        description: '',
+        supportedModel: sourcePrompt.supportedModel,
+        parameters: sourcePrompt.parameters,
+      );
+      final newPromptId = await _db.createChatPrompt(forkedPrompt);
+
+      // Copy conditions first to build ID remap
+      final conditionIdMap = await _copyConditions(sourcePrompt.id!, newPromptId);
+
+      for (final folder in folders) {
+        final newFolderId = await _db.createPromptItemFolder(
+          folder.copyWith(id: null, chatPromptId: newPromptId),
+        );
+        for (int i = 0; i < folder.items.length; i++) {
+          final item = folder.items[i];
+          final remappedConditionId = item.conditionId != null
+              ? conditionIdMap[item.conditionId!]
+              : null;
+          await _db.createPromptItem(
+            item.copyWithNullableFolderId(
+              id: null,
+              chatPromptId: newPromptId,
+              folderId: newFolderId,
+              order: i,
+              enableMode: item.enableMode,
+              conditionId: remappedConditionId,
+              conditionValue: item.conditionValue,
+            ),
+          );
+        }
+      }
+      for (int i = 0; i < standaloneItems.length; i++) {
+        final item = standaloneItems[i];
+        final remappedConditionId = item.conditionId != null
+            ? conditionIdMap[item.conditionId!]
+            : null;
+        await _db.createPromptItem(
+          item.copyWithNullableFolderId(
+            id: null,
+            chatPromptId: newPromptId,
+            folderId: null,
+            order: i,
+            enableMode: item.enableMode,
+            conditionId: remappedConditionId,
+            conditionValue: item.conditionValue,
+          ),
+        );
+      }
+
+      // Fork regex rules
+      final regexRules = await _db.readPromptRegexRules(sourcePrompt.id!);
+      for (int i = 0; i < regexRules.length; i++) {
+        await _db.createPromptRegexRule(
+          regexRules[i].copyWith(
+            id: null,
+            chatPromptId: newPromptId,
+            order: i,
+          ),
+        );
+      }
+
+      final forkedWithId = await _db.readChatPrompt(newPromptId);
+      if (mounted && forkedWithId != null) {
+        _navigateToEdit(forkedWithId);
+      }
+    } catch (e) {
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '프롬프트 복사에 실패했습니다: $e',
+        );
+      }
+    }
+  }
+
+  Future<Map<int, int>> _copyConditions(int sourcePromptId, int newPromptId) async {
+    final conditions = await _db.readPromptConditions(sourcePromptId);
+    final conditionIdMap = <int, int>{};
+    for (int i = 0; i < conditions.length; i++) {
+      final oldId = conditions[i].id;
+      final options = await _db.readPromptConditionOptions(oldId!);
+      final newConditionId = await _db.createPromptCondition(
+        conditions[i].copyWith(id: null, chatPromptId: newPromptId, order: i),
+      );
+      conditionIdMap[oldId] = newConditionId;
+      for (int j = 0; j < options.length; j++) {
+        await _db.createPromptConditionOption(
+          options[j].copyWith(id: null, conditionId: newConditionId, order: j),
+        );
+      }
+    }
+
+    final presets = await _db.readPromptConditionPresets(sourcePromptId);
+    for (int i = 0; i < presets.length; i++) {
+      final newPresetId = await _db.createPromptConditionPreset(
+        presets[i].copyWith(id: null, chatPromptId: newPromptId, order: i),
+      );
+      final values = await _db.readPromptConditionPresetValues(presets[i].id!);
+      for (final value in values) {
+        final remappedConditionId = value.conditionId != null
+            ? conditionIdMap[value.conditionId!]
+            : null;
+        await _db.createPromptConditionPresetValue(
+          value.copyWith(
+            id: null,
+            presetId: newPresetId,
+            conditionId: remappedConditionId,
+          ),
+        );
+      }
+    }
+
+    return conditionIdMap;
+  }
+
+  Future<void> _resetDefaultPrompts() async {
+    final confirm = await CommonDialog.showConfirmation(
+      context: context,
+      title: '초기화',
+      content: '모든 기본 프롬프트를 초기 상태로 되돌리시겠습니까?',
+      confirmText: '초기화',
+      isDestructive: true,
+    );
+    if (confirm != true) return;
+
+    try {
+      await DefaultSeederService().seedDefaultChatPrompts();
+
+      await _loadPrompts();
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '기본 프롬프트가 초기화되었습니다',
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '기본 프롬프트 초기화에 실패했습니다: $e',
+        );
+      }
+    }
+  }
+
   Future<void> _exportPrompt(ChatPrompt prompt) async {
     try {
-      final promptWithItems = ChatPrompt(
-        name: prompt.name,
-        description: prompt.description,
-        supportedModel: prompt.supportedModel,
-        parameters: prompt.parameters,
-        items: await _db.readPromptItemsByChatPrompt(prompt.id!),
-      );
+      final folders = await _db.readPromptItemFolders(prompt.id!);
+      for (final folder in folders) {
+        folder.items.addAll(await _db.readPromptItemsByFolder(folder.id!));
+      }
+      final standaloneItems = await _db.readStandalonePromptItems(prompt.id!);
+      final regexRules = await _db.readPromptRegexRules(prompt.id!);
 
-      final jsonString = const JsonEncoder.withIndent('  ').convert(promptWithItems.toJson());
+      final conditions = await _db.readPromptConditions(prompt.id!);
+      for (final condition in conditions) {
+        final options = await _db.readPromptConditionOptions(condition.id!);
+        condition.options.addAll(options);
+      }
+      final conditionPresets = await _db.readPromptConditionPresets(prompt.id!);
+      for (final preset in conditionPresets) {
+        final values = await _db.readPromptConditionPresetValues(preset.id!);
+        preset.values.addAll(values);
+      }
+
+      final jsonString = const JsonEncoder.withIndent('  ').convert(
+        prompt.toJson(
+          folders: folders,
+          standaloneItems: standaloneItems,
+          regexRules: regexRules,
+          conditions: conditions,
+          conditionPresets: conditionPresets,
+        ),
+      );
       final fileName = '${prompt.name}.json';
 
       if (Platform.isAndroid) {
-        const platform = MethodChannel('com.example.flan/file_saver');
+        const platform = MethodChannel('com.flanapp.flan/file_saver');
         final result = await platform.invokeMethod('saveToDownloads', {
           'fileName': fileName,
           'content': jsonString,
@@ -162,19 +485,19 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
       final jsonString = await file.readAsString();
       final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
 
-      final prompt = ChatPrompt.fromJson(jsonData);
-      final promptId = await _db.createChatPrompt(prompt);
-
-      for (int i = 0; i < prompt.items.length; i++) {
-        final item = prompt.items[i];
-        await _db.createPromptItem(
-          item.copyWith(
-            id: null,
-            chatPromptId: promptId,
-            order: i,
-          ),
+      final Map<String, dynamic> normalizedData;
+      if (SillyTavernPresetConverter.isSillyTavernPreset(jsonData)) {
+        final fileName = result.files.single.name.replaceAll('.json', '');
+        normalizedData = SillyTavernPresetConverter.convertToNativeFormat(
+          jsonData,
+          fileName: fileName,
         );
+      } else {
+        normalizedData = jsonData;
       }
+
+      final prompt = ChatPrompt.fromJson(normalizedData);
+      await _db.insertChatPromptFromJson(prompt, normalizedData);
 
       await _loadPrompts();
 
@@ -200,15 +523,16 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
     final horizontalPadding = screenWidth * 0.05;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('채팅 프롬프트'),
+      appBar: CommonAppBar(
+        title: '채팅 프롬프트',
         actions: [
-          PopupMenuButton<String>(
-            icon: const Icon(Icons.more_vert),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
-            ),
-            offset: const Offset(0, 50),
+          CommonAppBarPopupMenuButton<String>(
+            tooltip: '더보기',
+            onSelected: (value) {
+              if (value == 'import') {
+                _importPrompt();
+              }
+            },
             itemBuilder: (context) => [
               const PopupMenuItem<String>(
                 value: 'import',
@@ -221,11 +545,6 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
                 ),
               ),
             ],
-            onSelected: (value) {
-              if (value == 'import') {
-                _importPrompt();
-              }
-            },
           ),
         ],
       ),
@@ -282,26 +601,26 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
                     final prompt = _prompts[index];
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 16.0),
-                      child: PromptListItem(
+                      child: SettingsPromptListItem(
                         title: prompt.name,
                         description: prompt.description ?? '${prompt.items.length}개 항목',
                         isSelected: prompt.isSelected,
+                        isDefault: prompt.isDefault,
                         onRadioTap: () => _selectPrompt(prompt.id!),
-                        onTap: () => _navigateToEdit(prompt),
-                        onEdit: () => _navigateToEdit(prompt),
+                        onTap: prompt.isDefault ? null : () => _navigateToEdit(prompt),
+                        onEdit: prompt.isDefault ? null : () => _navigateToEdit(prompt),
+                        onCopy: () => _duplicatePrompt(prompt),
+                        onReset: prompt.isDefault ? () => _resetDefaultPrompts() : null,
                         onExport: () => _exportPrompt(prompt),
-                        onDelete: () => _deletePrompt(
-                          prompt.id!,
-                          prompt.name,
-                        ),
+                        onDelete: prompt.isDefault
+                            ? null
+                            : () => _deletePrompt(prompt.id!, prompt.name),
                       ),
                     );
                   },
                 ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: () => _navigateToEdit(null),
-        elevation: 0,
-        child: const Icon(Icons.add),
+      floatingActionButton: CommonFab(
+        onPressed: () => _createNewPrompt(),
       ),
     );
   }

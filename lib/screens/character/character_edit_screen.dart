@@ -1,19 +1,25 @@
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../constants/ui_constants.dart';
+import '../../providers/tokenizer_provider.dart';
+import '../../utils/token_counter.dart';
 import '../../database/database_helper.dart';
 import '../../models/character/character.dart';
 import '../../models/character/cover_image.dart';
-import '../../models/character/lorebook_folder.dart';
+import '../../models/character/character_book_folder.dart';
 import '../../models/character/persona.dart';
 import '../../models/character/start_scenario.dart';
 import '../../utils/common_dialog.dart';
-import '../../widgets/custom_text_field.dart';
+import '../../widgets/common/common_custom_text_field.dart';
+import '../../widgets/common/common_appbar.dart';
+import '../../widgets/common/common_edit_text.dart';
+import '../../widgets/common/common_title_medium.dart';
 import 'tabs/cover_image_tab.dart';
-import 'tabs/lorebook_tab.dart';
+import 'tabs/character_book_tab.dart';
 import 'tabs/persona_tab.dart';
 import 'tabs/start_scenario_tab.dart';
 
@@ -34,13 +40,14 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   late TabController _tabController;
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
-  final _summaryController = TextEditingController();
+  final _nicknameController = TextEditingController();
+  final _creatorNotesController = TextEditingController();
   final _keywordsController = TextEditingController();
-  final _worldSettingController = TextEditingController();
+  final _descriptionController = TextEditingController();
 
   // 로어북 관련 상태
-  final List<LorebookFolder> _folders = [];
-  final List<Lorebook> _standaloneLorebooks = [];
+  final List<CharacterBookFolder> _folders = [];
+  final List<CharacterBook> _standaloneCharacterBooks = [];
 
   // 페르소나 관련 상태
   final List<Persona> _personas = [];
@@ -59,12 +66,13 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
 
   // 원본 데이터 저장 (변경 감지용)
   String _originalName = '';
-  String _originalSummary = '';
+  String _originalNickname = '';
+  String _originalCreatorNotes = '';
   String _originalKeywords = '';
-  String _originalWorldSetting = '';
+  String _originalDescription = '';
   int? _originalSelectedCoverImageId;
-  List<LorebookFolder> _originalFolders = [];
-  List<Lorebook> _originalStandaloneLorebooks = [];
+  List<CharacterBookFolder> _originalFolders = [];
+  List<CharacterBook> _originalStandaloneCharacterBooks = [];
   List<Persona> _originalPersonas = [];
   List<StartScenario> _originalStartScenarios = [];
   List<CoverImage> _originalCoverImages = [];
@@ -87,9 +95,10 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
 
     // 텍스트 컨트롤러에 리스너 추가하여 자동 저장
     _nameController.addListener(_autoSave);
-    _summaryController.addListener(_autoSave);
+    _nicknameController.addListener(_autoSave);
+    _creatorNotesController.addListener(_autoSave);
     _keywordsController.addListener(_autoSave);
-    _worldSettingController.addListener(_autoSave);
+    _descriptionController.addListener(_autoSave);
   }
 
   Future<void> _loadCharacterData() async {
@@ -102,32 +111,34 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       final character = await _db.readCharacter(widget.characterId!);
       if (character != null) {
         _nameController.text = character.name;
-        _summaryController.text = character.summary ?? '';
-        _keywordsController.text = character.keywords ?? '';
-        _worldSettingController.text = character.worldSetting ?? '';
+        _nicknameController.text = character.nickname ?? '';
+        _creatorNotesController.text = character.creatorNotes ?? '';
+        _keywordsController.text = character.tags.join(', ');
+        _descriptionController.text = character.description ?? '';
         _selectedCoverImageId = character.selectedCoverImageId;
 
         // 원본 데이터 저장
         _originalName = character.name;
-        _originalSummary = character.summary ?? '';
-        _originalKeywords = character.keywords ?? '';
-        _originalWorldSetting = character.worldSetting ?? '';
+        _originalNickname = character.nickname ?? '';
+        _originalCreatorNotes = character.creatorNotes ?? '';
+        _originalKeywords = character.tags.join(', ');
+        _originalDescription = character.description ?? '';
         _originalSelectedCoverImageId = character.selectedCoverImageId;
       }
 
       // 로어북 폴더 및 로어북 로드
-      final folders = await _db.readLorebookFolders(widget.characterId!);
+      final folders = await _db.readCharacterBookFolders(widget.characterId!);
       for (var folder in folders) {
-        final lorebooks = await _db.readLorebooksByFolder(folder.id!);
-        folder.lorebooks.addAll(lorebooks);
+        final characterBooks = await _db.readCharacterBooksByFolder(folder.id!);
+        folder.characterBooks.addAll(characterBooks);
       }
       _folders.addAll(folders);
       _originalFolders = _folders.map((f) => _copyFolder(f)).toList();
 
       // 독립형 로어북 로드
-      final standaloneLorebooks = await _db.readStandaloneLorebooks(widget.characterId!);
-      _standaloneLorebooks.addAll(standaloneLorebooks);
-      _originalStandaloneLorebooks = standaloneLorebooks.map((lb) => _copyLorebook(lb)).toList();
+      final standaloneCharacterBooks = await _db.readStandaloneCharacterBooks(widget.characterId!);
+      _standaloneCharacterBooks.addAll(standaloneCharacterBooks);
+      _originalStandaloneCharacterBooks = standaloneCharacterBooks.map((lb) => _copyCharacterBook(lb)).toList();
 
       // 페르소나 로드
       final personas = await _db.readPersonas(widget.characterId!);
@@ -158,31 +169,32 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   }
 
   // 데이터 복사 헬퍼 메서드들
-  LorebookFolder _copyFolder(LorebookFolder folder) {
-    final copied = LorebookFolder(
+  CharacterBookFolder _copyFolder(CharacterBookFolder folder) {
+    final copied = CharacterBookFolder(
       id: folder.id,
       characterId: folder.characterId,
       name: folder.name,
       order: folder.order,
       isExpanded: folder.isExpanded,
     );
-    copied.lorebooks.addAll(folder.lorebooks.map((lb) => _copyLorebook(lb)));
+    copied.characterBooks.addAll(folder.characterBooks.map((lb) => _copyCharacterBook(lb)));
     return copied;
   }
 
-  Lorebook _copyLorebook(Lorebook lorebook) {
-    return Lorebook(
-      id: lorebook.id,
-      characterId: lorebook.characterId,
-      folderId: lorebook.folderId,
-      name: lorebook.name,
-      order: lorebook.order,
-      isExpanded: lorebook.isExpanded,
-      activationCondition: lorebook.activationCondition,
-      activationKeys: List<String>.from(lorebook.activationKeys),
-      keyCondition: lorebook.keyCondition,
-      deploymentOrder: lorebook.deploymentOrder,
-      content: lorebook.content,
+  CharacterBook _copyCharacterBook(CharacterBook characterBook) {
+    return CharacterBook(
+      id: characterBook.id,
+      characterId: characterBook.characterId,
+      folderId: characterBook.folderId,
+      name: characterBook.name,
+      order: characterBook.order,
+      isExpanded: characterBook.isExpanded,
+      enabled: characterBook.enabled,
+      keys: List<String>.from(characterBook.keys),
+      secondaryKeyUsage: characterBook.secondaryKeyUsage,
+      secondaryKeys: List<String>.from(characterBook.secondaryKeys),
+      insertionOrder: characterBook.insertionOrder,
+      content: characterBook.content,
     );
   }
 
@@ -216,7 +228,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       name: image.name,
       order: image.order,
       isExpanded: image.isExpanded,
-      imagePath: image.imagePath,
+      imageData: image.imageData,
     );
   }
 
@@ -224,9 +236,10 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   bool _hasChanges() {
     // 기본 정보 변경 확인
     if (_nameController.text != _originalName ||
-        _summaryController.text != _originalSummary ||
+        _nicknameController.text != _originalNickname ||
+        _creatorNotesController.text != _originalCreatorNotes ||
         _keywordsController.text != _originalKeywords ||
-        _worldSettingController.text != _originalWorldSetting ||
+        _descriptionController.text != _originalDescription ||
         _selectedCoverImageId != _originalSelectedCoverImageId) {
       return true;
     }
@@ -236,30 +249,30 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     for (int i = 0; i < _folders.length; i++) {
       if (_folders[i].name != _originalFolders[i].name ||
           _folders[i].isExpanded != _originalFolders[i].isExpanded ||
-          _folders[i].lorebooks.length != _originalFolders[i].lorebooks.length) {
+          _folders[i].characterBooks.length != _originalFolders[i].characterBooks.length) {
         return true;
       }
-      for (int j = 0; j < _folders[i].lorebooks.length; j++) {
-        final current = _folders[i].lorebooks[j];
-        final original = _originalFolders[i].lorebooks[j];
+      for (int j = 0; j < _folders[i].characterBooks.length; j++) {
+        final current = _folders[i].characterBooks[j];
+        final original = _originalFolders[i].characterBooks[j];
         if (current.name != original.name ||
             current.content != original.content ||
-            current.activationCondition != original.activationCondition ||
-            current.activationKeys.join(',') != original.activationKeys.join(',')) {
+            current.enabled != original.enabled ||
+            current.keys.join(',') != original.keys.join(',')) {
           return true;
         }
       }
     }
 
     // 독립형 로어북 변경 확인
-    if (_standaloneLorebooks.length != _originalStandaloneLorebooks.length) return true;
-    for (int i = 0; i < _standaloneLorebooks.length; i++) {
-      final current = _standaloneLorebooks[i];
-      final original = _originalStandaloneLorebooks[i];
+    if (_standaloneCharacterBooks.length != _originalStandaloneCharacterBooks.length) return true;
+    for (int i = 0; i < _standaloneCharacterBooks.length; i++) {
+      final current = _standaloneCharacterBooks[i];
+      final original = _originalStandaloneCharacterBooks[i];
       if (current.name != original.name ||
           current.content != original.content ||
-          current.activationCondition != original.activationCondition ||
-          current.activationKeys.join(',') != original.activationKeys.join(',')) {
+          current.enabled != original.enabled ||
+          current.keys.join(',') != original.keys.join(',')) {
         return true;
       }
     }
@@ -283,11 +296,11 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       }
     }
 
-    // 표지 이미지 변경 확인 (name과 imagePath 비교)
+    // 표지 이미지 변경 확인 (name과 imageData 비교)
     if (_coverImages.length != _originalCoverImages.length) return true;
     for (int i = 0; i < _coverImages.length; i++) {
       if (_coverImages[i].name != _originalCoverImages[i].name ||
-          _coverImages[i].imagePath != _originalCoverImages[i].imagePath) {
+          _coverImages[i].imageData != _originalCoverImages[i].imageData) {
         return true;
       }
     }
@@ -301,16 +314,16 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     if (_nameController.text.isEmpty) return false;
 
     // 기본 정보 확인
-    if (_summaryController.text.isNotEmpty ||
+    if (_creatorNotesController.text.isNotEmpty ||
         _keywordsController.text.isNotEmpty ||
-        _worldSettingController.text.isNotEmpty ||
+        _descriptionController.text.isNotEmpty ||
         _selectedCoverImageId != null) {
       return true;
     }
 
     // 하위 데이터 확인
     if (_folders.isNotEmpty ||
-        _standaloneLorebooks.isNotEmpty ||
+        _standaloneCharacterBooks.isNotEmpty ||
         _personas.isNotEmpty ||
         _startScenarios.isNotEmpty ||
         _coverImages.isNotEmpty) {
@@ -332,9 +345,10 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
 
     _tabController.dispose();
     _nameController.dispose();
-    _summaryController.dispose();
+    _nicknameController.dispose();
+    _creatorNotesController.dispose();
     _keywordsController.dispose();
-    _worldSettingController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -365,16 +379,17 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       final prefs = await SharedPreferences.getInstance();
       final data = {
         'name': _nameController.text,
-        'summary': _summaryController.text,
+        'nickname': _nicknameController.text,
+        'creatorNotes': _creatorNotesController.text,
         'keywords': _keywordsController.text,
-        'worldSetting': _worldSettingController.text,
+        'description': _descriptionController.text,
         'selectedCoverImageId': _selectedCoverImageId,
         'folders': _folders.map((f) {
           final folderMap = f.toMap();
-          folderMap['lorebooks'] = f.lorebooks.map((lb) => lb.toMap()).toList();
+          folderMap['characterBooks'] = f.characterBooks.map((lb) => lb.toMap()).toList();
           return folderMap;
         }).toList(),
-        'standaloneLorebooks': _standaloneLorebooks.map((lb) => lb.toMap()).toList(),
+        'standaloneCharacterBooks': _standaloneCharacterBooks.map((lb) => lb.toMap()).toList(),
         'personas': _personas.map((p) => p.toMap()).toList(),
         'startScenarios': _startScenarios.map((s) => s.toMap()).toList(),
         'coverImages': _coverImages.map((c) => c.toMap()).toList(),
@@ -418,19 +433,20 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       if (shouldRestore == true && mounted) {
         setState(() {
           _nameController.text = data['name'] as String? ?? '';
-          _summaryController.text = data['summary'] as String? ?? '';
+          _nicknameController.text = data['nickname'] as String? ?? '';
+          _creatorNotesController.text = data['creatorNotes'] as String? ?? '';
           _keywordsController.text = data['keywords'] as String? ?? '';
-          _worldSettingController.text = data['worldSetting'] as String? ?? '';
+          _descriptionController.text = data['description'] as String? ?? '';
           _selectedCoverImageId = data['selectedCoverImageId'] as int?;
 
           // 로어북 폴더 복원
           _folders.clear();
           if (data['folders'] != null) {
             for (var folderMap in data['folders'] as List) {
-              final folder = LorebookFolder.fromMap(folderMap as Map<String, dynamic>);
-              if (folderMap['lorebooks'] != null) {
-                for (var lbMap in folderMap['lorebooks'] as List) {
-                  folder.lorebooks.add(Lorebook.fromMap(lbMap as Map<String, dynamic>));
+              final folder = CharacterBookFolder.fromMap(folderMap as Map<String, dynamic>);
+              if (folderMap['characterBooks'] != null) {
+                for (var lbMap in folderMap['characterBooks'] as List) {
+                  folder.characterBooks.add(CharacterBook.fromMap(lbMap as Map<String, dynamic>));
                 }
               }
               _folders.add(folder);
@@ -438,10 +454,10 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           }
 
           // 독립형 로어북 복원
-          _standaloneLorebooks.clear();
-          if (data['standaloneLorebooks'] != null) {
-            for (var lbMap in data['standaloneLorebooks'] as List) {
-              _standaloneLorebooks.add(Lorebook.fromMap(lbMap as Map<String, dynamic>));
+          _standaloneCharacterBooks.clear();
+          if (data['standaloneCharacterBooks'] != null) {
+            for (var lbMap in data['standaloneCharacterBooks'] as List) {
+              _standaloneCharacterBooks.add(CharacterBook.fromMap(lbMap as Map<String, dynamic>));
             }
           }
 
@@ -473,12 +489,13 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         // 복원한 데이터를 원본으로 설정 (편집 모드인 경우)
         if (_isEditMode) {
           _originalName = _nameController.text;
-          _originalSummary = _summaryController.text;
+          _originalNickname = _nicknameController.text;
+          _originalCreatorNotes = _creatorNotesController.text;
           _originalKeywords = _keywordsController.text;
-          _originalWorldSetting = _worldSettingController.text;
+          _originalDescription = _descriptionController.text;
           _originalSelectedCoverImageId = _selectedCoverImageId;
           _originalFolders = _folders.map((f) => _copyFolder(f)).toList();
-          _originalStandaloneLorebooks = _standaloneLorebooks.map((lb) => _copyLorebook(lb)).toList();
+          _originalStandaloneCharacterBooks = _standaloneCharacterBooks.map((lb) => _copyCharacterBook(lb)).toList();
           _originalPersonas = _personas.map((p) => _copyPersona(p)).toList();
           _originalStartScenarios = _startScenarios.map((s) => _copyStartScenario(s)).toList();
           _originalCoverImages = _coverImages.map((c) => _copyCoverImage(c)).toList();
@@ -517,6 +534,10 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   }
 
   Future<void> _handleSave() async {
+    // 현재 포커스된 EditText의 값을 커밋하기 위해 포커스 해제
+    FocusScope.of(context).unfocus();
+    await Future.delayed(Duration.zero);
+
     // 이름만 필수로 체크
     if (_nameController.text.isEmpty) {
       CommonDialog.showSnackBar(
@@ -537,12 +558,17 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       if (_isEditMode) {
         // 기존 캐릭터 수정
         characterId = widget.characterId!;
+        final tags = _keywordsController.text.isEmpty
+            ? <String>[]
+            : _keywordsController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+
         final character = Character(
           id: characterId,
           name: _nameController.text,
-          summary: _summaryController.text.isEmpty ? null : _summaryController.text,
-          keywords: _keywordsController.text.isEmpty ? null : _keywordsController.text,
-          worldSetting: _worldSettingController.text.isEmpty ? null : _worldSettingController.text,
+          nickname: _nicknameController.text.isEmpty ? null : _nicknameController.text,
+          creatorNotes: _creatorNotesController.text.isEmpty ? null : _creatorNotesController.text,
+          tags: tags,
+          description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
           selectedCoverImageId: _selectedCoverImageId,
           updatedAt: DateTime.now(),
           isDraft: false,
@@ -550,11 +576,16 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         await _db.updateCharacter(character);
       } else {
         // 새 캐릭터 생성
+        final tags = _keywordsController.text.isEmpty
+            ? <String>[]
+            : _keywordsController.text.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
+
         final character = Character(
           name: _nameController.text,
-          summary: _summaryController.text.isEmpty ? null : _summaryController.text,
-          keywords: _keywordsController.text.isEmpty ? null : _keywordsController.text,
-          worldSetting: _worldSettingController.text.isEmpty ? null : _worldSettingController.text,
+          nickname: _nicknameController.text.isEmpty ? null : _nicknameController.text,
+          creatorNotes: _creatorNotesController.text.isEmpty ? null : _creatorNotesController.text,
+          tags: tags,
+          description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
           selectedCoverImageId: _selectedCoverImageId,
           isDraft: false,
         );
@@ -602,27 +633,27 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     // Edit 모드일 때: DB에 있지만 메모리에 없는 항목들 삭제
     if (_isEditMode) {
       // 로어북 폴더 삭제 처리
-      final existingFolders = await _db.readLorebookFolders(characterId);
+      final existingFolders = await _db.readCharacterBookFolders(characterId);
       final currentFolderIds = _folders
           .where((f) => f.id != null && f.id! > 0)
           .map((f) => f.id!)
           .toSet();
       for (var existingFolder in existingFolders) {
         if (!currentFolderIds.contains(existingFolder.id)) {
-          await _db.deleteLorebookFolder(existingFolder.id!);
+          await _db.deleteCharacterBookFolder(existingFolder.id!);
           debugPrint('폴더 삭제: ${existingFolder.id}');
         }
       }
 
       // 독립형 로어북 삭제 처리
-      final existingStandaloneLorebooks = await _db.readStandaloneLorebooks(characterId);
-      final currentStandaloneLbIds = _standaloneLorebooks
+      final existingStandaloneCharacterBooks = await _db.readStandaloneCharacterBooks(characterId);
+      final currentStandaloneLbIds = _standaloneCharacterBooks
           .where((lb) => lb.id != null && lb.id! > 0)
           .map((lb) => lb.id!)
           .toSet();
-      for (var existingLb in existingStandaloneLorebooks) {
+      for (var existingLb in existingStandaloneCharacterBooks) {
         if (!currentStandaloneLbIds.contains(existingLb.id)) {
-          await _db.deleteLorebook(existingLb.id!);
+          await _db.deleteCharacterBook(existingLb.id!);
           debugPrint('독립형 로어북 삭제: ${existingLb.id}');
         }
       }
@@ -679,7 +710,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       if (folder.id == null || folder.id! < 0) {
         debugPrint('분기: 새 폴더 생성 (id null or < 0)');
         // 새 폴더 생성
-        folderId = await _db.createLorebookFolder(folder.copyWith(
+        folderId = await _db.createCharacterBookFolder(folder.copyWith(
           id: null,
           characterId: characterId,
         ));
@@ -687,7 +718,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       } else if (!_isEditMode || folder.characterId != characterId) {
         debugPrint('분기: 새 캐릭터로 복사 (!_isEditMode || folder.characterId != characterId)');
         // 새 캐릭터로 복사하는 경우 새로 생성
-        folderId = await _db.createLorebookFolder(folder.copyWith(
+        folderId = await _db.createCharacterBookFolder(folder.copyWith(
           id: null,
           characterId: characterId,
         ));
@@ -695,7 +726,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       } else {
         debugPrint('분기: 기존 폴더 업데이트');
         // 기존 폴더 업데이트 (같은 캐릭터, 기존 ID)
-        await _db.updateLorebookFolder(folder.copyWith(
+        await _db.updateCharacterBookFolder(folder.copyWith(
           characterId: characterId,
         ));
         folderId = folder.id!;
@@ -704,36 +735,36 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
 
       // 폴더 내 로어북 삭제 처리 (Edit 모드이고 기존 폴더인 경우)
       if (_isEditMode && folder.id != null && folder.id! > 0) {
-        final existingLorebooks = await _db.readLorebooksByFolder(folderId);
-        final currentLbIds = folder.lorebooks
+        final existingCharacterBooks = await _db.readCharacterBooksByFolder(folderId);
+        final currentLbIds = folder.characterBooks
             .where((lb) => lb.id != null && lb.id! > 0)
             .map((lb) => lb.id!)
             .toSet();
-        for (var existingLb in existingLorebooks) {
+        for (var existingLb in existingCharacterBooks) {
           if (!currentLbIds.contains(existingLb.id)) {
-            await _db.deleteLorebook(existingLb.id!);
+            await _db.deleteCharacterBook(existingLb.id!);
             debugPrint('폴더 내 로어북 삭제: ${existingLb.id}');
           }
         }
       }
 
       // 폴더 내 로어북 저장
-      for (var lorebook in folder.lorebooks) {
-        if (lorebook.id == null || lorebook.id! < 0) {
-          await _db.createLorebook(lorebook.copyWith(
+      for (var characterBook in folder.characterBooks) {
+        if (characterBook.id == null || characterBook.id! < 0) {
+          await _db.createCharacterBook(characterBook.copyWith(
             id: null,
             characterId: characterId,
             folderId: folderId,
           ));
-        } else if (!_isEditMode || lorebook.characterId != characterId) {
+        } else if (!_isEditMode || characterBook.characterId != characterId) {
           // 새 캐릭터로 복사하는 경우 새로 생성
-          await _db.createLorebook(lorebook.copyWith(
+          await _db.createCharacterBook(characterBook.copyWith(
             id: null,
             characterId: characterId,
             folderId: folderId,
           ));
         } else {
-          await _db.updateLorebook(lorebook.copyWith(
+          await _db.updateCharacterBook(characterBook.copyWith(
             characterId: characterId,
             folderId: folderId,
           ));
@@ -742,21 +773,21 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     }
 
     // 독립형 로어북 저장
-    for (var lorebook in _standaloneLorebooks) {
-      if (lorebook.id == null || lorebook.id! < 0) {
-        await _db.createLorebook(lorebook.copyWith(
+    for (var characterBook in _standaloneCharacterBooks) {
+      if (characterBook.id == null || characterBook.id! < 0) {
+        await _db.createCharacterBook(characterBook.copyWith(
           id: null,
           characterId: characterId,
           folderId: null,
         ));
-      } else if (!_isEditMode || lorebook.characterId != characterId) {
-        await _db.createLorebook(lorebook.copyWith(
+      } else if (!_isEditMode || characterBook.characterId != characterId) {
+        await _db.createCharacterBook(characterBook.copyWith(
           id: null,
           characterId: characterId,
           folderId: null,
         ));
       } else {
-        await _db.updateLorebook(lorebook.copyWith(
+        await _db.updateCharacterBook(characterBook.copyWith(
           characterId: characterId,
         ));
       }
@@ -825,45 +856,14 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     return Stack(
       children: [
         Scaffold(
-          appBar: AppBar(
-        automaticallyImplyLeading: false,
-        titleSpacing: 0,
-        title: Row(
-          children: [
-            IconButton(
-              icon: const Icon(Icons.arrow_back),
-              onPressed: () => Navigator.pop(context),
-              padding: EdgeInsets.only(left: 16),
-              visualDensity: VisualDensity.compact,
-              constraints: const BoxConstraints(),
-            ),
-
-            const SizedBox(width: 4),
-            Expanded(
-              child: Text(
-                _isEditMode ? '캐릭터 수정' : '캐릭터 만들기',
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            TextButton(
-              onPressed: _handleSave,
-              style: TextButton.styleFrom(
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                minimumSize: Size.zero,
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-              child: const Text(
-                '저장',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-          ],
-        ),
+          appBar: CommonAppBar(
+        title: _isEditMode ? '캐릭터 수정' : '캐릭터 만들기',
+        actions: [
+          CommonAppBarIconButton(
+            icon: Icons.check,
+            onPressed: _handleSave,
+          ),
+        ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(UIConstants.tabBarHeight),
           child: TabBar(
@@ -888,7 +888,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
               Tab(
                 child: SizedBox(
                   width: UIConstants.tabWidth,
-                  child: Center(child: Text('로어북')),
+                  child: Center(child: Text('설정집')),
                 ),
               ),
               Tab(
@@ -918,9 +918,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         children: [
           _buildProfileTab(),
           _buildDetailSettingsTab(),
-          LorebookTab(
+          CharacterBookTab(
             folders: _folders,
-            standaloneLorebooks: _standaloneLorebooks,
+            standaloneCharacterBooks: _standaloneCharacterBooks,
             onUpdate: () {
               setState(() {});
               _autoSave();
@@ -973,7 +973,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       child: ListView(
         padding: const EdgeInsets.all(UIConstants.spacing20),
         children: [
-          CustomTextField(
+          CommonCustomTextField(
             controller: _nameController,
             label: '이름',
             helpText: '캐릭터의 고유한 이름을 입력해주세요.',
@@ -988,8 +988,17 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
             },
           ),
           const SizedBox(height: UIConstants.spacing20),
-          CustomTextField(
-            controller: _summaryController,
+          CommonCustomTextField(
+            controller: _nicknameController,
+            label: '닉네임',
+            helpText: '프롬프트에서 {{char}} 대신 사용할 호칭입니다. 비워두면 이름이 사용됩니다.',
+            hintText: '캐릭터의 닉네임을 입력해주세요.',
+            maxLines: null,
+            showCounter: true,
+          ),
+          const SizedBox(height: UIConstants.spacing20),
+          CommonCustomTextField(
+            controller: _creatorNotesController,
             label: '한 줄 소개',
             helpText: '캐릭터를 간단히 설명하는 한 문장을 작성해주세요.',
             hintText: '어떤 캐릭터인지 설명할 수 있는 간단한 소개를 입력해주세요.',
@@ -997,7 +1006,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
             showCounter: true,
           ),
           const SizedBox(height: UIConstants.spacing20),
-          CustomTextField(
+          CommonCustomTextField(
             controller: _keywordsController,
             label: '키워드',
             helpText: '캐릭터를 나타내는 키워드를 쉼표(,)로 구분하여 입력해주세요.',
@@ -1021,12 +1030,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Text(
-                  '세계관 설정',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
+                const CommonTitleMedium(text: '세계관 설정'),
                 const SizedBox(width: 4),
                 GestureDetector(
                   onTap: () {
@@ -1051,10 +1055,12 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
                 ),
                 const Spacer(),
                 ValueListenableBuilder<TextEditingValue>(
-                  valueListenable: _worldSettingController,
+                  valueListenable: _descriptionController,
                   builder: (context, value, child) {
+                    final tokenizer = context.watch<TokenizerProvider>().selectedTokenizer;
+                    final tokenCount = TokenCounter.estimateTokenCount(value.text, tokenizer: tokenizer);
                     return Text(
-                      '${value.text.length}',
+                      '$tokenCount token',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
@@ -1066,40 +1072,10 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           ),
           const SizedBox(height: 8),
           Expanded(
-            child: TextFormField(
-              controller: _worldSettingController,
-              style: Theme.of(context).textTheme.bodyMedium,
-              decoration: InputDecoration(
-                hintText: '세계관 설정을 입력해주세요.',
-                hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-                  ),
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.3),
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(10),
-                  borderSide: BorderSide(
-                    color: Theme.of(context).colorScheme.primary,
-                  ),
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 18,
-                  vertical: 10,
-                ),
-                counterText: '',
-                isDense: true,
-              ),
-              maxLines: null,
+            child: CommonEditText(
+              controller: _descriptionController,
+              hintText: '세계관 설정을 입력해주세요.',
+              size: CommonEditTextSize.medium,
               expands: true,
               textAlignVertical: TextAlignVertical.top,
             ),

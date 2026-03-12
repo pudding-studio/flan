@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "136734250749",
+    "project_id": "flan-9926c",
+    "storage_bucket": "flan-9926c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:136734250749:android:5b48d3d1810f5825f5d094",
+        "android_client_info": {
+          "package_name": "com.flanapp.flan"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAPFlGq4sYaMxN32Uk3D9_sHEllnMSaL38"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

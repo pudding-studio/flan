@@ -47,6 +47,7 @@ class CommonDialog {
       context: context,
       builder: (context) => AlertDialog(
         title: title != null ? Text(title) : null,
+        contentPadding: const EdgeInsets.fromLTRB(24, 30, 24, 10),
         content: Text(content),
         actions: [
           TextButton(

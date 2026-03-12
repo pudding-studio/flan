@@ -4,6 +4,13 @@ import 'dart:convert';
 import '../../models/chat/chat_log.dart';
 import '../../database/database_helper.dart';
 import '../../utils/common_dialog.dart';
+import '../../widgets/common/common_appbar.dart';
+import '../../widgets/common/common_info_box.dart';
+
+String _formatTimestamp(DateTime timestamp) {
+  return '${timestamp.year}-${timestamp.month.toString().padLeft(2, '0')}-${timestamp.day.toString().padLeft(2, '0')} '
+      '${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}:${timestamp.second.toString().padLeft(2, '0')}';
+}
 
 class LogScreen extends StatefulWidget {
   const LogScreen({super.key});
@@ -102,47 +109,26 @@ class _LogScreenState extends State<LogScreen> {
     }
   }
 
-  void _showLogDetail(ChatLog log) {
+  Future<void> _showLogDetail(ChatLog log) async {
+    if (log.id == null) return;
+    final fullLog = await _db.readChatLog(log.id!);
+    if (fullLog == null || !mounted) return;
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      builder: (context) => _LogDetailSheet(log: log),
+      builder: (context) => _LogDetailSheet(log: fullLog),
     );
-  }
-
-  String _extractUserMessage(String request) {
-    try {
-      final data = jsonDecode(request);
-      final contents = data['contents'] as List<dynamic>?;
-      if (contents == null || contents.isEmpty) return '';
-
-      final lastContent = contents.last as Map<String, dynamic>;
-      if (lastContent['role'] != 'user') return '';
-
-      final parts = lastContent['parts'] as List<dynamic>?;
-      if (parts == null || parts.isEmpty) return '';
-
-      final text = parts[0]['text'] as String? ?? '';
-      return text.length > 50 ? '${text.substring(0, 50)}...' : text;
-    } catch (e) {
-      return '';
-    }
-  }
-
-  String _formatTimestamp(DateTime timestamp) {
-    return '${timestamp.year}-${timestamp.month.toString().padLeft(2, '0')}-${timestamp.day.toString().padLeft(2, '0')} '
-        '${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}:${timestamp.second.toString().padLeft(2, '0')}';
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('API 로그'),
+      appBar: CommonAppBar(
+        title: 'API 로그',
         actions: [
           if (_logs.isNotEmpty)
-            IconButton(
-              icon: const Icon(Icons.delete_sweep),
+            CommonAppBarIconButton(
+              icon: Icons.delete_sweep,
               onPressed: _deleteAllLogs,
               tooltip: '전체 삭제',
             ),
@@ -150,65 +136,77 @@ class _LogScreenState extends State<LogScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _logs.isEmpty
-              ? Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.history,
-                        size: 64,
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        '로그가 없습니다',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                      ),
-                    ],
+          : Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                  child: CommonInfoBox(
+                    message: 'API 요청/응답 로그를 확인할 수 있습니다.\n7일이 지난 로그는 자동으로 삭제됩니다.',
                   ),
-                )
-              : ListView.separated(
-                  itemCount: _logs.length,
-                  separatorBuilder: (context, index) => const Divider(height: 1),
-                  itemBuilder: (context, index) {
-                    final log = _logs[index];
-                    final userMessage = _extractUserMessage(log.request);
-                    return ListTile(
-                      title: Text(
-                        _formatTimestamp(log.timestamp),
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              fontWeight: FontWeight.w500,
-                            ),
-                      ),
-                      subtitle: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Type: ${log.type}',
-                            style: Theme.of(context).textTheme.bodySmall,
-                          ),
-                          if (userMessage.isNotEmpty)
-                            Text(
-                              userMessage,
-                              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                  ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                        ],
-                      ),
-                      trailing: IconButton(
-                        icon: const Icon(Icons.delete_outline),
-                        onPressed: () => _deleteLog(log.id!),
-                      ),
-                      onTap: () => _showLogDetail(log),
-                    );
-                  },
                 ),
+                Expanded(
+                  child: _logs.isEmpty
+                      ? Center(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                Icons.history,
+                                size: 64,
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
+                              const SizedBox(height: 16),
+                              Text(
+                                '로그가 없습니다',
+                                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        )
+                      : ListView.separated(
+                          itemCount: _logs.length,
+                          separatorBuilder: (context, index) => const Divider(height: 1),
+                          itemBuilder: (context, index) {
+                            final log = _logs[index];
+                            final isAutoSummary = log.type == 'auto_summary';
+                            return ListTile(
+                              leading: isAutoSummary
+                                  ? Icon(
+                                      Icons.summarize,
+                                      color: Theme.of(context).colorScheme.tertiary,
+                                      size: 20,
+                                    )
+                                  : null,
+                              title: Text(
+                                _formatTimestamp(log.timestamp),
+                                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                      fontWeight: FontWeight.w500,
+                                      color: isAutoSummary
+                                          ? Theme.of(context).colorScheme.tertiary
+                                          : null,
+                                    ),
+                              ),
+                              subtitle: Text(
+                                isAutoSummary ? '자동 요약' : 'Type: ${log.type}',
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: isAutoSummary
+                                          ? Theme.of(context).colorScheme.tertiary
+                                          : null,
+                                    ),
+                              ),
+                              trailing: IconButton(
+                                icon: const Icon(Icons.delete_outline),
+                                onPressed: () => _deleteLog(log.id!),
+                              ),
+                              onTap: () => _showLogDetail(log),
+                            );
+                          },
+                        ),
+                ),
+              ],
+            ),
     );
   }
 }
@@ -224,7 +222,7 @@ class _LogDetailSheet extends StatefulWidget {
 
 class _LogDetailSheetState extends State<_LogDetailSheet> {
   bool _showFormattedRequest = true;
-  bool _showFormattedResponse = false;
+  bool _showFormattedResponse = true;
 
   String _formatJson(String jsonString) {
     try {
@@ -235,29 +233,8 @@ class _LogDetailSheetState extends State<_LogDetailSheet> {
     }
   }
 
-  String _extractModelId() {
-    try {
-      final data = jsonDecode(widget.log.request);
-      final modelId = data['model'] as String?;
-      if (modelId == null) return 'Gemini API';
-
-      switch (modelId) {
-        case 'gemini-3-pro-preview':
-          return 'Gemini 3 Pro Preview';
-        case 'gemini-3-flash-preview':
-          return 'Gemini 3 Flash Preview';
-        case 'gemini-2.5-pro':
-          return 'Gemini 2.5 Pro';
-        case 'gemini-2.5-flash':
-          return 'Gemini 2.5 Flash';
-        case 'gemini-2.5-flash-lite':
-          return 'Gemini 2.5 Flash Lite';
-        default:
-          return modelId;
-      }
-    } catch (e) {
-      return 'Unknown';
-    }
+  String _getModelName() {
+    return widget.log.modelName ?? widget.log.type;
   }
 
   void _copyToClipboard(String text) {
@@ -343,7 +320,7 @@ class _LogDetailSheetState extends State<_LogDetailSheet> {
             const SizedBox(height: 12),
             _buildInfoRow('시간', _formatTimestamp(widget.log.timestamp)),
             _buildInfoRow('타입', widget.log.type),
-            _buildInfoRow('모델', _extractModelId()),
+            _buildInfoRow('모델', _getModelName()),
             if (widget.log.chatRoomId != null)
               _buildInfoRow('채팅방 ID', widget.log.chatRoomId.toString()),
             if (widget.log.characterId != null)
@@ -486,8 +463,4 @@ class _LogDetailSheetState extends State<_LogDetailSheet> {
     );
   }
 
-  String _formatTimestamp(DateTime timestamp) {
-    return '${timestamp.year}-${timestamp.month.toString().padLeft(2, '0')}-${timestamp.day.toString().padLeft(2, '0')} '
-        '${timestamp.hour.toString().padLeft(2, '0')}:${timestamp.minute.toString().padLeft(2, '0')}:${timestamp.second.toString().padLeft(2, '0')}';
-  }
 }

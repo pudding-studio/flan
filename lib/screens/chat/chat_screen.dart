@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
-import 'widgets/chat_room_card.dart';
+import '../../widgets/chat/chat_room_card.dart';
 import '../../models/chat/chat_room.dart';
-import '../../models/chat/chat_message.dart';
-import '../../models/character/character.dart';
-import '../../models/character/cover_image.dart';
+import '../../models/chat/chat_room_summary.dart';
 import '../../database/database_helper.dart';
 import '../../utils/common_dialog.dart';
-import '../../utils/token_counter.dart';
+import '../../utils/metadata_parser.dart';
+import '../../widgets/common/common_appbar.dart';
+import '../../widgets/common/common_edit_text.dart';
 import 'chat_room_screen.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -18,7 +18,7 @@ class ChatScreen extends StatefulWidget {
 
 class _ChatScreenState extends State<ChatScreen> {
   final DatabaseHelper _db = DatabaseHelper.instance;
-  List<_ChatRoomData> _chatRooms = [];
+  List<ChatRoomSummary> _chatRooms = [];
   bool _isLoading = true;
   bool _isEditMode = false;
   final Set<int> _selectedChatRoomIds = {};
@@ -31,55 +31,21 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 
   Future<void> _loadChatRooms() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
 
     try {
-      final allChatRooms = await _db.database.then((db) async {
-        final List<Map<String, dynamic>> maps = await db.query(
-          'chat_rooms',
-          orderBy: 'updated_at DESC',
-        );
-        return maps.map((map) => ChatRoom.fromMap(map)).toList();
-      });
+      final summaries = await _db.readChatRoomSummaries();
 
-      final List<_ChatRoomData> chatRoomDataList = [];
-
-      for (final chatRoom in allChatRooms) {
-        final character = await _db.readCharacter(chatRoom.characterId);
-        if (character == null) continue;
-
-        final coverImages = await _db.readCoverImages(chatRoom.characterId);
-        final selectedCover = coverImages.isNotEmpty ? coverImages.first : null;
-
-        final messages = await _db.readChatMessagesByChatRoom(chatRoom.id!);
-        final lastMessage = messages.isNotEmpty ? messages.last : null;
-
-        int assistantMessageCount = 0;
-        int totalTokens = 0;
-        for (final message in messages) {
-          if (message.role == MessageRole.assistant) {
-            assistantMessageCount++;
-          }
-          totalTokens += TokenCounter.estimateTokenCount(message.content);
-        }
-
-        chatRoomDataList.add(_ChatRoomData(
-          chatRoom: chatRoom,
-          character: character,
-          coverImage: selectedCover,
-          lastMessage: lastMessage,
-          messageCount: assistantMessageCount,
-          tokenCount: totalTokens,
-        ));
-      }
-
+      if (!mounted) return;
       setState(() {
-        _chatRooms = chatRoomDataList;
+        _chatRooms = summaries;
         _sortChatRooms();
         _isLoading = false;
       });
     } catch (e) {
       debugPrint('Error loading chat rooms: $e');
+      if (!mounted) return;
       setState(() => _isLoading = false);
     }
   }
@@ -183,13 +149,10 @@ class _ChatScreenState extends State<ChatScreen> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('채팅방 이름 수정'),
-        content: TextField(
+        content: CommonEditText(
           controller: controller,
-          decoration: const InputDecoration(
-            labelText: '채팅방 이름',
-            border: OutlineInputBorder(),
-          ),
-          autofocus: true,
+          hintText: '채팅방 이름',
+          size: CommonEditTextSize.medium,
         ),
         actions: [
           TextButton(
@@ -259,50 +222,29 @@ class _ChatScreenState extends State<ChatScreen> {
     final horizontalPadding = screenWidth * 0.05;
 
     return Scaffold(
-      appBar: AppBar(
+      appBar: CommonAppBar(
         title: _isEditMode
-          ? Text('${_selectedChatRoomIds.length}개 선택됨')
-          : const Text('채팅'),
-        leading: _isEditMode
-          ? IconButton(
-              icon: const Icon(Icons.close),
-              onPressed: _toggleEditMode,
-            )
-          : null,
+          ? '${_selectedChatRoomIds.length}개 선택됨'
+          : '채팅',
+        showBackButton: false,
+        showCloseButton: _isEditMode,
+        onClosePressed: _toggleEditMode,
         actions: [
           if (!_isEditMode)
-            Transform.translate(
-              offset: const Offset(8, 0),
-              child: IconButton(
-                icon: const Icon(Icons.edit_outlined),
-                onPressed: _toggleEditMode,
-                tooltip: '편집',
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                constraints: const BoxConstraints(),
-              ),
+            CommonAppBarIconButton(
+              icon: Icons.edit_outlined,
+              onPressed: _toggleEditMode,
+              tooltip: '편집',
             ),
           if (_isEditMode)
-            Transform.translate(
-              offset: const Offset(8, 0),
-              child: IconButton(
-                icon: const Icon(Icons.delete_outline),
-                onPressed: _selectedChatRoomIds.isEmpty ? null : _deleteSelectedChatRooms,
-                tooltip: '삭제',
-                padding: EdgeInsets.zero,
-                visualDensity: VisualDensity.compact,
-                constraints: const BoxConstraints(),
-              ),
+            CommonAppBarIconButton(
+              icon: Icons.delete_outline,
+              onPressed: _selectedChatRoomIds.isEmpty ? null : _deleteSelectedChatRooms,
+              tooltip: '삭제',
             ),
           if (!_isEditMode)
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_vert),
+            CommonAppBarPopupMenuButton<String>(
               tooltip: '더보기',
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
-              ),
               onSelected: (String value) {
                 if (value == 'date' || value == 'name' || value == 'message_count') {
                   setState(() {
@@ -366,13 +308,39 @@ class _ChatScreenState extends State<ChatScreen> {
                 ];
               },
             ),
-          const SizedBox(width: 16),
         ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : _chatRooms.isEmpty
-              ? const Center(child: Text('채팅방이 없습니다'))
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.chat_bubble_outline,
+                        size: 80,
+                        color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.3),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        '채팅방이 없습니다',
+                        style: TextStyle(
+                          fontSize: 16,
+                          color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '캐릭터를 선택하여 새 채팅을 시작해보세요',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.4),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
               : ListView.separated(
                   padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16.0),
                   itemCount: _chatRooms.length,
@@ -450,9 +418,11 @@ class _ChatScreenState extends State<ChatScreen> {
                       },
                       child: ChatRoomCard(
                         title: data.chatRoom.name,
-                        lastMessage: data.lastMessage?.content ?? '메시지가 없습니다',
+                        lastMessage: data.lastMessage != null
+                            ? MetadataParser.removeMetadataTags(data.lastMessage!.content)
+                            : '메시지가 없습니다',
                         date: _formatDate(data.chatRoom.updatedAt),
-                        imagePath: data.coverImage?.imagePath,
+                        imageData: data.coverImage?.imageData,
                         messageCount: data.messageCount,
                         tokenCount: data.tokenCount,
                         isEditMode: _isEditMode,
@@ -465,20 +435,3 @@ class _ChatScreenState extends State<ChatScreen> {
   }
 }
 
-class _ChatRoomData {
-  final ChatRoom chatRoom;
-  final Character character;
-  final CoverImage? coverImage;
-  final ChatMessage? lastMessage;
-  final int messageCount;
-  final int tokenCount;
-
-  _ChatRoomData({
-    required this.chatRoom,
-    required this.character,
-    this.coverImage,
-    this.lastMessage,
-    required this.messageCount,
-    required this.tokenCount,
-  });
-}

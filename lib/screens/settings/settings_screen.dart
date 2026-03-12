@@ -1,12 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import '../../providers/theme_provider.dart';
-import '../../utils/common_dialog.dart';
+import '../../widgets/common/common_appbar.dart';
 import 'api_key_screen.dart';
 import 'chat_model_screen.dart';
 import 'chat_prompt_screen.dart';
+import 'auto_summary_screen.dart';
+import 'tokenizer_screen.dart';
+import 'backup_screen.dart';
 import 'log_screen.dart';
 import 'legal_document_screen.dart';
+import 'statistics_screen.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -16,40 +21,30 @@ class SettingsScreen extends StatefulWidget {
 }
 
 class _SettingsScreenState extends State<SettingsScreen> {
-  bool _notificationsEnabled = true;
-  bool _soundEnabled = true;
-  String _language = 'ko';
+  String _version = '...';
 
+  @override
+  void initState() {
+    super.initState();
+    _loadVersion();
+  }
+
+  Future<void> _loadVersion() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    setState(() {
+      _version = packageInfo.version;
+    });
+  }
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('설정'),
+      appBar: const CommonAppBar(
+        title: '설정',
+        showBackButton: false,
       ),
       body: ListView(
         children: [
           _buildSectionHeader('일반'),
-          _buildListTile(
-            icon: Icons.language,
-            title: '언어',
-            trailing: DropdownButton<String>(
-              value: _language,
-              underline: const SizedBox(),
-              borderRadius: BorderRadius.circular(16),
-              items: const [
-                DropdownMenuItem(value: 'ko', child: Text('한국어')),
-                DropdownMenuItem(value: 'en', child: Text('English')),
-                DropdownMenuItem(value: 'ja', child: Text('日本語')),
-              ],
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() {
-                    _language = value;
-                  });
-                }
-              },
-            ),
-          ),
           Consumer<ThemeProvider>(
             builder: (context, themeProvider, child) {
               String themeModeValue;
@@ -99,32 +94,50 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
             },
           ),
-          const Divider(),
-          _buildSectionHeader('알림'),
-          _buildSwitchTile(
-            icon: Icons.notifications,
-            title: '알림 받기',
-            subtitle: '새로운 메시지 알림을 받습니다',
-            value: _notificationsEnabled,
-            onChanged: (value) {
-              setState(() {
-                _notificationsEnabled = value;
-              });
+          Consumer<ThemeProvider>(
+            builder: (context, themeProvider, child) {
+              return _buildListTile(
+                icon: Icons.palette,
+                title: '테마 색상',
+                trailing: DropdownButton<ThemeColor>(
+                  value: themeProvider.themeColor,
+                  underline: const SizedBox(),
+                  borderRadius: BorderRadius.circular(16),
+                  items: ThemeColor.values.map((color) {
+                    return DropdownMenuItem(
+                      value: color,
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            width: 20,
+                            height: 20,
+                            decoration: BoxDecoration(
+                              color: color.color,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.grey.withValues(alpha: 0.3),
+                                width: 1,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          Text(color.displayName),
+                        ],
+                      ),
+                    );
+                  }).toList(),
+                  onChanged: (value) {
+                    if (value != null) {
+                      themeProvider.setThemeColor(value);
+                    }
+                  },
+                ),
+              );
             },
           ),
-          _buildSwitchTile(
-            icon: Icons.volume_up,
-            title: '사운드',
-            subtitle: '알림 소리를 재생합니다',
-            value: _soundEnabled,
-            onChanged: (value) {
-              setState(() {
-                _soundEnabled = value;
-              });
-            },
-          ),
           const Divider(),
-          _buildSectionHeader('모델'),
+          _buildSectionHeader('채팅'),
           _buildListTile(
             icon: Icons.key,
             title: 'API 키 등록',
@@ -146,6 +159,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           _buildListTile(
+            icon: Icons.token,
+            title: '토크나이저',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const TokenizerScreen()),
+              );
+            },
+          ),
+          _buildListTile(
             icon: Icons.chat_bubble_outline,
             title: '채팅 프롬프트',
             onTap: () {
@@ -155,8 +178,46 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
             },
           ),
+          _buildListTile(
+            icon: Icons.auto_awesome,
+            title: '자동 요약',
+            subtitle: '전역 자동 요약 설정',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const AutoSummaryScreen(
+                    chatRoomId: 0,
+                  ),
+                ),
+              );
+            },
+          ),
           const Divider(),
           _buildSectionHeader('데이터'),
+          _buildListTile(
+            icon: Icons.backup,
+            title: '백업 및 복구',
+            subtitle: '데이터 내보내기/가져오기',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const BackupScreen()),
+              );
+            },
+          ),
+          _buildListTile(
+            icon: Icons.bar_chart,
+            title: '통계',
+            subtitle: '날짜별 모델 사용량 및 비용',
+            onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                    builder: (context) => const StatisticsScreen()),
+              );
+            },
+          ),
           _buildListTile(
             icon: Icons.article_outlined,
             title: '로그',
@@ -168,34 +229,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
             },
           ),
-          _buildListTile(
-            icon: Icons.storage,
-            title: '저장공간',
-            subtitle: '캐시 및 데이터 관리',
-            onTap: () {
-              _showClearCacheDialog();
-            },
-          ),
-          _buildListTile(
-            icon: Icons.cloud_download,
-            title: '백업 및 복원',
-            onTap: () {
-              // TODO: 백업/복원 페이지로 이동
-            },
-          ),
           const Divider(),
           _buildSectionHeader('정보'),
           _buildListTile(
-            icon: Icons.help,
-            title: '도움말',
-            onTap: () {
-              // TODO: 도움말 페이지로 이동
-            },
-          ),
-          _buildListTile(
             icon: Icons.info,
             title: '앱 정보',
-            subtitle: '버전 1.0.0',
+            subtitle: '버전 $_version',
             onTap: () {
               _showAboutDialog();
             },
@@ -268,47 +307,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  Widget _buildSwitchTile({
-    required IconData icon,
-    required String title,
-    String? subtitle,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return SwitchListTile(
-      secondary: Icon(icon),
-      title: Text(title),
-      subtitle: subtitle != null ? Text(subtitle) : null,
-      value: value,
-      onChanged: onChanged,
-    );
-  }
-
-  Future<void> _showClearCacheDialog() async {
-    final confirmed = await CommonDialog.showConfirmation(
-      context: context,
-      title: '캐시 삭제',
-      content: '캐시를 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.',
-      confirmText: '삭제',
-      isDestructive: true,
-    );
-
-    if (confirmed == true) {
-      // TODO: 캐시 삭제 로직
-      if (mounted) {
-        CommonDialog.showSnackBar(
-          context: context,
-          message: '캐시가 삭제되었습니다',
-        );
-      }
-    }
-  }
-
   void _showAboutDialog() {
     showAboutDialog(
       context: context,
       applicationName: 'Flan',
-      applicationVersion: '1.0.0',
+      applicationVersion: _version,
       applicationIcon: const Icon(Icons.chat_bubble, size: 48),
       children: [
         const Text('AI 캐릭터와 대화할 수 있는 앱입니다.'),
