@@ -61,6 +61,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
 
   Future<void> _loadPreferences() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
       _isGridView = prefs.getBool('character_is_grid_view') ?? true;
       final sortMethodString = prefs.getString('character_sort_method') ?? 'createdAtDesc';
@@ -82,6 +83,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
   }
 
   Future<void> _loadCharacters() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     try {
       final characters = await _db.readAllCharacters();
@@ -104,6 +106,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
         }
       }
 
+      if (!mounted) return;
       setState(() {
         _characters = characters;
         _characterCoverImages = coverImages;
@@ -117,7 +120,9 @@ class _CharacterScreenState extends State<CharacterScreen> {
         );
       }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
