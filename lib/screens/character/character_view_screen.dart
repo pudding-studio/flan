@@ -392,6 +392,18 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
     );
   }
 
+  String _replaceStartTextKeywords(String text) {
+    final keywords = {
+      'char': _character?.name ?? '',
+      'user': '',
+    };
+    var result = text;
+    for (final entry in keywords.entries) {
+      result = result.replaceAll('{{${entry.key}}}', entry.value);
+    }
+    return result;
+  }
+
   Widget _buildSelectedScenarioContent() {
     if (_selectedScenarioIndex == null) {
       return const SizedBox();
@@ -414,7 +426,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              scenario.startSetting!,
+              _replaceStartTextKeywords(scenario.startSetting!),
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
@@ -431,7 +443,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
               borderRadius: BorderRadius.circular(12),
             ),
             child: Text(
-              scenario.startMessage!,
+              _replaceStartTextKeywords(scenario.startMessage!),
               style: Theme.of(context).textTheme.bodyMedium,
             ),
           ),
