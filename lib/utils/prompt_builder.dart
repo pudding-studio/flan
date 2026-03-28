@@ -38,7 +38,7 @@ class PromptBuilder {
 
     // Add condition variable keywords
     if (conditions != null && conditionStates != null) {
-      keywords.addAll(buildConditionKeywords(conditions, conditionStates));
+      keywords.addAll(buildConditionKeywords(conditions, conditionStates, existingKeywords: keywords));
     }
 
     final states = conditionStates ?? {};
@@ -87,7 +87,7 @@ class PromptBuilder {
 
     // Add condition variable keywords
     if (conditions != null && conditionStates != null) {
-      keywords.addAll(buildConditionKeywords(conditions, conditionStates));
+      keywords.addAll(buildConditionKeywords(conditions, conditionStates, existingKeywords: keywords));
     }
 
     final states = conditionStates ?? {};
@@ -369,16 +369,23 @@ class PromptBuilder {
   /// Build variable substitution keywords from condition states.
   /// For conditions of type "variable", replaces {{variableName}} with
   /// the currently selected option value.
+  /// [existingKeywords] is used to pre-resolve nested references
+  /// (e.g. option value "{{user}}" is resolved to the actual user name).
   static Map<String, String> buildConditionKeywords(
     List<PromptCondition> conditions,
-    Map<int, String> conditionStates,
-  ) {
+    Map<int, String> conditionStates, {
+    Map<String, String> existingKeywords = const {},
+  }) {
     final keywords = <String, String>{};
     for (final condition in conditions) {
       if (condition.type == ConditionType.variable &&
           condition.variableName != null &&
           condition.variableName!.isNotEmpty) {
-        final value = conditionStates[condition.id!] ?? '';
+        var value = conditionStates[condition.id!] ?? '';
+        // Pre-resolve nested variable references (e.g. {{user}}, {{char}})
+        for (final entry in existingKeywords.entries) {
+          value = value.replaceAll('{{${entry.key}}}', entry.value);
+        }
         keywords[condition.variableName!] = value;
       }
     }

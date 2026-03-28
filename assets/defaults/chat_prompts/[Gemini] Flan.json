@@ -1278,6 +1278,13 @@
         {
           "id": 23,
           "presetId": 37,
+          "conditionId": 38,
+          "value": "{{user}}",
+          "customValue": null
+        },
+        {
+          "id": 24,
+          "presetId": 37,
           "conditionId": 39,
           "value": "페르소나 사칭 방지",
           "customValue": null
