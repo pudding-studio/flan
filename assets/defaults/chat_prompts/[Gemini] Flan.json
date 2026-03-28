@@ -1144,7 +1144,7 @@
       "chatPromptId": 25,
       "name": "Output Language",
       "type": "variable",
-      "variableName": "ouput_language",
+      "variableName": "output_language",
       "order": 1,
       "options": [
         {
