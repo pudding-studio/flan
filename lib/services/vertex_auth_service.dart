@@ -1,30 +1,14 @@
 import 'dart:convert';
 import 'package:googleapis_auth/auth_io.dart';
 import 'package:http/http.dart' as http;
-import 'package:shared_preferences/shared_preferences.dart';
 
 class VertexAuthService {
-  static const String _regionKey = 'vertex_ai_region';
-  static const String _defaultRegion = 'us-central1';
-
   static final VertexAuthService _instance = VertexAuthService._();
   factory VertexAuthService() => _instance;
   VertexAuthService._();
 
   AccessCredentials? _cachedCredentials;
   String? _cachedJsonKey;
-
-  /// Get the stored region or default.
-  static Future<String> getRegion() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_regionKey) ?? _defaultRegion;
-  }
-
-  /// Save the selected region.
-  static Future<void> setRegion(String region) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_regionKey, region);
-  }
 
   /// Extract project_id from service account JSON.
   static String? extractProjectId(String jsonString) {
@@ -80,13 +64,12 @@ class VertexAuthService {
     }
   }
 
-  /// Build the Vertex AI endpoint URL.
+  /// Build the Vertex AI global endpoint URL.
   static String buildEndpoint({
     required String projectId,
-    required String region,
     required String modelId,
   }) {
-    return 'https://$region-aiplatform.googleapis.com/v1/projects/$projectId/locations/$region/publishers/google/models/$modelId:generateContent';
+    return 'https://aiplatform.googleapis.com/v1/projects/$projectId/locations/global/publishers/google/models/$modelId:generateContent';
   }
 
   /// Validate a service account JSON by attempting token acquisition.
@@ -126,14 +109,4 @@ class VertexAuthService {
     _cachedCredentials = null;
     _cachedJsonKey = null;
   }
-
-  static const List<String> availableRegions = [
-    'us-central1',
-    'us-east4',
-    'us-west1',
-    'europe-west1',
-    'europe-west4',
-    'asia-northeast1',
-    'asia-southeast1',
-  ];
 }

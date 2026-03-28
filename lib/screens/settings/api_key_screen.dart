@@ -9,7 +9,6 @@ import '../../widgets/common/common_custom_text_field.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../../widgets/common/common_filter_chip.dart';
 import '../../widgets/common/common_settings.dart';
-import '../../widgets/common/common_title_medium.dart';
 import '../../services/ai_service.dart';
 import '../../services/vertex_auth_service.dart';
 
@@ -44,8 +43,6 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
   List<String> _keys = [];
   int _activeIndex = 0;
   int? _editingIndex;
-  String _vertexRegion = 'us-central1';
-
   bool get _isVertexAi => _selectedApiKeyType == ApiKeyType.vertexAi;
 
   @override
@@ -87,7 +84,6 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
         }
       }
 
-      _vertexRegion = await VertexAuthService.getRegion();
       _loadKeysForType(_selectedApiKeyType);
     } catch (e) {
       if (mounted) {
@@ -159,20 +155,23 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
     try {
       final key = _apiKeyController.text.trim();
 
-      // Validate API key before saving
-      final validationError = await AiService.validateApiKey(
-        _selectedApiKeyType.prefsKey,
-        key,
-      );
-      if (validationError != null) {
-        if (mounted) {
-          await CommonDialog.showInfo(
-            context: context,
-            title: 'API 키 검증 실패',
-            content: validationError,
-          );
+      // Validate API key before saving (skip for types that incur API costs)
+      const costFreeTypes = [ApiKeyType.openai, ApiKeyType.vertexAi];
+      if (costFreeTypes.contains(_selectedApiKeyType)) {
+        final validationError = await AiService.validateApiKey(
+          _selectedApiKeyType.prefsKey,
+          key,
+        );
+        if (validationError != null) {
+          if (mounted) {
+            await CommonDialog.showInfo(
+              context: context,
+              title: 'API 키 검증 실패',
+              content: validationError,
+            );
+          }
+          return;
         }
-        return;
       }
 
       if (_editingIndex != null) {
@@ -365,48 +364,6 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
     return '${key.substring(0, 4)}${'•' * (key.length - 8)}${key.substring(key.length - 4)}';
   }
 
-  Widget _buildVertexAiRegionSelector() {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.location_on_outlined,
-                  size: 20,
-                  color: Theme.of(context).colorScheme.primary,
-                ),
-                const SizedBox(width: 8),
-                const CommonTitleMedium(text: '리전'),
-              ],
-            ),
-            const SizedBox(height: 12),
-            DropdownButtonFormField<String>(
-              value: _vertexRegion,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                contentPadding:
-                    EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              ),
-              items: VertexAuthService.availableRegions
-                  .map((r) => DropdownMenuItem(value: r, child: Text(r)))
-                  .toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() => _vertexRegion = value);
-                  VertexAuthService.setRegion(value);
-                }
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _buildApiKeyTypeSelector(BuildContext context) {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -552,9 +509,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
                     _buildKeyList(),
                     const SizedBox(height: 16),
                     if (_isVertexAi) ...[
-                      _buildVertexAiRegionSelector(),
-                      const SizedBox(height: 16),
-                      CommonButton.filled(
+                                      CommonButton.filled(
                         onPressed:
                             _isLoading ? null : _pickVertexAiJsonFile,
                         icon: _editingIndex != null
