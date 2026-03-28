@@ -359,8 +359,7 @@ _syncContentFromControllers();
   Future<void> _importSummaryPrompt() async {
     try {
       final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['json'],
+        type: FileType.any,
       );
 
       if (result == null || result.files.isEmpty) return;

@@ -75,8 +75,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
   Future<void> _importCharacterBooks() async {
     try {
       final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['json'],
+        type: FileType.any,
       );
 
       if (result == null || result.files.isEmpty) return;

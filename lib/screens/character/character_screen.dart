@@ -412,8 +412,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
   Future<void> _importCharacter() async {
     try {
       final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['json', 'png', 'charx'],
+        type: FileType.any,
       );
 
       if (result == null || result.files.isEmpty) return;

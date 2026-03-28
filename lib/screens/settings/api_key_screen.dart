@@ -295,8 +295,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
 
   Future<void> _pickVertexAiJsonFile() async {
     final result = await FilePicker.platform.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: ['json'],
+      type: FileType.any,
     );
     if (result == null || result.files.single.path == null) return;
 
