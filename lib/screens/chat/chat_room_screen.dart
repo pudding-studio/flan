@@ -1303,11 +1303,20 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             else
               const SizedBox.shrink(),
             if (locationMain != null)
-              Text(locationMain, style: metaStyle),
+              Flexible(
+                child: Text(
+                  locationMain,
+                  style: metaStyle,
+                  textAlign: TextAlign.end,
+                ),
+              ),
           ],
         ),
         if (locationSub != null)
-          Text(locationSub, style: metaStyle),
+          Align(
+            alignment: Alignment.centerRight,
+            child: Text(locationSub, style: metaStyle),
+          ),
       ],
     );
   }

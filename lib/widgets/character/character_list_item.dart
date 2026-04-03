@@ -98,17 +98,21 @@ class CharacterListItem extends StatelessWidget {
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                       ),
-                      const SizedBox(height: 8),
-                      SizedBox(
-                        height: 24,
-                        child: ClipRect(
-                          child: Wrap(
-                            spacing: 4,
-                            runSpacing: 4,
-                            children: tags.map((tag) => CharacterTagChip(label: tag)).toList(),
+                      if (tags.isNotEmpty) ...[
+                        const SizedBox(height: 8),
+                        SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          physics: const NeverScrollableScrollPhysics(),
+                          child: Row(
+                            children: tags
+                                .map((tag) => Padding(
+                                      padding: const EdgeInsets.only(right: 4),
+                                      child: CharacterTagChip(label: tag),
+                                    ))
+                                .toList(),
                           ),
                         ),
-                      ),
+                      ],
                     ],
                   ),
                 ),
@@ -121,7 +125,7 @@ class CharacterListItem extends StatelessWidget {
               right: -4,
               child: Container(
                 width: 24,
-                height: 24,
+                height: 28,
                 decoration: BoxDecoration(
                   color: isSelected
                     ? Theme.of(context).colorScheme.primary
@@ -148,7 +152,7 @@ class CharacterListItem extends StatelessWidget {
               child: PopupMenuButton<String>(
                 icon: Container(
                   width: 24,
-                  height: 24,
+                  height: 28,
                   decoration: BoxDecoration(
                     color: Colors.black.withValues(alpha: 0.5),
                     shape: BoxShape.circle,
