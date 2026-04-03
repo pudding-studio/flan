@@ -105,6 +105,7 @@ class PromptBuilder {
     );
 
     final contents = <Map<String, dynamic>>[];
+    bool startMessageInserted = false;
 
     if (chatPrompt != null && chatPrompt.items.isNotEmpty) {
       for (final item in chatPrompt.items) {
@@ -112,6 +113,15 @@ class PromptBuilder {
 
         if (item.role == PromptRole.chat) {
           final messages = adjustedChatHistoryMap[item] ?? [];
+          // Insert start message as model turn right before first chat message
+          if (!startMessageInserted &&
+              startScenario?.startMessage != null &&
+              startScenario!.startMessage!.isNotEmpty &&
+              messages.isNotEmpty) {
+            final resolvedStartMessage = replaceKeywords(startScenario.startMessage!, keywords);
+            _addContent(contents, 'model', resolvedStartMessage);
+            startMessageInserted = true;
+          }
           for (final msg in messages) {
             var content = msg.content;
             if (metadataMap != null &&
@@ -276,7 +286,6 @@ class PromptBuilder {
       'user_description': resolve(persona?.content ?? ''),
       'character_book': resolve(_buildCharacterBookText(activeCharacterBooks)),
       'start_setting': resolve(startScenario?.startSetting ?? ''),
-      'start_message': resolve(startScenario?.startMessage ?? ''),
       'chat_memo': resolve(chatRoom?.memo ?? ''),
       'chat_historys': resolve(_buildChatHistorysText(summaries, summaryMetadataMap)),
     };
