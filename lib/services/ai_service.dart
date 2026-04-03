@@ -491,10 +491,8 @@ class AiService {
         throw Exception('서비스 계정 JSON에 project_id가 없습니다');
       }
 
-      final region = await VertexAuthService.getRegion();
       final endpoint = VertexAuthService.buildEndpoint(
         projectId: projectId,
-        region: region,
         modelId: modelId,
       );
 

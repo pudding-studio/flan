@@ -475,8 +475,7 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
   Future<void> _importPrompt() async {
     try {
       final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['json'],
+        type: FileType.any,
       );
 
       if (result == null || result.files.isEmpty) return;
@@ -607,8 +606,8 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
                         isSelected: prompt.isSelected,
                         isDefault: prompt.isDefault,
                         onRadioTap: () => _selectPrompt(prompt.id!),
-                        onTap: prompt.isDefault ? null : () => _navigateToEdit(prompt),
-                        onEdit: prompt.isDefault ? null : () => _navigateToEdit(prompt),
+                        onTap: () => _navigateToEdit(prompt),
+                        onEdit: () => _navigateToEdit(prompt),
                         onCopy: () => _duplicatePrompt(prompt),
                         onReset: prompt.isDefault ? () => _resetDefaultPrompts() : null,
                         onExport: () => _exportPrompt(prompt),

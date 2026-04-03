@@ -24,6 +24,7 @@ import 'character_view_screen.dart';
 import '../../widgets/character/character_card.dart';
 import '../../widgets/character/character_list_item.dart';
 import '../../widgets/common/common_appbar.dart';
+import '../agent/agent_chat_screen.dart';
 
 class CharacterScreen extends StatefulWidget {
   const CharacterScreen({super.key});
@@ -61,6 +62,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
 
   Future<void> _loadPreferences() async {
     final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
     setState(() {
       _isGridView = prefs.getBool('character_is_grid_view') ?? true;
       final sortMethodString = prefs.getString('character_sort_method') ?? 'createdAtDesc';
@@ -82,6 +84,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
   }
 
   Future<void> _loadCharacters() async {
+    if (!mounted) return;
     setState(() => _isLoading = true);
     try {
       final characters = await _db.readAllCharacters();
@@ -104,6 +107,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
         }
       }
 
+      if (!mounted) return;
       setState(() {
         _characters = characters;
         _characterCoverImages = coverImages;
@@ -117,7 +121,9 @@ class _CharacterScreenState extends State<CharacterScreen> {
         );
       }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -412,8 +418,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
   Future<void> _importCharacter() async {
     try {
       final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['json', 'png', 'charx'],
+        type: FileType.any,
       );
 
       if (result == null || result.files.isEmpty) return;
@@ -627,6 +632,21 @@ class _CharacterScreenState extends State<CharacterScreen> {
         showCloseButton: _isEditMode,
         onClosePressed: _toggleEditMode,
         actions: [
+          if (!_isEditMode)
+            CommonAppBarIconButton(
+              icon: Icons.auto_awesome,
+              offsetX: 10.0,
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const AgentChatScreen(),
+                  ),
+                );
+                _loadCharacters();
+              },
+              tooltip: 'Flan Agent',
+            ),
           if (!_isEditMode)
             CommonAppBarIconButton(
               icon: Icons.edit_outlined,

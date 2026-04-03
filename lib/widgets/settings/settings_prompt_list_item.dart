@@ -132,8 +132,7 @@ class SettingsPromptListItem extends StatelessWidget {
                 ),
                 offset: const Offset(-8, 36),
                 itemBuilder: (context) => [
-                  if (!isDefault)
-                    PopupMenuItem<String>(
+                  PopupMenuItem<String>(
                       value: 'edit',
                       onTap: onEdit,
                       child: const Row(
@@ -167,8 +166,7 @@ class SettingsPromptListItem extends StatelessWidget {
                         ],
                       ),
                     ),
-                  if (!isDefault)
-                    PopupMenuItem<String>(
+                  PopupMenuItem<String>(
                       value: 'export',
                       onTap: onExport,
                       child: const Row(

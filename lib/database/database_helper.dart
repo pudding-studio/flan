@@ -1856,6 +1856,32 @@ class DatabaseHelper {
     return await db.insert('chat_rooms', map);
   }
 
+  static const int agentCharacterId = -1;
+
+  Future<int> getOrCreateAgentChatRoom() async {
+    final db = await database;
+    final maps = await db.query(
+      'chat_rooms',
+      where: 'character_id = ?',
+      whereArgs: [agentCharacterId],
+      limit: 1,
+    );
+
+    if (maps.isNotEmpty) {
+      return maps.first['id'] as int;
+    }
+
+    final chatRoom = ChatRoom(
+      characterId: agentCharacterId,
+      name: 'Flan Agent',
+      pinMode: 'manual',
+    );
+
+    final map = chatRoom.toMap();
+    map.remove('id');
+    return await db.insert('chat_rooms', map);
+  }
+
   Future<ChatRoom?> readChatRoom(int id) async {
     final db = await database;
     final maps = await db.query(

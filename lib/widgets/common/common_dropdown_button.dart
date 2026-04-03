@@ -76,8 +76,11 @@ class CommonDropdownButton<T> extends StatelessWidget {
     final menuMaxHeight = config.menuMaxHeight;
     final itemHeight = config.itemHeight;
 
+    // Fallback to null if value is not found in items to prevent assertion error
+    final safeValue = (value != null && items.contains(value)) ? value : null;
+
     return DropdownButtonFormField2<T>(
-      value: value,
+      value: safeValue,
       isExpanded: isExpanded,
       style: textStyle,
       hint: hintText != null

@@ -9,6 +9,7 @@ import '../../constants/ui_constants.dart';
 import '../../database/database_helper.dart';
 import '../../models/chat/chat_model.dart';
 import '../../models/chat/custom_model.dart';
+import '../../models/chat/custom_provider.dart';
 import '../../models/chat/unified_model.dart';
 import '../../models/chat/auto_summary_settings.dart';
 import '../../models/chat/summary_prompt_item.dart';
@@ -40,8 +41,10 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
 
   bool _isEnabled = true;
   ChatModelProvider _selectedProvider = ChatModelProvider.googleAIStudio;
+  String? _selectedCustomProviderId;
   UnifiedModel _selectedModel = UnifiedModel.fromChatModel(ChatModel.geminiFlash3Preview);
   List<CustomModel> _customModels = [];
+  List<CustomProvider> _customProviders = [];
   late TextEditingController _tokenThresholdController;
   AutoSummarySettings? _existingSettings;
   bool _isLoading = true;
@@ -90,6 +93,7 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
         _autoPinByMessageCountController.text = msgCount?.toString() ?? '10';
       }
 
+      _customProviders = await CustomProviderRepository.loadAll();
       _customModels = await CustomModelRepository.loadAll();
 
       final settings = await _db.getAutoSummarySettings(widget.chatRoomId);
@@ -99,9 +103,14 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
         if (settings.summaryModel.startsWith('custom:')) {
           final customId = settings.summaryModel.replaceFirst('custom:', '');
           final custom = _customModels.where((m) => m.id == customId).firstOrNull;
-          resolvedModel = custom != null
-              ? UnifiedModel.fromCustomModel(custom)
-              : UnifiedModel.fromChatModel(ChatModel.geminiFlash3Preview);
+          if (custom != null) {
+            final cp = custom.providerId != null
+                ? _customProviders.where((p) => p.id == custom.providerId).firstOrNull
+                : null;
+            resolvedModel = UnifiedModel.fromCustomModel(custom, provider: cp);
+          } else {
+            resolvedModel = UnifiedModel.fromChatModel(ChatModel.geminiFlash3Preview);
+          }
         } else {
           resolvedModel = UnifiedModel.fromChatModel(
             ChatModel.resolveFromStoredValue(settings.summaryModel),
@@ -359,8 +368,7 @@ _syncContentFromControllers();
   Future<void> _importSummaryPrompt() async {
     try {
       final result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['json'],
+        type: FileType.any,
       );
 
       if (result == null || result.files.isEmpty) return;
@@ -503,30 +511,61 @@ _syncContentFromControllers();
           _buildSectionHeader('요약 모델'),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: DropdownButton<ChatModelProvider>(
-              value: _selectedProvider,
-              isExpanded: true,
-              underline: const SizedBox(),
-              borderRadius: BorderRadius.circular(16),
-              items: ChatModelProvider.values
-                  .where((p) => p != ChatModelProvider.all)
-                  .map((p) => DropdownMenuItem(
-                        value: p,
-                        child: Text(p.displayName),
-                      ))
-                  .toList(),
-              onChanged: (value) {
-                if (value != null) {
-                  final models = UnifiedModel.getByProvider(value, _customModels);
-                  setState(() {
-                    _selectedProvider = value;
-                    if (models.isNotEmpty) {
-                      _selectedModel = models.first;
-                    }
-                  });
-                }
-              },
-            ),
+            child: Builder(builder: (context) {
+              final dropdownItems = <DropdownMenuItem<String>>[];
+              for (final p in ChatModelProvider.values) {
+                if (p == ChatModelProvider.all || p == ChatModelProvider.custom) continue;
+                dropdownItems.add(DropdownMenuItem(
+                  value: p.name,
+                  child: Text(p.displayName),
+                ));
+              }
+              for (final cp in _customProviders) {
+                dropdownItems.add(DropdownMenuItem(
+                  value: 'custom:${cp.id}',
+                  child: Text(cp.name),
+                ));
+              }
+
+              final selectedKey = _selectedProvider == ChatModelProvider.custom
+                  && _selectedCustomProviderId != null
+                  ? 'custom:$_selectedCustomProviderId'
+                  : _selectedProvider.name;
+
+              return DropdownButton<String>(
+                value: dropdownItems.any((i) => i.value == selectedKey)
+                    ? selectedKey
+                    : ChatModelProvider.googleAIStudio.name,
+                isExpanded: true,
+                underline: const SizedBox(),
+                borderRadius: BorderRadius.circular(16),
+                items: dropdownItems,
+                onChanged: (value) {
+                  if (value == null) return;
+                  List<UnifiedModel> models;
+                  if (value.startsWith('custom:')) {
+                    final cpId = value.substring(7);
+                    models = UnifiedModel.getByCustomProvider(cpId, _customModels, _customProviders);
+                    setState(() {
+                      _selectedProvider = ChatModelProvider.custom;
+                      _selectedCustomProviderId = cpId;
+                      if (models.isNotEmpty) _selectedModel = models.first;
+                    });
+                  } else {
+                    final p = ChatModelProvider.values.firstWhere(
+                      (e) => e.name == value,
+                      orElse: () => ChatModelProvider.googleAIStudio,
+                    );
+                    models = UnifiedModel.getByProvider(p, _customModels, _customProviders);
+                    setState(() {
+                      _selectedProvider = p;
+                      _selectedCustomProviderId = null;
+                      if (models.isNotEmpty) _selectedModel = models.first;
+                    });
+                  }
+                },
+              );
+            }),
           ),
           _buildModelDropdown(),
           const Divider(),
@@ -1007,7 +1046,9 @@ _syncContentFromControllers();
   }
 
   Widget _buildModelDropdown() {
-    final models = UnifiedModel.getByProvider(_selectedProvider, _customModels);
+    final models = _selectedProvider == ChatModelProvider.custom && _selectedCustomProviderId != null
+        ? UnifiedModel.getByCustomProvider(_selectedCustomProviderId!, _customModels, _customProviders)
+        : UnifiedModel.getByProvider(_selectedProvider, _customModels, _customProviders);
     final currentValid = models.contains(_selectedModel);
     final effectiveModel = currentValid
         ? _selectedModel

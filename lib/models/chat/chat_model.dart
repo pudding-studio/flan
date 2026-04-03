@@ -117,6 +117,13 @@ enum ChatModel {
     ApiFormat.gemini,
     ModelPricing(inputPrice: 2.00, cachedInputPrice: 0.20, outputPrice: 12.00),
   ),
+  vertexGeminiPro31(
+    'Gemini 3.1 Pro',
+    ChatModelProvider.vertexAi,
+    'gemini-3.1-pro',
+    ApiFormat.gemini,
+    ModelPricing(inputPrice: 2.00, cachedInputPrice: 0.20, outputPrice: 12.00),
+  ),
   vertexGeminiFlash3Preview(
     'Gemini 3 Flash Preview',
     ChatModelProvider.vertexAi,

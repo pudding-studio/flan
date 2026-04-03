@@ -1144,7 +1144,7 @@
       "chatPromptId": 25,
       "name": "Output Language",
       "type": "variable",
-      "variableName": "ouput_language",
+      "variableName": "output_language",
       "order": 1,
       "options": [
         {
@@ -1277,6 +1277,13 @@
         },
         {
           "id": 23,
+          "presetId": 37,
+          "conditionId": 38,
+          "value": "{{user}}",
+          "customValue": null
+        },
+        {
+          "id": 24,
           "presetId": 37,
           "conditionId": 39,
           "value": "페르소나 사칭 방지",
