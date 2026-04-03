@@ -2753,6 +2753,11 @@ class DatabaseHelper {
     return posts;
   }
 
+  Future<void> deleteCommunityPost(int postId) async {
+    final db = await database;
+    await db.delete('community_posts', where: 'id = ?', whereArgs: [postId]);
+  }
+
   Future<void> deleteCommunityPosts(int characterId) async {
     final db = await database;
     await db.delete('community_posts', where: 'character_id = ?', whereArgs: [characterId]);

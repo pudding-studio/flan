@@ -405,6 +405,23 @@ class _CommunityScreenState extends State<CommunityScreen> {
     }
   }
 
+  Future<void> _deletePost(CommunityPost post) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('게시글 삭제'),
+        content: const Text('이 게시글을 삭제할까요?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('취소')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('삭제')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
+    await _db.deleteCommunityPost(post.id!);
+    await _load();
+  }
+
   String _nowString(DateTime now) =>
       '${now.year}년 ${now.month}월 ${now.day}일 '
       '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
@@ -530,6 +547,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: Theme.of(context).colorScheme.outline,
                         ),
+                  ),
+                  const SizedBox(width: 4),
+                  GestureDetector(
+                    onTap: () => _deletePost(post),
+                    child: Icon(
+                      Icons.delete_outline,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.outlineVariant,
+                    ),
                   ),
                 ],
               ),
