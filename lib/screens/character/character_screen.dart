@@ -635,6 +635,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
           if (!_isEditMode)
             CommonAppBarIconButton(
               icon: Icons.auto_awesome,
+              offsetX: 10.0,
               onPressed: () async {
                 await Navigator.push(
                   context,
