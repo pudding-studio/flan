@@ -1,4 +1,9 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
 import '../../models/chat/chat_model.dart';
 import '../../models/chat/custom_model.dart';
@@ -20,6 +25,14 @@ class CustomModelScreen extends StatelessWidget {
       appBar: CommonAppBar(
         title: '커스텀 모델',
         actions: [
+          CommonAppBarIconButton(
+            icon: Icons.file_download_outlined,
+            onPressed: () => _importFromJson(context),
+          ),
+          CommonAppBarIconButton(
+            icon: Icons.file_upload_outlined,
+            onPressed: () => _exportToJson(context),
+          ),
           CommonAppBarIconButton(
             icon: Icons.add,
             onPressed: () => _openProviderEditor(context, null),
@@ -143,6 +156,145 @@ class CustomModelScreen extends StatelessWidget {
     );
     if (confirmed == true) {
       await settingsProvider.deleteCustomModel(model.id);
+    }
+  }
+
+  Future<void> _exportToJson(BuildContext context) async {
+    final provider = context.read<ChatModelSettingsProvider>();
+    final providers = provider.customProviders;
+    final models = provider.customModels;
+
+    if (providers.isEmpty) {
+      CommonDialog.showSnackBar(
+        context: context,
+        message: '내보낼 커스텀 모델이 없습니다',
+      );
+      return;
+    }
+
+    try {
+      final exportData = providers.map((cp) {
+        final childModels = models
+            .where((m) => m.providerId == cp.id)
+            .map((m) => {
+                  'displayName': m.displayName,
+                  'modelId': m.modelId,
+                  'pricing': m.pricing.toJson(),
+                })
+            .toList();
+        return {
+          'name': cp.name,
+          'baseUrl': cp.baseUrl,
+          'apiKey': cp.apiKey,
+          'apiFormat': cp.apiFormat.name,
+          'models': childModels,
+        };
+      }).toList();
+
+      final jsonString =
+          const JsonEncoder.withIndent('  ').convert(exportData);
+      const fileName = 'custom_models.json';
+
+      if (Platform.isAndroid) {
+        const platform = MethodChannel('com.flanapp.flan/file_saver');
+        final result = await platform.invokeMethod('saveToDownloads', {
+          'fileName': fileName,
+          'content': jsonString,
+        });
+
+        if (context.mounted) {
+          CommonDialog.showSnackBar(
+            context: context,
+            message: result == true
+                ? 'Download/$fileName에 저장되었습니다'
+                : '저장에 실패했습니다',
+          );
+        }
+      } else if (Platform.isIOS) {
+        final directory = await getApplicationDocumentsDirectory();
+        final filePath = '${directory.path}/$fileName';
+        final file = File(filePath);
+        await file.writeAsString(jsonString);
+
+        if (context.mounted) {
+          CommonDialog.showSnackBar(
+            context: context,
+            message: '$filePath에 저장되었습니다',
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '내보내기 실패: $e',
+        );
+      }
+    }
+  }
+
+  Future<void> _importFromJson(BuildContext context) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+      );
+      if (result == null || result.files.single.path == null) return;
+
+      final file = File(result.files.single.path!);
+      final jsonString = await file.readAsString();
+      final List<dynamic> importData = jsonDecode(jsonString);
+
+      final provider = context.read<ChatModelSettingsProvider>();
+      int providerCount = 0;
+      int modelCount = 0;
+
+      for (final entry in importData) {
+        final map = entry as Map<String, dynamic>;
+        final cp = CustomProvider(
+          id: DateTime.now().microsecondsSinceEpoch.toString(),
+          name: map['name'] as String,
+          baseUrl: map['baseUrl'] as String? ?? '',
+          apiKey: map['apiKey'] as String? ?? '',
+          apiFormat: ApiFormat.values.firstWhere(
+            (f) => f.name == map['apiFormat'],
+            orElse: () => ApiFormat.openai,
+          ),
+        );
+        await provider.addCustomProvider(cp);
+        providerCount++;
+
+        final models = map['models'] as List<dynamic>? ?? [];
+        for (final mEntry in models) {
+          final mMap = mEntry as Map<String, dynamic>;
+          final model = CustomModel(
+            id: DateTime.now().microsecondsSinceEpoch.toString(),
+            displayName: mMap['displayName'] as String,
+            modelId: mMap['modelId'] as String,
+            providerId: cp.id,
+            pricing: mMap['pricing'] != null
+                ? ModelPricing.fromJson(
+                    mMap['pricing'] as Map<String, dynamic>)
+                : const ModelPricing.zero(),
+          );
+          await provider.addCustomModel(model);
+          modelCount++;
+        }
+      }
+
+      if (context.mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '제조사 $providerCount개, 모델 $modelCount개를 가져왔습니다',
+        );
+      }
+    } catch (e) {
+      if (context.mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: '가져오기 실패: $e',
+        );
+      }
     }
   }
 }
