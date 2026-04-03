@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../../database/database_helper.dart';
 import '../../models/character/character.dart';
 import '../../models/character/start_scenario.dart';
+import '../../models/chat/chat_message.dart';
 import '../../models/chat/chat_room.dart';
 import '../../models/chat/chat_summary.dart';
 import '../../models/community/community_post.dart';
@@ -38,6 +39,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   ChatRoom? _chatRoom;
   List<StartScenario> _startScenarios = [];
   List<ChatSummary> _chatSummaries = [];
+  List<ChatMessage> _recentMessages = [];
   List<CommunityPost> _posts = [];
   bool _isLoading = true;
   bool _isGenerating = false;
@@ -55,6 +57,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
       _db.readChatRoom(widget.chatRoomId),
       _db.readStartScenarios(widget.characterId),
       _db.getChatSummaries(widget.chatRoomId),
+      _db.readRecentAssistantMessages(widget.chatRoomId, 3),
       _db.readCommunityPosts(widget.characterId),
     ]);
     if (!mounted) return;
@@ -63,7 +66,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
       _chatRoom = results[1] as ChatRoom?;
       _startScenarios = results[2] as List<StartScenario>;
       _chatSummaries = results[3] as List<ChatSummary>;
-      _posts = results[4] as List<CommunityPost>;
+      _recentMessages = results[4] as List<ChatMessage>;
+      _posts = results[5] as List<CommunityPost>;
       _isLoading = false;
     });
   }
@@ -88,6 +92,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
     if (_chatSummaries.isNotEmpty) {
       final summaryText = _chatSummaries.map((s) => s.summaryContent).join('\n\n');
       parts.add('## 세부 요약\n$summaryText');
+    }
+
+    if (_recentMessages.isNotEmpty) {
+      final recentText = _recentMessages.map((m) => m.content).join('\n\n---\n\n');
+      parts.add('## 최근 대화 내용\n$recentText');
     }
 
     return parts.join('\n\n');

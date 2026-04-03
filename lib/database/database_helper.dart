@@ -2112,6 +2112,18 @@ class DatabaseHelper {
     return summaries;
   }
 
+  Future<List<ChatMessage>> readRecentAssistantMessages(int chatRoomId, int count) async {
+    final db = await database;
+    final result = await db.query(
+      'chat_messages',
+      where: "chat_room_id = ? AND role = 'assistant'",
+      whereArgs: [chatRoomId],
+      orderBy: 'created_at DESC',
+      limit: count,
+    );
+    return result.reversed.map((map) => ChatMessage.fromMap(map)).toList();
+  }
+
   Future<List<ChatMessage>> readChatMessagesRecent(int chatRoomId, int count) async {
     final db = await database;
     final limit = count * 2;
