@@ -65,7 +65,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
       _character = results[0] as Character?;
       _chatRoom = results[1] as ChatRoom?;
       _startScenarios = results[2] as List<StartScenario>;
-      _chatSummaries = results[3] as List<ChatSummary>;
+      final allSummaries = results[3] as List<ChatSummary>;
+      _chatSummaries = allSummaries.length > 5 ? allSummaries.sublist(allSummaries.length - 5) : allSummaries;
       _recentMessages = results[4] as List<ChatMessage>;
       _posts = results[5] as List<CommunityPost>;
       _isLoading = false;
