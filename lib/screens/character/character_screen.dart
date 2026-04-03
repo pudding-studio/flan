@@ -24,6 +24,7 @@ import 'character_view_screen.dart';
 import '../../widgets/character/character_card.dart';
 import '../../widgets/character/character_list_item.dart';
 import '../../widgets/common/common_appbar.dart';
+import '../agent/agent_chat_screen.dart';
 
 class CharacterScreen extends StatefulWidget {
   const CharacterScreen({super.key});
@@ -631,6 +632,20 @@ class _CharacterScreenState extends State<CharacterScreen> {
         showCloseButton: _isEditMode,
         onClosePressed: _toggleEditMode,
         actions: [
+          if (!_isEditMode)
+            CommonAppBarIconButton(
+              icon: Icons.auto_awesome,
+              onPressed: () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const AgentChatScreen(),
+                  ),
+                );
+                _loadCharacters();
+              },
+              tooltip: 'Flan Agent',
+            ),
           if (!_isEditMode)
             CommonAppBarIconButton(
               icon: Icons.edit_outlined,

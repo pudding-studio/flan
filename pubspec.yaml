@@ -80,6 +80,7 @@ flutter:
     - assets/defaults/chat_prompts/
     - assets/defaults/summary_prompts/
     - assets/defaults/characters/
+    - assets/defaults/agent_prompts/
 
 flutter_launcher_icons:
   android: true
