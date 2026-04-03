@@ -81,6 +81,7 @@ flutter:
     - assets/defaults/summary_prompts/
     - assets/defaults/characters/
     - assets/defaults/agent_prompts/
+    - assets/defaults/community_prompts/
 
 flutter_launcher_icons:
   android: true

@@ -20,6 +20,8 @@ import '../models/chat/chat_message_metadata.dart';
 import '../models/chat/auto_summary_settings.dart';
 import '../models/chat/chat_room_summary.dart';
 import '../models/chat/chat_summary.dart';
+import '../models/community/community_post.dart';
+import '../models/community/community_comment.dart';
 import '../utils/metadata_parser.dart';
 
 class DatabaseHelper {
@@ -40,7 +42,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 40,
+      version: 41,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -478,6 +480,39 @@ class DatabaseHelper {
     await db.execute('''
       CREATE INDEX idx_end_pin_message_id_chat_summaries
       ON chat_summaries (end_pin_message_id)
+    ''');
+
+    // Community tables
+    await db.execute('''
+      CREATE TABLE community_posts (
+        id $idType,
+        character_id $intType,
+        author $textType,
+        title $textType,
+        time $textType,
+        content $textType,
+        created_at $textType,
+        FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE
+      )
+    ''');
+    await db.execute('''
+      CREATE INDEX idx_character_id_community_posts
+      ON community_posts (character_id)
+    ''');
+
+    await db.execute('''
+      CREATE TABLE community_comments (
+        id $idType,
+        post_id $intType,
+        author $textType,
+        time $textType,
+        content $textType,
+        FOREIGN KEY (post_id) REFERENCES community_posts (id) ON DELETE CASCADE
+      )
+    ''');
+    await db.execute('''
+      CREATE INDEX idx_post_id_community_comments
+      ON community_comments (post_id)
     ''');
   }
 
@@ -1115,6 +1150,39 @@ class DatabaseHelper {
     if (oldVersion < 40) {
       await db.execute('''
         ALTER TABLE chat_logs ADD COLUMN model_name TEXT
+      ''');
+    }
+
+    if (oldVersion < 41) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS community_posts (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          character_id INTEGER NOT NULL,
+          author TEXT NOT NULL,
+          title TEXT NOT NULL,
+          time TEXT NOT NULL,
+          content TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE
+        )
+      ''');
+      await db.execute('''
+        CREATE INDEX IF NOT EXISTS idx_character_id_community_posts
+        ON community_posts (character_id)
+      ''');
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS community_comments (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          post_id INTEGER NOT NULL,
+          author TEXT NOT NULL,
+          time TEXT NOT NULL,
+          content TEXT NOT NULL,
+          FOREIGN KEY (post_id) REFERENCES community_posts (id) ON DELETE CASCADE
+        )
+      ''');
+      await db.execute('''
+        CREATE INDEX IF NOT EXISTS idx_post_id_community_comments
+        ON community_comments (post_id)
       ''');
     }
   }
@@ -2627,6 +2695,55 @@ class DatabaseHelper {
     }
 
     return promptId;
+  }
+
+  // ==================== 커뮤니티 CRUD ====================
+
+  Future<int> createCommunityPost(CommunityPost post) async {
+    final db = await database;
+    final map = post.toMap();
+    map.remove('id');
+    return await db.insert('community_posts', map);
+  }
+
+  Future<int> createCommunityComment(CommunityComment comment) async {
+    final db = await database;
+    final map = comment.toMap();
+    map.remove('id');
+    return await db.insert('community_comments', map);
+  }
+
+  Future<List<CommunityPost>> readCommunityPosts(int characterId) async {
+    final db = await database;
+
+    final postMaps = await db.query(
+      'community_posts',
+      where: 'character_id = ?',
+      whereArgs: [characterId],
+      orderBy: 'time DESC',
+    );
+    final posts = postMaps.map((m) => CommunityPost.fromMap(m)).toList();
+
+    if (posts.isEmpty) return posts;
+
+    final postIds = posts.map((p) => p.id!).toList();
+    final placeholders = List.filled(postIds.length, '?').join(', ');
+    final commentMaps = await db.rawQuery(
+      'SELECT * FROM community_comments WHERE post_id IN ($placeholders)',
+      postIds,
+    );
+    final comments = commentMaps.map((m) => CommunityComment.fromMap(m)).toList();
+
+    for (final post in posts) {
+      post.comments = comments.where((c) => c.postId == post.id).toList();
+    }
+
+    return posts;
+  }
+
+  Future<void> deleteCommunityPosts(int characterId) async {
+    final db = await database;
+    await db.delete('community_posts', where: 'character_id = ?', whereArgs: [characterId]);
   }
 
   // ==================== 유틸리티 ====================

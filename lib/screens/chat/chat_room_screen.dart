@@ -37,6 +37,7 @@ import '../../providers/viewer_settings_provider.dart';
 import 'widgets/chat_bottom_panel.dart';
 import 'widgets/chat_room_drawer.dart';
 import '../character/character_view_screen.dart';
+import '../community/community_screen.dart';
 
 enum SendingPhase { none, preparing, waiting, summarizing }
 
@@ -75,7 +76,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   Map<int, ChatMessageMetadata> _metadataMap = {};
   int? _summaryThresholdIndex;
   Set<int> _summarizedMessageIds = {};
-  bool _showBottomPanel = false;
+  bool _showMorePanel = false;
   bool _showScrollButtons = false;
   bool _hasNewMessage = false;
   List<ChatPrompt> _chatPrompts = [];
@@ -104,8 +105,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   void _onMessageFocusChanged() {
-    if (_messageFocusNode.hasFocus && _showBottomPanel) {
-      setState(() => _showBottomPanel = false);
+    if (_messageFocusNode.hasFocus && _showMorePanel) {
+      setState(() => _showMorePanel = false);
     }
   }
 
@@ -674,13 +675,108 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     });
   }
 
-  void _toggleBottomPanel() {
-    if (_showBottomPanel) {
-      setState(() => _showBottomPanel = false);
+  void _showMoreMenu() {
+    if (_showMorePanel) {
+      setState(() => _showMorePanel = false);
     } else {
       FocusScope.of(context).unfocus();
-      setState(() => _showBottomPanel = true);
+      setState(() => _showMorePanel = true);
     }
+  }
+
+  Widget _buildMorePanel() {
+    return Container(
+      color: Theme.of(context).colorScheme.surface,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          child: GridView.count(
+            crossAxisCount: 4,
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            mainAxisSpacing: 20,
+            crossAxisSpacing: 8,
+            childAspectRatio: 0.85,
+            children: [
+              _buildMenuAppIcon(
+                context,
+                icon: Icons.forum_outlined,
+                label: '커뮤니티',
+                onTap: () {
+                  setState(() => _showMorePanel = false);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => CommunityScreen(
+                        characterId: _character!.id!,
+                        chatRoomId: widget.chatRoomId,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              _buildMenuAppIcon(
+                context,
+                icon: Icons.text_fields,
+                label: '텍스트 설정',
+                onTap: () {
+                  setState(() => _showMorePanel = false);
+                  _showViewerSettings();
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMenuAppIcon(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.primaryContainer,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              color: Theme.of(context).colorScheme.onPrimaryContainer,
+              size: 26,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelSmall,
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showViewerSettings() {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+      ),
+      builder: (context) => const ChatBottomPanel(),
+    );
   }
 
   Future<void> _finishSending() async {
@@ -1564,9 +1660,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               children: [
                 GestureDetector(
                   onTap: () {
-                    if (_showBottomPanel) {
-                      setState(() => _showBottomPanel = false);
-                    }
+                    if (_showMorePanel) setState(() => _showMorePanel = false);
                   },
                   child: ListView.builder(
                     controller: _scrollController,
@@ -1723,11 +1817,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       IconButton(
                         icon: Icon(
                           Icons.more_vert,
-                          color: _showBottomPanel
+                          color: _showMorePanel
                               ? Theme.of(context).colorScheme.primary
                               : null,
                         ),
-                        onPressed: _toggleBottomPanel,
+                        onPressed: _showMoreMenu,
                         padding: const EdgeInsets.only(left: 0, top: 8, right: 8, bottom: 8),
                       ),
                     ],
@@ -1736,8 +1830,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               ),
             ),
           ),
-          if (_showBottomPanel)
-            const ChatBottomPanel(),
+          if (_showMorePanel) _buildMorePanel(),
         ],
       ),
     );

@@ -14,6 +14,7 @@ import 'providers/theme_provider.dart';
 import 'providers/chat_model_provider.dart';
 import 'providers/tokenizer_provider.dart';
 import 'providers/viewer_settings_provider.dart';
+import 'providers/community_model_provider.dart';
 import 'database/database_helper.dart';
 import 'services/default_seeder_service.dart';
 
@@ -41,6 +42,7 @@ void main() async {
           ChangeNotifierProvider(create: (_) => ChatModelSettingsProvider()),
           ChangeNotifierProvider(create: (_) => TokenizerProvider()),
           ChangeNotifierProvider(create: (_) => ViewerSettingsProvider()),
+          ChangeNotifierProvider(create: (_) => CommunityModelProvider()),
         ],
         child: const MyApp(),
       ),
