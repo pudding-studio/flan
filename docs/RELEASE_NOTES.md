@@ -1,5 +1,31 @@
 # Flan 릴리즈 노트
 
+## v1.0.4
+
+### 새로운 기능
+- **Flan Agent 채팅** — 대화형으로 캐릭터 생성·수정·편집 가능
+- **커스텀 제조사(Provider) 그룹핑** — 제조사별로 URL/Key/API포맷을 공유하며 하위 모델 여러 개 등록
+- **제조사 드롭다운에 커스텀 제조사 표시** — "커스텀" 단일 항목 대신 등록한 제조사가 개별 항목으로 표시
+- **커스텀 모델 내보내기/가져오기** — 제조사+모델 데이터를 JSON으로 export/import
+- **기본 프롬프트 수정·내보내기** — 기본 프롬프트도 편집 및 내보내기 가능
+- **README 재작성 및 CC BY-NC-SA 4.0 라이선스 추가**
+
+### 개선
+- 시작메시지를 첫 유저 메시지 바로 앞 model 턴으로만 삽입
+- 시작설정/시작메시지 표시 시 {{user}} {{char}} 플레이스홀더 치환 적용
+- 파일 가져오기 시 모든 확장자 선택 가능하도록 변경
+
+### 버그 수정
+- 캐릭터 카드 태그 다수 사용 시 bottom overflow 수정
+- Agent 아이콘 위치 조정
+- CommonDropdownButton에서 삭제된 항목 선택 시 AssertionError 수정
+- CharacterScreen에서 dispose 후 setState 호출 오류 수정
+- 기본 프롬프트 변수명 오타 수정 (ouput_language → output_language)
+- 프롬프트 조건 변수 치환 시 중첩 변수 미해결 문제 수정
+- Google AI Studio·Anthropic API 키 저장 시 검증 스킵 (비용 발생 방지)
+
+---
+
 ## v1.0.3
 
 ### 새로운 기능
