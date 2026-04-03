@@ -1,5 +1,6 @@
 import 'chat_model.dart';
 import 'custom_model.dart';
+import 'custom_provider.dart';
 
 class UnifiedModel {
   final String id;
@@ -36,16 +37,22 @@ class UnifiedModel {
         apiKeyType: _apiKeyTypeForProvider(model.provider),
       );
 
-  factory UnifiedModel.fromCustomModel(CustomModel model) => UnifiedModel(
+  factory UnifiedModel.fromCustomModel(
+    CustomModel model, {
+    CustomProvider? provider,
+  }) =>
+      UnifiedModel(
         id: 'custom:${model.id}',
-        displayName: model.displayName,
+        displayName: provider != null
+            ? '${provider.name} > ${model.displayName}'
+            : model.displayName,
         modelId: model.modelId,
-        apiFormat: model.apiFormat,
+        apiFormat: provider?.apiFormat ?? model.apiFormat,
         provider: ChatModelProvider.custom,
         pricing: model.pricing,
-        baseUrl: model.baseUrl,
+        baseUrl: provider?.baseUrl ?? model.baseUrl,
         apiKeyType: model.apiKeyType,
-        apiKey: model.apiKey,
+        apiKey: provider?.apiKey ?? model.apiKey,
         isCustom: true,
       );
 
@@ -69,21 +76,31 @@ class UnifiedModel {
 
   static List<UnifiedModel> getByProvider(
     ChatModelProvider provider,
-    List<CustomModel> customModels,
-  ) {
+    List<CustomModel> customModels, [
+    List<CustomProvider> customProviders = const [],
+  ]) {
     final builtIn = ChatModel.getModelsByProvider(provider)
         .map((m) => UnifiedModel.fromChatModel(m))
         .toList();
 
+    UnifiedModel resolveCustom(CustomModel m) {
+      final cp = m.providerId != null
+          ? customProviders
+              .where((p) => p.id == m.providerId)
+              .firstOrNull
+          : null;
+      return UnifiedModel.fromCustomModel(m, provider: cp);
+    }
+
     if (provider == ChatModelProvider.all) {
       return [
         ...builtIn,
-        ...customModels.map((m) => UnifiedModel.fromCustomModel(m)),
+        ...customModels.map(resolveCustom),
       ];
     }
 
     if (provider == ChatModelProvider.custom) {
-      return customModels.map((m) => UnifiedModel.fromCustomModel(m)).toList();
+      return customModels.map(resolveCustom).toList();
     }
 
     return builtIn;

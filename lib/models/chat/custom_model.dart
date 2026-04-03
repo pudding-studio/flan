@@ -10,15 +10,17 @@ class CustomModel {
   final String baseUrl;
   final String apiKey;
   final ModelPricing pricing;
+  final String? providerId;
 
   const CustomModel({
     required this.id,
     required this.displayName,
     required this.modelId,
     this.apiFormat = ApiFormat.openai,
-    required this.baseUrl,
-    required this.apiKey,
+    this.baseUrl = '',
+    this.apiKey = '',
     this.pricing = const ModelPricing.zero(),
+    this.providerId,
   });
 
   /// Backward-compatible apiKeyType for UnifiedModel
@@ -32,6 +34,7 @@ class CustomModel {
         'baseUrl': baseUrl,
         'apiKey': apiKey,
         'pricing': pricing.toJson(),
+        if (providerId != null) 'providerId': providerId,
       };
 
   factory CustomModel.fromJson(Map<String, dynamic> json) => CustomModel(
@@ -47,6 +50,7 @@ class CustomModel {
         pricing: json['pricing'] != null
             ? ModelPricing.fromJson(json['pricing'] as Map<String, dynamic>)
             : const ModelPricing.zero(),
+        providerId: json['providerId'] as String?,
       );
 
   CustomModel copyWith({
@@ -56,6 +60,7 @@ class CustomModel {
     String? baseUrl,
     String? apiKey,
     ModelPricing? pricing,
+    String? providerId,
   }) =>
       CustomModel(
         id: id,
@@ -65,6 +70,7 @@ class CustomModel {
         baseUrl: baseUrl ?? this.baseUrl,
         apiKey: apiKey ?? this.apiKey,
         pricing: pricing ?? this.pricing,
+        providerId: providerId ?? this.providerId,
       );
 }
 

@@ -10,6 +10,7 @@ import '../models/chat/chat_message.dart';
 import '../models/chat/chat_message_metadata.dart';
 import '../models/chat/summary_prompt_item.dart';
 import '../models/chat/custom_model.dart';
+import '../models/chat/custom_provider.dart';
 import '../models/chat/unified_model.dart';
 import '../models/prompt/prompt_parameters.dart';
 import '../utils/prompt_builder.dart';
@@ -458,7 +459,11 @@ class AutoSummaryService {
       final customModels = await CustomModelRepository.loadAll();
       final custom = customModels.where((m) => m.id == customId).firstOrNull;
       if (custom != null) {
-        return UnifiedModel.fromCustomModel(custom);
+        final providers = await CustomProviderRepository.loadAll();
+        final cp = custom.providerId != null
+            ? providers.where((p) => p.id == custom.providerId).firstOrNull
+            : null;
+        return UnifiedModel.fromCustomModel(custom, provider: cp);
       }
     }
     final resolved = ChatModel.resolveFromStoredValue(storedValue);

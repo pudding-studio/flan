@@ -9,6 +9,7 @@ import '../../constants/ui_constants.dart';
 import '../../database/database_helper.dart';
 import '../../models/chat/chat_model.dart';
 import '../../models/chat/custom_model.dart';
+import '../../models/chat/custom_provider.dart';
 import '../../models/chat/unified_model.dart';
 import '../../models/chat/auto_summary_settings.dart';
 import '../../models/chat/summary_prompt_item.dart';
@@ -42,6 +43,7 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
   ChatModelProvider _selectedProvider = ChatModelProvider.googleAIStudio;
   UnifiedModel _selectedModel = UnifiedModel.fromChatModel(ChatModel.geminiFlash3Preview);
   List<CustomModel> _customModels = [];
+  List<CustomProvider> _customProviders = [];
   late TextEditingController _tokenThresholdController;
   AutoSummarySettings? _existingSettings;
   bool _isLoading = true;
@@ -90,6 +92,7 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
         _autoPinByMessageCountController.text = msgCount?.toString() ?? '10';
       }
 
+      _customProviders = await CustomProviderRepository.loadAll();
       _customModels = await CustomModelRepository.loadAll();
 
       final settings = await _db.getAutoSummarySettings(widget.chatRoomId);
@@ -99,9 +102,14 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
         if (settings.summaryModel.startsWith('custom:')) {
           final customId = settings.summaryModel.replaceFirst('custom:', '');
           final custom = _customModels.where((m) => m.id == customId).firstOrNull;
-          resolvedModel = custom != null
-              ? UnifiedModel.fromCustomModel(custom)
-              : UnifiedModel.fromChatModel(ChatModel.geminiFlash3Preview);
+          if (custom != null) {
+            final cp = custom.providerId != null
+                ? _customProviders.where((p) => p.id == custom.providerId).firstOrNull
+                : null;
+            resolvedModel = UnifiedModel.fromCustomModel(custom, provider: cp);
+          } else {
+            resolvedModel = UnifiedModel.fromChatModel(ChatModel.geminiFlash3Preview);
+          }
         } else {
           resolvedModel = UnifiedModel.fromChatModel(
             ChatModel.resolveFromStoredValue(settings.summaryModel),
@@ -516,7 +524,7 @@ _syncContentFromControllers();
                   .toList(),
               onChanged: (value) {
                 if (value != null) {
-                  final models = UnifiedModel.getByProvider(value, _customModels);
+                  final models = UnifiedModel.getByProvider(value, _customModels, _customProviders);
                   setState(() {
                     _selectedProvider = value;
                     if (models.isNotEmpty) {
