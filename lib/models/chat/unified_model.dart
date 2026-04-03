@@ -43,9 +43,7 @@ class UnifiedModel {
   }) =>
       UnifiedModel(
         id: 'custom:${model.id}',
-        displayName: provider != null
-            ? '${provider.name} > ${model.displayName}'
-            : model.displayName,
+        displayName: model.displayName,
         modelId: model.modelId,
         apiFormat: provider?.apiFormat ?? model.apiFormat,
         provider: ChatModelProvider.custom,
@@ -104,6 +102,19 @@ class UnifiedModel {
     }
 
     return builtIn;
+  }
+
+  static List<UnifiedModel> getByCustomProvider(
+    String customProviderId,
+    List<CustomModel> customModels,
+    List<CustomProvider> customProviders,
+  ) {
+    final cp =
+        customProviders.where((p) => p.id == customProviderId).firstOrNull;
+    return customModels
+        .where((m) => m.providerId == customProviderId)
+        .map((m) => UnifiedModel.fromCustomModel(m, provider: cp))
+        .toList();
   }
 
   @override

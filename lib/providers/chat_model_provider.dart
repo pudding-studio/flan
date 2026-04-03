@@ -8,20 +8,30 @@ import '../models/chat/unified_model.dart';
 class ChatModelSettingsProvider extends ChangeNotifier {
   static const String _providerKey = 'chat_model_provider';
   static const String _modelKey = 'chat_model';
+  static const String _customProviderIdKey = 'chat_model_custom_provider_id';
 
   ChatModelProvider _selectedProvider = ChatModelProvider.all;
+  String? _selectedCustomProviderId;
   UnifiedModel _selectedModel =
       UnifiedModel.fromChatModel(ChatModel.geminiPro31Preview);
   List<CustomModel> _customModels = [];
   List<CustomProvider> _customProviders = [];
 
   ChatModelProvider get selectedProvider => _selectedProvider;
+  String? get selectedCustomProviderId => _selectedCustomProviderId;
   UnifiedModel get selectedModel => _selectedModel;
   List<CustomModel> get customModels => _customModels;
   List<CustomProvider> get customProviders => _customProviders;
 
-  List<UnifiedModel> get availableModels =>
-      UnifiedModel.getByProvider(_selectedProvider, _customModels, _customProviders);
+  List<UnifiedModel> get availableModels {
+    if (_selectedProvider == ChatModelProvider.custom &&
+        _selectedCustomProviderId != null) {
+      return UnifiedModel.getByCustomProvider(
+          _selectedCustomProviderId!, _customModels, _customProviders);
+    }
+    return UnifiedModel.getByProvider(
+        _selectedProvider, _customModels, _customProviders);
+  }
 
   ChatModelSettingsProvider() {
     _loadSettings();
@@ -41,6 +51,10 @@ class ChatModelSettingsProvider extends ChangeNotifier {
         (p) => p.name == providerString,
         orElse: () => ChatModelProvider.all,
       );
+    }
+
+    if (_selectedProvider == ChatModelProvider.custom) {
+      _selectedCustomProviderId = prefs.getString(_customProviderIdKey);
     }
 
     if (modelString != null) {
@@ -105,6 +119,7 @@ class ChatModelSettingsProvider extends ChangeNotifier {
 
   Future<void> setProvider(ChatModelProvider provider) async {
     _selectedProvider = provider;
+    _selectedCustomProviderId = null;
 
     final models =
         UnifiedModel.getByProvider(provider, _customModels, _customProviders);
@@ -116,6 +131,25 @@ class ChatModelSettingsProvider extends ChangeNotifier {
 
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_providerKey, provider.name);
+    await prefs.remove(_customProviderIdKey);
+    await prefs.setString(_modelKey, _selectedModel.id);
+  }
+
+  Future<void> setCustomProviderSelection(String customProviderId) async {
+    _selectedProvider = ChatModelProvider.custom;
+    _selectedCustomProviderId = customProviderId;
+
+    final models = UnifiedModel.getByCustomProvider(
+        customProviderId, _customModels, _customProviders);
+    if (!models.contains(_selectedModel) && models.isNotEmpty) {
+      _selectedModel = models.first;
+    }
+
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_providerKey, ChatModelProvider.custom.name);
+    await prefs.setString(_customProviderIdKey, customProviderId);
     await prefs.setString(_modelKey, _selectedModel.id);
   }
 

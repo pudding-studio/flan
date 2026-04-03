@@ -33,25 +33,52 @@ class ChatModelScreen extends StatelessWidget {
         builder: (context, provider, child) {
           final availableModels = provider.availableModels;
 
+          // Build provider dropdown items: built-in (except 'custom') + each custom provider
+          final dropdownItems = <DropdownMenuItem<String>>[];
+          for (final p in ChatModelProvider.values) {
+            if (p == ChatModelProvider.custom) continue;
+            dropdownItems.add(DropdownMenuItem(
+              value: p.name,
+              child: Text(p.displayName),
+            ));
+          }
+          for (final cp in provider.customProviders) {
+            dropdownItems.add(DropdownMenuItem(
+              value: 'custom:${cp.id}',
+              child: Text(cp.name),
+            ));
+          }
+
+          // Current selection key
+          final selectedKey = provider.selectedProvider == ChatModelProvider.custom
+              && provider.selectedCustomProviderId != null
+              ? 'custom:${provider.selectedCustomProviderId}'
+              : provider.selectedProvider.name;
+
           return ListView(
             children: [
               _buildSectionHeader(context, '제조사'),
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: DropdownButton<ChatModelProvider>(
-                  value: provider.selectedProvider,
+                child: DropdownButton<String>(
+                  value: dropdownItems.any((i) => i.value == selectedKey)
+                      ? selectedKey
+                      : ChatModelProvider.all.name,
                   isExpanded: true,
                   underline: const SizedBox(),
                   borderRadius: BorderRadius.circular(16),
-                  items: ChatModelProvider.values
-                      .map((p) => DropdownMenuItem(
-                            value: p,
-                            child: Text(p.displayName),
-                          ))
-                      .toList(),
+                  items: dropdownItems,
                   onChanged: (value) {
-                    if (value != null) {
-                      provider.setProvider(value);
+                    if (value == null) return;
+                    if (value.startsWith('custom:')) {
+                      final cpId = value.substring(7);
+                      provider.setCustomProviderSelection(cpId);
+                    } else {
+                      final p = ChatModelProvider.values.firstWhere(
+                        (e) => e.name == value,
+                        orElse: () => ChatModelProvider.all,
+                      );
+                      provider.setProvider(p);
                     }
                   },
                 ),
