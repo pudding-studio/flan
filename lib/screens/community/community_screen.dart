@@ -185,6 +185,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   void _showWritePost() {
+    final nicknameCtrl = TextEditingController(text: '나');
     final titleCtrl = TextEditingController();
     final contentCtrl = TextEditingController();
 
@@ -206,6 +207,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
             Text('게시글 작성',
                 style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
+            TextField(
+              controller: nicknameCtrl,
+              decoration: const InputDecoration(
+                hintText: '닉네임',
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+            ),
+            const SizedBox(height: 10),
             TextField(
               controller: titleCtrl,
               decoration: const InputDecoration(
@@ -229,11 +239,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
               width: double.infinity,
               child: FilledButton(
                 onPressed: () async {
+                  final nickname = nicknameCtrl.text.trim();
                   final title = titleCtrl.text.trim();
                   final content = contentCtrl.text.trim();
-                  if (title.isEmpty || content.isEmpty) return;
+                  if (nickname.isEmpty || title.isEmpty || content.isEmpty) return;
                   Navigator.pop(ctx);
-                  await _submitPost(title: title, content: content);
+                  await _submitPost(author: nickname, title: title, content: content);
                 },
                 child: const Text('등록'),
               ),
@@ -244,13 +255,13 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
   }
 
-  Future<void> _submitPost({required String title, required String content}) async {
+  Future<void> _submitPost({required String author, required String title, required String content}) async {
     setState(() => _isGenerating = true);
     try {
       final now = DateTime.now();
       final post = CommunityPost(
         chatRoomId: widget.chatRoomId,
-        author: '나',
+        author: author,
         title: title,
         time: now,
         content: content,

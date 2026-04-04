@@ -63,6 +63,9 @@ class DefaultSeederService {
   }
 
   Future<void> seedDefaultCharacters() async {
+    final existing = await _db.readAllCharacters();
+    if (existing.isNotEmpty) return;
+
     final assetPaths = await _listAssets('assets/defaults/characters');
 
     for (final assetPath in assetPaths) {

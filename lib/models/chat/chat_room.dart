@@ -32,7 +32,7 @@ class ChatRoom {
     this.pinMode = 'auto',
     this.autoPinByDate = false,
     this.autoPinByLocation = false,
-    this.autoPinByAi = true,
+    this.autoPinByAi = false,
     this.autoPinByMessageCount,
     this.selectedModelId,
     DateTime? createdAt,

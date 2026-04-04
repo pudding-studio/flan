@@ -541,7 +541,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       final assistantMessageId = await _db.createChatMessage(assistantMessage);
 
-      await _saveMessageMetadata(assistantMessageId, responseText);
+      final pinCreated = await _saveMessageMetadata(assistantMessageId, responseText);
 
       // 채팅방 토큰 합산 업데이트
       await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
@@ -551,17 +551,19 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       );
       await _db.updateChatRoom(updatedChatRoom);
 
-      // 자동 요약 트리거 체크 (전역 설정)
-      final latestChatRoom = await _db.readChatRoom(widget.chatRoomId);
-      if (latestChatRoom != null) {
-        final shouldTrigger = await _autoSummaryService.shouldTriggerSummary(
-          chatRoomId: widget.chatRoomId,
-          currentTokenCount: latestChatRoom.totalTokenCount,
-        );
+      // 자동 요약 트리거 체크: 새 핀이 생성된 경우에만 실행
+      if (pinCreated) {
+        final latestChatRoom = await _db.readChatRoom(widget.chatRoomId);
+        if (latestChatRoom != null) {
+          final shouldTrigger = await _autoSummaryService.shouldTriggerSummary(
+            chatRoomId: widget.chatRoomId,
+            currentTokenCount: latestChatRoom.totalTokenCount,
+          );
 
-        if (shouldTrigger) {
-          if (mounted) setState(() => _sendingPhase = SendingPhase.summarizing);
-          await _autoSummaryService.generateAllPendingSummaries(chatRoomId: widget.chatRoomId);
+          if (shouldTrigger) {
+            if (mounted) setState(() => _sendingPhase = SendingPhase.summarizing);
+            await _autoSummaryService.generateAllPendingSummaries(chatRoomId: widget.chatRoomId);
+          }
         }
       }
 
@@ -699,7 +701,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
-  Future<void> _saveMessageMetadata(int messageId, String content) async {
+  /// Returns true if a new pin was created for this message.
+  Future<bool> _saveMessageMetadata(int messageId, String content) async {
     final previous = await _db.readLatestChatMessageMetadata(widget.chatRoomId);
     final metadata = MetadataParser.buildMetadata(
       chatMessageId: messageId,
@@ -736,6 +739,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     setState(() {
       _metadataMap[messageId] = finalMetadata.copyWith(id: metadataId);
     });
+    return shouldPin;
   }
 
   Future<void> _togglePin(int messageId) async {
@@ -877,15 +881,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   Future<void> _onPromptChanged(int? promptId) async {
     if (_chatRoom == null) return;
-    final updated = ChatRoom(
-      id: _chatRoom!.id,
-      characterId: _chatRoom!.characterId,
-      name: _chatRoom!.name,
+    final updated = _chatRoom!.copyWith(
       selectedChatPromptId: promptId,
-      selectedPersonaId: _chatRoom!.selectedPersonaId,
-      selectedStartScenarioId: _chatRoom!.selectedStartScenarioId,
-      totalTokenCount: _chatRoom!.totalTokenCount,
-      createdAt: _chatRoom!.createdAt,
       updatedAt: DateTime.now(),
     );
     await _db.updateChatRoom(updated);
@@ -904,15 +901,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   Future<void> _onPersonaChanged(int? personaId) async {
     if (_chatRoom == null) return;
-    final updated = ChatRoom(
-      id: _chatRoom!.id,
-      characterId: _chatRoom!.characterId,
-      name: _chatRoom!.name,
-      selectedChatPromptId: _chatRoom!.selectedChatPromptId,
+    final updated = _chatRoom!.copyWith(
       selectedPersonaId: personaId,
-      selectedStartScenarioId: _chatRoom!.selectedStartScenarioId,
-      totalTokenCount: _chatRoom!.totalTokenCount,
-      createdAt: _chatRoom!.createdAt,
       updatedAt: DateTime.now(),
     );
     await _db.updateChatRoom(updated);
@@ -1058,7 +1048,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     try {
       if (_chatRoom == null || _character == null) return;
 
-      // 새 채팅방 생성 (memo, summary, pinMode 포함)
+      // 새 채팅방 생성 (기존 설정 전체 복사, id 제외)
       final branchName = await _generateBranchName();
       final newChatRoom = ChatRoom(
         characterId: _chatRoom!.characterId,
@@ -1066,9 +1056,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         selectedChatPromptId: _chatRoom!.selectedChatPromptId,
         selectedPersonaId: _chatRoom!.selectedPersonaId,
         selectedStartScenarioId: _chatRoom!.selectedStartScenarioId,
+        selectedConditionPresetId: _chatRoom!.selectedConditionPresetId,
         memo: _chatRoom!.memo,
         summary: _chatRoom!.summary,
         pinMode: _chatRoom!.pinMode,
+        autoPinByDate: _chatRoom!.autoPinByDate,
+        autoPinByLocation: _chatRoom!.autoPinByLocation,
+        autoPinByAi: _chatRoom!.autoPinByAi,
+        autoPinByMessageCount: _chatRoom!.autoPinByMessageCount,
+        selectedModelId: _chatRoom!.selectedModelId,
       );
 
       final newChatRoomId = await _db.createChatRoom(newChatRoom);

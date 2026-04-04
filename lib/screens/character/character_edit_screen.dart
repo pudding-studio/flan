@@ -914,48 +914,13 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
             overlayColor: WidgetStateProperty.all(Colors.transparent),
             splashFactory: NoSplash.splashFactory,
             tabs: const [
-              Tab(
-                child: SizedBox(
-                  width: UIConstants.tabWidth,
-                  child: Center(child: Text('프로필')),
-                ),
-              ),
-              Tab(
-                child: SizedBox(
-                  width: UIConstants.tabWidth,
-                  child: Center(child: Text('캐릭터설정')),
-                ),
-              ),
-              Tab(
-                child: SizedBox(
-                  width: UIConstants.tabWidth,
-                  child: Center(child: Text('설정집')),
-                ),
-              ),
-              Tab(
-                child: SizedBox(
-                  width: UIConstants.tabWidth,
-                  child: Center(child: Text('페르소나')),
-                ),
-              ),
-              Tab(
-                child: SizedBox(
-                  width: UIConstants.tabWidth,
-                  child: Center(child: Text('시작설정')),
-                ),
-              ),
-              Tab(
-                child: SizedBox(
-                  width: UIConstants.tabWidth,
-                  child: Center(child: Text('표지')),
-                ),
-              ),
-              Tab(
-                child: SizedBox(
-                  width: UIConstants.tabWidth,
-                  child: Center(child: Text('기타')),
-                ),
-              ),
+              Tab(text: '프로필'),
+              Tab(text: '캐릭터설정'),
+              Tab(text: '설정집'),
+              Tab(text: '페르소나'),
+              Tab(text: '시작설정'),
+              Tab(text: '표지'),
+              Tab(text: '기타'),
             ],
           ),
         ),
