@@ -121,9 +121,16 @@ class _CommunityScreenState extends State<CommunityScreen> {
       final nowStr =
           '${now.year}년 ${now.month}월 ${now.day}일 ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
-      final systemPrompt = await rootBundle.loadString(
+      var systemPrompt = await rootBundle.loadString(
         'assets/defaults/community_prompts/community_generate.txt',
       );
+
+      if (_character?.communityMood?.isNotEmpty == true) {
+        systemPrompt += '\n- 커뮤니티 분위기: ${_character!.communityMood}';
+      }
+      if (_character?.communityLanguage?.isNotEmpty == true) {
+        systemPrompt += '\n- 사용 언어: ${_character!.communityLanguage}';
+      }
 
       final userMessage =
           '현재 시각: $nowStr\n\n'
@@ -340,9 +347,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
     required String content,
   }) async {
     final model = context.read<CommunityModelProvider>().selectedModel;
-    final systemPrompt = await rootBundle.loadString(
+    var systemPrompt = await rootBundle.loadString(
       'assets/defaults/community_prompts/post_replies.txt',
     );
+    if (_character?.communityMood?.isNotEmpty == true) {
+      systemPrompt += '\n- 커뮤니티 분위기: ${_character!.communityMood}';
+    }
+    if (_character?.communityLanguage?.isNotEmpty == true) {
+      systemPrompt += '\n- 사용 언어: ${_character!.communityLanguage}';
+    }
     final now = DateTime.now();
     final nowStr = _nowString(now);
     final worldview = _buildWorldviewText();
@@ -371,9 +384,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
   Future<void> _generateCommentReplies({required CommunityPost post}) async {
     final model = context.read<CommunityModelProvider>().selectedModel;
-    final systemPrompt = await rootBundle.loadString(
+    var systemPrompt = await rootBundle.loadString(
       'assets/defaults/community_prompts/comment_replies.txt',
     );
+    if (_character?.communityMood?.isNotEmpty == true) {
+      systemPrompt += '\n- 커뮤니티 분위기: ${_character!.communityMood}';
+    }
+    if (_character?.communityLanguage?.isNotEmpty == true) {
+      systemPrompt += '\n- 사용 언어: ${_character!.communityLanguage}';
+    }
     final now = DateTime.now();
     final nowStr = _nowString(now);
     final worldview = _buildWorldviewText();
@@ -455,7 +474,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
         backgroundColor: secondary,
         foregroundColor: onSecondary,
         iconTheme: IconThemeData(color: onSecondary),
-        title: Text('커뮤니티', style: TextStyle(color: onSecondary)),
+        title: Text(
+          _character?.communityName?.isNotEmpty == true
+              ? _character!.communityName!
+              : '자유게시판',
+          style: TextStyle(color: onSecondary),
+        ),
         actions: [
           if (_isGenerating)
             Padding(
@@ -720,6 +744,45 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     size: CommonDropdownButtonSize.xsmall,
                   ),
                 ),
+                if (_character != null) ...[
+                  const SizedBox(height: 24),
+                  const Divider(),
+                  const SizedBox(height: 16),
+                  Text(
+                    '커뮤니티 설정',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(fontSize: 16),
+                  ),
+                  const SizedBox(height: 16),
+                  _buildSettingRow(
+                    label: '커뮤니티 이름',
+                    child: Text(
+                      _character!.communityName?.isNotEmpty == true
+                          ? _character!.communityName!
+                          : '자유게시판',
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ),
+                  if (_character!.communityMood?.isNotEmpty == true) ...[
+                    const SizedBox(height: 8),
+                    _buildSettingRow(
+                      label: '커뮤니티 분위기',
+                      child: Text(
+                        _character!.communityMood!,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ),
+                  ],
+                  if (_character!.communityLanguage?.isNotEmpty == true) ...[
+                    const SizedBox(height: 8),
+                    _buildSettingRow(
+                      label: '사용 언어',
+                      child: Text(
+                        _character!.communityLanguage!,
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ),
+                  ],
+                ],
               ],
             ),
           ),
