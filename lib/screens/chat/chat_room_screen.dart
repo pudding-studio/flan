@@ -84,6 +84,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   List<PromptRegexRule> _regexRules = [];
   final FocusNode _messageFocusNode = FocusNode();
 
+  // Search
+  bool _isSearching = false;
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  List<int> _searchMatchIndices = [];
+  int _currentSearchIndex = -1;
+
   @override
   void initState() {
     super.initState();
@@ -110,11 +117,78 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
+  void _toggleSearch() {
+    setState(() {
+      _isSearching = !_isSearching;
+      if (!_isSearching) {
+        _searchController.clear();
+        _searchMatchIndices = [];
+        _currentSearchIndex = -1;
+      } else {
+        _searchFocusNode.requestFocus();
+      }
+    });
+  }
+
+  void _performSearch(String query) {
+    if (query.isEmpty) {
+      setState(() {
+        _searchMatchIndices = [];
+        _currentSearchIndex = -1;
+      });
+      return;
+    }
+
+    final lowerQuery = query.toLowerCase();
+    final matches = <int>[];
+    for (int i = 0; i < _messages.length; i++) {
+      if (_messages[i].content.toLowerCase().contains(lowerQuery)) {
+        matches.add(i);
+      }
+    }
+
+    setState(() {
+      _searchMatchIndices = matches;
+      _currentSearchIndex = matches.isNotEmpty ? 0 : -1;
+    });
+
+    if (matches.isNotEmpty) {
+      _scrollToSearchResult(0);
+    }
+  }
+
+  void _navigateSearch(int direction) {
+    if (_searchMatchIndices.isEmpty) return;
+    setState(() {
+      _currentSearchIndex =
+          (_currentSearchIndex + direction) % _searchMatchIndices.length;
+      if (_currentSearchIndex < 0) {
+        _currentSearchIndex = _searchMatchIndices.length - 1;
+      }
+    });
+    _scrollToSearchResult(_currentSearchIndex);
+  }
+
+  void _scrollToSearchResult(int searchIndex) {
+    final messageIndex = _searchMatchIndices[searchIndex];
+    // ListView is reversed, so convert index
+    final reversedIndex = _messages.length - 1 - messageIndex;
+    // Estimate scroll position
+    final estimatedOffset = reversedIndex * 80.0;
+    _scrollController.animateTo(
+      estimatedOffset.clamp(0, _scrollController.position.maxScrollExtent),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
+
   @override
   void dispose() {
     _messageFocusNode.removeListener(_onMessageFocusChanged);
     _messageFocusNode.dispose();
     _messageController.dispose();
+    _searchController.dispose();
+    _searchFocusNode.dispose();
     _scrollController.removeListener(_onScrollChanged);
     _scrollController.dispose();
     for (var controller in _editControllers.values) {
@@ -702,7 +776,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               _buildMenuAppIcon(
                 context,
                 icon: Icons.forum_outlined,
-                label: '커뮤니티',
+                label: 'SNS',
                 onTap: () {
                   setState(() => _showMorePanel = false);
                   Navigator.push(
@@ -1429,6 +1503,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
     final isSummaryThreshold = _summaryThresholdIndex != null && index == _summaryThresholdIndex;
     final isSummarized = message.id != null && _summarizedMessageIds.contains(message.id!);
+    final isSearchMatch = _isSearching && _searchMatchIndices.contains(index);
+    final isCurrentSearchMatch = isSearchMatch &&
+        _currentSearchIndex >= 0 &&
+        _searchMatchIndices[_currentSearchIndex] == index;
 
     return Column(
       children: [
@@ -1437,6 +1515,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             horizontal: 16 + viewer.paragraphWidth,
             vertical: 0,
           ),
+          decoration: isCurrentSearchMatch
+              ? BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+                )
+              : isSearchMatch
+                  ? BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.15),
+                    )
+                  : null,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1633,26 +1720,87 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         onAutoPinByMessageCountChanged: (v) => _onAutoPinOptionChanged(byMessageCount: v),
         onPresetChanged: _onPresetChanged,
       ),
-      appBar: CommonAppBar(
-        title: _character!.name,
-        titleWidget: GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => CharacterViewScreen(characterId: _character!.id!),
+      appBar: _isSearching
+          ? AppBar(
+              automaticallyImplyLeading: false,
+              titleSpacing: 0,
+              title: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: _toggleSearch,
+                    padding: const EdgeInsets.only(left: 16),
+                    visualDensity: VisualDensity.compact,
+                    constraints: const BoxConstraints(),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      focusNode: _searchFocusNode,
+                      decoration: const InputDecoration(
+                        hintText: '메시지 검색...',
+                        border: InputBorder.none,
+                      ),
+                      onChanged: _performSearch,
+                      textInputAction: TextInputAction.search,
+                    ),
+                  ),
+                  if (_searchMatchIndices.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 4),
+                      child: Text(
+                        '${_currentSearchIndex + 1}/${_searchMatchIndices.length}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.keyboard_arrow_up),
+                    onPressed: () => _navigateSearch(-1),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.keyboard_arrow_down),
+                    onPressed: () => _navigateSearch(1),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  const SizedBox(width: 8),
+                ],
               ),
-            );
-          },
-          child: Row(
-            children: [
-              _buildCharacterAvatar(),
-              const SizedBox(width: 12),
-              Text(_character!.name),
-            ],
-          ),
-        ),
-      ),
+            )
+          : CommonAppBar(
+              title: _character!.name,
+              titleWidget: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CharacterViewScreen(characterId: _character!.id!),
+                    ),
+                  );
+                },
+                child: Row(
+                  children: [
+                    _buildCharacterAvatar(),
+                    const SizedBox(width: 12),
+                    Flexible(
+                      child: Text(
+                        _character!.name,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                CommonAppBarIconButton(
+                  icon: Icons.search,
+                  onPressed: _toggleSearch,
+                  tooltip: '검색',
+                  offsetX: 20.0,
+                ),
+              ],
+            ),
       body: Column(
         children: [
           Expanded(
@@ -1776,27 +1924,40 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             child: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: CommonEditText(
-                  controller: _messageController,
-                  focusNode: _messageFocusNode,
-                  enabled: !_isSending,
-                  hintText: _sendingPhase == SendingPhase.preparing
-                      ? '메시지 생성 중...'
-                      : _sendingPhase == SendingPhase.waiting
-                          ? '응답 대기 중...'
-                          : _sendingPhase == SendingPhase.summarizing
-                              ? '요약 중...'
-                              : '메시지를 입력하세요',
-                  minLines: 1,
-                  maxLines: 5,
-                  textInputAction: TextInputAction.newline,
-                  suffixIcon: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Transform.translate(
-                        offset: const Offset(8, 0),
-                        child: IconButton(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      icon: AnimatedRotation(
+                        turns: _showMorePanel ? 0.125 : 0,
+                        duration: const Duration(milliseconds: 200),
+                        child: Icon(
+                          Icons.add,
+                          color: _showMorePanel
+                              ? Theme.of(context).colorScheme.primary
+                              : null,
+                        ),
+                      ),
+                      onPressed: _showMoreMenu,
+                      padding: const EdgeInsets.all(8),
+                      constraints: const BoxConstraints(),
+                    ),
+                    Expanded(
+                      child: CommonEditText(
+                        controller: _messageController,
+                        focusNode: _messageFocusNode,
+                        enabled: !_isSending,
+                        hintText: _sendingPhase == SendingPhase.preparing
+                            ? '메시지 생성 중...'
+                            : _sendingPhase == SendingPhase.waiting
+                                ? '응답 대기 중...'
+                                : _sendingPhase == SendingPhase.summarizing
+                                    ? '요약 중...'
+                                    : '메시지를 입력하세요',
+                        minLines: 1,
+                        maxLines: 5,
+                        textInputAction: TextInputAction.newline,
+                        suffixIcon: IconButton(
                           icon: _isSending
                               ? SizedBox(
                                   width: 24,
@@ -1814,18 +1975,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                           onPressed: _isSending ? null : _sendMessage,
                         ),
                       ),
-                      IconButton(
-                        icon: Icon(
-                          Icons.more_vert,
-                          color: _showMorePanel
-                              ? Theme.of(context).colorScheme.primary
-                              : null,
-                        ),
-                        onPressed: _showMoreMenu,
-                        padding: const EdgeInsets.only(left: 0, top: 8, right: 8, bottom: 8),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),

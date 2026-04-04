@@ -90,13 +90,21 @@ class CommunityParser {
   }
 
   static DateTime? _parseTime(String? value) {
-    if (value == null || value.length != 8) return null;
+    if (value == null || (value.length != 8 && value.length != 12)) return null;
     final year = int.tryParse(value.substring(0, 4));
     final month = int.tryParse(value.substring(4, 6));
     final day = int.tryParse(value.substring(6, 8));
     if (year == null || month == null || day == null) return null;
+
+    int hour = 0;
+    int minute = 0;
+    if (value.length == 12) {
+      hour = int.tryParse(value.substring(8, 10)) ?? 0;
+      minute = int.tryParse(value.substring(10, 12)) ?? 0;
+    }
+
     try {
-      return DateTime(year, month, day);
+      return DateTime(year, month, day, hour, minute);
     } catch (_) {
       return null;
     }

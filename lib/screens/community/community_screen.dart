@@ -37,7 +37,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
   Character? _character;
   ChatRoom? _chatRoom;
-  List<StartScenario> _startScenarios = [];
+  StartScenario? _selectedScenario;
   List<ChatSummary> _chatSummaries = [];
   List<ChatMessage> _recentMessages = [];
   List<CommunityPost> _posts = [];
@@ -55,20 +55,25 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final results = await Future.wait([
       _db.readCharacter(widget.characterId),
       _db.readChatRoom(widget.chatRoomId),
-      _db.readStartScenarios(widget.characterId),
       _db.getChatSummaries(widget.chatRoomId),
-      _db.readRecentAssistantMessages(widget.chatRoomId, 3),
+      _db.readRecentAssistantMessages(widget.chatRoomId, 5),
       _db.readCommunityPosts(widget.chatRoomId),
     ]);
     if (!mounted) return;
+    final chatRoom = results[1] as ChatRoom?;
+    StartScenario? scenario;
+    if (chatRoom?.selectedStartScenarioId != null) {
+      scenario = await _db.readStartScenario(chatRoom!.selectedStartScenarioId!);
+    }
+    if (!mounted) return;
     setState(() {
       _character = results[0] as Character?;
-      _chatRoom = results[1] as ChatRoom?;
-      _startScenarios = results[2] as List<StartScenario>;
-      final allSummaries = results[3] as List<ChatSummary>;
+      _chatRoom = chatRoom;
+      _selectedScenario = scenario;
+      final allSummaries = results[2] as List<ChatSummary>;
       _chatSummaries = allSummaries.length > 5 ? allSummaries.sublist(allSummaries.length - 5) : allSummaries;
-      _recentMessages = results[4] as List<ChatMessage>;
-      _posts = results[5] as List<CommunityPost>;
+      _recentMessages = results[3] as List<ChatMessage>;
+      _posts = results[4] as List<CommunityPost>;
       _isLoading = false;
     });
   }
@@ -77,27 +82,25 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final parts = <String>[];
 
     if (_character?.description?.isNotEmpty == true) {
-      parts.add('## 세계관 설명\n${_character!.description}');
+      parts.add('## Worldview Description\n${_character!.description}');
     }
 
-    for (final s in _startScenarios) {
-      if (s.startSetting?.isNotEmpty == true) {
-        parts.add('## 시나리오: ${s.name}\n${s.startSetting}');
-      }
+    if (_selectedScenario?.startSetting?.isNotEmpty == true) {
+      parts.add('## Scenario: ${_selectedScenario!.name}\n${_selectedScenario!.startSetting}');
     }
 
     if (_chatRoom?.summary.isNotEmpty == true) {
-      parts.add('## 채팅 요약\n${_chatRoom!.summary}');
+      parts.add('## Chat Summary\n${_chatRoom!.summary}');
     }
 
     if (_chatSummaries.isNotEmpty) {
       final summaryText = _chatSummaries.map((s) => s.summaryContent).join('\n\n');
-      parts.add('## 세부 요약\n$summaryText');
+      parts.add('## Detailed Summaries\n$summaryText');
     }
 
     if (_recentMessages.isNotEmpty) {
       final recentText = _recentMessages.map((m) => m.content).join('\n\n---\n\n');
-      parts.add('## 최근 대화 내용\n$recentText');
+      parts.add('## Recent Conversations\n$recentText');
     }
 
     return parts.join('\n\n');
@@ -118,23 +121,29 @@ class _CommunityScreenState extends State<CommunityScreen> {
     try {
       final model = context.read<CommunityModelProvider>().selectedModel;
       final now = DateTime.now();
-      final nowStr =
-          '${now.year}년 ${now.month}월 ${now.day}일 ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+      final nowStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
       var systemPrompt = await rootBundle.loadString(
         'assets/defaults/community_prompts/community_generate.txt',
       );
 
       if (_character?.communityMood?.isNotEmpty == true) {
-        systemPrompt += '\n- 커뮤니티 분위기: ${_character!.communityMood}';
+        systemPrompt += '\n- Community mood: ${_character!.communityMood}';
       }
       if (_character?.communityLanguage?.isNotEmpty == true) {
-        systemPrompt += '\n- 사용 언어: ${_character!.communityLanguage}';
+        systemPrompt += '\n- Language: ${_character!.communityLanguage}';
+      }
+
+      String latestPostInfo = '';
+      if (_posts.isNotEmpty) {
+        final latestTime = _posts.first.time;
+        final latestStr = '${latestTime.year}-${latestTime.month.toString().padLeft(2, '0')}-${latestTime.day.toString().padLeft(2, '0')} ${latestTime.hour.toString().padLeft(2, '0')}:${latestTime.minute.toString().padLeft(2, '0')}';
+        latestPostInfo = '\nBase time (generate only after this time): $latestStr\n';
       }
 
       final userMessage =
-          '현재 시각: $nowStr\n\n'
-          '아래 세계관과 채팅 요약을 바탕으로 커뮤니티 게시글을 생성해주세요.\n\n'
+          'Current time: $nowStr\n$latestPostInfo\n'
+          'Based on the worldview and chat summary below, generate community posts.\n\n'
           '$worldview';
 
       final response = await _aiService.sendMessage(
@@ -351,19 +360,19 @@ class _CommunityScreenState extends State<CommunityScreen> {
       'assets/defaults/community_prompts/post_replies.txt',
     );
     if (_character?.communityMood?.isNotEmpty == true) {
-      systemPrompt += '\n- 커뮤니티 분위기: ${_character!.communityMood}';
+      systemPrompt += '\n- Community mood: ${_character!.communityMood}';
     }
     if (_character?.communityLanguage?.isNotEmpty == true) {
-      systemPrompt += '\n- 사용 언어: ${_character!.communityLanguage}';
+      systemPrompt += '\n- Language: ${_character!.communityLanguage}';
     }
     final now = DateTime.now();
     final nowStr = _nowString(now);
     final worldview = _buildWorldviewText();
 
     final userMessage =
-        '현재 시각: $nowStr\n\n'
-        '${worldview.isNotEmpty ? '## 세계관\n$worldview\n\n' : ''}'
-        '## 게시글\n제목: $title\n내용: $content';
+        'Current time: $nowStr\nBase time (generate only after this time): $nowStr\n\n'
+        '${worldview.isNotEmpty ? '## Worldview\n$worldview\n\n' : ''}'
+        '## Post\nTitle: $title\nContent: $content';
 
     final response = await _aiService.sendMessage(
       systemPrompt: systemPrompt,
@@ -388,10 +397,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
       'assets/defaults/community_prompts/comment_replies.txt',
     );
     if (_character?.communityMood?.isNotEmpty == true) {
-      systemPrompt += '\n- 커뮤니티 분위기: ${_character!.communityMood}';
+      systemPrompt += '\n- Community mood: ${_character!.communityMood}';
     }
     if (_character?.communityLanguage?.isNotEmpty == true) {
-      systemPrompt += '\n- 사용 언어: ${_character!.communityLanguage}';
+      systemPrompt += '\n- Language: ${_character!.communityLanguage}';
     }
     final now = DateTime.now();
     final nowStr = _nowString(now);
@@ -401,11 +410,17 @@ class _CommunityScreenState extends State<CommunityScreen> {
       return '  - ${c.author} (${_formatDate(c.time)}): ${c.content}';
     }).join('\n');
 
+    String baseTimeStr = nowStr;
+    if (post.comments.isNotEmpty) {
+      final latestComment = post.comments.last;
+      baseTimeStr = _nowString(latestComment.time);
+    }
+
     final userMessage =
-        '현재 시각: $nowStr\n\n'
-        '${worldview.isNotEmpty ? '## 세계관\n$worldview\n\n' : ''}'
-        '## 게시글\n제목: ${post.title}\n내용: ${post.content}\n\n'
-        '## 기존 댓글\n$existingComments';
+        'Current time: $nowStr\nBase time (generate only after this time): $baseTimeStr\n\n'
+        '${worldview.isNotEmpty ? '## Worldview\n$worldview\n\n' : ''}'
+        '## Post\nTitle: ${post.title}\nContent: ${post.content}\n\n'
+        '## Existing Comments\n$existingComments';
 
     final response = await _aiService.sendMessage(
       systemPrompt: systemPrompt,
@@ -459,7 +474,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   String _nowString(DateTime now) =>
-      '${now.year}년 ${now.month}월 ${now.day}일 '
+      '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} '
       '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
   @override
@@ -481,20 +496,27 @@ class _CommunityScreenState extends State<CommunityScreen> {
           style: TextStyle(color: onSecondary),
         ),
         actions: [
-          if (_isGenerating)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2, color: onSecondary),
+          Transform.translate(
+              offset: const Offset(6, 0),
+              child: OutlinedButton(
+                onPressed: _isGenerating ? null : _regenerate,
+                style: OutlinedButton.styleFrom(
+                  side: BorderSide(color: _isGenerating ? onSecondary.withValues(alpha: 0.4) : onSecondary),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: Text(
+                  'New',
+                  style: TextStyle(
+                    color: _isGenerating ? onSecondary.withValues(alpha: 0.4) : onSecondary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
               ),
-            )
-          else
-            IconButton(
-              icon: Icon(Icons.refresh, color: onSecondary),
-              tooltip: '커뮤니티 글 생성',
-              onPressed: _regenerate,
             ),
           IconButton(
             icon: Icon(Icons.menu, color: onSecondary),
@@ -514,35 +536,44 @@ class _CommunityScreenState extends State<CommunityScreen> {
             ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _posts.isEmpty
-              ? _buildEmptyState()
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: _posts.length,
-                  itemBuilder: (context, i) => _buildPostCard(_posts[i]),
-                ),
+          : RefreshIndicator(
+              onRefresh: _regenerate,
+              child: _posts.isEmpty
+                  ? _buildEmptyState()
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      itemCount: _posts.length,
+                      itemBuilder: (context, i) => _buildPostCard(_posts[i]),
+                    ),
+            ),
     );
   }
 
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.forum_outlined,
-              size: 64, color: Theme.of(context).colorScheme.outlineVariant),
-          const SizedBox(height: 16),
-          Text('아직 게시글이 없습니다',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.outline,
-                  )),
-          const SizedBox(height: 8),
-          Text('재생성 버튼을 눌러 커뮤니티를 생성해보세요',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.outline,
-                  )),
-        ],
-      ),
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        SizedBox(height: MediaQuery.of(context).size.height * 0.3),
+        Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.forum_outlined,
+                  size: 64, color: Theme.of(context).colorScheme.outlineVariant),
+              const SizedBox(height: 16),
+              Text('아직 게시글이 없습니다',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.outline,
+                      )),
+              const SizedBox(height: 8),
+              Text('당겨서 게시글을 새로 불러오세요',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.outline,
+                      )),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
@@ -809,6 +840,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   String _formatDate(DateTime dt) {
-    return '${dt.year}.${dt.month.toString().padLeft(2, '0')}.${dt.day.toString().padLeft(2, '0')}';
+    return '${dt.year}.${dt.month.toString().padLeft(2, '0')}.${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
   }
 }
