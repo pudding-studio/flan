@@ -16,6 +16,9 @@ class Character {
   final DateTime updatedAt;
   final bool isDraft;
   final int? sortOrder;
+  final String? communityName;
+  final String? communityMood;
+  final String? communityLanguage;
 
   Character({
     this.id,
@@ -29,6 +32,9 @@ class Character {
     DateTime? updatedAt,
     this.isDraft = false,
     this.sortOrder,
+    this.communityName,
+    this.communityMood,
+    this.communityLanguage,
   })  : tags = tags ?? [],
         createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now();
@@ -64,6 +70,9 @@ class Character {
       updatedAt: DateTime.parse(map['updated_at'] as String),
       isDraft: (map['is_draft'] as int) == 1,
       sortOrder: map['sort_order'] as int?,
+      communityName: map['community_name'] as String?,
+      communityMood: map['community_mood'] as String?,
+      communityLanguage: map['community_language'] as String?,
     );
   }
 
@@ -80,6 +89,9 @@ class Character {
       'updated_at': updatedAt.toIso8601String(),
       'is_draft': isDraft ? 1 : 0,
       'sort_order': sortOrder,
+      'community_name': communityName,
+      'community_mood': communityMood,
+      'community_language': communityLanguage,
     };
   }
 
@@ -95,6 +107,9 @@ class Character {
     DateTime? updatedAt,
     bool? isDraft,
     int? sortOrder,
+    Object? communityName = _sentinel,
+    Object? communityMood = _sentinel,
+    Object? communityLanguage = _sentinel,
   }) {
     return Character(
       id: id ?? this.id,
@@ -108,8 +123,19 @@ class Character {
       updatedAt: updatedAt ?? this.updatedAt,
       isDraft: isDraft ?? this.isDraft,
       sortOrder: sortOrder ?? this.sortOrder,
+      communityName: communityName == _sentinel
+          ? this.communityName
+          : communityName as String?,
+      communityMood: communityMood == _sentinel
+          ? this.communityMood
+          : communityMood as String?,
+      communityLanguage: communityLanguage == _sentinel
+          ? this.communityLanguage
+          : communityLanguage as String?,
     );
   }
+
+  static const _sentinel = Object();
 
   Map<String, dynamic> toJson({
     List<Persona>? personas,
@@ -130,6 +156,9 @@ class Character {
       'updatedAt': updatedAt.toIso8601String(),
       'isDraft': isDraft,
       'sortOrder': sortOrder,
+      'communityName': communityName,
+      'communityMood': communityMood,
+      'communityLanguage': communityLanguage,
       'personas': personas?.map((p) => p.toJson()).toList(),
       'startScenarios': startScenarios?.map((s) => s.toJson()).toList(),
       'characterBookFolders': characterBookFolders?.map((f) => f.toJson()).toList(),
@@ -159,6 +188,9 @@ class Character {
           : null,
       isDraft: json['isDraft'] as bool? ?? false,
       sortOrder: json['sortOrder'] as int?,
+      communityName: json['communityName'] as String?,
+      communityMood: json['communityMood'] as String?,
+      communityLanguage: json['communityLanguage'] as String?,
     );
   }
 }

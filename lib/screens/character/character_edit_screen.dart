@@ -59,6 +59,11 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   final List<CoverImage> _coverImages = [];
   int? _selectedCoverImageId;
 
+  // 커뮤니티 설정 관련 컨트롤러
+  final _communityNameController = TextEditingController();
+  final _communityMoodController = TextEditingController();
+  final _communityLanguageController = TextEditingController();
+
   // 데이터베이스
   final DatabaseHelper _db = DatabaseHelper.instance;
   bool _isLoading = false;
@@ -76,13 +81,16 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   List<Persona> _originalPersonas = [];
   List<StartScenario> _originalStartScenarios = [];
   List<CoverImage> _originalCoverImages = [];
+  String _originalCommunityName = '';
+  String _originalCommunityMood = '';
+  String _originalCommunityLanguage = '';
 
   bool get _isEditMode => widget.characterId != null;
 
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 6, vsync: this);
+    _tabController = TabController(length: 7, vsync: this);
 
     // 자동 저장 데이터 확인 및 복원
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -99,6 +107,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     _creatorNotesController.addListener(_autoSave);
     _keywordsController.addListener(_autoSave);
     _descriptionController.addListener(_autoSave);
+    _communityNameController.addListener(_autoSave);
+    _communityMoodController.addListener(_autoSave);
+    _communityLanguageController.addListener(_autoSave);
   }
 
   Future<void> _loadCharacterData() async {
@@ -124,6 +135,13 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         _originalKeywords = character.tags.join(', ');
         _originalDescription = character.description ?? '';
         _originalSelectedCoverImageId = character.selectedCoverImageId;
+
+        _communityNameController.text = character.communityName ?? '';
+        _communityMoodController.text = character.communityMood ?? '';
+        _communityLanguageController.text = character.communityLanguage ?? '';
+        _originalCommunityName = character.communityName ?? '';
+        _originalCommunityMood = character.communityMood ?? '';
+        _originalCommunityLanguage = character.communityLanguage ?? '';
       }
 
       // 로어북 폴더 및 로어북 로드
@@ -240,7 +258,10 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         _creatorNotesController.text != _originalCreatorNotes ||
         _keywordsController.text != _originalKeywords ||
         _descriptionController.text != _originalDescription ||
-        _selectedCoverImageId != _originalSelectedCoverImageId) {
+        _selectedCoverImageId != _originalSelectedCoverImageId ||
+        _communityNameController.text != _originalCommunityName ||
+        _communityMoodController.text != _originalCommunityMood ||
+        _communityLanguageController.text != _originalCommunityLanguage) {
       return true;
     }
 
@@ -349,6 +370,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     _creatorNotesController.dispose();
     _keywordsController.dispose();
     _descriptionController.dispose();
+    _communityNameController.dispose();
+    _communityMoodController.dispose();
+    _communityLanguageController.dispose();
     super.dispose();
   }
 
@@ -393,6 +417,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         'personas': _personas.map((p) => p.toMap()).toList(),
         'startScenarios': _startScenarios.map((s) => s.toMap()).toList(),
         'coverImages': _coverImages.map((c) => c.toMap()).toList(),
+        'communityName': _communityNameController.text,
+        'communityMood': _communityMoodController.text,
+        'communityLanguage': _communityLanguageController.text,
         'timestamp': DateTime.now().toIso8601String(),
       };
       await prefs.setString(_getAutoSaveKey(), jsonEncode(data));
@@ -484,6 +511,11 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
               _coverImages.add(CoverImage.fromMap(cMap as Map<String, dynamic>));
             }
           }
+
+          // 커뮤니티 설정 복원
+          _communityNameController.text = data['communityName'] as String? ?? '';
+          _communityMoodController.text = data['communityMood'] as String? ?? '';
+          _communityLanguageController.text = data['communityLanguage'] as String? ?? '';
         });
 
         // 복원한 데이터를 원본으로 설정 (편집 모드인 경우)
@@ -499,6 +531,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           _originalPersonas = _personas.map((p) => _copyPersona(p)).toList();
           _originalStartScenarios = _startScenarios.map((s) => _copyStartScenario(s)).toList();
           _originalCoverImages = _coverImages.map((c) => _copyCoverImage(c)).toList();
+          _originalCommunityName = _communityNameController.text;
+          _originalCommunityMood = _communityMoodController.text;
+          _originalCommunityLanguage = _communityLanguageController.text;
         }
       } else if (shouldRestore == false) {
         // 사용자가 취소를 선택하면 자동 저장 데이터 삭제
@@ -572,6 +607,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           selectedCoverImageId: _selectedCoverImageId,
           updatedAt: DateTime.now(),
           isDraft: false,
+          communityName: _communityNameController.text.isEmpty ? null : _communityNameController.text,
+          communityMood: _communityMoodController.text.isEmpty ? null : _communityMoodController.text,
+          communityLanguage: _communityLanguageController.text.isEmpty ? null : _communityLanguageController.text,
         );
         await _db.updateCharacter(character);
       } else {
@@ -588,6 +626,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           description: _descriptionController.text.isEmpty ? null : _descriptionController.text,
           selectedCoverImageId: _selectedCoverImageId,
           isDraft: false,
+          communityName: _communityNameController.text.isEmpty ? null : _communityNameController.text,
+          communityMood: _communityMoodController.text.isEmpty ? null : _communityMoodController.text,
+          communityLanguage: _communityLanguageController.text.isEmpty ? null : _communityLanguageController.text,
         );
         characterId = await _db.createCharacter(character);
       }
@@ -909,6 +950,12 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
                   child: Center(child: Text('표지')),
                 ),
               ),
+              Tab(
+                child: SizedBox(
+                  width: UIConstants.tabWidth,
+                  child: Center(child: Text('기타')),
+                ),
+              ),
             ],
           ),
         ),
@@ -952,6 +999,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
               _autoSave();
             },
           ),
+          _buildOtherTab(),
         ],
       ),
         ),
@@ -964,6 +1012,40 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
             ),
           ),
       ],
+    );
+  }
+
+  Widget _buildOtherTab() {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CommonTitleMedium(
+            text: '커뮤니티 설정',
+            helpMessage: '캐릭터의 커뮤니티 게시판 설정을 구성합니다.',
+          ),
+          const SizedBox(height: 16),
+          CommonCustomTextField(
+            controller: _communityNameController,
+            label: '커뮤니티 이름',
+            hintText: '예: 자유게시판, 모험가 광장 등',
+          ),
+          const SizedBox(height: 16),
+          CommonCustomTextField(
+            controller: _communityMoodController,
+            label: '커뮤니티 분위기',
+            hintText: '예: 유머러스하고 친근한 분위기',
+            maxLines: 3,
+          ),
+          const SizedBox(height: 16),
+          CommonCustomTextField(
+            controller: _communityLanguageController,
+            label: '커뮤니티 사용언어',
+            hintText: '사용자 언어 (현재는 한국어만 지원)',
+          ),
+        ],
+      ),
     );
   }
 

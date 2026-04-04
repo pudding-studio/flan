@@ -42,7 +42,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 42,
+      version: 43,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -67,7 +67,10 @@ class DatabaseHelper {
         created_at $textType,
         updated_at $textType,
         is_draft $boolType,
-        sort_order INTEGER
+        sort_order INTEGER,
+        community_name $textTypeNullable,
+        community_mood $textTypeNullable,
+        community_language $textTypeNullable
       )
     ''');
 
@@ -1198,6 +1201,12 @@ class DatabaseHelper {
         CREATE INDEX IF NOT EXISTS idx_chat_room_id_community_posts
         ON community_posts (chat_room_id)
       ''');
+    }
+
+    if (oldVersion < 43) {
+      await db.execute('ALTER TABLE characters ADD COLUMN community_name TEXT');
+      await db.execute('ALTER TABLE characters ADD COLUMN community_mood TEXT');
+      await db.execute('ALTER TABLE characters ADD COLUMN community_language TEXT');
     }
   }
 
