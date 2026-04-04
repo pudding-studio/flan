@@ -10,7 +10,7 @@ class CommunityParser {
   ///
   /// Comments belong to the post immediately above them.
   /// If a time value cannot be parsed, it is set to latestTime + 1 minute.
-  static List<CommunityPost> parse(String raw, {required int characterId}) {
+  static List<CommunityPost> parse(String raw, {required int chatRoomId}) {
     final lines = raw.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty);
 
     final posts = <CommunityPost>[];
@@ -22,7 +22,7 @@ class CommunityParser {
         final time = _parseTime(fields['Time']) ?? latestTime.add(const Duration(minutes: 1));
         latestTime = time;
         posts.add(CommunityPost(
-          characterId: characterId,
+          chatRoomId: chatRoomId,
           author: fields['Auther'] ?? '익명',
           title: fields['Title'] ?? '(제목 없음)',
           time: time,

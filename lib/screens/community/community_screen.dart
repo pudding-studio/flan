@@ -58,7 +58,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
       _db.readStartScenarios(widget.characterId),
       _db.getChatSummaries(widget.chatRoomId),
       _db.readRecentAssistantMessages(widget.chatRoomId, 3),
-      _db.readCommunityPosts(widget.characterId),
+      _db.readCommunityPosts(widget.chatRoomId),
     ]);
     if (!mounted) return;
     setState(() {
@@ -144,7 +144,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         logType: 'community',
       );
 
-      final parsed = CommunityParser.parse(response.text, characterId: widget.characterId);
+      final parsed = CommunityParser.parse(response.text, chatRoomId: widget.chatRoomId);
       for (final post in parsed) {
         final postId = await _db.createCommunityPost(post);
         for (final comment in post.comments) {
@@ -233,7 +233,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     try {
       final now = DateTime.now();
       final post = CommunityPost(
-        characterId: widget.characterId,
+        chatRoomId: widget.chatRoomId,
         author: '나',
         title: title,
         time: now,
@@ -406,6 +406,18 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Future<void> _deleteComment(CommunityComment comment) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('댓글 삭제'),
+        content: const Text('이 댓글을 삭제할까요?'),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('취소')),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('삭제')),
+        ],
+      ),
+    );
+    if (confirmed != true) return;
     await _db.deleteCommunityComment(comment.id!);
     await _load();
   }

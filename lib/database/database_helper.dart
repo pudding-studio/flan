@@ -42,7 +42,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 41,
+      version: 42,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -486,18 +486,18 @@ class DatabaseHelper {
     await db.execute('''
       CREATE TABLE community_posts (
         id $idType,
-        character_id $intType,
+        chat_room_id $intType,
         author $textType,
         title $textType,
         time $textType,
         content $textType,
         created_at $textType,
-        FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE
+        FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE
       )
     ''');
     await db.execute('''
-      CREATE INDEX idx_character_id_community_posts
-      ON community_posts (character_id)
+      CREATE INDEX idx_chat_room_id_community_posts
+      ON community_posts (chat_room_id)
     ''');
 
     await db.execute('''
@@ -1162,13 +1162,8 @@ class DatabaseHelper {
           title TEXT NOT NULL,
           time TEXT NOT NULL,
           content TEXT NOT NULL,
-          created_at TEXT NOT NULL,
-          FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE
+          created_at TEXT NOT NULL
         )
-      ''');
-      await db.execute('''
-        CREATE INDEX IF NOT EXISTS idx_character_id_community_posts
-        ON community_posts (character_id)
       ''');
       await db.execute('''
         CREATE TABLE IF NOT EXISTS community_comments (
@@ -1180,9 +1175,26 @@ class DatabaseHelper {
           FOREIGN KEY (post_id) REFERENCES community_posts (id) ON DELETE CASCADE
         )
       ''');
+    }
+
+    if (oldVersion < 42) {
+      // Recreate community_posts with chat_room_id instead of character_id
+      await db.execute('DROP TABLE IF EXISTS community_posts');
       await db.execute('''
-        CREATE INDEX IF NOT EXISTS idx_post_id_community_comments
-        ON community_comments (post_id)
+        CREATE TABLE community_posts (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          chat_room_id INTEGER NOT NULL,
+          author TEXT NOT NULL,
+          title TEXT NOT NULL,
+          time TEXT NOT NULL,
+          content TEXT NOT NULL,
+          created_at TEXT NOT NULL,
+          FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE
+        )
+      ''');
+      await db.execute('''
+        CREATE INDEX IF NOT EXISTS idx_chat_room_id_community_posts
+        ON community_posts (chat_room_id)
       ''');
     }
   }
@@ -2725,13 +2737,13 @@ class DatabaseHelper {
     return await db.insert('community_comments', map);
   }
 
-  Future<List<CommunityPost>> readCommunityPosts(int characterId) async {
+  Future<List<CommunityPost>> readCommunityPosts(int chatRoomId) async {
     final db = await database;
 
     final postMaps = await db.query(
       'community_posts',
-      where: 'character_id = ?',
-      whereArgs: [characterId],
+      where: 'chat_room_id = ?',
+      whereArgs: [chatRoomId],
       orderBy: 'time DESC',
     );
     final posts = postMaps.map((m) => CommunityPost.fromMap(m)).toList();
@@ -2763,9 +2775,9 @@ class DatabaseHelper {
     await db.delete('community_posts', where: 'id = ?', whereArgs: [postId]);
   }
 
-  Future<void> deleteCommunityPosts(int characterId) async {
+  Future<void> deleteCommunityPosts(int chatRoomId) async {
     final db = await database;
-    await db.delete('community_posts', where: 'character_id = ?', whereArgs: [characterId]);
+    await db.delete('community_posts', where: 'chat_room_id = ?', whereArgs: [chatRoomId]);
   }
 
   // ==================== 유틸리티 ====================

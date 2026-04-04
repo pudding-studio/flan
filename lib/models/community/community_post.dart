@@ -2,7 +2,7 @@ import 'community_comment.dart';
 
 class CommunityPost {
   final int? id;
-  final int characterId;
+  final int chatRoomId;
   final String author;
   final String title;
   final DateTime time;
@@ -12,7 +12,7 @@ class CommunityPost {
 
   CommunityPost({
     this.id,
-    required this.characterId,
+    required this.chatRoomId,
     required this.author,
     required this.title,
     required this.time,
@@ -24,7 +24,7 @@ class CommunityPost {
 
   factory CommunityPost.fromMap(Map<String, dynamic> map) => CommunityPost(
         id: map['id'] as int?,
-        characterId: map['character_id'] as int,
+        chatRoomId: map['chat_room_id'] as int,
         author: map['author'] as String,
         title: map['title'] as String,
         time: DateTime.parse(map['time'] as String),
@@ -34,7 +34,7 @@ class CommunityPost {
 
   Map<String, dynamic> toMap() => {
         'id': id,
-        'character_id': characterId,
+        'chat_room_id': chatRoomId,
         'author': author,
         'title': title,
         'time': time.toIso8601String(),
