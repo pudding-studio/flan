@@ -405,6 +405,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
     }
   }
 
+  Future<void> _deleteComment(CommunityComment comment) async {
+    await _db.deleteCommunityComment(comment.id!);
+    await _load();
+  }
+
   Future<void> _deletePost(CommunityPost post) async {
     final confirmed = await showDialog<bool>(
       context: context,
@@ -548,13 +553,14 @@ class _CommunityScreenState extends State<CommunityScreen> {
                           color: Theme.of(context).colorScheme.outline,
                         ),
                   ),
-                  const SizedBox(width: 4),
-                  GestureDetector(
+                  const SizedBox(width: 8),
+                  InkWell(
                     onTap: () => _deletePost(post),
+                    borderRadius: BorderRadius.circular(4),
                     child: Icon(
                       Icons.delete_outline,
-                      size: 16,
-                      color: Theme.of(context).colorScheme.outlineVariant,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.outline,
                     ),
                   ),
                 ],
@@ -641,6 +647,16 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             color: Theme.of(context).colorScheme.outline,
                           ),
+                    ),
+                    const Spacer(),
+                    InkWell(
+                      onTap: () => _deleteComment(comment),
+                      borderRadius: BorderRadius.circular(4),
+                      child: Icon(
+                        Icons.delete_outline,
+                        size: 14,
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
                     ),
                   ],
                 ),
