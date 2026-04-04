@@ -1178,6 +1178,8 @@ class DatabaseHelper {
     }
 
     if (oldVersion < 42) {
+      // Clear orphaned comments before dropping posts (FK CASCADE doesn't work on DROP TABLE)
+      await db.execute('DELETE FROM community_comments');
       // Recreate community_posts with chat_room_id instead of character_id
       await db.execute('DROP TABLE IF EXISTS community_posts');
       await db.execute('''
