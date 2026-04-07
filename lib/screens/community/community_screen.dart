@@ -258,6 +258,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   void _showWriteComment(CommunityPost post) {
+    final nicknameCtrl = TextEditingController(text: '나');
     final contentCtrl = TextEditingController();
 
     showModalBottomSheet(
@@ -288,6 +289,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
             ),
             const SizedBox(height: 12),
             TextField(
+              controller: nicknameCtrl,
+              decoration: const InputDecoration(
+                hintText: '닉네임',
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
               controller: contentCtrl,
               maxLines: 3,
               autofocus: true,
@@ -302,10 +312,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
               width: double.infinity,
               child: FilledButton(
                 onPressed: () async {
+                  final nickname = nicknameCtrl.text.trim();
                   final content = contentCtrl.text.trim();
-                  if (content.isEmpty) return;
+                  if (nickname.isEmpty || content.isEmpty) return;
                   Navigator.pop(ctx);
-                  await _submitComment(post: post, content: content);
+                  await _submitComment(post: post, author: nickname, content: content);
                 },
                 child: const Text('등록'),
               ),
@@ -316,13 +327,13 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
   }
 
-  Future<void> _submitComment({required CommunityPost post, required String content}) async {
+  Future<void> _submitComment({required CommunityPost post, required String author, required String content}) async {
     setState(() => _isGenerating = true);
     try {
       final now = DateTime.now();
       final userComment = CommunityComment(
         postId: post.id!,
-        author: '나',
+        author: author,
         time: now,
         content: content,
       );
