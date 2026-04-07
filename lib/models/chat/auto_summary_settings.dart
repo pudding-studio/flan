@@ -2,6 +2,7 @@ class AutoSummarySettings {
   final int? id;
   final int chatRoomId;
   final bool isEnabled;
+  final bool useSubModel;
   final String summaryModel;
   final int tokenThreshold;
   final String summaryPrompt;
@@ -14,6 +15,7 @@ class AutoSummarySettings {
     this.id,
     required this.chatRoomId,
     this.isEnabled = true,
+    this.useSubModel = false,
     this.summaryModel = 'geminiFlash3Preview',
     this.tokenThreshold = 5000,
     this.summaryPrompt = 'Please summarize the following conversation concisely.',
@@ -29,6 +31,7 @@ class AutoSummarySettings {
       id: map['id'] as int?,
       chatRoomId: map['chat_room_id'] as int,
       isEnabled: (map['is_enabled'] as int? ?? 1) == 1,
+      useSubModel: (map['use_sub_model'] as int? ?? 0) == 1,
       summaryModel: map['summary_model'] as String? ?? 'geminiFlash3Preview',
       tokenThreshold: map['token_threshold'] as int? ?? 5000,
       summaryPrompt: map['summary_prompt'] as String? ??
@@ -45,6 +48,7 @@ class AutoSummarySettings {
       'id': id,
       'chat_room_id': chatRoomId,
       'is_enabled': isEnabled ? 1 : 0,
+      'use_sub_model': useSubModel ? 1 : 0,
       'summary_model': summaryModel,
       'token_threshold': tokenThreshold,
       'summary_prompt': summaryPrompt,
@@ -59,6 +63,7 @@ class AutoSummarySettings {
     int? id,
     int? chatRoomId,
     bool? isEnabled,
+    bool? useSubModel,
     String? summaryModel,
     int? tokenThreshold,
     String? summaryPrompt,
@@ -71,6 +76,7 @@ class AutoSummarySettings {
       id: id ?? this.id,
       chatRoomId: chatRoomId ?? this.chatRoomId,
       isEnabled: isEnabled ?? this.isEnabled,
+      useSubModel: useSubModel ?? this.useSubModel,
       summaryModel: summaryModel ?? this.summaryModel,
       tokenThreshold: tokenThreshold ?? this.tokenThreshold,
       summaryPrompt: summaryPrompt ?? this.summaryPrompt,

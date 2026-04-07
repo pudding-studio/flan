@@ -40,6 +40,7 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
   late TabController _tabController;
 
   bool _isEnabled = true;
+  bool _useSubModel = false;
   ChatModelProvider _selectedProvider = ChatModelProvider.googleAIStudio;
   String? _selectedCustomProviderId;
   UnifiedModel _selectedModel = UnifiedModel.fromChatModel(ChatModel.geminiFlash3Preview);
@@ -128,6 +129,7 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
 
         setState(() {
           _isEnabled = settings.isEnabled;
+          _useSubModel = settings.useSubModel;
           _selectedModel = resolvedModel;
           _selectedProvider = resolvedModel.provider;
           _tokenThresholdController.text = settings.tokenThreshold.toString();
@@ -183,6 +185,7 @@ _syncContentFromControllers();
       id: _existingSettings?.id,
       chatRoomId: widget.chatRoomId,
       isEnabled: _isEnabled,
+      useSubModel: _useSubModel,
       summaryModel: _selectedModel.id,
       tokenThreshold:
           int.tryParse(_tokenThresholdController.text) ?? 5000,
@@ -509,65 +512,78 @@ _syncContentFromControllers();
         if (_isEnabled) ...[
           const Divider(),
           _buildSectionHeader('요약 모델'),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Builder(builder: (context) {
-              final dropdownItems = <DropdownMenuItem<String>>[];
-              for (final p in ChatModelProvider.values) {
-                if (p == ChatModelProvider.custom) continue;
-                dropdownItems.add(DropdownMenuItem(
-                  value: p.name,
-                  child: Text(p.displayName),
-                ));
-              }
-              for (final cp in _customProviders) {
-                dropdownItems.add(DropdownMenuItem(
-                  value: 'custom:${cp.id}',
-                  child: Text(cp.name),
-                ));
-              }
-
-              final selectedKey = _selectedProvider == ChatModelProvider.custom
-                  && _selectedCustomProviderId != null
-                  ? 'custom:$_selectedCustomProviderId'
-                  : _selectedProvider.name;
-
-              return DropdownButton<String>(
-                value: dropdownItems.any((i) => i.value == selectedKey)
-                    ? selectedKey
-                    : ChatModelProvider.googleAIStudio.name,
-                isExpanded: true,
-                underline: const SizedBox(),
-                borderRadius: BorderRadius.circular(16),
-                items: dropdownItems,
-                onChanged: (value) {
-                  if (value == null) return;
-                  List<UnifiedModel> models;
-                  if (value.startsWith('custom:')) {
-                    final cpId = value.substring(7);
-                    models = UnifiedModel.getByCustomProvider(cpId, _customModels, _customProviders);
-                    setState(() {
-                      _selectedProvider = ChatModelProvider.custom;
-                      _selectedCustomProviderId = cpId;
-                      if (models.isNotEmpty) _selectedModel = models.first;
-                    });
-                  } else {
-                    final p = ChatModelProvider.values.firstWhere(
-                      (e) => e.name == value,
-                      orElse: () => ChatModelProvider.googleAIStudio,
-                    );
-                    models = UnifiedModel.getByProvider(p, _customModels, _customProviders);
-                    setState(() {
-                      _selectedProvider = p;
-                      _selectedCustomProviderId = null;
-                      if (models.isNotEmpty) _selectedModel = models.first;
-                    });
-                  }
-                },
-              );
-            }),
+          SwitchListTile(
+            secondary: const Icon(Icons.swap_horiz),
+            title: const Text('보조 모델 사용'),
+            subtitle: const Text('채팅 모델 설정의 보조 모델을 사용합니다'),
+            value: _useSubModel,
+            onChanged: (value) {
+              setState(() {
+                _useSubModel = value;
+              });
+            },
           ),
-          _buildModelDropdown(),
+          if (!_useSubModel) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              child: Builder(builder: (context) {
+                final dropdownItems = <DropdownMenuItem<String>>[];
+                for (final p in ChatModelProvider.values) {
+                  if (p == ChatModelProvider.custom) continue;
+                  dropdownItems.add(DropdownMenuItem(
+                    value: p.name,
+                    child: Text(p.displayName),
+                  ));
+                }
+                for (final cp in _customProviders) {
+                  dropdownItems.add(DropdownMenuItem(
+                    value: 'custom:${cp.id}',
+                    child: Text(cp.name),
+                  ));
+                }
+
+                final selectedKey = _selectedProvider == ChatModelProvider.custom
+                    && _selectedCustomProviderId != null
+                    ? 'custom:$_selectedCustomProviderId'
+                    : _selectedProvider.name;
+
+                return DropdownButton<String>(
+                  value: dropdownItems.any((i) => i.value == selectedKey)
+                      ? selectedKey
+                      : ChatModelProvider.googleAIStudio.name,
+                  isExpanded: true,
+                  underline: const SizedBox(),
+                  borderRadius: BorderRadius.circular(16),
+                  items: dropdownItems,
+                  onChanged: (value) {
+                    if (value == null) return;
+                    List<UnifiedModel> models;
+                    if (value.startsWith('custom:')) {
+                      final cpId = value.substring(7);
+                      models = UnifiedModel.getByCustomProvider(cpId, _customModels, _customProviders);
+                      setState(() {
+                        _selectedProvider = ChatModelProvider.custom;
+                        _selectedCustomProviderId = cpId;
+                        if (models.isNotEmpty) _selectedModel = models.first;
+                      });
+                    } else {
+                      final p = ChatModelProvider.values.firstWhere(
+                        (e) => e.name == value,
+                        orElse: () => ChatModelProvider.googleAIStudio,
+                      );
+                      models = UnifiedModel.getByProvider(p, _customModels, _customProviders);
+                      setState(() {
+                        _selectedProvider = p;
+                        _selectedCustomProviderId = null;
+                        if (models.isNotEmpty) _selectedModel = models.first;
+                      });
+                    }
+                  },
+                );
+              }),
+            ),
+            _buildModelDropdown(),
+          ],
           const Divider(),
           _buildSectionHeader('자동 요약 시작 조건'),
           Padding(

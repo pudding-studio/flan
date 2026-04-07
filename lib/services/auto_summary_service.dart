@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
+import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database_helper.dart';
 import '../models/character/character_book_folder.dart';
 import '../models/character/persona.dart';
@@ -157,7 +158,9 @@ class AutoSummaryService {
           ];
         }
 
-        final summaryModel = await _resolveModel(settings.summaryModel);
+        final summaryModel = settings.useSubModel
+            ? await _resolveSubModel()
+            : await _resolveModel(settings.summaryModel);
         final response = await _aiService.sendMessage(
           systemPrompt: systemPrompt,
           contents: contents,
@@ -358,7 +361,9 @@ class AutoSummaryService {
 
     _log('Regenerating summary #${summary.id} for range [${summary.startPinMessageId} → ${summary.endPinMessageId}]');
 
-    final summaryModel = await _resolveModel(settings.summaryModel);
+    final summaryModel = settings.useSubModel
+        ? await _resolveSubModel()
+        : await _resolveModel(settings.summaryModel);
     final response = await _aiService.sendMessage(
       systemPrompt: systemPrompt,
       contents: contents,
@@ -468,6 +473,15 @@ class AutoSummaryService {
     }
     final resolved = ChatModel.resolveFromStoredValue(storedValue);
     return UnifiedModel.fromChatModel(resolved);
+  }
+
+  Future<UnifiedModel> _resolveSubModel() async {
+    final prefs = await SharedPreferences.getInstance();
+    final subModelString = prefs.getString('sub_model');
+    if (subModelString != null) {
+      return _resolveModel(subModelString);
+    }
+    return UnifiedModel.fromChatModel(ChatModel.geminiFlash25);
   }
 
   Future<List<ChatMessageMetadata>> getChatMessageMetadataList(

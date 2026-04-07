@@ -42,7 +42,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 45,
+      version: 46,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -437,6 +437,7 @@ class DatabaseHelper {
         id $idType,
         chat_room_id $intType,
         is_enabled $boolType DEFAULT 1,
+        use_sub_model $boolType DEFAULT 0,
         summary_model $textType DEFAULT 'gemini-2.0-flash-exp',
         token_threshold INTEGER NOT NULL DEFAULT 5000,
         summary_prompt $textType,
@@ -1215,6 +1216,12 @@ class DatabaseHelper {
 
     if (oldVersion < 45) {
       await db.execute("ALTER TABLE cover_images ADD COLUMN image_type TEXT DEFAULT 'cover'");
+    }
+
+    if (oldVersion < 46) {
+      await db.execute('''
+        ALTER TABLE auto_summary_settings ADD COLUMN use_sub_model INTEGER NOT NULL DEFAULT 0
+      ''');
     }
   }
 
