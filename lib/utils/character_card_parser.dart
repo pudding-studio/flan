@@ -6,7 +6,7 @@ import '../models/character/persona.dart';
 import '../models/character/start_scenario.dart';
 import '../models/character/character_book_folder.dart';
 import '../models/character/cover_image.dart';
-import '../utils/image_processor.dart';
+import '../utils/character_image_storage.dart';
 
 class CharacterCardParser {
   /// PNG 파일에서 Character Card V2/V3 메타데이터를 추출합니다
@@ -250,11 +250,12 @@ class CharacterCardParser {
     return [];
   }
 
-  /// V3 assets에서 icon 타입의 이미지를 CoverImage로 변환합니다
+  /// V3 assets의 모든 이미지를 CoverImage로 변환합니다 (모든 asset type 지원)
   /// [archiveFiles]는 CHARX에서 embeded:// URI 해석 시 사용
   static Future<List<CoverImage>> parseAssets(
     Map<String, dynamic> cardData,
-    int characterId, {
+    int characterId,
+    String characterName, {
     Map<String, Uint8List>? archiveFiles,
   }) async {
     try {
@@ -268,37 +269,63 @@ class CharacterCardParser {
       for (final asset in assets) {
         if (asset is! Map<String, dynamic>) continue;
 
-        final type = asset['type'] as String?;
-        if (type != 'icon') continue;
-
         final uri = asset['uri'] as String?;
         if (uri == null || uri.isEmpty || uri == 'ccdefault:') continue;
 
         Uint8List? imageBytes;
+        String imageName;
+        String ext;
 
         if (uri.startsWith('data:')) {
-          // Base64 data URL
+          // Base64 data URL — extract mime type for extension
+          final mimeMatch = RegExp(r'data:([^;]+);').firstMatch(uri);
+          ext = _mimeToExt(mimeMatch?.group(1));
+          final assetName = asset['name'] as String?;
+          imageName = (assetName != null && assetName.isNotEmpty)
+              ? assetName
+              : 'asset_${order + 1}';
           final commaIndex = uri.indexOf(',');
           if (commaIndex != -1) {
             imageBytes = base64.decode(uri.substring(commaIndex + 1));
           }
         } else if (uri.startsWith('embeded://') && archiveFiles != null) {
-          // CHARX embedded asset
-          final path = uri.substring('embeded://'.length);
-          imageBytes = archiveFiles[path];
+          // CHARX embedded asset — use filename from path
+          final embeddedPath = uri.substring('embeded://'.length);
+          imageBytes = archiveFiles[embeddedPath];
+          final fileName = embeddedPath.contains('/')
+              ? embeddedPath.split('/').last
+              : embeddedPath;
+          final dotIndex = fileName.lastIndexOf('.');
+          if (dotIndex != -1 && dotIndex < fileName.length - 1) {
+            imageName = fileName.substring(0, dotIndex);
+            ext = fileName.substring(dotIndex + 1).toLowerCase();
+          } else {
+            imageName = fileName.isNotEmpty ? fileName : 'asset_${order + 1}';
+            ext = 'bin';
+          }
+        } else {
+          continue;
         }
 
         if (imageBytes != null) {
           try {
-            final processed = await ImageProcessor.processToWebp512FromBytes(imageBytes);
+            final filePath = await CharacterImageStorage.saveImage(
+              characterName,
+              imageName,
+              ext,
+              imageBytes,
+            );
+            final assetDisplayName = asset['name'] as String?;
             coverImages.add(CoverImage(
               characterId: characterId,
-              name: '표지 ${order + 1}',
+              name: (assetDisplayName != null && assetDisplayName.isNotEmpty)
+                  ? assetDisplayName
+                  : '표지 ${order + 1}',
               order: order++,
-              imageData: processed,
+              path: filePath,
             ));
           } catch (_) {
-            // Skip failed image processing
+            // Skip failed image saves
           }
         }
       }
@@ -306,6 +333,24 @@ class CharacterCardParser {
       return coverImages;
     } catch (e) {
       return [];
+    }
+  }
+
+  /// Maps MIME type string to a file extension.
+  static String _mimeToExt(String? mime) {
+    if (mime == null) return 'bin';
+    switch (mime.toLowerCase()) {
+      case 'image/png': return 'png';
+      case 'image/jpeg':
+      case 'image/jpg': return 'jpg';
+      case 'image/webp': return 'webp';
+      case 'image/gif': return 'gif';
+      case 'image/bmp': return 'bmp';
+      case 'image/svg+xml': return 'svg';
+      case 'image/avif': return 'avif';
+      default:
+        final sub = mime.split('/');
+        return sub.length > 1 ? sub.last : 'bin';
     }
   }
 

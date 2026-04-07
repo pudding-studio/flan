@@ -955,6 +955,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           CoverImageTab(
             coverImages: _coverImages,
             selectedCoverImageId: _selectedCoverImageId,
+            characterName: _nameController.text,
             onSelectedCoverImageChanged: (id) {
               setState(() => _selectedCoverImageId = id);
               _autoSave();

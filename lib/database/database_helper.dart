@@ -42,7 +42,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 43,
+      version: 44,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -1207,6 +1207,10 @@ class DatabaseHelper {
       await db.execute('ALTER TABLE characters ADD COLUMN community_name TEXT');
       await db.execute('ALTER TABLE characters ADD COLUMN community_mood TEXT');
       await db.execute('ALTER TABLE characters ADD COLUMN community_language TEXT');
+    }
+
+    if (oldVersion < 44) {
+      await db.execute('ALTER TABLE cover_images ADD COLUMN path TEXT');
     }
   }
 

@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -5,14 +6,15 @@ import 'package:image_picker/image_picker.dart';
 
 import '../../../constants/ui_constants.dart';
 import '../../../models/character/cover_image.dart';
+import '../../../utils/character_image_storage.dart';
 import '../../../utils/common_dialog.dart';
-import '../../../utils/image_processor.dart';
 import '../../../widgets/common/common_button.dart';
 import '../../../widgets/common/common_title_medium.dart';
 
 class CoverImageTab extends StatefulWidget {
   final List<CoverImage> coverImages;
   final int? selectedCoverImageId;
+  final String characterName;
   final Function(int?) onSelectedCoverImageChanged;
   final VoidCallback onUpdate;
 
@@ -20,6 +22,7 @@ class CoverImageTab extends StatefulWidget {
     super.key,
     required this.coverImages,
     required this.selectedCoverImageId,
+    required this.characterName,
     required this.onSelectedCoverImageChanged,
     required this.onUpdate,
   });
@@ -29,8 +32,8 @@ class CoverImageTab extends StatefulWidget {
 }
 
 class _CoverImageTabState extends State<CoverImageTab> {
-  static const double _lorebookItemHorizontalPadding = 10.0;
-  static const double _lorebookItemVerticalPadding = 10.0;
+  static const double _itemHorizontalPadding = 10.0;
+  static const double _itemVerticalPadding = 10.0;
 
   int? _editingCoverImageId;
   final Map<int, TextEditingController> _editControllers = {};
@@ -53,38 +56,49 @@ class _CoverImageTabState extends State<CoverImageTab> {
   }
 
   Future<void> _addCoverImage() async {
-    final XFile? image = await _imagePicker.pickImage(
+    final XFile? picked = await _imagePicker.pickImage(
       source: ImageSource.gallery,
     );
+    if (picked == null) return;
 
-    if (image != null) {
-      try {
-        final Uint8List imageData = await ImageProcessor.processToWebp512(image.path);
+    try {
+      final bytes = await picked.readAsBytes();
+      final originalName = _baseNameWithoutExt(picked.name);
+      final ext = _extractExt(picked.name);
+      final characterName = widget.characterName.isNotEmpty
+          ? widget.characterName
+          : 'unknown';
 
-        setState(() {
-          final newCoverImage = CoverImage(
-            id: _getNextTempId(),
-            characterId: -1, // Will be set when saving
-            name: '표지 ${widget.coverImages.length + 1}',
-            order: widget.coverImages.length,
-            imageData: imageData,
-            isExpanded: true,
-          );
-          widget.coverImages.add(newCoverImage);
+      final filePath = await CharacterImageStorage.saveImage(
+        characterName,
+        originalName,
+        ext,
+        bytes,
+      );
 
-          // 첫 번째 표지를 자동으로 선택
-          if (widget.coverImages.length == 1) {
-            widget.onSelectedCoverImageChanged(newCoverImage.id);
-          }
-        });
-        _notifyUpdate();
-      } catch (e) {
-        if (!mounted) return;
-        CommonDialog.showSnackBar(
-          context: context,
-          message: '이미지 처리 중 오류가 발생했습니다: $e',
+      setState(() {
+        final newImage = CoverImage(
+          id: _getNextTempId(),
+          characterId: -1,
+          name: originalName.isNotEmpty
+              ? originalName
+              : '표지 ${widget.coverImages.length + 1}',
+          order: widget.coverImages.length,
+          path: filePath,
+          isExpanded: true,
         );
-      }
+        widget.coverImages.add(newImage);
+        if (widget.coverImages.length == 1) {
+          widget.onSelectedCoverImageChanged(newImage.id);
+        }
+      });
+      _notifyUpdate();
+    } catch (e) {
+      if (!mounted) return;
+      CommonDialog.showSnackBar(
+        context: context,
+        message: '이미지 저장 중 오류가 발생했습니다: $e',
+      );
     }
   }
 
@@ -95,14 +109,16 @@ class _CoverImageTabState extends State<CoverImageTab> {
     );
 
     if (confirmed) {
+      if (coverImage.path != null) {
+        await CharacterImageStorage.deleteImage(coverImage.path!);
+      }
       setState(() {
         widget.coverImages.remove(coverImage);
-
-        // 선택된 표지를 삭제한 경우
         if (widget.selectedCoverImageId == coverImage.id) {
-          // 첫 번째 표지를 선택하거나, 없으면 null
           widget.onSelectedCoverImageChanged(
-            widget.coverImages.isNotEmpty ? widget.coverImages.first.id : null,
+            widget.coverImages.isNotEmpty
+                ? widget.coverImages.first.id
+                : null,
           );
         }
       });
@@ -122,20 +138,32 @@ class _CoverImageTabState extends State<CoverImageTab> {
         _notifyUpdate();
       } else {
         _editingCoverImageId = coverImage.id;
-        _editControllers[coverImage.id!] = TextEditingController(text: coverImage.name);
+        _editControllers[coverImage.id!] =
+            TextEditingController(text: coverImage.name);
       }
     });
   }
 
   void _saveCoverImageName(CoverImage coverImage, String value) {
     setState(() {
-      if (value.isNotEmpty) {
-        coverImage.name = value;
-      }
+      if (value.isNotEmpty) coverImage.name = value;
       _editingCoverImageId = null;
       _editControllers.remove(coverImage.id!)?.dispose();
     });
     _notifyUpdate();
+  }
+
+  String _baseNameWithoutExt(String fileName) {
+    final dotIndex = fileName.lastIndexOf('.');
+    return dotIndex > 0 ? fileName.substring(0, dotIndex) : fileName;
+  }
+
+  String _extractExt(String fileName) {
+    final dotIndex = fileName.lastIndexOf('.');
+    if (dotIndex != -1 && dotIndex < fileName.length - 1) {
+      return fileName.substring(dotIndex + 1).toLowerCase();
+    }
+    return 'jpg';
   }
 
   @override
@@ -155,14 +183,11 @@ class _CoverImageTabState extends State<CoverImageTab> {
           const SizedBox(height: 8),
           Expanded(
             child: widget.coverImages.isEmpty
-                ? const Center(
-                    child: Text('표지 이미지가 없습니다'),
-                  )
+                ? const Center(child: Text('표지 이미지가 없습니다'))
                 : ListView.builder(
                     itemCount: widget.coverImages.length,
-                    itemBuilder: (context, index) {
-                      return _buildCoverImageItem(widget.coverImages[index]);
-                    },
+                    itemBuilder: (context, index) =>
+                        _buildCoverImageItem(widget.coverImages[index]),
                   ),
           ),
           const SizedBox(height: 16),
@@ -180,66 +205,95 @@ class _CoverImageTabState extends State<CoverImageTab> {
   }
 
   Widget _buildCoverImageItem(CoverImage coverImage) {
+    final displayPath = coverImage.path ?? '';
+
     return Container(
       key: ValueKey(coverImage.id),
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+        color: Theme.of(context)
+            .colorScheme
+            .surfaceContainerHighest
+            .withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
         ),
       ),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           InkWell(
-            onTap: () {
-              setState(() {
-                coverImage.isExpanded = !coverImage.isExpanded;
-              });
-            },
+            onTap: () =>
+                setState(() => coverImage.isExpanded = !coverImage.isExpanded),
             overlayColor: WidgetStateProperty.all(Colors.transparent),
             borderRadius: BorderRadius.circular(10),
-            child: Container(
+            child: Padding(
               padding: const EdgeInsets.symmetric(
-                horizontal: _lorebookItemHorizontalPadding,
-                vertical: _lorebookItemVerticalPadding,
+                horizontal: _itemHorizontalPadding,
+                vertical: _itemVerticalPadding,
               ),
               child: Row(
                 children: [
                   Radio<int>(
                     value: coverImage.id!,
                     groupValue: widget.selectedCoverImageId,
-                    onChanged: (int? value) {
+                    onChanged: (value) {
                       widget.onSelectedCoverImageChanged(value);
                       setState(() {});
                     },
-                    visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+                    visualDensity:
+                        const VisualDensity(horizontal: -4, vertical: -4),
                     materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                   ),
                   const SizedBox(width: 8),
                   Expanded(
-                    child: _editingCoverImageId == coverImage.id
-                        ? TextField(
-                            controller: _editControllers[coverImage.id!],
-                            style: Theme.of(context).textTheme.bodyMedium,
-                            decoration: const InputDecoration(
-                              border: InputBorder.none,
-                              isDense: true,
-                              contentPadding: EdgeInsets.zero,
-                            ),
-                            autofocus: true,
-                            onSubmitted: (value) => _saveCoverImageName(coverImage, value),
-                          )
-                        : Text(
-                            coverImage.name,
-                            style: Theme.of(context).textTheme.bodyMedium,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _editingCoverImageId == coverImage.id
+                            ? TextField(
+                                controller: _editControllers[coverImage.id!],
+                                style: Theme.of(context).textTheme.bodyMedium,
+                                decoration: const InputDecoration(
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                                autofocus: true,
+                                onSubmitted: (value) =>
+                                    _saveCoverImageName(coverImage, value),
+                              )
+                            : Text(
+                                coverImage.name,
+                                style: Theme.of(context).textTheme.bodyMedium,
+                              ),
+                        if (displayPath.isNotEmpty) ...[
+                          const SizedBox(height: 2),
+                          Text(
+                            displayPath,
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                                  color: Theme.of(context)
+                                      .colorScheme
+                                      .onSurface
+                                      .withValues(alpha: 0.5),
+                                ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
+                        ],
+                      ],
+                    ),
                   ),
                   GestureDetector(
                     onTap: () => _toggleCoverImageEdit(coverImage),
                     child: Icon(
-                      _editingCoverImageId == coverImage.id ? Icons.check : Icons.edit_outlined,
+                      _editingCoverImageId == coverImage.id
+                          ? Icons.check
+                          : Icons.edit_outlined,
                       size: 18,
                     ),
                   ),
@@ -250,37 +304,71 @@ class _CoverImageTabState extends State<CoverImageTab> {
                   ),
                   const SizedBox(width: 12),
                   Icon(
-                    coverImage.isExpanded ? Icons.expand_less : Icons.expand_more,
+                    coverImage.isExpanded
+                        ? Icons.expand_less
+                        : Icons.expand_more,
                     size: 20,
                   ),
                 ],
               ),
             ),
           ),
-          if (coverImage.isExpanded && coverImage.imageData != null) ...[
+          if (coverImage.isExpanded) ...[
             const Divider(height: 1),
             Padding(
               padding: const EdgeInsets.all(12),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: Image.memory(
-                  coverImage.imageData!,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      height: 200,
-                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                      child: const Center(
-                        child: Icon(Icons.error_outline),
-                      ),
-                    );
-                  },
-                ),
+                child: _buildImagePreview(coverImage),
               ),
             ),
           ],
         ],
       ),
+    );
+  }
+
+  Widget _buildImagePreview(CoverImage coverImage) {
+    if (coverImage.path != null) {
+      return FutureBuilder<Uint8List?>(
+        future: CharacterImageStorage.loadImage(coverImage.path!),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const SizedBox(
+              height: 120,
+              child: Center(child: CircularProgressIndicator()),
+            );
+          }
+          final bytes = snapshot.data;
+          if (bytes != null) {
+            return Image.memory(bytes, fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => _imageErrorWidget());
+          }
+          return Image.file(
+            File(coverImage.path!),
+            fit: BoxFit.cover,
+            errorBuilder: (_, __, ___) => _imageErrorWidget(),
+          );
+        },
+      );
+    }
+
+    if (coverImage.imageData != null) {
+      return Image.memory(
+        coverImage.imageData!,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _imageErrorWidget(),
+      );
+    }
+
+    return _imageErrorWidget();
+  }
+
+  Widget _imageErrorWidget() {
+    return Container(
+      height: 200,
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: const Center(child: Icon(Icons.broken_image_outlined)),
     );
   }
 }

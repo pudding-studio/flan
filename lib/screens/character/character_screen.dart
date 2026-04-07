@@ -16,9 +16,10 @@ import '../../models/character/persona.dart';
 import '../../models/character/start_scenario.dart';
 import '../../models/character/character_book_folder.dart';
 import '../../models/character/cover_image.dart';
+import 'package:path/path.dart' as p;
 import '../../utils/common_dialog.dart';
 import '../../utils/character_card_parser.dart';
-import '../../utils/image_processor.dart';
+import '../../utils/character_image_storage.dart';
 import 'character_edit_screen.dart';
 import 'character_view_screen.dart';
 import '../../widgets/character/character_card.dart';
@@ -486,24 +487,36 @@ class _CharacterScreenState extends State<CharacterScreen> {
         startScenarios = CharacterCardParser.parseStartScenarios(metadata, 0);
         standaloneCharacterBooks = CharacterCardParser.parseCharacterBooks(metadata, 0);
 
-        // V3 assets에서 icon 추출 시도
-        final assetCovers = await CharacterCardParser.parseAssets(metadata, 0);
+        // V3 assets에서 이미지 추출 시도
+        final assetCovers = await CharacterCardParser.parseAssets(
+          metadata,
+          0,
+          character.name,
+        );
         if (assetCovers.isNotEmpty) {
           coverImages = assetCovers;
         } else {
-          // PNG 이미지 자체를 표지 이미지로 변환
+          // PNG 이미지 자체를 표지 이미지로 저장
           try {
-            final imageData = await ImageProcessor.processToWebp512FromBytes(pngBytes);
+            final fileName = p.basename(file.path);
+            final dotIndex = fileName.lastIndexOf('.');
+            final baseName = dotIndex > 0 ? fileName.substring(0, dotIndex) : fileName;
+            final filePath = await CharacterImageStorage.saveImage(
+              character.name,
+              baseName,
+              'png',
+              pngBytes,
+            );
             coverImages = [
               CoverImage(
                 characterId: 0,
                 name: '표지 1',
                 order: 0,
-                imageData: imageData,
+                path: filePath,
               ),
             ];
           } catch (_) {
-            // Image processing failure is non-critical
+            // Image save failure is non-critical
           }
         }
       } else if (extension == 'charx') {
@@ -535,6 +548,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
         coverImages = await CharacterCardParser.parseAssets(
           jsonData,
           0,
+          character.name,
           archiveFiles: archiveFiles,
         );
       } else {

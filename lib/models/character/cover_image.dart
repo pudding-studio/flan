@@ -6,7 +6,8 @@ class CoverImage {
   String name;
   int order;
   bool isExpanded;
-  Uint8List? imageData; // webp 512x512 바이너리 데이터
+  Uint8List? imageData; // legacy BLOB data (backward compat)
+  String? path; // absolute file path (file-based storage)
 
   CoverImage({
     this.id,
@@ -15,6 +16,7 @@ class CoverImage {
     required this.order,
     this.isExpanded = false,
     this.imageData,
+    this.path,
   });
 
   // DB에서 읽어올 때 사용
@@ -26,6 +28,7 @@ class CoverImage {
       order: map['order'] as int,
       isExpanded: (map['is_expanded'] as int?) == 1,
       imageData: map['image_data'] as Uint8List?,
+      path: map['path'] as String?,
     );
   }
 
@@ -38,6 +41,7 @@ class CoverImage {
       'order': order,
       'is_expanded': isExpanded ? 1 : 0,
       'image_data': imageData,
+      'path': path,
     };
   }
 
@@ -48,6 +52,7 @@ class CoverImage {
     int? order,
     bool? isExpanded,
     Uint8List? imageData,
+    String? path,
   }) {
     return CoverImage(
       id: id ?? this.id,
@@ -56,6 +61,7 @@ class CoverImage {
       order: order ?? this.order,
       isExpanded: isExpanded ?? this.isExpanded,
       imageData: imageData ?? this.imageData,
+      path: path ?? this.path,
     );
   }
 
@@ -67,6 +73,7 @@ class CoverImage {
       'order': order,
       'isExpanded': isExpanded,
       'imageData': imageData?.toList(),
+      'path': path,
     };
   }
 
@@ -79,6 +86,7 @@ class CoverImage {
       order: json['order'] as int,
       isExpanded: json['isExpanded'] as bool? ?? false,
       imageData: imageDataList != null ? Uint8List.fromList(imageDataList.cast<int>()) : null,
+      path: json['path'] as String?,
     );
   }
 }
