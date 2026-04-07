@@ -1,6 +1,5 @@
-import 'dart:typed_data';
-
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../widgets/common/markdown_text.dart';
 import '../../models/chat/chat_room.dart';
@@ -1628,6 +1627,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
                     ),
                   ] else ...[
+                    IconButton(
+                      icon: const Icon(Icons.copy_outlined, size: 18),
+                      onPressed: () => Clipboard.setData(ClipboardData(text: message.content)),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+                    ),
+                    const SizedBox(width: 0),
                     IconButton(
                       icon: const Icon(Icons.edit_outlined, size: 18),
                       onPressed: () => _startEditMessage(message),
