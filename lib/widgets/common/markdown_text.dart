@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'fullscreen_image_viewer.dart';
@@ -43,7 +45,7 @@ class MarkdownText extends StatelessWidget {
           if (segments[i].type == _SegmentType.text)
             _buildTextContent(segments[i].value, style, primaryColor, tertiaryColor)
           else
-            _NetworkImageBlock(
+            _ImageBlock(
               url: segments[i].value,
               alt: segments[i].alt,
             ),
@@ -299,55 +301,77 @@ class _Segment {
   _Segment(this.type, this.value, {this.alt});
 }
 
-class _NetworkImageBlock extends StatelessWidget {
+class _ImageBlock extends StatelessWidget {
   final String url;
   final String? alt;
 
-  const _NetworkImageBlock({required this.url, this.alt});
+  const _ImageBlock({required this.url, this.alt});
+
+  bool get _isLocalFile =>
+      url.startsWith('/') || url.startsWith('file://');
+
+  String get _filePath =>
+      url.startsWith('file://') ? url.substring(7) : url;
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
-      child: GestureDetector(
-        onTap: () => FullscreenImageViewer.show(context, url),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxHeight: 300),
-            child: CachedNetworkImage(
-              imageUrl: url,
-              fit: BoxFit.contain,
-              placeholder: (context, url) => Container(
-                height: 150,
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
-              ),
-              errorWidget: (context, url, error) => Container(
-                height: 80,
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                child: Center(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.broken_image,
-                          color: Theme.of(context).colorScheme.onSurfaceVariant),
-                      if (alt != null && alt!.isNotEmpty)
-                        Padding(
-                          padding: const EdgeInsets.only(top: 4),
-                          child: Text(
-                            alt!,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                                ),
-                          ),
+      child: Center(
+        child: SizedBox(
+          width: screenWidth * 0.7,
+          child: GestureDetector(
+            onTap: () => FullscreenImageViewer.show(context, url),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 300),
+                child: _isLocalFile
+                    ? Image.file(
+                        File(_filePath),
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => _errorWidget(context),
+                      )
+                    : CachedNetworkImage(
+                        imageUrl: url,
+                        fit: BoxFit.contain,
+                        placeholder: (context, url) => Container(
+                          height: 150,
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
                         ),
-                    ],
-                  ),
-                ),
+                        errorWidget: (context, url, error) => _errorWidget(context),
+                      ),
               ),
             ),
           ),
+        ),
+      ),
+    );
+  }
+
+  Widget _errorWidget(BuildContext context) {
+    return Container(
+      height: 80,
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.broken_image,
+                color: Theme.of(context).colorScheme.onSurfaceVariant),
+            if (alt != null && alt!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  alt!,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+              ),
+          ],
         ),
       ),
     );

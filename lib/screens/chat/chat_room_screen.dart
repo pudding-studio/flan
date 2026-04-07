@@ -68,6 +68,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   StartScenario? _startScenario;
   List<ChatMessage> _messages = [];
   List<CoverImage> _coverImages = [];
+  List<CoverImage> _additionalImages = [];
+  Map<String, String> _imagePathMap = {}; // image name → file path
   bool _isLoading = true;
   SendingPhase _sendingPhase = SendingPhase.none;
   bool get _isSending => _sendingPhase != SendingPhase.none;
@@ -209,6 +211,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       final character = await _db.readCharacter(chatRoom.characterId);
       final messages = await _db.readChatMessagesByChatRoom(widget.chatRoomId);
       final coverImages = await _db.readCoverImages(chatRoom.characterId);
+      final additionalImages = await _db.readAdditionalImages(chatRoom.characterId);
+      // Build name→path map for <img="name"> tag resolution
+      final imagePathMap = <String, String>{};
+      for (final img in [...coverImages, ...additionalImages]) {
+        if (img.path != null && img.name.isNotEmpty) {
+          imagePathMap[img.name] = img.path!;
+        }
+      }
       final metadataList = await _db.readChatMessageMetadataByChatRoom(widget.chatRoomId);
       final metadataMap = <int, ChatMessageMetadata>{};
       for (final m in metadataList) {
@@ -262,6 +272,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         _startScenario = startScenario;
         _messages = messages;
         _coverImages = coverImages;
+        _additionalImages = additionalImages;
+        _imagePathMap = imagePathMap;
         _metadataMap = metadataMap;
         _summaryThresholdIndex = summaryThresholdIndex;
         _summarizedMessageIds = summarizedIds;
@@ -607,9 +619,21 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
+  static final _imgTagPattern = RegExp(r'<img="([^"]+)">');
+
   String _buildDisplayContent(String content) {
     var text = MetadataParser.removeMetadataTags(content);
-    return RegexProcessor.apply(text, _regexRules, RegexTarget.displayModify);
+    text = RegexProcessor.apply(text, _regexRules, RegexTarget.displayModify);
+    // <img="이름"> → 캐릭터 이미지가 있으면 로컬 이미지로 변환, 없으면 삭제
+    text = text.replaceAllMapped(_imgTagPattern, (match) {
+      final name = match.group(1)!;
+      final path = _imagePathMap[name];
+      if (path != null) {
+        return '![$name]($path)';
+      }
+      return '';
+    });
+    return text;
   }
 
 

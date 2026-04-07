@@ -425,7 +425,14 @@ class _CharacterScreenState extends State<CharacterScreen> {
       if (result == null || result.files.isEmpty) return;
 
       final file = File(result.files.single.path!);
-      final extension = result.files.single.extension?.toLowerCase();
+      var extension = result.files.single.extension?.toLowerCase();
+      if (extension == null || extension.isEmpty) {
+        final filePath = result.files.single.path ?? '';
+        final dotIndex = filePath.lastIndexOf('.');
+        if (dotIndex != -1 && dotIndex < filePath.length - 1) {
+          extension = filePath.substring(dotIndex + 1).toLowerCase();
+        }
+      }
 
       Character? character;
       List<Persona>? personas;
@@ -433,6 +440,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
       List<CharacterBookFolder>? characterBookFolders;
       List<CharacterBook>? standaloneCharacterBooks;
       List<CoverImage>? coverImages;
+      List<CoverImage>? additionalImages;
 
       if (extension == 'json') {
         // JSON 파일 처리
@@ -488,13 +496,14 @@ class _CharacterScreenState extends State<CharacterScreen> {
         standaloneCharacterBooks = CharacterCardParser.parseCharacterBooks(metadata, 0);
 
         // V3 assets에서 이미지 추출 시도
-        final assetCovers = await CharacterCardParser.parseAssets(
+        final allAssets = await CharacterCardParser.parseAssets(
           metadata,
           0,
           character.name,
         );
-        if (assetCovers.isNotEmpty) {
-          coverImages = assetCovers;
+        if (allAssets.isNotEmpty) {
+          coverImages = allAssets.where((i) => i.imageType == 'cover').toList();
+          additionalImages = allAssets.where((i) => i.imageType == 'additional').toList();
         } else {
           // PNG 이미지 자체를 표지 이미지로 저장
           try {
@@ -521,8 +530,26 @@ class _CharacterScreenState extends State<CharacterScreen> {
         }
       } else if (extension == 'charx') {
         // CHARX (ZIP archive) 파일 처리
-        final archiveBytes = await file.readAsBytes();
-        final archive = ZipDecoder().decodeBytes(archiveBytes);
+        // CHARX는 이미지+ZIP 폴리글롯 형태일 수 있으므로 PK 시그니처 탐색
+        final rawBytes = await file.readAsBytes();
+        Uint8List archiveBytes = rawBytes;
+        if (rawBytes.length >= 4 &&
+            !(rawBytes[0] == 0x50 && rawBytes[1] == 0x4B)) {
+          int zipStart = -1;
+          for (int i = 0; i < rawBytes.length - 4; i++) {
+            if (rawBytes[i] == 0x50 &&
+                rawBytes[i + 1] == 0x4B &&
+                rawBytes[i + 2] == 0x03 &&
+                rawBytes[i + 3] == 0x04) {
+              zipStart = i;
+              break;
+            }
+          }
+          if (zipStart > 0) {
+            archiveBytes = Uint8List.sublistView(rawBytes, zipStart);
+          }
+        }
+        final archive = ZipDecoder().decodeBytes(archiveBytes, verify: false);
 
         // card.json 찾기
         final cardJsonFile = archive.findFile('card.json');
@@ -545,12 +572,14 @@ class _CharacterScreenState extends State<CharacterScreen> {
         }
 
         // V3 assets에서 이미지 추출
-        coverImages = await CharacterCardParser.parseAssets(
+        final allAssets = await CharacterCardParser.parseAssets(
           jsonData,
           0,
           character.name,
           archiveFiles: archiveFiles,
         );
+        coverImages = allAssets.where((i) => i.imageType == 'cover').toList();
+        additionalImages = allAssets.where((i) => i.imageType == 'additional').toList();
       } else {
         throw FormatException('지원하지 않는 파일 형식입니다');
       }
@@ -592,10 +621,26 @@ class _CharacterScreenState extends State<CharacterScreen> {
         }
       }
 
+      int? firstCoverImageId;
       if (coverImages != null) {
         for (final image in coverImages) {
+          final imageId = await _db.createCoverImage(image.copyWith(characterId: characterId));
+          firstCoverImageId ??= imageId;
+        }
+      }
+
+      if (additionalImages != null) {
+        for (final image in additionalImages) {
           await _db.createCoverImage(image.copyWith(characterId: characterId));
         }
+      }
+
+      // 표지 이미지가 있으면 첫번째를 선택 상태로 설정
+      if (firstCoverImageId != null) {
+        await _db.updateCharacter(character.copyWith(
+          id: characterId,
+          selectedCoverImageId: firstCoverImageId,
+        ));
       }
 
       await _loadCharacters();

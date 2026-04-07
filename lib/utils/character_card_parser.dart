@@ -264,13 +264,18 @@ class CharacterCardParser {
       if (assets == null) return [];
 
       final coverImages = <CoverImage>[];
-      int order = 0;
+
+      int coverOrder = 0;
+      int additionalOrder = 0;
 
       for (final asset in assets) {
         if (asset is! Map<String, dynamic>) continue;
 
         final uri = asset['uri'] as String?;
         if (uri == null || uri.isEmpty || uri == 'ccdefault:') continue;
+
+        final type = asset['type'] as String?;
+        final isIcon = type == 'icon';
 
         Uint8List? imageBytes;
         String imageName;
@@ -283,7 +288,7 @@ class CharacterCardParser {
           final assetName = asset['name'] as String?;
           imageName = (assetName != null && assetName.isNotEmpty)
               ? assetName
-              : 'asset_${order + 1}';
+              : 'asset_${coverOrder + additionalOrder + 1}';
           final commaIndex = uri.indexOf(',');
           if (commaIndex != -1) {
             imageBytes = base64.decode(uri.substring(commaIndex + 1));
@@ -300,7 +305,7 @@ class CharacterCardParser {
             imageName = fileName.substring(0, dotIndex);
             ext = fileName.substring(dotIndex + 1).toLowerCase();
           } else {
-            imageName = fileName.isNotEmpty ? fileName : 'asset_${order + 1}';
+            imageName = fileName.isNotEmpty ? fileName : 'asset_${coverOrder + additionalOrder + 1}';
             ext = 'bin';
           }
         } else {
@@ -316,13 +321,16 @@ class CharacterCardParser {
               imageBytes,
             );
             final assetDisplayName = asset['name'] as String?;
+            final imageType = isIcon ? 'cover' : 'additional';
+            final order = isIcon ? coverOrder++ : additionalOrder++;
             coverImages.add(CoverImage(
               characterId: characterId,
               name: (assetDisplayName != null && assetDisplayName.isNotEmpty)
                   ? assetDisplayName
-                  : '표지 ${order + 1}',
-              order: order++,
+                  : (isIcon ? '표지 ${order + 1}' : '이미지 ${order + 1}'),
+              order: order,
               path: filePath,
+              imageType: imageType,
             ));
           } catch (_) {
             // Skip failed image saves
