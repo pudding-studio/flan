@@ -1,13 +1,16 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:archive/archive.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../database/database_helper.dart';
 import '../../utils/common_dialog.dart';
+import '../../utils/streaming_zip_writer.dart';
 import '../../widgets/common/common_appbar.dart';
 
 class BackupScreen extends StatefulWidget {
@@ -38,6 +41,8 @@ class _BackupScreenState extends State<BackupScreen> {
     'chat_model',
     'character_is_grid_view',
     'character_sort_method',
+    'custom_models',
+    'custom_providers',
   ];
 
   Future<void> _createBackup() async {
@@ -45,19 +50,20 @@ class _BackupScreenState extends State<BackupScreen> {
 
     try {
       final dbPath = await _db.getDatabaseFilePath();
+      final appDocDir = await getApplicationDocumentsDirectory();
       final now = DateTime.now();
       final timestamp =
           '${now.year}${_pad(now.month)}${_pad(now.day)}_${_pad(now.hour)}${_pad(now.minute)}${_pad(now.second)}';
-      final fileName = 'flan_backup_$timestamp.db';
+      final fileName = 'flan_backup_$timestamp.zip';
 
       final tempDir = await getTemporaryDirectory();
-      final tempPath = '${tempDir.path}/$fileName';
+      final tempDbPath = '${tempDir.path}/backup.db';
 
       // Copy DB file to temp
-      await File(dbPath).copy(tempPath);
+      await File(dbPath).copy(tempDbPath);
 
-      // Open the copy and embed preferences into it
-      final backupDb = await openDatabase(tempPath, singleInstance: false);
+      // Open the copy and embed preferences + app path into it
+      final backupDb = await openDatabase(tempDbPath, singleInstance: false);
       await backupDb.execute('''
         CREATE TABLE IF NOT EXISTS _backup_metadata (
           key TEXT PRIMARY KEY,
@@ -80,16 +86,39 @@ class _BackupScreenState extends State<BackupScreen> {
         'key': 'created_at',
         'value': now.toIso8601String(),
       });
+      await backupDb.insert('_backup_metadata', {
+        'key': 'app_doc_path',
+        'value': appDocDir.path,
+      });
       await backupDb.close();
+
+      // Build ZIP: stream entries one at a time to avoid OOM
+      final tempZipPath = '${tempDir.path}/$fileName';
+      final zipWriter = await StreamingZipWriter.open(tempZipPath);
+
+      final dbBytes = await File(tempDbPath).readAsBytes();
+      await zipWriter.addFile('backup.db', dbBytes);
+      await File(tempDbPath).delete();
+
+      final charsDir = Directory(p.join(appDocDir.path, 'characters'));
+      if (await charsDir.exists()) {
+        await for (final entity in charsDir.list(recursive: true)) {
+          if (entity is! File) continue;
+          final relativePath = p.relative(entity.path, from: appDocDir.path);
+          final fileBytes = await entity.readAsBytes();
+          await zipWriter.addFile(relativePath, fileBytes);
+        }
+      }
+
+      await zipWriter.close();
 
       if (Platform.isAndroid) {
         const platform = MethodChannel('com.flanapp.flan/file_saver');
         final result = await platform.invokeMethod('copyFileToDownloads', {
-          'sourcePath': tempPath,
+          'sourcePath': tempZipPath,
           'fileName': fileName,
         });
-
-        await File(tempPath).delete();
+        await File(tempZipPath).delete();
 
         if (result == true && mounted) {
           CommonDialog.showSnackBar(
@@ -104,8 +133,8 @@ class _BackupScreenState extends State<BackupScreen> {
         }
       } else if (Platform.isIOS) {
         final docsDir = await getApplicationDocumentsDirectory();
-        await File(tempPath).copy('${docsDir.path}/$fileName');
-        await File(tempPath).delete();
+        await File(tempZipPath).copy('${docsDir.path}/$fileName');
+        await File(tempZipPath).delete();
 
         if (mounted) {
           CommonDialog.showSnackBar(
@@ -137,20 +166,45 @@ class _BackupScreenState extends State<BackupScreen> {
       final file = result.files.single;
       final selectedPath = file.path!;
       final originalName = file.name;
-      if (!originalName.endsWith('.db')) {
+      final isZip = originalName.endsWith('.zip');
+      final isDb = originalName.endsWith('.db');
+
+      if (!isZip && !isDb) {
         if (mounted) {
           CommonDialog.showSnackBar(
             context: context,
-            message: '.db 백업 파일을 선택해주세요',
+            message: '.zip 또는 .db 백업 파일을 선택해주세요',
           );
         }
         return;
       }
 
+      // Resolve the DB path from ZIP or use directly
+      String dbPathToRead = selectedPath;
+      Archive? archive;
+      if (isZip) {
+        final zipBytes = await File(selectedPath).readAsBytes();
+        archive = ZipDecoder().decodeBytes(zipBytes, verify: false);
+        // Extract backup.db to a temp file for metadata reading
+        final dbEntry = archive.findFile('backup.db');
+        if (dbEntry == null) {
+          if (mounted) {
+            CommonDialog.showSnackBar(
+              context: context,
+              message: 'ZIP 파일에서 backup.db를 찾을 수 없습니다',
+            );
+          }
+          return;
+        }
+        final tempDir = await getTemporaryDirectory();
+        dbPathToRead = '${tempDir.path}/backup_restore.db';
+        await File(dbPathToRead).writeAsBytes(dbEntry.content as List<int>);
+      }
+
       // Read backup metadata to show info
       String createdAt = '알 수 없음';
       try {
-        final backupDb = await openDatabase(selectedPath, readOnly: true, singleInstance: false);
+        final backupDb = await openDatabase(dbPathToRead, readOnly: true, singleInstance: false);
         final tables = await backupDb.rawQuery(
           "SELECT name FROM sqlite_master WHERE type='table' AND name='_backup_metadata'",
         );
@@ -176,31 +230,61 @@ class _BackupScreenState extends State<BackupScreen> {
         isDestructive: true,
       );
 
-      if (confirm != true) return;
+      if (confirm != true) {
+        if (isZip) await File(dbPathToRead).delete();
+        return;
+      }
 
       setState(() => _isProcessing = true);
+
+      final appDocDir = await getApplicationDocumentsDirectory();
+
+      // Restore character images from ZIP
+      if (isZip && archive != null) {
+        // Clear existing characters directory
+        final charsDir = Directory(p.join(appDocDir.path, 'characters'));
+        if (await charsDir.exists()) {
+          await charsDir.delete(recursive: true);
+        }
+
+        // Extract image files
+        for (final entry in archive) {
+          if (!entry.isFile) continue;
+          if (!entry.name.startsWith('characters/')) continue;
+          final outPath = p.join(appDocDir.path, entry.name);
+          final outFile = File(outPath);
+          await outFile.parent.create(recursive: true);
+          await outFile.writeAsBytes(entry.content as List<int>);
+        }
+      }
 
       // Close current DB, overwrite with backup, reopen
       final dbPath = await _db.getDatabaseFilePath();
       await _db.closeDatabase();
 
-      await File(selectedPath).copy(dbPath);
+      if (isZip) {
+        await File(dbPathToRead).copy(dbPath);
+        await File(dbPathToRead).delete();
+      } else {
+        await File(selectedPath).copy(dbPath);
+      }
 
-      // Extract and restore preferences before reopening main DB
+      // Extract and restore preferences, fix image paths
       try {
         final restoredDb = await openDatabase(dbPath, singleInstance: false);
         final tables = await restoredDb.rawQuery(
           "SELECT name FROM sqlite_master WHERE type='table' AND name='_backup_metadata'",
         );
         if (tables.isNotEmpty) {
-          final rows = await restoredDb.query(
+          // Restore preferences
+          final prefsRows = await restoredDb.query(
             '_backup_metadata',
             where: 'key = ?',
             whereArgs: ['preferences'],
           );
-          if (rows.isNotEmpty) {
+          if (prefsRows.isNotEmpty) {
             final prefsData =
-                jsonDecode(rows.first['value'] as String) as Map<String, dynamic>;
+                jsonDecode(prefsRows.first['value'] as String) as Map<String, dynamic>;
             final prefs = await SharedPreferences.getInstance();
             for (final entry in prefsData.entries) {
               final value = entry.value;
@@ -215,12 +299,32 @@ class _BackupScreenState extends State<BackupScreen> {
               }
             }
           }
-          // Clean up metadata table from restored DB
+
+          // Fix image paths if app doc path changed
+          if (isZip) {
+            final pathRows = await restoredDb.query(
+              '_backup_metadata',
+              where: 'key = ?',
+              whereArgs: ['app_doc_path'],
+            );
+            if (pathRows.isNotEmpty) {
+              final oldDocPath = pathRows.first['value'] as String;
+              final newDocPath = appDocDir.path;
+              if (oldDocPath != newDocPath) {
+                await restoredDb.rawUpdate(
+                  "UPDATE cover_images SET path = REPLACE(path, ?, ?) WHERE path IS NOT NULL",
+                  [oldDocPath, newDocPath],
+                );
+              }
+            }
+          }
+
+          // Clean up metadata table
           await restoredDb.execute('DROP TABLE IF EXISTS _backup_metadata');
         }
         await restoredDb.close();
       } catch (_) {
-        // Preferences restore failed, but DB restore succeeded
+        // Preferences/path restore failed, but DB restore succeeded
       }
 
       await _db.reopenDatabase();
@@ -277,7 +381,7 @@ class _BackupScreenState extends State<BackupScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '캐릭터, 채팅 기록, 프롬프트, 설정 등 모든 데이터를 하나의 백업 파일로 내보냅니다.',
+                        '캐릭터(이미지 포함), 채팅 기록, 프롬프트, 커스텀 모델, 설정 등 모든 데이터를 하나의 백업 파일로 내보냅니다.',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -316,7 +420,7 @@ class _BackupScreenState extends State<BackupScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '백업 .db 파일을 선택하여 데이터를 복원합니다.',
+                        '백업 .zip 파일을 선택하여 데이터를 복원합니다. (기존 .db 파일도 지원)',
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
