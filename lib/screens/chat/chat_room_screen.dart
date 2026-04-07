@@ -794,7 +794,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          padding: const EdgeInsets.only(left: 16, right: 16, top: 6, bottom: 12),
           child: GridView.count(
             crossAxisCount: 4,
             shrinkWrap: true,
@@ -848,8 +848,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 56,
-            height: 56,
+            width: 45,
+            height: 45,
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.primaryContainer,
               shape: BoxShape.circle,
@@ -857,7 +857,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             child: Icon(
               icon,
               color: Theme.of(context).colorScheme.onPrimaryContainer,
-              size: 26,
+              size: 21,
             ),
           ),
           const SizedBox(height: 6),
