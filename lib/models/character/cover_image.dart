@@ -8,6 +8,7 @@ class CoverImage {
   bool isExpanded;
   Uint8List? imageData; // legacy BLOB data (backward compat)
   String? path; // absolute file path (file-based storage)
+  String imageType; // 'cover' or 'additional'
 
   CoverImage({
     this.id,
@@ -17,6 +18,7 @@ class CoverImage {
     this.isExpanded = false,
     this.imageData,
     this.path,
+    this.imageType = 'cover',
   });
 
   // DB에서 읽어올 때 사용
@@ -29,6 +31,7 @@ class CoverImage {
       isExpanded: (map['is_expanded'] as int?) == 1,
       imageData: map['image_data'] as Uint8List?,
       path: map['path'] as String?,
+      imageType: (map['image_type'] as String?) ?? 'cover',
     );
   }
 
@@ -42,6 +45,7 @@ class CoverImage {
       'is_expanded': isExpanded ? 1 : 0,
       'image_data': imageData,
       'path': path,
+      'image_type': imageType,
     };
   }
 
@@ -53,6 +57,7 @@ class CoverImage {
     bool? isExpanded,
     Uint8List? imageData,
     String? path,
+    String? imageType,
   }) {
     return CoverImage(
       id: id ?? this.id,
@@ -62,6 +67,7 @@ class CoverImage {
       isExpanded: isExpanded ?? this.isExpanded,
       imageData: imageData ?? this.imageData,
       path: path ?? this.path,
+      imageType: imageType ?? this.imageType,
     );
   }
 
@@ -74,6 +80,7 @@ class CoverImage {
       'isExpanded': isExpanded,
       'imageData': imageData?.toList(),
       'path': path,
+      'imageType': imageType,
     };
   }
 
@@ -87,6 +94,7 @@ class CoverImage {
       isExpanded: json['isExpanded'] as bool? ?? false,
       imageData: imageDataList != null ? Uint8List.fromList(imageDataList.cast<int>()) : null,
       path: json['path'] as String?,
+      imageType: (json['imageType'] as String?) ?? 'cover',
     );
   }
 }

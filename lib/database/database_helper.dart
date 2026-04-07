@@ -42,7 +42,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 44,
+      version: 45,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -1212,6 +1212,10 @@ class DatabaseHelper {
     if (oldVersion < 44) {
       await db.execute('ALTER TABLE cover_images ADD COLUMN path TEXT');
     }
+
+    if (oldVersion < 45) {
+      await db.execute("ALTER TABLE cover_images ADD COLUMN image_type TEXT DEFAULT 'cover'");
+    }
   }
 
   // ==================== 캐릭터 CRUD ====================
@@ -1490,7 +1494,18 @@ class DatabaseHelper {
     final db = await database;
     final result = await db.query(
       'cover_images',
-      where: 'character_id = ?',
+      where: "character_id = ? AND (image_type IS NULL OR image_type = 'cover')",
+      whereArgs: [characterId],
+      orderBy: '`order` ASC',
+    );
+    return result.map((map) => CoverImage.fromMap(map)).toList();
+  }
+
+  Future<List<CoverImage>> readAdditionalImages(int characterId) async {
+    final db = await database;
+    final result = await db.query(
+      'cover_images',
+      where: "character_id = ? AND image_type = 'additional'",
       whereArgs: [characterId],
       orderBy: '`order` ASC',
     );
