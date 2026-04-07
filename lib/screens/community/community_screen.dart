@@ -44,20 +44,27 @@ class _CommunityScreenState extends State<CommunityScreen> {
   bool _isLoading = true;
   bool _isGenerating = false;
 
+  // Draft state for retry on failure
+  String _draftPostAuthor = '익명';
+  String _draftPostTitle = '';
+  String _draftPostContent = '';
+  final Map<int, String> _draftCommentAuthor = {};
+  final Map<int, String> _draftCommentContent = {};
+
   @override
   void initState() {
     super.initState();
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() => _isLoading = true);
+  Future<void> _load({bool showLoading = true}) async {
+    if (showLoading) setState(() => _isLoading = true);
     final results = await Future.wait([
       _db.readCharacter(widget.characterId),
       _db.readChatRoom(widget.chatRoomId),
       _db.readStartScenarios(widget.characterId),
       _db.getChatSummaries(widget.chatRoomId),
-      _db.readRecentAssistantMessages(widget.chatRoomId, 3),
+      _db.readRecentAssistantMessages(        widget.chatRoomId, 3),
       _db.readCommunityPosts(widget.chatRoomId),
     ]);
     if (!mounted) return;
@@ -164,7 +171,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         }
       }
 
-      await _load();
+      await _load(showLoading: false);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -176,8 +183,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   void _showWritePost() {
-    final titleCtrl = TextEditingController();
-    final contentCtrl = TextEditingController();
+    final authorCtrl = TextEditingController(text: _draftPostAuthor);
+    final titleCtrl = TextEditingController(text: _draftPostTitle);
+    final contentCtrl = TextEditingController(text: _draftPostContent);
 
     showModalBottomSheet(
       context: context,
@@ -197,6 +205,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
             Text('게시글 작성',
                 style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
+            TextField(
+              controller: authorCtrl,
+              decoration: const InputDecoration(
+                hintText: '작성자',
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+            ),
+            const SizedBox(height: 10),
             TextField(
               controller: titleCtrl,
               decoration: const InputDecoration(
@@ -220,11 +237,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
               width: double.infinity,
               child: FilledButton(
                 onPressed: () async {
+                  final author = authorCtrl.text.trim();
                   final title = titleCtrl.text.trim();
                   final content = contentCtrl.text.trim();
-                  if (title.isEmpty || content.isEmpty) return;
+                  if (author.isEmpty || title.isEmpty || content.isEmpty) return;
+                  _draftPostAuthor = author;
+                  _draftPostTitle = title;
+                  _draftPostContent = content;
                   Navigator.pop(ctx);
-                  await _submitPost(title: title, content: content);
+                  await _submitPost(author: author, title: title, content: content);
                 },
                 child: const Text('등록'),
               ),
@@ -235,20 +256,33 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
   }
 
-  Future<void> _submitPost({required String title, required String content}) async {
+  Future<void> _submitPost({required String author, required String title, required String content}) async {
     setState(() => _isGenerating = true);
     try {
+      final replies = await _generatePostReplies(title: title, content: content);
+
       final now = DateTime.now();
       final post = CommunityPost(
         chatRoomId: widget.chatRoomId,
-        author: '나',
+        author: author,
         title: title,
         time: now,
         content: content,
       );
       final postId = await _db.createCommunityPost(post);
-      await _generatePostReplies(postId: postId, title: title, content: content);
-      await _load();
+      for (final c in replies) {
+        await _db.createCommunityComment(CommunityComment(
+          postId: postId,
+          author: c.author,
+          time: c.time,
+          content: c.content,
+        ));
+      }
+
+      _draftPostAuthor = '익명';
+      _draftPostTitle = '';
+      _draftPostContent = '';
+      await _load(showLoading: false);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('등록 실패: $e')));
@@ -258,8 +292,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   void _showWriteComment(CommunityPost post) {
-    final nicknameCtrl = TextEditingController(text: '나');
-    final contentCtrl = TextEditingController();
+    final postId = post.id!;
+    final nicknameCtrl = TextEditingController(text: _draftCommentAuthor[postId] ?? '익명');
+    final contentCtrl = TextEditingController(text: _draftCommentContent[postId] ?? '');
 
     showModalBottomSheet(
       context: context,
@@ -315,6 +350,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   final nickname = nicknameCtrl.text.trim();
                   final content = contentCtrl.text.trim();
                   if (nickname.isEmpty || content.isEmpty) return;
+                  _draftCommentAuthor[postId] = nickname;
+                  _draftCommentContent[postId] = content;
                   Navigator.pop(ctx);
                   await _submitComment(post: post, author: nickname, content: content);
                 },
@@ -330,7 +367,25 @@ class _CommunityScreenState extends State<CommunityScreen> {
   Future<void> _submitComment({required CommunityPost post, required String author, required String content}) async {
     setState(() => _isGenerating = true);
     try {
+      // Add user comment to post context for AI without saving to DB yet
       final now = DateTime.now();
+      final postWithUserComment = CommunityPost(
+        id: post.id,
+        chatRoomId: post.chatRoomId,
+        author: post.author,
+        title: post.title,
+        time: post.time,
+        content: post.content,
+        createdAt: post.createdAt,
+        comments: [
+          ...post.comments,
+          CommunityComment(postId: post.id!, author: author, time: now, content: content),
+        ],
+      );
+
+      final aiReplies = await _generateCommentReplies(post: postWithUserComment);
+
+      // AI succeeded — now save user comment + AI replies to DB
       final userComment = CommunityComment(
         postId: post.id!,
         author: author,
@@ -338,12 +393,13 @@ class _CommunityScreenState extends State<CommunityScreen> {
         content: content,
       );
       await _db.createCommunityComment(userComment);
+      for (final c in aiReplies) {
+        await _db.createCommunityComment(c);
+      }
 
-      // Reload current comments to pass as context to AI
-      final updatedPost = (await _db.readCommunityPosts(widget.characterId))
-          .firstWhere((p) => p.id == post.id);
-      await _generateCommentReplies(post: updatedPost);
-      await _load();
+      _draftCommentAuthor.remove(post.id!);
+      _draftCommentContent.remove(post.id!);
+      await _load(showLoading: false);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('등록 실패: $e')));
@@ -352,8 +408,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     }
   }
 
-  Future<void> _generatePostReplies({
-    required int postId,
+  Future<List<CommunityComment>> _generatePostReplies({
     required String title,
     required String content,
   }) async {
@@ -372,7 +427,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final worldview = _buildWorldviewText();
 
     final userMessage =
-        '현재 시각: $nowStr\n\n'
+        '현재 시각: $nowStr\n기준 시각 (이 시각 이후의 댓글만 생성): $nowStr\n\n'
         '${worldview.isNotEmpty ? '## 세계관\n$worldview\n\n' : ''}'
         '## 게시글\n제목: $title\n내용: $content';
 
@@ -387,13 +442,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
       logType: 'community',
     );
 
-    final comments = CommunityParser.parseComments(response.text, postId: postId);
-    for (final c in comments) {
-      await _db.createCommunityComment(c);
-    }
+    return CommunityParser.parseComments(response.text, postId: 0);
   }
 
-  Future<void> _generateCommentReplies({required CommunityPost post}) async {
+  Future<List<CommunityComment>> _generateCommentReplies({required CommunityPost post}) async {
     final model = context.read<CommunityModelProvider>().selectedModel;
     var systemPrompt = await rootBundle.loadString(
       'assets/defaults/community_prompts/comment_replies.txt',
@@ -429,10 +481,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
       logType: 'community',
     );
 
-    final comments = CommunityParser.parseComments(response.text, postId: post.id!);
-    for (final c in comments) {
-      await _db.createCommunityComment(c);
-    }
+    return CommunityParser.parseComments(response.text, postId: post.id!);
   }
 
   Future<void> _deleteComment(CommunityComment comment) async {
@@ -449,7 +498,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
     if (confirmed != true) return;
     await _db.deleteCommunityComment(comment.id!);
-    await _load();
+    await _load(showLoading: false);
   }
 
   Future<void> _deletePost(CommunityPost post) async {
@@ -466,7 +515,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
     if (confirmed != true) return;
     await _db.deleteCommunityPost(post.id!);
-    await _load();
+    await _load(showLoading: false);
   }
 
   String _nowString(DateTime now) =>
@@ -492,21 +541,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
           style: TextStyle(color: onSecondary),
         ),
         actions: [
-          if (_isGenerating)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(strokeWidth: 2, color: onSecondary),
-              ),
-            )
-          else
-            IconButton(
-              icon: Icon(Icons.refresh, color: onSecondary),
-              tooltip: '커뮤니티 글 생성',
-              onPressed: _regenerate,
-            ),
           IconButton(
             icon: Icon(Icons.menu, color: onSecondary),
             tooltip: '설정',
@@ -523,37 +557,47 @@ class _CommunityScreenState extends State<CommunityScreen> {
               onPressed: _showWritePost,
               child: const Icon(Icons.edit),
             ),
-      body: _isLoading
+      body: _isLoading || _isGenerating
           ? const Center(child: CircularProgressIndicator())
-          : _posts.isEmpty
-              ? _buildEmptyState()
-              : ListView.builder(
-                  padding: const EdgeInsets.symmetric(vertical: 8),
-                  itemCount: _posts.length,
-                  itemBuilder: (context, i) => _buildPostCard(_posts[i]),
-                ),
+          : RefreshIndicator(
+              onRefresh: _regenerate,
+              child: _posts.isEmpty
+                  ? _buildEmptyState()
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      itemCount: _posts.length,
+                      itemBuilder: (context, i) => _buildPostCard(_posts[i]),
+                    ),
+            ),
     );
   }
 
+
   Widget _buildEmptyState() {
-    return Center(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.forum_outlined,
-              size: 64, color: Theme.of(context).colorScheme.outlineVariant),
-          const SizedBox(height: 16),
-          Text('아직 게시글이 없습니다',
-              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.outline,
-                  )),
-          const SizedBox(height: 8),
-          Text('재생성 버튼을 눌러 커뮤니티를 생성해보세요',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).colorScheme.outline,
-                  )),
-        ],
-      ),
+    return ListView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      children: [
+        SizedBox(height: MediaQuery.of(context).size.height * 0.3),
+        Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.forum_outlined,
+                  size: 64, color: Theme.of(context).colorScheme.outlineVariant),
+              const SizedBox(height: 16),
+              Text('아직 게시글이 없습니다',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.outline,
+                      )),
+              const SizedBox(height: 8),
+              Text('당겨서 게시글을 새로 불러오세요',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.outline,
+                      )),
+            ],
+          ),
+        ),
+      ],
     );
   }
 
