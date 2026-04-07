@@ -257,8 +257,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       if (!mounted) return;
 
-      // Restore per-room model selection
-      if (chatRoom.selectedModelId != null) {
+      // Restore per-room model selection (only for custom preset)
+      if (chatRoom.modelPreset == 'custom' && chatRoom.selectedModelId != null) {
         final modelProvider = context.read<ChatModelSettingsProvider>();
         final savedId = chatRoom.selectedModelId!;
         final available = modelProvider.availableModels;
@@ -528,11 +528,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       if (mounted) setState(() => _sendingPhase = SendingPhase.waiting);
 
-      final modelProvider = context.read<ChatModelSettingsProvider>();
       final aiResponse = await _aiService.sendMessage(
         systemPrompt: apiData.systemPrompt,
         contents: apiData.contents,
-        model: modelProvider.selectedModel,
+        model: _resolveModel(),
         promptParameters: apiData.parameters,
         chatRoomId: widget.chatRoomId,
         characterId: _character?.id,
@@ -893,6 +892,28 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
+  UnifiedModel _resolveModel() {
+    final provider = context.read<ChatModelSettingsProvider>();
+    switch (_chatRoom?.modelPreset) {
+      case 'secondary':
+        return provider.subModel;
+      case 'custom':
+        return provider.selectedModel;
+      default: // 'primary'
+        return provider.selectedModel;
+    }
+  }
+
+  Future<void> _onModelPresetChanged(String preset) async {
+    if (_chatRoom == null) return;
+    final updated = _chatRoom!.copyWith(
+      modelPreset: preset,
+      updatedAt: DateTime.now(),
+    );
+    await _db.updateChatRoom(updated);
+    setState(() => _chatRoom = updated);
+  }
+
   Future<void> _onModelChanged(UnifiedModel model) async {
     final provider = context.read<ChatModelSettingsProvider>();
     await provider.setModel(model);
@@ -985,11 +1006,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       if (mounted) setState(() => _sendingPhase = SendingPhase.waiting);
 
-      final modelProvider2 = context.read<ChatModelSettingsProvider>();
       final aiResponse2 = await _aiService.sendMessage(
         systemPrompt: apiData.systemPrompt,
         contents: apiData.contents,
-        model: modelProvider2.selectedModel,
+        model: _resolveModel(),
         promptParameters: apiData.parameters,
         chatRoomId: widget.chatRoomId,
         characterId: _character?.id,
@@ -1090,6 +1110,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         autoPinByAi: _chatRoom!.autoPinByAi,
         autoPinByMessageCount: _chatRoom!.autoPinByMessageCount,
         selectedModelId: _chatRoom!.selectedModelId,
+        modelPreset: _chatRoom!.modelPreset,
       );
 
       final newChatRoomId = await _db.createChatRoom(newChatRoom);
@@ -1213,11 +1234,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       if (mounted) setState(() => _sendingPhase = SendingPhase.waiting);
 
-      final modelProvider3 = context.read<ChatModelSettingsProvider>();
       final aiResponse3 = await _aiService.sendMessage(
         systemPrompt: apiData.systemPrompt,
         contents: apiData.contents,
-        model: modelProvider3.selectedModel,
+        model: _resolveModel(),
         promptParameters: apiData.parameters,
         chatRoomId: widget.chatRoomId,
         characterId: _character?.id,
@@ -1747,6 +1767,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         chatPrompts: _chatPrompts,
         personas: _personas,
         onModelChanged: _onModelChanged,
+        onModelPresetChanged: _onModelPresetChanged,
         onPromptChanged: _onPromptChanged,
         onPersonaChanged: _onPersonaChanged,
         onPinModeChanged: _onPinModeChanged,

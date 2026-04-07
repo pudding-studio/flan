@@ -10,7 +10,9 @@ import '../../models/chat/chat_summary.dart';
 import '../../models/community/community_post.dart';
 import '../../models/community/community_comment.dart';
 import '../../models/chat/chat_model.dart';
+import '../../models/chat/model_preset.dart';
 import '../../models/chat/unified_model.dart';
+import '../../providers/chat_model_provider.dart';
 import '../../providers/community_model_provider.dart';
 import '../../services/ai_service.dart';
 import '../../utils/community_parser.dart';
@@ -91,9 +93,17 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Future<UnifiedModel> _getModel() async {
-    final provider = context.read<CommunityModelProvider>();
-    await provider.initialized;
-    return provider.selectedModel;
+    final communityProvider = context.read<CommunityModelProvider>();
+    final chatProvider = context.read<ChatModelSettingsProvider>();
+    await communityProvider.initialized;
+    switch (communityProvider.modelPreset) {
+      case ModelPreset.primary:
+        return chatProvider.selectedModel;
+      case ModelPreset.secondary:
+        return chatProvider.subModel;
+      case ModelPreset.custom:
+        return communityProvider.selectedModel;
+    }
   }
 
   String _appendCommunitySettings(String systemPrompt) {
@@ -844,42 +854,87 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Widget _buildModelDrawer() {
-    final selectableProviders = ChatModelProvider.values.toList();
-
     return Drawer(
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Consumer<CommunityModelProvider>(
-            builder: (context, provider, _) => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '사용 모델',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(fontSize: 16),
-                ),
-                const SizedBox(height: 16),
-                _buildSettingRow(
-                  label: '제조사',
-                  child: CommonDropdownButton<ChatModelProvider>(
-                    value: provider.selectedProvider,
-                    items: selectableProviders,
-                    onChanged: (p) { if (p != null) provider.setProvider(p); },
-                    labelBuilder: (p) => p.displayName,
-                    size: CommonDropdownButtonSize.xsmall,
+            builder: (context, provider, _) {
+              final providerOptions = ProviderOption.buildOptions(provider.customProviders);
+
+              ProviderOption? currentProviderOption;
+              if (provider.modelPreset == ModelPreset.custom) {
+                currentProviderOption = providerOptions.where(
+                  (o) => o.builtInProvider == provider.selectedProvider,
+                ).firstOrNull;
+                currentProviderOption ??= providerOptions.firstOrNull;
+              }
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '사용 모델',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(fontSize: 16),
                   ),
-                ),
-                const SizedBox(height: 8),
-                _buildSettingRow(
-                  label: '모델',
-                  child: CommonDropdownButton<UnifiedModel>(
-                    value: provider.selectedModel,
-                    items: provider.availableModels,
-                    onChanged: (m) { if (m != null) provider.setModel(m); },
-                    labelBuilder: (m) => m.displayName,
-                    size: CommonDropdownButtonSize.xsmall,
+                  const SizedBox(height: 16),
+                  _buildSettingRow(
+                    label: '모델설정',
+                    child: CommonDropdownButton<ModelPreset>(
+                      value: provider.modelPreset,
+                      items: ModelPreset.values,
+                      onChanged: (p) { if (p != null) provider.setModelPreset(p); },
+                      labelBuilder: (p) => p.displayName,
+                      size: CommonDropdownButtonSize.xsmall,
+                    ),
                   ),
-                ),
+                  if (provider.modelPreset != ModelPreset.custom) ...[
+                    const SizedBox(height: 4),
+                    Consumer<ChatModelSettingsProvider>(
+                      builder: (context, chatProvider, _) => Text(
+                        provider.modelPreset == ModelPreset.primary
+                            ? chatProvider.primaryModelLabel
+                            : chatProvider.subModelLabel,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              fontSize: 14,
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                            ),
+                      ),
+                    ),
+                  ],
+                  if (provider.modelPreset == ModelPreset.custom) ...[
+                    const SizedBox(height: 8),
+                    _buildSettingRow(
+                      label: '제조사',
+                      child: CommonDropdownButton<ProviderOption>(
+                        value: currentProviderOption,
+                        items: providerOptions,
+                        onChanged: (option) {
+                          if (option == null) return;
+                          if (option.isCustom) {
+                            // CommunityModelProvider doesn't support custom provider selection yet,
+                            // fall back to setting the built-in provider
+                            provider.setProvider(ChatModelProvider.custom);
+                          } else {
+                            provider.setProvider(option.builtInProvider!);
+                          }
+                        },
+                        labelBuilder: (o) => o.displayName,
+                        size: CommonDropdownButtonSize.xsmall,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildSettingRow(
+                      label: '채팅 모델',
+                      child: CommonDropdownButton<UnifiedModel>(
+                        value: provider.selectedModel,
+                        items: provider.availableModels,
+                        onChanged: (m) { if (m != null) provider.setModel(m); },
+                        labelBuilder: (m) => m.displayName,
+                        size: CommonDropdownButtonSize.xsmall,
+                      ),
+                    ),
+                  ],
                 if (_character != null) ...[
                   const SizedBox(height: 24),
                   const Divider(),
@@ -920,7 +975,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   ],
                 ],
               ],
-            ),
+            );
+            },
           ),
         ),
       ),

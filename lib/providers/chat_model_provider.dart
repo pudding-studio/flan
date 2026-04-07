@@ -38,6 +38,32 @@ class ChatModelSettingsProvider extends ChangeNotifier {
   List<CustomModel> get customModels => _customModels;
   List<CustomProvider> get customProviders => _customProviders;
 
+  /// Returns "{provider name} > {model name}" for the primary model.
+  String get primaryModelLabel {
+    final providerName = _selectedProvider == ChatModelProvider.custom &&
+            _selectedCustomProviderId != null
+        ? _customProviders
+                .where((p) => p.id == _selectedCustomProviderId)
+                .firstOrNull
+                ?.name ??
+            'Custom'
+        : _selectedProvider.displayName;
+    return '$providerName > ${_selectedModel.displayName}';
+  }
+
+  /// Returns "{provider name} > {model name}" for the secondary model.
+  String get subModelLabel {
+    final providerName = _subProvider == ChatModelProvider.custom &&
+            _subCustomProviderId != null
+        ? _customProviders
+                .where((p) => p.id == _subCustomProviderId)
+                .firstOrNull
+                ?.name ??
+            'Custom'
+        : _subProvider.displayName;
+    return '$providerName > ${_subModel.displayName}';
+  }
+
   List<UnifiedModel> get availableModels {
     if (_selectedProvider == ChatModelProvider.custom &&
         _selectedCustomProviderId != null) {
