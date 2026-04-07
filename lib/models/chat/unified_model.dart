@@ -13,6 +13,7 @@ class UnifiedModel {
   final String apiKeyType;
   final String? apiKey;
   final bool isCustom;
+  final int retryCount;
 
   const UnifiedModel({
     required this.id,
@@ -25,6 +26,7 @@ class UnifiedModel {
     required this.apiKeyType,
     this.apiKey,
     this.isCustom = false,
+    this.retryCount = 0,
   });
 
   factory UnifiedModel.fromChatModel(ChatModel model) => UnifiedModel(
@@ -52,6 +54,7 @@ class UnifiedModel {
         apiKeyType: model.apiKeyType,
         apiKey: provider?.apiKey ?? model.apiKey,
         isCustom: true,
+        retryCount: provider?.retryCount ?? 0,
       );
 
   static String _apiKeyTypeForProvider(ChatModelProvider provider) {

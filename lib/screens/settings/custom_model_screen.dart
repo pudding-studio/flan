@@ -187,6 +187,7 @@ class CustomModelScreen extends StatelessWidget {
           'baseUrl': cp.baseUrl,
           'apiKey': cp.apiKey,
           'apiFormat': cp.apiFormat.name,
+          'retryCount': cp.retryCount,
           'models': childModels,
         };
       }).toList();
@@ -260,6 +261,7 @@ class CustomModelScreen extends StatelessWidget {
             (f) => f.name == map['apiFormat'],
             orElse: () => ApiFormat.openai,
           ),
+          retryCount: map['retryCount'] as int? ?? 0,
         );
         await provider.addCustomProvider(cp);
         providerCount++;
@@ -415,6 +417,7 @@ class _CustomProviderEditorScreenState
   late TextEditingController _nameController;
   late TextEditingController _baseUrlController;
   late TextEditingController _apiKeyController;
+  late TextEditingController _retryCountController;
   ApiFormat _apiFormat = ApiFormat.openai;
 
   bool get _isEditing => widget.provider != null;
@@ -426,6 +429,9 @@ class _CustomProviderEditorScreenState
     _nameController = TextEditingController(text: p?.name ?? '');
     _baseUrlController = TextEditingController(text: p?.baseUrl ?? '');
     _apiKeyController = TextEditingController(text: p?.apiKey ?? '');
+    _retryCountController = TextEditingController(
+      text: p != null && p.retryCount > 0 ? p.retryCount.toString() : '',
+    );
     _apiFormat = p?.apiFormat ?? ApiFormat.openai;
   }
 
@@ -434,6 +440,7 @@ class _CustomProviderEditorScreenState
     _nameController.dispose();
     _baseUrlController.dispose();
     _apiKeyController.dispose();
+    _retryCountController.dispose();
     super.dispose();
   }
 
@@ -442,6 +449,9 @@ class _CustomProviderEditorScreenState
 
     final settingsProvider = context.read<ChatModelSettingsProvider>();
 
+    final retryCount =
+        int.tryParse(_retryCountController.text.trim()) ?? 0;
+
     final provider = CustomProvider(
       id: widget.provider?.id ??
           DateTime.now().millisecondsSinceEpoch.toString(),
@@ -449,6 +459,7 @@ class _CustomProviderEditorScreenState
       baseUrl: _baseUrlController.text.trim(),
       apiKey: _apiKeyController.text.trim(),
       apiFormat: _apiFormat,
+      retryCount: retryCount,
     );
 
     if (_isEditing) {
@@ -534,6 +545,25 @@ class _CustomProviderEditorScreenState
                   );
                 }).toList(),
               ),
+              const SizedBox(height: 24),
+              const CommonTitleMedium(text: '실패 시 재전송'),
+              const SizedBox(height: 4),
+              Text(
+                'API 호출 실패 시 자동으로 재시도할 횟수 (0 = 재시도 안 함)',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: 120,
+                child: CommonCustomTextField(
+                  controller: _retryCountController,
+                  label: '재전송 횟수',
+                  hintText: '0',
+                  maxLines: 1,
+                ),
+              ),
               const SizedBox(height: 32),
               CommonButton.filled(
                 onPressed: _save,
@@ -618,7 +648,6 @@ class _CustomModelEditorScreenState extends State<_CustomModelEditorScreen> {
         double.tryParse(_outputPriceController.text.trim()) ?? 0;
     final cachedInputPrice =
         double.tryParse(_cachedInputPriceController.text.trim()) ?? 0;
-
     final model = CustomModel(
       id: widget.model?.id ?? DateTime.now().millisecondsSinceEpoch.toString(),
       displayName: _nameController.text.trim(),

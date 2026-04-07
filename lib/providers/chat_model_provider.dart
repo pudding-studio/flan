@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/chat/chat_model.dart';
@@ -26,6 +27,9 @@ class ChatModelSettingsProvider extends ChangeNotifier {
 
   List<CustomModel> _customModels = [];
   List<CustomProvider> _customProviders = [];
+
+  final Completer<void> _initCompleter = Completer<void>();
+  Future<void> get initialized => _initCompleter.future;
 
   ChatModelProvider get selectedProvider => _selectedProvider;
   String? get selectedCustomProviderId => _selectedCustomProviderId;
@@ -85,7 +89,16 @@ class ChatModelSettingsProvider extends ChangeNotifier {
   }
 
   ChatModelSettingsProvider() {
-    _loadSettings();
+    _loadSettings().then((_) {
+      if (!_initCompleter.isCompleted) _initCompleter.complete();
+    }).catchError((e) {
+      if (!_initCompleter.isCompleted) _initCompleter.complete();
+    });
+  }
+
+  void _refreshSelectedModels() {
+    _selectedModel = _resolveModel(_selectedModel.id);
+    _subModel = _resolveModel(_subModel.id);
   }
 
   UnifiedModel _resolveModel(String modelString) {
@@ -320,6 +333,7 @@ class ChatModelSettingsProvider extends ChangeNotifier {
   Future<void> updateCustomProvider(CustomProvider provider) async {
     await CustomProviderRepository.update(provider);
     _customProviders = await CustomProviderRepository.loadAll();
+    _refreshSelectedModels();
     notifyListeners();
   }
 
