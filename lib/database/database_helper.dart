@@ -2118,7 +2118,7 @@ class DatabaseHelper {
     return Sqflite.firstIntValue(result) ?? 0;
   }
 
-  Future<List<ChatRoomSummary>> readChatRoomSummaries({int? characterId}) async {
+  Future<({List<ChatRoomSummary> summaries, int queriedCount})> readChatRoomSummaries({int? characterId, int? limit, int? offset}) async {
     final db = await database;
     final List<Map<String, dynamic>> maps;
     if (characterId != null) {
@@ -2127,11 +2127,15 @@ class DatabaseHelper {
         where: 'character_id = ?',
         whereArgs: [characterId],
         orderBy: 'updated_at DESC',
+        limit: limit,
+        offset: offset,
       );
     } else {
       maps = await db.query(
         'chat_rooms',
         orderBy: 'updated_at DESC',
+        limit: limit,
+        offset: offset,
       );
     }
     final chatRooms = maps.map((map) => ChatRoom.fromMap(map)).toList();
@@ -2158,7 +2162,7 @@ class DatabaseHelper {
         tokenCount: chatRoom.totalTokenCount,
       ));
     }
-    return summaries;
+    return (summaries: summaries, queriedCount: chatRooms.length);
   }
 
   Future<List<ChatMessage>> readRecentAssistantMessages(int chatRoomId, int count) async {

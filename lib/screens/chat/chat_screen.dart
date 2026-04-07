@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
+import '../../mixins/chat_room_pagination_mixin.dart';
 import '../../widgets/chat/chat_room_card.dart';
 import '../../models/chat/chat_room.dart';
-import '../../models/chat/chat_room_summary.dart';
-import '../../database/database_helper.dart';
 import '../../utils/common_dialog.dart';
 import '../../utils/metadata_parser.dart';
 import '../../widgets/common/common_appbar.dart';
@@ -16,9 +15,7 @@ class ChatScreen extends StatefulWidget {
   State<ChatScreen> createState() => _ChatScreenState();
 }
 
-class _ChatScreenState extends State<ChatScreen> {
-  final DatabaseHelper _db = DatabaseHelper.instance;
-  List<ChatRoomSummary> _chatRooms = [];
+class _ChatScreenState extends State<ChatScreen> with ChatRoomPaginationMixin {
   bool _isLoading = true;
   bool _isEditMode = false;
   final Set<int> _selectedChatRoomIds = {};
@@ -27,39 +24,38 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   void initState() {
     super.initState();
-    _loadChatRooms();
+    initPagination();
   }
 
-  Future<void> _loadChatRooms() async {
+  @override
+  void dispose() {
+    disposePagination();
+    super.dispose();
+  }
+
+  @override
+  void onChatRoomsLoaded() {
+    _sortChatRooms();
+  }
+
+  @override
+  Future<void> loadChatRooms() async {
     if (!mounted) return;
     setState(() => _isLoading = true);
-
-    try {
-      final summaries = await _db.readChatRoomSummaries();
-
-      if (!mounted) return;
-      setState(() {
-        _chatRooms = summaries;
-        _sortChatRooms();
-        _isLoading = false;
-      });
-    } catch (e) {
-      debugPrint('Error loading chat rooms: $e');
-      if (!mounted) return;
-      setState(() => _isLoading = false);
-    }
+    await super.loadChatRooms();
+    if (mounted) setState(() => _isLoading = false);
   }
 
   void _sortChatRooms() {
     switch (_sortMethod) {
       case 'date':
-        _chatRooms.sort((a, b) => b.chatRoom.updatedAt.compareTo(a.chatRoom.updatedAt));
+        chatRooms.sort((a, b) => b.chatRoom.updatedAt.compareTo(a.chatRoom.updatedAt));
         break;
       case 'name':
-        _chatRooms.sort((a, b) => a.chatRoom.name.compareTo(b.chatRoom.name));
+        chatRooms.sort((a, b) => a.chatRoom.name.compareTo(b.chatRoom.name));
         break;
       case 'message_count':
-        _chatRooms.sort((a, b) => b.messageCount.compareTo(a.messageCount));
+        chatRooms.sort((a, b) => b.messageCount.compareTo(a.messageCount));
         break;
     }
   }
@@ -97,13 +93,13 @@ class _ChatScreenState extends State<ChatScreen> {
     if (confirmed == true) {
       try {
         for (final id in _selectedChatRoomIds) {
-          await _db.deleteChatRoom(id);
+          await paginationDb.deleteChatRoom(id);
         }
         setState(() {
           _selectedChatRoomIds.clear();
           _isEditMode = false;
         });
-        _loadChatRooms();
+        loadChatRooms();
         if (!mounted) return;
         CommonDialog.showSnackBar(
           context: context,
@@ -172,8 +168,8 @@ class _ChatScreenState extends State<ChatScreen> {
         final updatedChatRoom = chatRoom.copyWith(
           name: result,
         );
-        await _db.updateChatRoom(updatedChatRoom);
-        _loadChatRooms();
+        await paginationDb.updateChatRoom(updatedChatRoom);
+        loadChatRooms();
       } catch (e) {
         debugPrint('Error renaming chat room: $e');
         if (!mounted) return;
@@ -198,8 +194,8 @@ class _ChatScreenState extends State<ChatScreen> {
 
     if (confirmed == true) {
       try {
-        await _db.deleteChatRoom(chatRoom.id!);
-        _loadChatRooms();
+        await paginationDb.deleteChatRoom(chatRoom.id!);
+        loadChatRooms();
         if (!mounted) return;
         CommonDialog.showSnackBar(
           context: context,
@@ -312,7 +308,7 @@ class _ChatScreenState extends State<ChatScreen> {
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : _chatRooms.isEmpty
+          : chatRooms.isEmpty
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -342,11 +338,20 @@ class _ChatScreenState extends State<ChatScreen> {
                   ),
                 )
               : ListView.separated(
+                  controller: chatScrollController,
                   padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16.0),
-                  itemCount: _chatRooms.length,
+                  itemCount: chatRooms.length + (hasMoreChats ? 1 : 0),
                   separatorBuilder: (context, index) => const SizedBox(height: 20.0),
                   itemBuilder: (context, index) {
-                    final data = _chatRooms[index];
+                    if (index >= chatRooms.length) {
+                      return const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(16.0),
+                          child: CircularProgressIndicator(),
+                        ),
+                      );
+                    }
+                    final data = chatRooms[index];
                     return GestureDetector(
                       onTap: () async {
                         if (_isEditMode) {
@@ -360,7 +365,7 @@ class _ChatScreenState extends State<ChatScreen> {
                               ),
                             ),
                           );
-                          _loadChatRooms();
+                          loadChatRooms();
                         }
                       },
                       onLongPress: _isEditMode ? null : () {
@@ -434,4 +439,3 @@ class _ChatScreenState extends State<ChatScreen> {
     );
   }
 }
-
