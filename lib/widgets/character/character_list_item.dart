@@ -61,6 +61,7 @@ class CharacterListItem extends StatelessWidget {
                       ? Image.memory(
                           imageData!,
                           fit: BoxFit.cover,
+                          alignment: Alignment.topCenter,
                           errorBuilder: (context, error, stackTrace) => Icon(
                             Icons.person,
                             size: imageSize * 0.4,

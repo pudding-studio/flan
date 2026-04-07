@@ -1,5 +1,7 @@
 import 'dart:typed_data';
 
+import '../../utils/character_image_storage.dart';
+
 class CoverImage {
   final int? id; // autoincrement primary key
   final int characterId; // foreign key to character
@@ -69,6 +71,13 @@ class CoverImage {
       path: path ?? this.path,
       imageType: imageType ?? this.imageType,
     );
+  }
+
+  /// Returns image bytes from imageData (BLOB) or path (file), whichever is available.
+  Future<Uint8List?> resolveImageData() async {
+    if (imageData != null) return imageData;
+    if (path != null) return await CharacterImageStorage.loadImage(path!);
+    return null;
   }
 
   Map<String, dynamic> toJson() {

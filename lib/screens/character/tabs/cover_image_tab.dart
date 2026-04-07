@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -329,39 +328,23 @@ class _CoverImageTabState extends State<CoverImageTab> {
   }
 
   Widget _buildImagePreview(CoverImage coverImage) {
-    if (coverImage.path != null) {
-      return FutureBuilder<Uint8List?>(
-        future: CharacterImageStorage.loadImage(coverImage.path!),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const SizedBox(
-              height: 120,
-              child: Center(child: CircularProgressIndicator()),
-            );
-          }
-          final bytes = snapshot.data;
-          if (bytes != null) {
-            return Image.memory(bytes, fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _imageErrorWidget());
-          }
-          return Image.file(
-            File(coverImage.path!),
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => _imageErrorWidget(),
+    return FutureBuilder<Uint8List?>(
+      future: coverImage.resolveImageData(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox(
+            height: 120,
+            child: Center(child: CircularProgressIndicator()),
           );
-        },
-      );
-    }
-
-    if (coverImage.imageData != null) {
-      return Image.memory(
-        coverImage.imageData!,
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => _imageErrorWidget(),
-      );
-    }
-
-    return _imageErrorWidget();
+        }
+        final bytes = snapshot.data;
+        if (bytes != null) {
+          return Image.memory(bytes, fit: BoxFit.cover, alignment: Alignment.topCenter,
+              errorBuilder: (_, __, ___) => _imageErrorWidget());
+        }
+        return _imageErrorWidget();
+      },
+    );
   }
 
   Widget _imageErrorWidget() {

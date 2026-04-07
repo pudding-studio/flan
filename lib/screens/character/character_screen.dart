@@ -104,7 +104,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
           } else {
             selectedImage = images.first;
           }
-          coverImages[character.id!] = selectedImage.imageData;
+          coverImages[character.id!] = await selectedImage.resolveImageData();
         }
       }
 

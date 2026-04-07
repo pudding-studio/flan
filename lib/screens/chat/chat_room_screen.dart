@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../widgets/common/markdown_text.dart';
@@ -1256,21 +1258,28 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   Widget _buildCharacterAvatar() {
     final selectedCover = _coverImages.isNotEmpty ? _coverImages.first : null;
 
-    if (selectedCover == null || selectedCover.imageData == null) {
-      return const CircleAvatar(
-        radius: 16,
-        backgroundColor: Color(0xFFE0E0E0),
-        child: Icon(
-          Icons.person_outline,
-          size: 16,
-          color: Color(0xFF757575),
-        ),
-      );
-    }
-
-    return CircleAvatar(
+    const fallback = CircleAvatar(
       radius: 16,
-      backgroundImage: MemoryImage(selectedCover.imageData!),
+      backgroundColor: Color(0xFFE0E0E0),
+      child: Icon(
+        Icons.person_outline,
+        size: 16,
+        color: Color(0xFF757575),
+      ),
+    );
+
+    if (selectedCover == null) return fallback;
+
+    return FutureBuilder<Uint8List?>(
+      future: selectedCover.resolveImageData(),
+      builder: (context, snapshot) {
+        final bytes = snapshot.data;
+        if (bytes == null) return fallback;
+        return CircleAvatar(
+          radius: 16,
+          backgroundImage: MemoryImage(bytes),
+        );
+      },
     );
   }
 

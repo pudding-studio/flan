@@ -45,6 +45,7 @@ class ChatRoomCard extends StatelessWidget {
       imageWidget = Image.memory(
         imageData!,
         fit: BoxFit.cover,
+        alignment: Alignment.topCenter,
         errorBuilder: (context, error, stackTrace) {
           return Icon(
             Icons.person,

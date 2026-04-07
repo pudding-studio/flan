@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../mixins/chat_room_pagination_mixin.dart';
@@ -42,6 +44,21 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
 
   @override
   int? get paginationCharacterId => widget.characterId;
+
+  @override
+  void onChatRoomsLoaded() {
+    _resolveChatCoverImages();
+  }
+
+  Future<void> _resolveChatCoverImages() async {
+    for (final data in chatRooms) {
+      final cover = data.coverImage;
+      if (cover != null && cover.imageData == null && cover.path != null) {
+        cover.imageData = await cover.resolveImageData();
+      }
+    }
+    if (mounted) setState(() {});
+  }
 
   int? _selectedPersonaIndex;
   int? _selectedScenarioIndex;
@@ -289,42 +306,50 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
       selectedCover = _coverImages.first;
     }
 
-    if (selectedCover == null || selectedCover.imageData == null) {
-      return AspectRatio(
-        aspectRatio: 1,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Icon(
-            Icons.person_outline,
-            size: 80,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
+    final fallback = AspectRatio(
+      aspectRatio: 1,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(16),
         ),
-      );
-    }
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: AspectRatio(
-        aspectRatio: 1,
-        child: Image.memory(
-          selectedCover.imageData!,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: Icon(
-                Icons.broken_image_outlined,
-                size: 80,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            );
-          },
+        child: Icon(
+          Icons.person_outline,
+          size: 80,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),
+    );
+
+    if (selectedCover == null) return fallback;
+
+    return FutureBuilder<Uint8List?>(
+      future: selectedCover.resolveImageData(),
+      builder: (context, snapshot) {
+        final bytes = snapshot.data;
+        if (bytes == null) return fallback;
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: AspectRatio(
+            aspectRatio: 1,
+            child: Image.memory(
+              bytes,
+              fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: Icon(
+                    Icons.broken_image_outlined,
+                    size: 80,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -479,6 +504,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
       child: Scaffold(
       appBar: CommonAppBar(
         title: _character!.name,
+        onBackPressed: () => Navigator.of(context).pop(_hasChanges),
         actions: [
           CommonAppBarIconButton(
             icon: Icons.edit_outlined,

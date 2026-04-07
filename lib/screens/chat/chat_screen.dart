@@ -36,6 +36,17 @@ class _ChatScreenState extends State<ChatScreen> with ChatRoomPaginationMixin {
   @override
   void onChatRoomsLoaded() {
     _sortChatRooms();
+    _resolveCoverImages();
+  }
+
+  Future<void> _resolveCoverImages() async {
+    for (final data in chatRooms) {
+      final cover = data.coverImage;
+      if (cover != null && cover.imageData == null && cover.path != null) {
+        cover.imageData = await cover.resolveImageData();
+      }
+    }
+    if (mounted) setState(() {});
   }
 
   @override

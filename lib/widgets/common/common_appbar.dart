@@ -13,6 +13,7 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
   final List<Widget>? actions;
   final bool showBackButton;
   final bool showCloseButton;
+  final VoidCallback? onBackPressed; // 뒤로가기 버튼 콜백
   final VoidCallback? onClosePressed; // 닫기 버튼 콜백
   final PreferredSizeWidget? bottom; // TabBar 등을 위한 bottom
 
@@ -23,6 +24,7 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
     this.actions,
     this.showBackButton = true,
     this.showCloseButton = false,
+    this.onBackPressed,
     this.onClosePressed,
     this.bottom,
   });
@@ -38,9 +40,9 @@ class CommonAppBar extends StatelessWidget implements PreferredSizeWidget {
           if (showBackButton || showCloseButton)
             IconButton(
               icon: Icon(showCloseButton ? Icons.close : Icons.arrow_back),
-              onPressed: showCloseButton && onClosePressed != null
-                  ? onClosePressed
-                  : () => Navigator.pop(context),
+              onPressed: showCloseButton
+                  ? (onClosePressed ?? () => Navigator.pop(context))
+                  : (onBackPressed ?? () => Navigator.pop(context)),
               padding: const EdgeInsets.only(left: 16),
               visualDensity: VisualDensity.compact,
               constraints: const BoxConstraints(),

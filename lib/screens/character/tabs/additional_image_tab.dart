@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
@@ -300,36 +299,23 @@ class _AdditionalImageTabState extends State<AdditionalImageTab> {
   }
 
   Widget _buildImagePreview(CoverImage image) {
-    if (image.path != null) {
-      return FutureBuilder<Uint8List?>(
-        future: CharacterImageStorage.loadImage(image.path!),
-        builder: (context, snapshot) {
-          if (snapshot.connectionState == ConnectionState.waiting) {
-            return const SizedBox(
-              height: 120,
-              child: Center(child: CircularProgressIndicator()),
-            );
-          }
-          final bytes = snapshot.data;
-          if (bytes != null) {
-            return Image.memory(bytes, fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => _errorWidget());
-          }
-          return Image.file(
-            File(image.path!),
-            fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => _errorWidget(),
+    return FutureBuilder<Uint8List?>(
+      future: image.resolveImageData(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SizedBox(
+            height: 120,
+            child: Center(child: CircularProgressIndicator()),
           );
-        },
-      );
-    }
-
-    if (image.imageData != null) {
-      return Image.memory(image.imageData!, fit: BoxFit.cover,
-          errorBuilder: (_, __, ___) => _errorWidget());
-    }
-
-    return _errorWidget();
+        }
+        final bytes = snapshot.data;
+        if (bytes != null) {
+          return Image.memory(bytes, fit: BoxFit.cover, alignment: Alignment.topCenter,
+              errorBuilder: (_, __, ___) => _errorWidget());
+        }
+        return _errorWidget();
+      },
+    );
   }
 
   Widget _errorWidget() {
