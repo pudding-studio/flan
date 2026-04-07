@@ -49,7 +49,8 @@ class GetCharacterTool extends AgentTool {
   String get name => 'get_character';
 
   @override
-  String get description => 'Get full details of a character including its personas.';
+  String get description =>
+      'Get full details of a character including personas, start scenarios, character books, and SNS settings.';
 
   @override
   List<AgentToolParameter> get parameters => [
@@ -73,6 +74,8 @@ class GetCharacterTool extends AgentTool {
     }
 
     final personas = await _db.readPersonas(id);
+    final startScenarios = await _db.readStartScenarios(id);
+    final characterBooks = await _db.readCharacterBooks(id);
 
     return AgentToolResult(
       success: true,
@@ -84,6 +87,9 @@ class GetCharacterTool extends AgentTool {
         'tags': character.tags,
         'description': character.description,
         'isDraft': character.isDraft,
+        'communityName': character.communityName,
+        'communityMood': character.communityMood,
+        'communityLanguage': character.communityLanguage,
         'createdAt': character.createdAt.toIso8601String(),
         'updatedAt': character.updatedAt.toIso8601String(),
         'personas': personas.map((p) => {
@@ -91,6 +97,22 @@ class GetCharacterTool extends AgentTool {
           'name': p.name,
           'content': p.content,
           'order': p.order,
+        }).toList(),
+        'startScenarios': startScenarios.map((s) => {
+          'id': s.id,
+          'name': s.name,
+          'startSetting': s.startSetting,
+          'startMessage': s.startMessage,
+          'order': s.order,
+        }).toList(),
+        'characterBooks': characterBooks.map((b) => {
+          'id': b.id,
+          'name': b.name,
+          'content': b.content,
+          'keys': b.keys,
+          'enabled': b.enabled.name,
+          'folderId': b.folderId,
+          'order': b.order,
         }).toList(),
       },
       message: '캐릭터 "${character.name}" 정보를 가져왔습니다.',
@@ -137,6 +159,21 @@ class CreateCharacterTool extends AgentTool {
       type: 'string',
       description: 'Creator notes (optional)',
     ),
+    const AgentToolParameter(
+      name: 'communityName',
+      type: 'string',
+      description: 'SNS community name / identity (optional)',
+    ),
+    const AgentToolParameter(
+      name: 'communityMood',
+      type: 'string',
+      description: 'SNS community mood / tone (optional)',
+    ),
+    const AgentToolParameter(
+      name: 'communityLanguage',
+      type: 'string',
+      description: 'SNS community language (optional)',
+    ),
   ];
 
   @override
@@ -156,6 +193,9 @@ class CreateCharacterTool extends AgentTool {
       description: description,
       tags: tags,
       creatorNotes: creatorNotes,
+      communityName: args['communityName'] as String?,
+      communityMood: args['communityMood'] as String?,
+      communityLanguage: args['communityLanguage'] as String?,
     );
 
     final id = await _db.createCharacter(character);
@@ -212,6 +252,21 @@ class UpdateCharacterTool extends AgentTool {
       type: 'string',
       description: 'New creator notes (optional)',
     ),
+    const AgentToolParameter(
+      name: 'communityName',
+      type: 'string',
+      description: 'New SNS community name / identity (optional)',
+    ),
+    const AgentToolParameter(
+      name: 'communityMood',
+      type: 'string',
+      description: 'New SNS community mood / tone (optional)',
+    ),
+    const AgentToolParameter(
+      name: 'communityLanguage',
+      type: 'string',
+      description: 'New SNS community language (optional)',
+    ),
   ];
 
   @override
@@ -236,6 +291,15 @@ class UpdateCharacterTool extends AgentTool {
       description: args['description'] as String? ?? character.description,
       tags: tags ?? character.tags,
       creatorNotes: args['creatorNotes'] as String? ?? character.creatorNotes,
+      communityName: args.containsKey('communityName')
+          ? args['communityName'] as String?
+          : character.communityName,
+      communityMood: args.containsKey('communityMood')
+          ? args['communityMood'] as String?
+          : character.communityMood,
+      communityLanguage: args.containsKey('communityLanguage')
+          ? args['communityLanguage'] as String?
+          : character.communityLanguage,
       updatedAt: DateTime.now(),
     );
 

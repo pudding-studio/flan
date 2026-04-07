@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../widgets/common/markdown_text.dart';
 import '../../models/chat/chat_room.dart';
@@ -68,6 +69,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   StartScenario? _startScenario;
   List<ChatMessage> _messages = [];
   List<CoverImage> _coverImages = [];
+  List<CoverImage> _additionalImages = [];
+  Map<String, String> _imagePathMap = {}; // image name → file path
   bool _isLoading = true;
   SendingPhase _sendingPhase = SendingPhase.none;
   bool get _isSending => _sendingPhase != SendingPhase.none;
@@ -209,6 +212,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       final character = await _db.readCharacter(chatRoom.characterId);
       final messages = await _db.readChatMessagesByChatRoom(widget.chatRoomId);
       final coverImages = await _db.readCoverImages(chatRoom.characterId);
+      final additionalImages = await _db.readAdditionalImages(chatRoom.characterId);
+      // Build name→path map for <img="name"> tag resolution
+      final imagePathMap = <String, String>{};
+      for (final img in [...coverImages, ...additionalImages]) {
+        if (img.path != null && img.name.isNotEmpty) {
+          imagePathMap[img.name] = img.path!;
+        }
+      }
       final metadataList = await _db.readChatMessageMetadataByChatRoom(widget.chatRoomId);
       final metadataMap = <int, ChatMessageMetadata>{};
       for (final m in metadataList) {
@@ -246,8 +257,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       if (!mounted) return;
 
-      // Restore per-room model selection
-      if (chatRoom.selectedModelId != null) {
+      // Restore per-room model selection (only for custom preset)
+      if (chatRoom.modelPreset == 'custom' && chatRoom.selectedModelId != null) {
         final modelProvider = context.read<ChatModelSettingsProvider>();
         final savedId = chatRoom.selectedModelId!;
         final available = modelProvider.availableModels;
@@ -262,6 +273,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         _startScenario = startScenario;
         _messages = messages;
         _coverImages = coverImages;
+        _additionalImages = additionalImages;
+        _imagePathMap = imagePathMap;
         _metadataMap = metadataMap;
         _summaryThresholdIndex = summaryThresholdIndex;
         _summarizedMessageIds = summarizedIds;
@@ -515,11 +528,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       if (mounted) setState(() => _sendingPhase = SendingPhase.waiting);
 
-      final modelProvider = context.read<ChatModelSettingsProvider>();
       final aiResponse = await _aiService.sendMessage(
         systemPrompt: apiData.systemPrompt,
         contents: apiData.contents,
-        model: modelProvider.selectedModel,
+        model: _resolveModel(),
         promptParameters: apiData.parameters,
         chatRoomId: widget.chatRoomId,
         characterId: _character?.id,
@@ -591,7 +603,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       await _db.deleteChatMessage(messageId);
       // 채팅방 토큰 합산 업데이트
       await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
-      await _loadChatData();
+      await _loadChatData(showLoading: false);
       if (!mounted) return;
       CommonDialog.showSnackBar(
         context: context,
@@ -607,9 +619,21 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
+  static final _imgTagPattern = RegExp(r'<img="([^"]+)">');
+
   String _buildDisplayContent(String content) {
     var text = MetadataParser.removeMetadataTags(content);
-    return RegexProcessor.apply(text, _regexRules, RegexTarget.displayModify);
+    text = RegexProcessor.apply(text, _regexRules, RegexTarget.displayModify);
+    // <img="이름"> → 캐릭터 이미지가 있으면 로컬 이미지로 변환, 없으면 삭제
+    text = text.replaceAllMapped(_imgTagPattern, (match) {
+      final name = match.group(1)!;
+      final path = _imagePathMap[name];
+      if (path != null) {
+        return '![$name]($path)';
+      }
+      return '';
+    });
+    return text;
   }
 
 
@@ -685,7 +709,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       await _db.updateChatMessage(updatedMessage);
       await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
       _cancelEditMessage();
-      await _loadChatData();
+      await _loadChatData(showLoading: false);
       if (!mounted) return;
       CommonDialog.showSnackBar(
         context: context,
@@ -768,7 +792,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       child: SafeArea(
         top: false,
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+          padding: const EdgeInsets.only(left: 16, right: 16, top: 6, bottom: 12),
           child: GridView.count(
             crossAxisCount: 4,
             shrinkWrap: true,
@@ -822,8 +846,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 56,
-            height: 56,
+            width: 45,
+            height: 45,
             decoration: BoxDecoration(
               color: Theme.of(context).colorScheme.primaryContainer,
               shape: BoxShape.circle,
@@ -831,7 +855,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             child: Icon(
               icon,
               color: Theme.of(context).colorScheme.onPrimaryContainer,
-              size: 26,
+              size: 21,
             ),
           ),
           const SizedBox(height: 6),
@@ -866,6 +890,28 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         if (wasScrolledUp) _hasNewMessage = true;
       });
     }
+  }
+
+  UnifiedModel _resolveModel() {
+    final provider = context.read<ChatModelSettingsProvider>();
+    switch (_chatRoom?.modelPreset) {
+      case 'secondary':
+        return provider.subModel;
+      case 'custom':
+        return provider.selectedModel;
+      default: // 'primary'
+        return provider.selectedModel;
+    }
+  }
+
+  Future<void> _onModelPresetChanged(String preset) async {
+    if (_chatRoom == null) return;
+    final updated = _chatRoom!.copyWith(
+      modelPreset: preset,
+      updatedAt: DateTime.now(),
+    );
+    await _db.updateChatRoom(updated);
+    setState(() => _chatRoom = updated);
   }
 
   Future<void> _onModelChanged(UnifiedModel model) async {
@@ -960,11 +1006,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       if (mounted) setState(() => _sendingPhase = SendingPhase.waiting);
 
-      final modelProvider2 = context.read<ChatModelSettingsProvider>();
       final aiResponse2 = await _aiService.sendMessage(
         systemPrompt: apiData.systemPrompt,
         contents: apiData.contents,
-        model: modelProvider2.selectedModel,
+        model: _resolveModel(),
         promptParameters: apiData.parameters,
         chatRoomId: widget.chatRoomId,
         characterId: _character?.id,
@@ -1065,6 +1110,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         autoPinByAi: _chatRoom!.autoPinByAi,
         autoPinByMessageCount: _chatRoom!.autoPinByMessageCount,
         selectedModelId: _chatRoom!.selectedModelId,
+        modelPreset: _chatRoom!.modelPreset,
       );
 
       final newChatRoomId = await _db.createChatRoom(newChatRoom);
@@ -1188,11 +1234,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       if (mounted) setState(() => _sendingPhase = SendingPhase.waiting);
 
-      final modelProvider3 = context.read<ChatModelSettingsProvider>();
       final aiResponse3 = await _aiService.sendMessage(
         systemPrompt: apiData.systemPrompt,
         contents: apiData.contents,
-        model: modelProvider3.selectedModel,
+        model: _resolveModel(),
         promptParameters: apiData.parameters,
         chatRoomId: widget.chatRoomId,
         characterId: _character?.id,
@@ -1232,21 +1277,28 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   Widget _buildCharacterAvatar() {
     final selectedCover = _coverImages.isNotEmpty ? _coverImages.first : null;
 
-    if (selectedCover == null || selectedCover.imageData == null) {
-      return const CircleAvatar(
-        radius: 16,
-        backgroundColor: Color(0xFFE0E0E0),
-        child: Icon(
-          Icons.person_outline,
-          size: 16,
-          color: Color(0xFF757575),
-        ),
-      );
-    }
-
-    return CircleAvatar(
+    const fallback = CircleAvatar(
       radius: 16,
-      backgroundImage: MemoryImage(selectedCover.imageData!),
+      backgroundColor: Color(0xFFE0E0E0),
+      child: Icon(
+        Icons.person_outline,
+        size: 16,
+        color: Color(0xFF757575),
+      ),
+    );
+
+    if (selectedCover == null) return fallback;
+
+    return FutureBuilder<Uint8List?>(
+      future: selectedCover.resolveImageData(),
+      builder: (context, snapshot) {
+        final bytes = snapshot.data;
+        if (bytes == null) return fallback;
+        return CircleAvatar(
+          radius: 16,
+          backgroundImage: MemoryImage(bytes),
+        );
+      },
     );
   }
 
@@ -1596,6 +1648,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     ),
                   ] else ...[
                     IconButton(
+                      icon: const Icon(Icons.copy_outlined, size: 18),
+                      onPressed: () => Clipboard.setData(ClipboardData(text: message.content)),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints(),
+                      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+                    ),
+                    const SizedBox(width: 0),
+                    IconButton(
                       icon: const Icon(Icons.edit_outlined, size: 18),
                       onPressed: () => _startEditMessage(message),
                       padding: EdgeInsets.zero,
@@ -1703,10 +1763,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         selectedPersonaId: _chatRoom!.selectedPersonaId,
         initialTab: _drawerTab,
         onTabChanged: (tab) => _drawerTab = tab,
-        onChatRoomUpdated: _loadChatData,
+        onChatRoomUpdated: () => _loadChatData(showLoading: false),
         chatPrompts: _chatPrompts,
         personas: _personas,
         onModelChanged: _onModelChanged,
+        onModelPresetChanged: _onModelPresetChanged,
         onPromptChanged: _onPromptChanged,
         onPersonaChanged: _onPersonaChanged,
         onPinModeChanged: _onPinModeChanged,

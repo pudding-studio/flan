@@ -42,7 +42,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 43,
+      version: 47,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -349,6 +349,7 @@ class DatabaseHelper {
         auto_pin_by_message_count INTEGER,
         selected_condition_preset_id INTEGER,
         selected_model_id TEXT,
+        model_preset TEXT NOT NULL DEFAULT 'primary',
         created_at $textType,
         updated_at $textType,
         FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE,
@@ -437,6 +438,7 @@ class DatabaseHelper {
         id $idType,
         chat_room_id $intType,
         is_enabled $boolType DEFAULT 1,
+        use_sub_model $boolType DEFAULT 0,
         summary_model $textType DEFAULT 'gemini-2.0-flash-exp',
         token_threshold INTEGER NOT NULL DEFAULT 5000,
         summary_prompt $textType,
@@ -1208,6 +1210,26 @@ class DatabaseHelper {
       await db.execute('ALTER TABLE characters ADD COLUMN community_mood TEXT');
       await db.execute('ALTER TABLE characters ADD COLUMN community_language TEXT');
     }
+
+    if (oldVersion < 44) {
+      await db.execute('ALTER TABLE cover_images ADD COLUMN path TEXT');
+    }
+
+    if (oldVersion < 45) {
+      await db.execute("ALTER TABLE cover_images ADD COLUMN image_type TEXT DEFAULT 'cover'");
+    }
+
+    if (oldVersion < 46) {
+      await db.execute('''
+        ALTER TABLE auto_summary_settings ADD COLUMN use_sub_model INTEGER NOT NULL DEFAULT 0
+      ''');
+    }
+
+    if (oldVersion < 47) {
+      await db.execute('''
+        ALTER TABLE chat_rooms ADD COLUMN model_preset TEXT NOT NULL DEFAULT 'primary'
+      ''');
+    }
   }
 
   // ==================== 캐릭터 CRUD ====================
@@ -1486,7 +1508,18 @@ class DatabaseHelper {
     final db = await database;
     final result = await db.query(
       'cover_images',
-      where: 'character_id = ?',
+      where: "character_id = ? AND (image_type IS NULL OR image_type = 'cover')",
+      whereArgs: [characterId],
+      orderBy: '`order` ASC',
+    );
+    return result.map((map) => CoverImage.fromMap(map)).toList();
+  }
+
+  Future<List<CoverImage>> readAdditionalImages(int characterId) async {
+    final db = await database;
+    final result = await db.query(
+      'cover_images',
+      where: "character_id = ? AND image_type = 'additional'",
       whereArgs: [characterId],
       orderBy: '`order` ASC',
     );
@@ -2092,7 +2125,7 @@ class DatabaseHelper {
     return Sqflite.firstIntValue(result) ?? 0;
   }
 
-  Future<List<ChatRoomSummary>> readChatRoomSummaries({int? characterId}) async {
+  Future<({List<ChatRoomSummary> summaries, int queriedCount})> readChatRoomSummaries({int? characterId, int? limit, int? offset}) async {
     final db = await database;
     final List<Map<String, dynamic>> maps;
     if (characterId != null) {
@@ -2101,11 +2134,15 @@ class DatabaseHelper {
         where: 'character_id = ?',
         whereArgs: [characterId],
         orderBy: 'updated_at DESC',
+        limit: limit,
+        offset: offset,
       );
     } else {
       maps = await db.query(
         'chat_rooms',
         orderBy: 'updated_at DESC',
+        limit: limit,
+        offset: offset,
       );
     }
     final chatRooms = maps.map((map) => ChatRoom.fromMap(map)).toList();
@@ -2132,7 +2169,7 @@ class DatabaseHelper {
         tokenCount: chatRoom.totalTokenCount,
       ));
     }
-    return summaries;
+    return (summaries: summaries, queriedCount: chatRooms.length);
   }
 
   Future<List<ChatMessage>> readRecentAssistantMessages(int chatRoomId, int count) async {

@@ -14,6 +14,7 @@ import '../../../models/prompt/prompt_condition_option.dart';
 import '../../../models/prompt/prompt_condition_preset.dart';
 import '../../../models/prompt/prompt_condition_preset_value.dart';
 import '../../../models/chat/chat_model.dart';
+import '../../../models/chat/model_preset.dart';
 import '../../../providers/chat_model_provider.dart';
 import '../../../services/auto_summary_service.dart';
 import '../../../utils/common_dialog.dart';
@@ -42,6 +43,7 @@ class ChatRoomDrawer extends StatefulWidget {
   final List<ChatPrompt> chatPrompts;
   final List<Persona> personas;
   final ValueChanged<UnifiedModel> onModelChanged;
+  final ValueChanged<String> onModelPresetChanged;
   final ValueChanged<int?> onPromptChanged;
   final ValueChanged<int?> onPersonaChanged;
   final ValueChanged<String> onPinModeChanged;
@@ -62,6 +64,7 @@ class ChatRoomDrawer extends StatefulWidget {
     required this.chatPrompts,
     required this.personas,
     required this.onModelChanged,
+    required this.onModelPresetChanged,
     required this.onPromptChanged,
     required this.onPersonaChanged,
     required this.onPinModeChanged,
@@ -589,12 +592,24 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
 
   Widget _buildChatSettings() {
     final modelProvider = context.watch<ChatModelSettingsProvider>();
-    final selectableProviders = ChatModelProvider.values
-        .where((p) => p != ChatModelProvider.all)
-        .toList();
-    final effectiveProvider = modelProvider.selectedProvider == ChatModelProvider.all
-        ? modelProvider.selectedModel.provider
-        : modelProvider.selectedProvider;
+    final currentPreset = ModelPreset.fromString(widget.chatRoom.modelPreset);
+    final providerOptions = ProviderOption.buildOptions(modelProvider.customProviders);
+
+    // Determine current provider option for custom mode
+    ProviderOption? currentProviderOption;
+    if (currentPreset == ModelPreset.custom) {
+      if (modelProvider.selectedProvider == ChatModelProvider.custom &&
+          modelProvider.selectedCustomProviderId != null) {
+        currentProviderOption = providerOptions.where(
+          (o) => o.customProviderId == modelProvider.selectedCustomProviderId,
+        ).firstOrNull;
+      } else {
+        currentProviderOption = providerOptions.where(
+          (o) => o.builtInProvider == modelProvider.selectedProvider,
+        ).firstOrNull;
+      }
+      currentProviderOption ??= providerOptions.firstOrNull;
+    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -605,35 +620,66 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
         ),
         const SizedBox(height: 12),
         _buildVerticalSettingRow(
-          label: '제조사',
-          child: CommonDropdownButton<ChatModelProvider>(
-            value: effectiveProvider,
-            items: selectableProviders,
-            onChanged: (provider) async {
-              if (provider != null) {
-                final settingsProvider = context.read<ChatModelSettingsProvider>();
-                await settingsProvider.setProvider(provider);
-                if (!mounted) return;
-                widget.onModelChanged(settingsProvider.selectedModel);
+          label: '모델설정',
+          child: CommonDropdownButton<ModelPreset>(
+            value: currentPreset,
+            items: ModelPreset.values,
+            onChanged: (preset) {
+              if (preset != null) {
+                widget.onModelPresetChanged(preset.name);
               }
             },
-            labelBuilder: (provider) => provider.displayName,
+            labelBuilder: (preset) => preset.displayName,
             size: CommonDropdownButtonSize.xsmall,
           ),
         ),
-        const SizedBox(height: 8),
-        _buildVerticalSettingRow(
-          label: '채팅 모델',
-          child: CommonDropdownButton<UnifiedModel>(
-            value: modelProvider.selectedModel,
-            items: modelProvider.availableModels,
-            onChanged: (model) {
-              if (model != null) widget.onModelChanged(model);
-            },
-            labelBuilder: (model) => model.displayName,
-            size: CommonDropdownButtonSize.xsmall,
+        if (currentPreset != ModelPreset.custom) ...[
+          const SizedBox(height: 4),
+          Text(
+            currentPreset == ModelPreset.primary
+                ? modelProvider.primaryModelLabel
+                : modelProvider.subModelLabel,
+            style: _subLabelStyle?.copyWith(
+              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+            ),
           ),
-        ),
+        ],
+        if (currentPreset == ModelPreset.custom) ...[
+          const SizedBox(height: 8),
+          _buildVerticalSettingRow(
+            label: '제조사',
+            child: CommonDropdownButton<ProviderOption>(
+              value: currentProviderOption,
+              items: providerOptions,
+              onChanged: (option) async {
+                if (option == null) return;
+                final settingsProvider = context.read<ChatModelSettingsProvider>();
+                if (option.isCustom) {
+                  await settingsProvider.setCustomProviderSelection(option.customProviderId!);
+                } else {
+                  await settingsProvider.setProvider(option.builtInProvider!);
+                }
+                if (!mounted) return;
+                widget.onModelChanged(settingsProvider.selectedModel);
+              },
+              labelBuilder: (option) => option.displayName,
+              size: CommonDropdownButtonSize.xsmall,
+            ),
+          ),
+          const SizedBox(height: 8),
+          _buildVerticalSettingRow(
+            label: '채팅 모델',
+            child: CommonDropdownButton<UnifiedModel>(
+              value: modelProvider.selectedModel,
+              items: modelProvider.availableModels,
+              onChanged: (model) {
+                if (model != null) widget.onModelChanged(model);
+              },
+              labelBuilder: (model) => model.displayName,
+              size: CommonDropdownButtonSize.xsmall,
+            ),
+          ),
+        ],
         const SizedBox(height: 8),
         _buildVerticalSettingRow(
           label: '채팅 프롬프트',

@@ -1,12 +1,16 @@
 import 'dart:typed_data';
 
+import '../../utils/character_image_storage.dart';
+
 class CoverImage {
   final int? id; // autoincrement primary key
   final int characterId; // foreign key to character
   String name;
   int order;
   bool isExpanded;
-  Uint8List? imageData; // webp 512x512 바이너리 데이터
+  Uint8List? imageData; // legacy BLOB data (backward compat)
+  String? path; // absolute file path (file-based storage)
+  String imageType; // 'cover' or 'additional'
 
   CoverImage({
     this.id,
@@ -15,6 +19,8 @@ class CoverImage {
     required this.order,
     this.isExpanded = false,
     this.imageData,
+    this.path,
+    this.imageType = 'cover',
   });
 
   // DB에서 읽어올 때 사용
@@ -26,6 +32,8 @@ class CoverImage {
       order: map['order'] as int,
       isExpanded: (map['is_expanded'] as int?) == 1,
       imageData: map['image_data'] as Uint8List?,
+      path: map['path'] as String?,
+      imageType: (map['image_type'] as String?) ?? 'cover',
     );
   }
 
@@ -38,6 +46,8 @@ class CoverImage {
       'order': order,
       'is_expanded': isExpanded ? 1 : 0,
       'image_data': imageData,
+      'path': path,
+      'image_type': imageType,
     };
   }
 
@@ -48,6 +58,8 @@ class CoverImage {
     int? order,
     bool? isExpanded,
     Uint8List? imageData,
+    String? path,
+    String? imageType,
   }) {
     return CoverImage(
       id: id ?? this.id,
@@ -56,7 +68,16 @@ class CoverImage {
       order: order ?? this.order,
       isExpanded: isExpanded ?? this.isExpanded,
       imageData: imageData ?? this.imageData,
+      path: path ?? this.path,
+      imageType: imageType ?? this.imageType,
     );
+  }
+
+  /// Returns image bytes from imageData (BLOB) or path (file), whichever is available.
+  Future<Uint8List?> resolveImageData() async {
+    if (imageData != null) return imageData;
+    if (path != null) return await CharacterImageStorage.loadImage(path!);
+    return null;
   }
 
   Map<String, dynamic> toJson() {
@@ -67,6 +88,8 @@ class CoverImage {
       'order': order,
       'isExpanded': isExpanded,
       'imageData': imageData?.toList(),
+      'path': path,
+      'imageType': imageType,
     };
   }
 
@@ -79,6 +102,8 @@ class CoverImage {
       order: json['order'] as int,
       isExpanded: json['isExpanded'] as bool? ?? false,
       imageData: imageDataList != null ? Uint8List.fromList(imageDataList.cast<int>()) : null,
+      path: json['path'] as String?,
+      imageType: (json['imageType'] as String?) ?? 'cover',
     );
   }
 }

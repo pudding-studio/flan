@@ -64,6 +64,7 @@ class CharacterCard extends StatelessWidget {
                             ? Image.memory(
                                 imageData!,
                                 fit: BoxFit.cover,
+                                alignment: Alignment.topCenter,
                                 errorBuilder: (context, error, stackTrace) => Icon(
                                   Icons.person,
                                   size: cardWidth * 0.4,

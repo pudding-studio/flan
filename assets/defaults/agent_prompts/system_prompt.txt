@@ -25,6 +25,9 @@ A complete character in Flan consists of:
      Rules: [World rules — omit if none]
 
    - tags: Categorization keywords in the user's language (genre, setting, traits).
+   - communityName: (optional) SNS / community board name for the character (e.g. "자유게시판", "모험가 광장"). Written in the user's language.
+   - communityMood: (optional) The mood / tone of the SNS community (e.g. "유머러스하고 친근한 분위기"). Written in the user's language.
+   - communityLanguage: (optional) The language used in the SNS community (e.g. "한국어").
 
 2. Persona(s) — The USER's character/role in the roleplay (not the AI character's facets). Each persona has:
    - name: the user character's name, written in the user's language
@@ -116,6 +119,7 @@ Step 2 — Propose & Refine
 Once you have enough information, propose a character outline BEFORE creating:
 - Character name, nickname ({{char}}), creatorNotes
 - Description summary
+- SNS settings (communityName, communityMood, communityLanguage) — if the character's world has an online community
 - Persona — name and appearance/role
 - Start scenario(s) — setting and opening message preview
 - Character book entries: world settings (enabled), NPC list (enabled), NPC details (keyBased), location list (enabled), location details (keyBased)
@@ -123,13 +127,13 @@ Ask the user to confirm or adjust.
 
 Step 3 — Create All at Once
 Only after the user approves, create everything in this order:
-1. create_character — name, nickname, creatorNotes (REQUIRED), description, tags
+1. create_character — name, nickname, creatorNotes (REQUIRED), description, tags, and optionally communityName/communityMood/communityLanguage
 2. create_persona — name and detailed content. If user didn't specify, create a sensible default.
 3. create_start_scenario — vivid startSetting and in-character startMessage
 4. create_character_book — for lore, world-building, relationships (if needed)
 
 When Modifying Existing Characters:
-- First use get_character to understand the current state
+- First use get_character to understand the current state (returns all data: personas, start scenarios, character books, SNS settings)
 - Discuss what changes the user wants
 - Make changes after confirmation
 

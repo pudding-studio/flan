@@ -10,18 +10,59 @@ class ChatModelSettingsProvider extends ChangeNotifier {
   static const String _modelKey = 'chat_model';
   static const String _customProviderIdKey = 'chat_model_custom_provider_id';
 
-  ChatModelProvider _selectedProvider = ChatModelProvider.all;
+  static const String _subProviderKey = 'sub_model_provider';
+  static const String _subModelKey = 'sub_model';
+  static const String _subCustomProviderIdKey = 'sub_model_custom_provider_id';
+
+  ChatModelProvider _selectedProvider = ChatModelProvider.googleAIStudio;
   String? _selectedCustomProviderId;
   UnifiedModel _selectedModel =
       UnifiedModel.fromChatModel(ChatModel.geminiPro31Preview);
+
+  ChatModelProvider _subProvider = ChatModelProvider.googleAIStudio;
+  String? _subCustomProviderId;
+  UnifiedModel _subModel =
+      UnifiedModel.fromChatModel(ChatModel.geminiFlash25);
+
   List<CustomModel> _customModels = [];
   List<CustomProvider> _customProviders = [];
 
   ChatModelProvider get selectedProvider => _selectedProvider;
   String? get selectedCustomProviderId => _selectedCustomProviderId;
   UnifiedModel get selectedModel => _selectedModel;
+
+  ChatModelProvider get subProvider => _subProvider;
+  String? get subCustomProviderId => _subCustomProviderId;
+  UnifiedModel get subModel => _subModel;
+
   List<CustomModel> get customModels => _customModels;
   List<CustomProvider> get customProviders => _customProviders;
+
+  /// Returns "{provider name} > {model name}" for the primary model.
+  String get primaryModelLabel {
+    final providerName = _selectedProvider == ChatModelProvider.custom &&
+            _selectedCustomProviderId != null
+        ? _customProviders
+                .where((p) => p.id == _selectedCustomProviderId)
+                .firstOrNull
+                ?.name ??
+            'Custom'
+        : _selectedProvider.displayName;
+    return '$providerName > ${_selectedModel.displayName}';
+  }
+
+  /// Returns "{provider name} > {model name}" for the secondary model.
+  String get subModelLabel {
+    final providerName = _subProvider == ChatModelProvider.custom &&
+            _subCustomProviderId != null
+        ? _customProviders
+                .where((p) => p.id == _subCustomProviderId)
+                .firstOrNull
+                ?.name ??
+            'Custom'
+        : _subProvider.displayName;
+    return '$providerName > ${_subModel.displayName}';
+  }
 
   List<UnifiedModel> get availableModels {
     if (_selectedProvider == ChatModelProvider.custom &&
@@ -33,8 +74,39 @@ class ChatModelSettingsProvider extends ChangeNotifier {
         _selectedProvider, _customModels, _customProviders);
   }
 
+  List<UnifiedModel> get availableSubModels {
+    if (_subProvider == ChatModelProvider.custom &&
+        _subCustomProviderId != null) {
+      return UnifiedModel.getByCustomProvider(
+          _subCustomProviderId!, _customModels, _customProviders);
+    }
+    return UnifiedModel.getByProvider(
+        _subProvider, _customModels, _customProviders);
+  }
+
   ChatModelSettingsProvider() {
     _loadSettings();
+  }
+
+  UnifiedModel _resolveModel(String modelString) {
+    if (modelString.startsWith('custom:')) {
+      final customId = modelString.substring(7);
+      final custom = _customModels.where((m) => m.id == customId);
+      if (custom.isNotEmpty) {
+        final cp = custom.first.providerId != null
+            ? _customProviders
+                .where((p) => p.id == custom.first.providerId)
+                .firstOrNull
+            : null;
+        return UnifiedModel.fromCustomModel(custom.first, provider: cp);
+      }
+    } else {
+      final builtIn = ChatModel.values.where((m) => m.name == modelString);
+      if (builtIn.isNotEmpty) {
+        return UnifiedModel.fromChatModel(builtIn.first);
+      }
+    }
+    return UnifiedModel.fromChatModel(ChatModel.geminiPro31Preview);
   }
 
   Future<void> _loadSettings() async {
@@ -49,7 +121,7 @@ class ChatModelSettingsProvider extends ChangeNotifier {
     if (providerString != null) {
       _selectedProvider = ChatModelProvider.values.firstWhere(
         (p) => p.name == providerString,
-        orElse: () => ChatModelProvider.all,
+        orElse: () => ChatModelProvider.googleAIStudio,
       );
     }
 
@@ -58,24 +130,26 @@ class ChatModelSettingsProvider extends ChangeNotifier {
     }
 
     if (modelString != null) {
-      if (modelString.startsWith('custom:')) {
-        final customId = modelString.substring(7);
-        final custom = _customModels.where((m) => m.id == customId);
-        if (custom.isNotEmpty) {
-          final cp = custom.first.providerId != null
-              ? _customProviders
-                  .where((p) => p.id == custom.first.providerId)
-                  .firstOrNull
-              : null;
-          _selectedModel =
-              UnifiedModel.fromCustomModel(custom.first, provider: cp);
-        }
-      } else {
-        final builtIn = ChatModel.values.where((m) => m.name == modelString);
-        if (builtIn.isNotEmpty) {
-          _selectedModel = UnifiedModel.fromChatModel(builtIn.first);
-        }
-      }
+      _selectedModel = _resolveModel(modelString);
+    }
+
+    // Load sub model settings
+    final subProviderString = prefs.getString(_subProviderKey);
+    final subModelString = prefs.getString(_subModelKey);
+
+    if (subProviderString != null) {
+      _subProvider = ChatModelProvider.values.firstWhere(
+        (p) => p.name == subProviderString,
+        orElse: () => ChatModelProvider.googleAIStudio,
+      );
+    }
+
+    if (_subProvider == ChatModelProvider.custom) {
+      _subCustomProviderId = prefs.getString(_subCustomProviderIdKey);
+    }
+
+    if (subModelString != null) {
+      _subModel = _resolveModel(subModelString);
     }
 
     notifyListeners();
@@ -162,6 +236,50 @@ class ChatModelSettingsProvider extends ChangeNotifier {
   }
 
   String getModelId() => _selectedModel.modelId;
+
+  Future<void> setSubProvider(ChatModelProvider provider) async {
+    _subProvider = provider;
+    _subCustomProviderId = null;
+
+    final models =
+        UnifiedModel.getByProvider(provider, _customModels, _customProviders);
+    if (!models.contains(_subModel) && models.isNotEmpty) {
+      _subModel = models.first;
+    }
+
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_subProviderKey, provider.name);
+    await prefs.remove(_subCustomProviderIdKey);
+    await prefs.setString(_subModelKey, _subModel.id);
+  }
+
+  Future<void> setSubCustomProviderSelection(String customProviderId) async {
+    _subProvider = ChatModelProvider.custom;
+    _subCustomProviderId = customProviderId;
+
+    final models = UnifiedModel.getByCustomProvider(
+        customProviderId, _customModels, _customProviders);
+    if (!models.contains(_subModel) && models.isNotEmpty) {
+      _subModel = models.first;
+    }
+
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_subProviderKey, ChatModelProvider.custom.name);
+    await prefs.setString(_subCustomProviderIdKey, customProviderId);
+    await prefs.setString(_subModelKey, _subModel.id);
+  }
+
+  Future<void> setSubModel(UnifiedModel model) async {
+    _subModel = model;
+    notifyListeners();
+
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_subModelKey, model.id);
+  }
 
   Future<void> addCustomModel(CustomModel model) async {
     await CustomModelRepository.add(model);

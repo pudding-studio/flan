@@ -18,6 +18,7 @@ import '../../widgets/common/common_custom_text_field.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../../widgets/common/common_edit_text.dart';
 import '../../widgets/common/common_title_medium.dart';
+import 'tabs/additional_image_tab.dart';
 import 'tabs/cover_image_tab.dart';
 import 'tabs/character_book_tab.dart';
 import 'tabs/persona_tab.dart';
@@ -59,7 +60,10 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   final List<CoverImage> _coverImages = [];
   int? _selectedCoverImageId;
 
-  // 커뮤니티 설정 관련 컨트롤러
+  // 추가 이미지 상태
+  final List<CoverImage> _additionalImages = [];
+
+  // SNS 설정 컨트롤러
   final _communityNameController = TextEditingController();
   final _communityMoodController = TextEditingController();
   final _communityLanguageController = TextEditingController();
@@ -81,6 +85,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   List<Persona> _originalPersonas = [];
   List<StartScenario> _originalStartScenarios = [];
   List<CoverImage> _originalCoverImages = [];
+  List<CoverImage> _originalAdditionalImages = [];
   String _originalCommunityName = '';
   String _originalCommunityMood = '';
   String _originalCommunityLanguage = '';
@@ -90,7 +95,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 7, vsync: this);
+    _tabController = TabController(length: 8, vsync: this);
 
     // 자동 저장 데이터 확인 및 복원
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -173,6 +178,11 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       _coverImages.addAll(coverImages);
       _originalCoverImages = coverImages.map((c) => _copyCoverImage(c)).toList();
 
+      // 추가 이미지 로드
+      final additionalImages = await _db.readAdditionalImages(widget.characterId!);
+      _additionalImages.addAll(additionalImages);
+      _originalAdditionalImages = additionalImages.map((c) => _copyCoverImage(c)).toList();
+
       setState(() {});
     } catch (e) {
       if (mounted) {
@@ -247,6 +257,8 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       order: image.order,
       isExpanded: image.isExpanded,
       imageData: image.imageData,
+      path: image.path,
+      imageType: image.imageType,
     );
   }
 
@@ -317,11 +329,20 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       }
     }
 
-    // 표지 이미지 변경 확인 (name과 imageData 비교)
+    // 표지 이미지 변경 확인
     if (_coverImages.length != _originalCoverImages.length) return true;
     for (int i = 0; i < _coverImages.length; i++) {
       if (_coverImages[i].name != _originalCoverImages[i].name ||
-          _coverImages[i].imageData != _originalCoverImages[i].imageData) {
+          _coverImages[i].path != _originalCoverImages[i].path) {
+        return true;
+      }
+    }
+
+    // 추가 이미지 변경 확인
+    if (_additionalImages.length != _originalAdditionalImages.length) return true;
+    for (int i = 0; i < _additionalImages.length; i++) {
+      if (_additionalImages[i].name != _originalAdditionalImages[i].name ||
+          _additionalImages[i].path != _originalAdditionalImages[i].path) {
         return true;
       }
     }
@@ -347,7 +368,8 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         _standaloneCharacterBooks.isNotEmpty ||
         _personas.isNotEmpty ||
         _startScenarios.isNotEmpty ||
-        _coverImages.isNotEmpty) {
+        _coverImages.isNotEmpty ||
+        _additionalImages.isNotEmpty) {
       return true;
     }
 
@@ -417,6 +439,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         'personas': _personas.map((p) => p.toMap()).toList(),
         'startScenarios': _startScenarios.map((s) => s.toMap()).toList(),
         'coverImages': _coverImages.map((c) => c.toMap()).toList(),
+        'additionalImages': _additionalImages.map((c) => c.toMap()).toList(),
         'communityName': _communityNameController.text,
         'communityMood': _communityMoodController.text,
         'communityLanguage': _communityLanguageController.text,
@@ -512,7 +535,15 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
             }
           }
 
-          // 커뮤니티 설정 복원
+          // 추가 이미지 복원
+          _additionalImages.clear();
+          if (data['additionalImages'] != null) {
+            for (var cMap in data['additionalImages'] as List) {
+              _additionalImages.add(CoverImage.fromMap(cMap as Map<String, dynamic>));
+            }
+          }
+
+          // SNS 설정 복원
           _communityNameController.text = data['communityName'] as String? ?? '';
           _communityMoodController.text = data['communityMood'] as String? ?? '';
           _communityLanguageController.text = data['communityLanguage'] as String? ?? '';
@@ -531,6 +562,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           _originalPersonas = _personas.map((p) => _copyPersona(p)).toList();
           _originalStartScenarios = _startScenarios.map((s) => _copyStartScenario(s)).toList();
           _originalCoverImages = _coverImages.map((c) => _copyCoverImage(c)).toList();
+          _originalAdditionalImages = _additionalImages.map((c) => _copyCoverImage(c)).toList();
           _originalCommunityName = _communityNameController.text;
           _originalCommunityMood = _communityMoodController.text;
           _originalCommunityLanguage = _communityLanguageController.text;
@@ -737,6 +769,19 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           debugPrint('표지 이미지 삭제: ${existingCover.id}');
         }
       }
+
+      // 추가 이미지 삭제 처리
+      final existingAdditionalImages = await _db.readAdditionalImages(characterId);
+      final currentAdditionalIds = _additionalImages
+          .where((c) => c.id != null && c.id! > 0)
+          .map((c) => c.id!)
+          .toSet();
+      for (var existing in existingAdditionalImages) {
+        if (!currentAdditionalIds.contains(existing.id)) {
+          await _db.deleteCoverImage(existing.id!);
+          debugPrint('추가 이미지 삭제: ${existing.id}');
+        }
+      }
     }
 
     // 로어북 폴더 및 로어북 저장
@@ -878,14 +923,37 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         await _db.createCoverImage(coverImage.copyWith(
           id: null,
           characterId: characterId,
+          imageType: 'cover',
         ));
       } else if (!_isEditMode || coverImage.characterId != characterId) {
         await _db.createCoverImage(coverImage.copyWith(
           id: null,
           characterId: characterId,
+          imageType: 'cover',
         ));
       } else {
         await _db.updateCoverImage(coverImage.copyWith(
+          characterId: characterId,
+        ));
+      }
+    }
+
+    // 추가 이미지 저장
+    for (var image in _additionalImages) {
+      if (image.id == null || image.id! < 0) {
+        await _db.createCoverImage(image.copyWith(
+          id: null,
+          characterId: characterId,
+          imageType: 'additional',
+        ));
+      } else if (!_isEditMode || image.characterId != characterId) {
+        await _db.createCoverImage(image.copyWith(
+          id: null,
+          characterId: characterId,
+          imageType: 'additional',
+        ));
+      } else {
+        await _db.updateCoverImage(image.copyWith(
           characterId: characterId,
         ));
       }
@@ -919,8 +987,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
               Tab(text: '설정집'),
               Tab(text: '페르소나'),
               Tab(text: '시작설정'),
-              Tab(text: '표지'),
-              Tab(text: '기타'),
+              Tab(text: '표지이미지'),
+              Tab(text: '추가이미지'),
+              Tab(text: 'SNS'),
             ],
           ),
         ),
@@ -955,10 +1024,19 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           CoverImageTab(
             coverImages: _coverImages,
             selectedCoverImageId: _selectedCoverImageId,
+            characterName: _nameController.text,
             onSelectedCoverImageChanged: (id) {
               setState(() => _selectedCoverImageId = id);
               _autoSave();
             },
+            onUpdate: () {
+              setState(() {});
+              _autoSave();
+            },
+          ),
+          AdditionalImageTab(
+            images: _additionalImages,
+            characterName: _nameController.text,
             onUpdate: () {
               setState(() {});
               _autoSave();
@@ -987,26 +1065,26 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CommonTitleMedium(
-            text: '커뮤니티 설정',
-            helpMessage: '캐릭터의 커뮤니티 게시판 설정을 구성합니다.',
+            text: 'SNS 설정',
+            helpMessage: '캐릭터의 SNS 게시판 설정을 구성합니다.',
           ),
           const SizedBox(height: 16),
           CommonCustomTextField(
             controller: _communityNameController,
-            label: '커뮤니티 이름',
+            label: 'SNS 이름',
             hintText: '예: 자유게시판, 모험가 광장 등',
           ),
           const SizedBox(height: 16),
           CommonCustomTextField(
             controller: _communityMoodController,
-            label: '커뮤니티 분위기',
+            label: 'SNS 분위기',
             hintText: '예: 유머러스하고 친근한 분위기',
             maxLines: 3,
           ),
           const SizedBox(height: 16),
           CommonCustomTextField(
             controller: _communityLanguageController,
-            label: '커뮤니티 사용언어',
+            label: 'SNS 사용언어',
             hintText: '사용자 언어 (현재는 한국어만 지원)',
           ),
         ],

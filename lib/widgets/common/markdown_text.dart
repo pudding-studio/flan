@@ -1,4 +1,11 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'fullscreen_image_viewer.dart';
+
+// Regex to match markdown image syntax: ![alt](url)
+final _imagePattern = RegExp(r'!\[([^\]]*)\]\(([^)]+)\)');
 
 class MarkdownText extends StatelessWidget {
   final String text;
@@ -20,15 +27,50 @@ class MarkdownText extends StatelessWidget {
     final primaryColor = Theme.of(context).colorScheme.primary;
     final tertiaryColor = Theme.of(context).colorScheme.tertiary;
 
+    // Split text into segments: plain text and image references
+    final segments = _splitByImages(text);
+
+    if (segments.length == 1 && segments.first.type == _SegmentType.text) {
+      // No images — use original rendering path
+      return _buildTextContent(segments.first.value, style, primaryColor, tertiaryColor);
+    }
+
+    // Mixed content: text and images
+    return Column(
+      crossAxisAlignment: textAlign == TextAlign.left
+          ? CrossAxisAlignment.start
+          : CrossAxisAlignment.stretch,
+      children: [
+        for (int i = 0; i < segments.length; i++) ...[
+          if (segments[i].type == _SegmentType.text)
+            _buildTextContent(segments[i].value, style, primaryColor, tertiaryColor)
+          else
+            _ImageBlock(
+              url: segments[i].value,
+              alt: segments[i].alt,
+            ),
+          if (i < segments.length - 1 && paragraphSpacing > 0)
+            SizedBox(height: paragraphSpacing),
+        ],
+      ],
+    );
+  }
+
+  Widget _buildTextContent(
+    String content,
+    TextStyle style,
+    Color primaryColor,
+    Color tertiaryColor,
+  ) {
     if (paragraphSpacing <= 0) {
-      final spans = _parse(text, style, primaryColor, tertiaryColor);
+      final spans = _parse(content, style, primaryColor, tertiaryColor);
       return RichText(
         textAlign: textAlign,
         text: TextSpan(children: spans),
       );
     }
 
-    final paragraphs = text.split('\n');
+    final paragraphs = content.split('\n');
     return Column(
       crossAxisAlignment: textAlign == TextAlign.left
           ? CrossAxisAlignment.start
@@ -45,6 +87,39 @@ class MarkdownText extends StatelessWidget {
         ],
       ],
     );
+  }
+
+  static List<_Segment> _splitByImages(String text) {
+    final segments = <_Segment>[];
+    int lastEnd = 0;
+
+    for (final match in _imagePattern.allMatches(text)) {
+      if (match.start > lastEnd) {
+        final before = text.substring(lastEnd, match.start).trim();
+        if (before.isNotEmpty) {
+          segments.add(_Segment(_SegmentType.text, before));
+        }
+      }
+      segments.add(_Segment(
+        _SegmentType.image,
+        match.group(2)!, // url
+        alt: match.group(1), // alt text
+      ));
+      lastEnd = match.end;
+    }
+
+    if (lastEnd < text.length) {
+      final remaining = text.substring(lastEnd).trim();
+      if (remaining.isNotEmpty) {
+        segments.add(_Segment(_SegmentType.text, remaining));
+      }
+    }
+
+    if (segments.isEmpty) {
+      segments.add(_Segment(_SegmentType.text, text));
+    }
+
+    return segments;
   }
 
   static List<InlineSpan> _parse(
@@ -213,5 +288,92 @@ class MarkdownText extends StatelessWidget {
       }
     }
     return -1;
+  }
+}
+
+enum _SegmentType { text, image }
+
+class _Segment {
+  final _SegmentType type;
+  final String value;
+  final String? alt;
+
+  _Segment(this.type, this.value, {this.alt});
+}
+
+class _ImageBlock extends StatelessWidget {
+  final String url;
+  final String? alt;
+
+  const _ImageBlock({required this.url, this.alt});
+
+  bool get _isLocalFile =>
+      url.startsWith('/') || url.startsWith('file://');
+
+  String get _filePath =>
+      url.startsWith('file://') ? url.substring(7) : url;
+
+  @override
+  Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 8),
+      child: Center(
+        child: SizedBox(
+          width: screenWidth * 0.7,
+          child: GestureDetector(
+            onTap: () => FullscreenImageViewer.show(context, url),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxHeight: 300),
+                child: _isLocalFile
+                    ? Image.file(
+                        File(_filePath),
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => _errorWidget(context),
+                      )
+                    : CachedNetworkImage(
+                        imageUrl: url,
+                        fit: BoxFit.contain,
+                        placeholder: (context, url) => Container(
+                          height: 150,
+                          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                          child: const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                        ),
+                        errorWidget: (context, url, error) => _errorWidget(context),
+                      ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _errorWidget(BuildContext context) {
+    return Container(
+      height: 80,
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: Center(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.broken_image,
+                color: Theme.of(context).colorScheme.onSurfaceVariant),
+            if (alt != null && alt!.isNotEmpty)
+              Padding(
+                padding: const EdgeInsets.only(top: 4),
+                child: Text(
+                  alt!,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 }

@@ -2,10 +2,53 @@
 
 ## Git Workflow
 
-- Default branch: `mvp`
+- Default branch: `develop`
 - Only commit; push only when user explicitly requests
-- Always push directly to `mvp` branch
+- All commits go to `develop` branch
 - No feature branches or PRs
+
+## Release Procedure
+
+릴리즈 요청 시 아래 순서를 반드시 따른다.
+
+### 1. develop에 커밋 & 푸시
+```bash
+git add <files>
+git commit -m "..."
+git push origin develop
+```
+
+### 2. 버전 업 (`pubspec.yaml`)
+```
+version: X.X.X+N  →  X.X.X+(N+1)
+```
+```bash
+git add pubspec.yaml
+git commit -m "chore: 버전 업 X.X.X+N → X.X.X+(N+1)"
+git push origin develop
+```
+
+### 3. develop → main 머지 & 푸시
+```bash
+git checkout main
+git merge develop --no-ff -m "chore: develop → main 머지 (vX.X.X+(N+1))"
+git push origin main
+git checkout develop
+```
+
+### 4. AAB 빌드 (릴리즈)
+```bash
+flutter build appbundle --release --split-debug-info=build/debug-info --obfuscate
+```
+출력: `build/app/outputs/bundle/release/app-release.aab`
+
+### 5. APK 빌드 (디버그)
+```bash
+flutter build apk --debug
+```
+출력: `build/app/outputs/flutter-apk/app-debug.apk`
+
+> `build/debug-info` 폴더는 크래시 스택 트레이스 복원에 필요하므로 보관할 것
 
 ## Project Overview
 

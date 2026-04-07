@@ -15,6 +15,7 @@ class ChatRoom {
   final bool autoPinByAi;
   final int? autoPinByMessageCount;
   final String? selectedModelId;
+  final String modelPreset; // 'primary', 'secondary', 'custom'
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -35,6 +36,7 @@ class ChatRoom {
     this.autoPinByAi = false,
     this.autoPinByMessageCount,
     this.selectedModelId,
+    this.modelPreset = 'primary',
     DateTime? createdAt,
     DateTime? updatedAt,
   })  : createdAt = createdAt ?? DateTime.now(),
@@ -58,6 +60,7 @@ class ChatRoom {
       autoPinByAi: (map['auto_pin_by_ai'] as int? ?? 1) == 1,
       autoPinByMessageCount: map['auto_pin_by_message_count'] as int?,
       selectedModelId: map['selected_model_id'] as String?,
+      modelPreset: map['model_preset'] as String? ?? 'primary',
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
     );
@@ -81,6 +84,7 @@ class ChatRoom {
       'auto_pin_by_ai': autoPinByAi ? 1 : 0,
       'auto_pin_by_message_count': autoPinByMessageCount,
       'selected_model_id': selectedModelId,
+      'model_preset': modelPreset,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
     };
@@ -103,6 +107,7 @@ class ChatRoom {
     bool? autoPinByAi,
     Object? autoPinByMessageCount = _sentinel,
     Object? selectedModelId = _sentinel,
+    String? modelPreset,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -129,6 +134,7 @@ class ChatRoom {
       selectedModelId: selectedModelId == _sentinel
           ? this.selectedModelId
           : selectedModelId as String?,
+      modelPreset: modelPreset ?? this.modelPreset,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );

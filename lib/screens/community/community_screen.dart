@@ -10,7 +10,9 @@ import '../../models/chat/chat_summary.dart';
 import '../../models/community/community_post.dart';
 import '../../models/community/community_comment.dart';
 import '../../models/chat/chat_model.dart';
+import '../../models/chat/model_preset.dart';
 import '../../models/chat/unified_model.dart';
+import '../../providers/chat_model_provider.dart';
 import '../../providers/community_model_provider.dart';
 import '../../services/ai_service.dart';
 import '../../utils/community_parser.dart';
@@ -43,6 +45,18 @@ class _CommunityScreenState extends State<CommunityScreen> {
   List<CommunityPost> _posts = [];
   bool _isLoading = true;
   bool _isGenerating = false;
+  bool _isSubmitting = false;
+
+  // Track newly created items for highlighting
+  final Set<int> _newPostIds = {};
+  final Set<int> _newCommentIds = {};
+
+  // Draft state for retry on failure
+  String _draftPostAuthor = '익명';
+  String _draftPostTitle = '';
+  String _draftPostContent = '';
+  final Map<int, String> _draftCommentAuthor = {};
+  final Map<int, String> _draftCommentContent = {};
 
   @override
   void initState() {
@@ -50,8 +64,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
     _load();
   }
 
-  Future<void> _load() async {
-    setState(() => _isLoading = true);
+  Future<void> _load({bool showLoading = true}) async {
+    if (showLoading) setState(() => _isLoading = true);
     final results = await Future.wait([
       _db.readCharacter(widget.characterId),
       _db.readChatRoom(widget.chatRoomId),
@@ -76,6 +90,30 @@ class _CommunityScreenState extends State<CommunityScreen> {
       _posts = results[4] as List<CommunityPost>;
       _isLoading = false;
     });
+  }
+
+  Future<UnifiedModel> _getModel() async {
+    final communityProvider = context.read<CommunityModelProvider>();
+    final chatProvider = context.read<ChatModelSettingsProvider>();
+    await communityProvider.initialized;
+    switch (communityProvider.modelPreset) {
+      case ModelPreset.primary:
+        return chatProvider.selectedModel;
+      case ModelPreset.secondary:
+        return chatProvider.subModel;
+      case ModelPreset.custom:
+        return communityProvider.selectedModel;
+    }
+  }
+
+  String _appendCommunitySettings(String systemPrompt) {
+    if (_character?.communityMood?.isNotEmpty == true) {
+      systemPrompt += '\n- Community mood: ${_character!.communityMood}';
+    }
+    if (_character?.communityLanguage?.isNotEmpty == true) {
+      systemPrompt += '\n- Language: ${_character!.communityLanguage}';
+    }
+    return systemPrompt;
   }
 
   String _buildWorldviewText() {
@@ -116,23 +154,19 @@ class _CommunityScreenState extends State<CommunityScreen> {
       return;
     }
 
+    _newPostIds.clear();
+    _newCommentIds.clear();
     setState(() => _isGenerating = true);
 
     try {
-      final model = context.read<CommunityModelProvider>().selectedModel;
+      final model = await _getModel();
       final now = DateTime.now();
       final nowStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
       var systemPrompt = await rootBundle.loadString(
         'assets/defaults/community_prompts/community_generate.txt',
       );
-
-      if (_character?.communityMood?.isNotEmpty == true) {
-        systemPrompt += '\n- Community mood: ${_character!.communityMood}';
-      }
-      if (_character?.communityLanguage?.isNotEmpty == true) {
-        systemPrompt += '\n- Language: ${_character!.communityLanguage}';
-      }
+      systemPrompt = _appendCommunitySettings(systemPrompt);
 
       String latestPostInfo = '';
       if (_posts.isNotEmpty) {
@@ -163,17 +197,19 @@ class _CommunityScreenState extends State<CommunityScreen> {
       final parsed = CommunityParser.parse(response.text, chatRoomId: widget.chatRoomId);
       for (final post in parsed) {
         final postId = await _db.createCommunityPost(post);
+        _newPostIds.add(postId);
         for (final comment in post.comments) {
-          await _db.createCommunityComment(CommunityComment(
+          final commentId = await _db.createCommunityComment(CommunityComment(
             postId: postId,
             author: comment.author,
             time: comment.time,
             content: comment.content,
           ));
+          _newCommentIds.add(commentId);
         }
       }
 
-      await _load();
+      await _load(showLoading: false);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -185,9 +221,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   void _showWritePost() {
-    final nicknameCtrl = TextEditingController(text: '나');
-    final titleCtrl = TextEditingController();
-    final contentCtrl = TextEditingController();
+    final authorCtrl = TextEditingController(text: _draftPostAuthor);
+    final titleCtrl = TextEditingController(text: _draftPostTitle);
+    final contentCtrl = TextEditingController(text: _draftPostContent);
 
     showModalBottomSheet(
       context: context,
@@ -208,7 +244,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             TextField(
-              controller: nicknameCtrl,
+              controller: authorCtrl,
               decoration: const InputDecoration(
                 hintText: '닉네임',
                 border: OutlineInputBorder(),
@@ -239,12 +275,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
               width: double.infinity,
               child: FilledButton(
                 onPressed: () async {
-                  final nickname = nicknameCtrl.text.trim();
+                  final author = authorCtrl.text.trim();
                   final title = titleCtrl.text.trim();
                   final content = contentCtrl.text.trim();
-                  if (nickname.isEmpty || title.isEmpty || content.isEmpty) return;
+                  if (author.isEmpty || title.isEmpty || content.isEmpty) return;
+                  _draftPostAuthor = author;
+                  _draftPostTitle = title;
+                  _draftPostContent = content;
                   Navigator.pop(ctx);
-                  await _submitPost(author: nickname, title: title, content: content);
+                  await _submitPost(author: author, title: title, content: content);
                 },
                 child: const Text('등록'),
               ),
@@ -256,8 +295,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Future<void> _submitPost({required String author, required String title, required String content}) async {
-    setState(() => _isGenerating = true);
+    _newPostIds.clear();
+    _newCommentIds.clear();
+    setState(() => _isSubmitting = true);
     try {
+      final replies = await _generatePostReplies(title: title, content: content);
+
       final now = DateTime.now();
       final post = CommunityPost(
         chatRoomId: widget.chatRoomId,
@@ -267,18 +310,33 @@ class _CommunityScreenState extends State<CommunityScreen> {
         content: content,
       );
       final postId = await _db.createCommunityPost(post);
-      await _generatePostReplies(postId: postId, title: title, content: content);
-      await _load();
+      _newPostIds.add(postId);
+      for (final c in replies) {
+        final commentId = await _db.createCommunityComment(CommunityComment(
+          postId: postId,
+          author: c.author,
+          time: c.time,
+          content: c.content,
+        ));
+        _newCommentIds.add(commentId);
+      }
+
+      _draftPostAuthor = '익명';
+      _draftPostTitle = '';
+      _draftPostContent = '';
+      await _load(showLoading: false);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('등록 실패: $e')));
     } finally {
-      if (mounted) setState(() => _isGenerating = false);
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
   void _showWriteComment(CommunityPost post) {
-    final contentCtrl = TextEditingController();
+    final postId = post.id!;
+    final nicknameCtrl = TextEditingController(text: _draftCommentAuthor[postId] ?? '익명');
+    final contentCtrl = TextEditingController(text: _draftCommentContent[postId] ?? '');
 
     showModalBottomSheet(
       context: context,
@@ -308,6 +366,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
             ),
             const SizedBox(height: 12),
             TextField(
+              controller: nicknameCtrl,
+              decoration: const InputDecoration(
+                hintText: '닉네임',
+                border: OutlineInputBorder(),
+                isDense: true,
+              ),
+            ),
+            const SizedBox(height: 10),
+            TextField(
               controller: contentCtrl,
               maxLines: 3,
               autofocus: true,
@@ -322,10 +389,13 @@ class _CommunityScreenState extends State<CommunityScreen> {
               width: double.infinity,
               child: FilledButton(
                 onPressed: () async {
+                  final nickname = nicknameCtrl.text.trim();
                   final content = contentCtrl.text.trim();
-                  if (content.isEmpty) return;
+                  if (nickname.isEmpty || content.isEmpty) return;
+                  _draftCommentAuthor[postId] = nickname;
+                  _draftCommentContent[postId] = content;
                   Navigator.pop(ctx);
-                  await _submitComment(post: post, content: content);
+                  await _submitComment(post: post, author: nickname, content: content);
                 },
                 child: const Text('등록'),
               ),
@@ -336,46 +406,63 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
   }
 
-  Future<void> _submitComment({required CommunityPost post, required String content}) async {
-    setState(() => _isGenerating = true);
+  Future<void> _submitComment({required CommunityPost post, required String author, required String content}) async {
+    _newPostIds.clear();
+    _newCommentIds.clear();
+    setState(() => _isSubmitting = true);
     try {
+      // Add user comment to post context for AI without saving to DB yet
       final now = DateTime.now();
+      final postWithUserComment = CommunityPost(
+        id: post.id,
+        chatRoomId: post.chatRoomId,
+        author: post.author,
+        title: post.title,
+        time: post.time,
+        content: post.content,
+        createdAt: post.createdAt,
+        comments: [
+          ...post.comments,
+          CommunityComment(postId: post.id!, author: author, time: now, content: content),
+        ],
+      );
+
+      final aiReplies = await _generateCommentReplies(post: postWithUserComment);
+
+      // AI succeeded — now save user comment + AI replies to DB
       final userComment = CommunityComment(
         postId: post.id!,
-        author: '나',
+        author: author,
         time: now,
         content: content,
       );
-      await _db.createCommunityComment(userComment);
+      final userCommentId = await _db.createCommunityComment(userComment);
+      _newCommentIds.add(userCommentId);
+      for (final c in aiReplies) {
+        final commentId = await _db.createCommunityComment(c);
+        _newCommentIds.add(commentId);
+      }
 
-      // Reload current comments to pass as context to AI
-      final updatedPost = (await _db.readCommunityPosts(widget.characterId))
-          .firstWhere((p) => p.id == post.id);
-      await _generateCommentReplies(post: updatedPost);
-      await _load();
+      _draftCommentAuthor.remove(post.id!);
+      _draftCommentContent.remove(post.id!);
+      await _load(showLoading: false);
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('등록 실패: $e')));
     } finally {
-      if (mounted) setState(() => _isGenerating = false);
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
-  Future<void> _generatePostReplies({
-    required int postId,
+  Future<List<CommunityComment>> _generatePostReplies({
     required String title,
     required String content,
   }) async {
-    final model = context.read<CommunityModelProvider>().selectedModel;
+    final model = await _getModel();
     var systemPrompt = await rootBundle.loadString(
       'assets/defaults/community_prompts/post_replies.txt',
     );
-    if (_character?.communityMood?.isNotEmpty == true) {
-      systemPrompt += '\n- Community mood: ${_character!.communityMood}';
-    }
-    if (_character?.communityLanguage?.isNotEmpty == true) {
-      systemPrompt += '\n- Language: ${_character!.communityLanguage}';
-    }
+    systemPrompt = _appendCommunitySettings(systemPrompt);
     final now = DateTime.now();
     final nowStr = _nowString(now);
     final worldview = _buildWorldviewText();
@@ -396,20 +483,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
       logType: 'community',
     );
 
-    final comments = CommunityParser.parseComments(response.text, postId: postId);
-    for (final c in comments) {
-      await _db.createCommunityComment(c);
-    }
+    return CommunityParser.parseComments(response.text, postId: 0);
   }
 
-  Future<void> _generateCommentReplies({required CommunityPost post}) async {
-    final model = context.read<CommunityModelProvider>().selectedModel;
+  Future<List<CommunityComment>> _generateCommentReplies({required CommunityPost post}) async {
+    final model = await _getModel();
     var systemPrompt = await rootBundle.loadString(
       'assets/defaults/community_prompts/comment_replies.txt',
     );
-    if (_character?.communityMood?.isNotEmpty == true) {
-      systemPrompt += '\n- Community mood: ${_character!.communityMood}';
-    }
+    systemPrompt = _appendCommunitySettings(systemPrompt);
     if (_character?.communityLanguage?.isNotEmpty == true) {
       systemPrompt += '\n- Language: ${_character!.communityLanguage}';
     }
@@ -444,10 +526,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
       logType: 'community',
     );
 
-    final comments = CommunityParser.parseComments(response.text, postId: post.id!);
-    for (final c in comments) {
-      await _db.createCommunityComment(c);
-    }
+    return CommunityParser.parseComments(response.text, postId: post.id!);
   }
 
   Future<void> _deleteComment(CommunityComment comment) async {
@@ -464,7 +543,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
     if (confirmed != true) return;
     await _db.deleteCommunityComment(comment.id!);
-    await _load();
+    await _load(showLoading: false);
   }
 
   Future<void> _deletePost(CommunityPost post) async {
@@ -481,7 +560,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
     if (confirmed != true) return;
     await _db.deleteCommunityPost(post.id!);
-    await _load();
+    await _load(showLoading: false);
   }
 
   String _nowString(DateTime now) =>
@@ -509,8 +588,20 @@ class _CommunityScreenState extends State<CommunityScreen> {
         actions: [
           Transform.translate(
               offset: const Offset(6, 0),
-              child: OutlinedButton(
-                onPressed: _isGenerating ? null : _regenerate,
+              child: _isSubmitting
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: onSecondary,
+                        ),
+                      ),
+                    )
+                  : OutlinedButton(
+                onPressed: _isGenerating ? null : _showWritePost,
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(color: _isGenerating ? onSecondary.withValues(alpha: 0.4) : onSecondary),
                   shape: RoundedRectangleBorder(
@@ -521,7 +612,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
                 child: Text(
-                  'New',
+                  '게시글 작성',
                   style: TextStyle(
                     color: _isGenerating ? onSecondary.withValues(alpha: 0.4) : onSecondary,
                     fontWeight: FontWeight.bold,
@@ -537,28 +628,29 @@ class _CommunityScreenState extends State<CommunityScreen> {
         ],
       ),
       endDrawer: _buildModelDrawer(),
-      floatingActionButton: _isGenerating
-          ? null
-          : FloatingActionButton(
-              backgroundColor: Theme.of(context).colorScheme.secondary,
-              foregroundColor: Theme.of(context).colorScheme.onSecondary,
-              onPressed: _showWritePost,
-              child: const Icon(Icons.edit),
-            ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _regenerate,
-              child: _posts.isEmpty
-                  ? _buildEmptyState()
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      itemCount: _posts.length,
-                      itemBuilder: (context, i) => _buildPostCard(_posts[i]),
-                    ),
+          : Column(
+              children: [
+                if (_isGenerating)
+                  const LinearProgressIndicator(),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: _regenerate,
+                    child: _posts.isEmpty
+                        ? _buildEmptyState()
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            itemCount: _posts.length,
+                            itemBuilder: (context, i) => _buildPostCard(_posts[i]),
+                          ),
+                  ),
+                ),
+              ],
             ),
     );
   }
+
 
   Widget _buildEmptyState() {
     return ListView(
@@ -591,16 +683,21 @@ class _CommunityScreenState extends State<CommunityScreen> {
   Widget _buildPostCard(CommunityPost post) {
     final secondaryContainer = Theme.of(context).colorScheme.secondaryContainer;
     final onSecondaryContainer = Theme.of(context).colorScheme.onSecondaryContainer;
+    final isNewPost = post.id != null && _newPostIds.contains(post.id);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Card(
-        color: Theme.of(context).colorScheme.surface,
+        color: isNewPost
+            ? Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.1)
+            : Theme.of(context).colorScheme.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(
-            color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
+            color: isNewPost
+                ? Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.5)
+                : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
           ),
         ),
         child: Padding(
@@ -695,8 +792,17 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Widget _buildComment(CommunityComment comment) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+    final isNewComment = comment.id != null && _newCommentIds.contains(comment.id);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: isNewComment ? const EdgeInsets.all(6) : EdgeInsets.zero,
+      decoration: isNewComment
+          ? BoxDecoration(
+              color: Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            )
+          : null,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
@@ -748,44 +854,87 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Widget _buildModelDrawer() {
-    final selectableProviders = ChatModelProvider.values
-        .where((p) => p != ChatModelProvider.all)
-        .toList();
-
     return Drawer(
       child: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Consumer<CommunityModelProvider>(
-            builder: (context, provider, _) => Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  '사용 모델',
-                  style: Theme.of(context).textTheme.titleSmall?.copyWith(fontSize: 16),
-                ),
-                const SizedBox(height: 16),
-                _buildSettingRow(
-                  label: '제조사',
-                  child: CommonDropdownButton<ChatModelProvider>(
-                    value: provider.selectedProvider,
-                    items: selectableProviders,
-                    onChanged: (p) { if (p != null) provider.setProvider(p); },
-                    labelBuilder: (p) => p.displayName,
-                    size: CommonDropdownButtonSize.xsmall,
+            builder: (context, provider, _) {
+              final providerOptions = ProviderOption.buildOptions(provider.customProviders);
+
+              ProviderOption? currentProviderOption;
+              if (provider.modelPreset == ModelPreset.custom) {
+                currentProviderOption = providerOptions.where(
+                  (o) => o.builtInProvider == provider.selectedProvider,
+                ).firstOrNull;
+                currentProviderOption ??= providerOptions.firstOrNull;
+              }
+
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    '사용 모델',
+                    style: Theme.of(context).textTheme.titleSmall?.copyWith(fontSize: 16),
                   ),
-                ),
-                const SizedBox(height: 8),
-                _buildSettingRow(
-                  label: '모델',
-                  child: CommonDropdownButton<UnifiedModel>(
-                    value: provider.selectedModel,
-                    items: provider.availableModels,
-                    onChanged: (m) { if (m != null) provider.setModel(m); },
-                    labelBuilder: (m) => m.displayName,
-                    size: CommonDropdownButtonSize.xsmall,
+                  const SizedBox(height: 16),
+                  _buildSettingRow(
+                    label: '모델설정',
+                    child: CommonDropdownButton<ModelPreset>(
+                      value: provider.modelPreset,
+                      items: ModelPreset.values,
+                      onChanged: (p) { if (p != null) provider.setModelPreset(p); },
+                      labelBuilder: (p) => p.displayName,
+                      size: CommonDropdownButtonSize.xsmall,
+                    ),
                   ),
-                ),
+                  if (provider.modelPreset != ModelPreset.custom) ...[
+                    const SizedBox(height: 4),
+                    Consumer<ChatModelSettingsProvider>(
+                      builder: (context, chatProvider, _) => Text(
+                        provider.modelPreset == ModelPreset.primary
+                            ? chatProvider.primaryModelLabel
+                            : chatProvider.subModelLabel,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              fontSize: 14,
+                              color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.55),
+                            ),
+                      ),
+                    ),
+                  ],
+                  if (provider.modelPreset == ModelPreset.custom) ...[
+                    const SizedBox(height: 8),
+                    _buildSettingRow(
+                      label: '제조사',
+                      child: CommonDropdownButton<ProviderOption>(
+                        value: currentProviderOption,
+                        items: providerOptions,
+                        onChanged: (option) {
+                          if (option == null) return;
+                          if (option.isCustom) {
+                            // CommunityModelProvider doesn't support custom provider selection yet,
+                            // fall back to setting the built-in provider
+                            provider.setProvider(ChatModelProvider.custom);
+                          } else {
+                            provider.setProvider(option.builtInProvider!);
+                          }
+                        },
+                        labelBuilder: (o) => o.displayName,
+                        size: CommonDropdownButtonSize.xsmall,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    _buildSettingRow(
+                      label: '채팅 모델',
+                      child: CommonDropdownButton<UnifiedModel>(
+                        value: provider.selectedModel,
+                        items: provider.availableModels,
+                        onChanged: (m) { if (m != null) provider.setModel(m); },
+                        labelBuilder: (m) => m.displayName,
+                        size: CommonDropdownButtonSize.xsmall,
+                      ),
+                    ),
+                  ],
                 if (_character != null) ...[
                   const SizedBox(height: 24),
                   const Divider(),
@@ -826,7 +975,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   ],
                 ],
               ],
-            ),
+            );
+            },
           ),
         ),
       ),

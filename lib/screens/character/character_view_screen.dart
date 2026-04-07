@@ -1,12 +1,13 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../mixins/chat_room_pagination_mixin.dart';
 import '../../models/character/character.dart';
 import '../../models/character/cover_image.dart';
 import '../../models/character/persona.dart';
 import '../../models/character/start_scenario.dart';
-import '../../database/database_helper.dart';
 import '../../models/chat/chat_room.dart';
-import '../../models/chat/chat_room_summary.dart';
 import '../chat/chat_room_screen.dart';
 import 'character_edit_screen.dart';
 import '../../widgets/character/character_tag_chip.dart';
@@ -31,17 +32,33 @@ class CharacterViewScreen extends StatefulWidget {
   State<CharacterViewScreen> createState() => _CharacterViewScreenState();
 }
 
-class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTickerProviderStateMixin {
-  final DatabaseHelper _db = DatabaseHelper.instance;
+class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTickerProviderStateMixin, ChatRoomPaginationMixin {
   late TabController _tabController;
 
   Character? _character;
   List<CoverImage> _coverImages = [];
   List<Persona> _personas = [];
   List<StartScenario> _startScenarios = [];
-  List<ChatRoomSummary> _chatRooms = [];
   bool _isLoading = true;
   bool _hasChanges = false;
+
+  @override
+  int? get paginationCharacterId => widget.characterId;
+
+  @override
+  void onChatRoomsLoaded() {
+    _resolveChatCoverImages();
+  }
+
+  Future<void> _resolveChatCoverImages() async {
+    for (final data in chatRooms) {
+      final cover = data.coverImage;
+      if (cover != null && cover.imageData == null && cover.path != null) {
+        cover.imageData = await cover.resolveImageData();
+      }
+    }
+    if (mounted) setState(() {});
+  }
 
   int? _selectedPersonaIndex;
   int? _selectedScenarioIndex;
@@ -51,11 +68,12 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _loadCharacterData();
-    _loadChatRooms();
+    initPagination();
   }
 
   @override
   void dispose() {
+    disposePagination();
     _tabController.dispose();
     super.dispose();
   }
@@ -64,37 +82,23 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
     setState(() => _isLoading = true);
 
     try {
-      final character = await _db.readCharacter(widget.characterId);
-      final coverImages = await _db.readCoverImages(widget.characterId);
-      final personas = await _db.readPersonas(widget.characterId);
-      final startScenarios = await _db.readStartScenarios(widget.characterId);
+      final character = await paginationDb.readCharacter(widget.characterId);
+      final coverImages = await paginationDb.readCoverImages(widget.characterId);
+      final personas = await paginationDb.readPersonas(widget.characterId);
+      final startScenarios = await paginationDb.readStartScenarios(widget.characterId);
 
       setState(() {
         _character = character;
         _coverImages = coverImages;
         _personas = personas;
         _startScenarios = startScenarios;
-        // 페르소나가 있으면 첫 번째를 기본 선택
         _selectedPersonaIndex = personas.isNotEmpty ? 0 : null;
-        // 시작 설정이 있으면 첫 번째를 기본 선택
         _selectedScenarioIndex = startScenarios.isNotEmpty ? 0 : null;
         _isLoading = false;
       });
     } catch (e) {
       debugPrint('Error loading character data: $e');
       setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _loadChatRooms() async {
-    try {
-      final summaries = await _db.readChatRoomSummaries(characterId: widget.characterId);
-
-      setState(() {
-        _chatRooms = summaries;
-      });
-    } catch (e) {
-      debugPrint('Error loading chat rooms: $e');
     }
   }
 
@@ -173,8 +177,8 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
         final updatedChatRoom = chatRoom.copyWith(
           name: result,
         );
-        await _db.updateChatRoom(updatedChatRoom);
-        _loadChatRooms();
+        await paginationDb.updateChatRoom(updatedChatRoom);
+        loadChatRooms();
       }
     } catch (e) {
       debugPrint('Error renaming chat room: $e');
@@ -199,8 +203,8 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
 
     if (confirmed == true) {
       try {
-        await _db.deleteChatRoom(chatRoom.id!);
-        _loadChatRooms();
+        await paginationDb.deleteChatRoom(chatRoom.id!);
+        loadChatRooms();
         if (!mounted) return;
         CommonDialog.showSnackBar(
           context: context,
@@ -221,9 +225,9 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
     if (_character == null) return;
 
     try {
-      final selectedPrompt = await _db.readSelectedChatPrompt();
+      final selectedPrompt = await paginationDb.readSelectedChatPrompt();
 
-      final existingRooms = await _db.database.then((db) async {
+      final existingRooms = await paginationDb.database.then((db) async {
         final List<Map<String, dynamic>> maps = await db.query(
           'chat_rooms',
           where: 'character_id = ?',
@@ -258,7 +262,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
             : null,
       );
 
-      final chatRoomId = await _db.createChatRoom(chatRoom);
+      final chatRoomId = await paginationDb.createChatRoom(chatRoom);
 
       if (!mounted) return;
 
@@ -271,13 +275,13 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
         ),
       );
 
-      final lastMessage = await _db.readLastChatMessage(chatRoomId);
+      final lastMessage = await paginationDb.readLastChatMessage(chatRoomId);
       if (lastMessage == null) {
-        await _db.deleteChatRoom(chatRoomId);
+        await paginationDb.deleteChatRoom(chatRoomId);
       }
 
       // 채팅방 리스트 새로고침
-      _loadChatRooms();
+      loadChatRooms();
     } catch (e) {
       debugPrint('Error creating chat: $e');
       if (!mounted) return;
@@ -302,42 +306,50 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
       selectedCover = _coverImages.first;
     }
 
-    if (selectedCover == null || selectedCover.imageData == null) {
-      return AspectRatio(
-        aspectRatio: 1,
-        child: Container(
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Icon(
-            Icons.person_outline,
-            size: 80,
-            color: Theme.of(context).colorScheme.onSurfaceVariant,
-          ),
+    final fallback = AspectRatio(
+      aspectRatio: 1,
+      child: Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(16),
         ),
-      );
-    }
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: AspectRatio(
-        aspectRatio: 1,
-        child: Image.memory(
-          selectedCover.imageData!,
-          fit: BoxFit.cover,
-          errorBuilder: (context, error, stackTrace) {
-            return Container(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest,
-              child: Icon(
-                Icons.broken_image_outlined,
-                size: 80,
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-            );
-          },
+        child: Icon(
+          Icons.person_outline,
+          size: 80,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
       ),
+    );
+
+    if (selectedCover == null) return fallback;
+
+    return FutureBuilder<Uint8List?>(
+      future: selectedCover.resolveImageData(),
+      builder: (context, snapshot) {
+        final bytes = snapshot.data;
+        if (bytes == null) return fallback;
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(16),
+          child: AspectRatio(
+            aspectRatio: 1,
+            child: Image.memory(
+              bytes,
+              fit: BoxFit.cover,
+              alignment: Alignment.topCenter,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  child: Icon(
+                    Icons.broken_image_outlined,
+                    size: 80,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  ),
+                );
+              },
+            ),
+          ),
+        );
+      },
     );
   }
 
@@ -492,6 +504,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
       child: Scaffold(
       appBar: CommonAppBar(
         title: _character!.name,
+        onBackPressed: () => Navigator.of(context).pop(_hasChanges),
         actions: [
           CommonAppBarIconButton(
             icon: Icons.edit_outlined,
@@ -607,7 +620,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
     final screenWidth = MediaQuery.of(context).size.width;
     final horizontalPadding = screenWidth * 0.05;
 
-    if (_chatRooms.isEmpty) {
+    if (chatRooms.isEmpty) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -642,11 +655,20 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
       children: [
         Expanded(
           child: ListView.separated(
+            controller: chatScrollController,
             padding: EdgeInsets.symmetric(horizontal: horizontalPadding, vertical: 16.0),
-            itemCount: _chatRooms.length,
+            itemCount: chatRooms.length + (hasMoreChats ? 1 : 0),
             separatorBuilder: (context, index) => const SizedBox(height: 20.0),
             itemBuilder: (context, index) {
-              final data = _chatRooms[index];
+              if (index >= chatRooms.length) {
+                return const Center(
+                  child: Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: CircularProgressIndicator(),
+                  ),
+                );
+              }
+              final data = chatRooms[index];
               return GestureDetector(
                 onTap: () async {
                   await Navigator.push(
@@ -657,7 +679,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
                       ),
                     ),
                   );
-                  _loadChatRooms();
+                  loadChatRooms();
                 },
                 onLongPress: () {
                   showDialog(

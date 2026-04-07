@@ -10,31 +10,27 @@ import '../../../utils/common_dialog.dart';
 import '../../../widgets/common/common_button.dart';
 import '../../../widgets/common/common_title_medium.dart';
 
-class CoverImageTab extends StatefulWidget {
-  final List<CoverImage> coverImages;
-  final int? selectedCoverImageId;
+class AdditionalImageTab extends StatefulWidget {
+  final List<CoverImage> images;
   final String characterName;
-  final Function(int?) onSelectedCoverImageChanged;
   final VoidCallback onUpdate;
 
-  const CoverImageTab({
+  const AdditionalImageTab({
     super.key,
-    required this.coverImages,
-    required this.selectedCoverImageId,
+    required this.images,
     required this.characterName,
-    required this.onSelectedCoverImageChanged,
     required this.onUpdate,
   });
 
   @override
-  State<CoverImageTab> createState() => _CoverImageTabState();
+  State<AdditionalImageTab> createState() => _AdditionalImageTabState();
 }
 
-class _CoverImageTabState extends State<CoverImageTab> {
+class _AdditionalImageTabState extends State<AdditionalImageTab> {
   static const double _itemHorizontalPadding = 10.0;
   static const double _itemVerticalPadding = 10.0;
 
-  int? _editingCoverImageId;
+  int? _editingImageId;
   final Map<int, TextEditingController> _editControllers = {};
   final ImagePicker _imagePicker = ImagePicker();
 
@@ -54,7 +50,7 @@ class _CoverImageTabState extends State<CoverImageTab> {
     setState(() {});
   }
 
-  Future<void> _addCoverImage() async {
+  Future<void> _addImage() async {
     final XFile? picked = await _imagePicker.pickImage(
       source: ImageSource.gallery,
     );
@@ -81,15 +77,13 @@ class _CoverImageTabState extends State<CoverImageTab> {
           characterId: -1,
           name: originalName.isNotEmpty
               ? originalName
-              : '표지 ${widget.coverImages.length + 1}',
-          order: widget.coverImages.length,
+              : '이미지 ${widget.images.length + 1}',
+          order: widget.images.length,
           path: filePath,
+          imageType: 'additional',
           isExpanded: true,
         );
-        widget.coverImages.add(newImage);
-        if (widget.coverImages.length == 1) {
-          widget.onSelectedCoverImageChanged(newImage.id);
-        }
+        widget.images.add(newImage);
       });
       _notifyUpdate();
     } catch (e) {
@@ -101,53 +95,45 @@ class _CoverImageTabState extends State<CoverImageTab> {
     }
   }
 
-  Future<void> _deleteCoverImage(CoverImage coverImage) async {
+  Future<void> _deleteImage(CoverImage image) async {
     final confirmed = await CommonDialog.showDeleteConfirmation(
       context: context,
-      itemName: coverImage.name,
+      itemName: image.name,
     );
 
     if (confirmed) {
-      if (coverImage.path != null) {
-        await CharacterImageStorage.deleteImage(coverImage.path!);
+      if (image.path != null) {
+        await CharacterImageStorage.deleteImage(image.path!);
       }
       setState(() {
-        widget.coverImages.remove(coverImage);
-        if (widget.selectedCoverImageId == coverImage.id) {
-          widget.onSelectedCoverImageChanged(
-            widget.coverImages.isNotEmpty
-                ? widget.coverImages.first.id
-                : null,
-          );
-        }
+        widget.images.remove(image);
       });
       _notifyUpdate();
     }
   }
 
-  void _toggleCoverImageEdit(CoverImage coverImage) {
+  void _toggleEdit(CoverImage image) {
     setState(() {
-      if (_editingCoverImageId == coverImage.id) {
-        final controller = _editControllers[coverImage.id!];
+      if (_editingImageId == image.id) {
+        final controller = _editControllers[image.id!];
         if (controller != null && controller.text.isNotEmpty) {
-          coverImage.name = controller.text;
+          image.name = controller.text;
         }
-        _editingCoverImageId = null;
-        _editControllers.remove(coverImage.id!)?.dispose();
+        _editingImageId = null;
+        _editControllers.remove(image.id!)?.dispose();
         _notifyUpdate();
       } else {
-        _editingCoverImageId = coverImage.id;
-        _editControllers[coverImage.id!] =
-            TextEditingController(text: coverImage.name);
+        _editingImageId = image.id;
+        _editControllers[image.id!] = TextEditingController(text: image.name);
       }
     });
   }
 
-  void _saveCoverImageName(CoverImage coverImage, String value) {
+  void _saveName(CoverImage image, String value) {
     setState(() {
-      if (value.isNotEmpty) coverImage.name = value;
-      _editingCoverImageId = null;
-      _editControllers.remove(coverImage.id!)?.dispose();
+      if (value.isNotEmpty) image.name = value;
+      _editingImageId = null;
+      _editControllers.remove(image.id!)?.dispose();
     });
     _notifyUpdate();
   }
@@ -175,27 +161,27 @@ class _CoverImageTabState extends State<CoverImageTab> {
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 5),
             child: CommonTitleMedium(
-              text: '표지',
-              helpMessage: '캐릭터의 표지 이미지를 추가할 수 있습니다.',
+              text: '추가 이미지',
+              helpMessage: '캐릭터에 관련된 참고 이미지를 추가할 수 있습니다.',
             ),
           ),
           const SizedBox(height: 8),
           Expanded(
-            child: widget.coverImages.isEmpty
-                ? const Center(child: Text('표지 이미지가 없습니다'))
+            child: widget.images.isEmpty
+                ? const Center(child: Text('추가 이미지가 없습니다'))
                 : ListView.builder(
-                    itemCount: widget.coverImages.length,
+                    itemCount: widget.images.length,
                     itemBuilder: (context, index) =>
-                        _buildCoverImageItem(widget.coverImages[index]),
+                        _buildImageItem(widget.images[index]),
                   ),
           ),
           const SizedBox(height: 16),
           SizedBox(
             width: double.infinity,
             child: CommonButton.filled(
-              onPressed: _addCoverImage,
+              onPressed: _addImage,
               icon: Icons.add,
-              label: '표지 이미지 추가',
+              label: '이미지 추가',
             ),
           ),
         ],
@@ -203,11 +189,11 @@ class _CoverImageTabState extends State<CoverImageTab> {
     );
   }
 
-  Widget _buildCoverImageItem(CoverImage coverImage) {
-    final displayPath = coverImage.path ?? '';
+  Widget _buildImageItem(CoverImage image) {
+    final displayPath = image.path ?? '';
 
     return Container(
-      key: ValueKey(coverImage.id),
+      key: ValueKey(image.id),
       margin: const EdgeInsets.only(bottom: 8),
       decoration: BoxDecoration(
         color: Theme.of(context)
@@ -224,7 +210,7 @@ class _CoverImageTabState extends State<CoverImageTab> {
         children: [
           InkWell(
             onTap: () =>
-                setState(() => coverImage.isExpanded = !coverImage.isExpanded),
+                setState(() => image.isExpanded = !image.isExpanded),
             overlayColor: WidgetStateProperty.all(Colors.transparent),
             borderRadius: BorderRadius.circular(10),
             child: Padding(
@@ -234,25 +220,13 @@ class _CoverImageTabState extends State<CoverImageTab> {
               ),
               child: Row(
                 children: [
-                  Radio<int>(
-                    value: coverImage.id!,
-                    groupValue: widget.selectedCoverImageId,
-                    onChanged: (value) {
-                      widget.onSelectedCoverImageChanged(value);
-                      setState(() {});
-                    },
-                    visualDensity:
-                        const VisualDensity(horizontal: -4, vertical: -4),
-                    materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  const SizedBox(width: 8),
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _editingCoverImageId == coverImage.id
+                        _editingImageId == image.id
                             ? TextField(
-                                controller: _editControllers[coverImage.id!],
+                                controller: _editControllers[image.id!],
                                 style: Theme.of(context).textTheme.bodyMedium,
                                 decoration: const InputDecoration(
                                   border: InputBorder.none,
@@ -260,11 +234,10 @@ class _CoverImageTabState extends State<CoverImageTab> {
                                   contentPadding: EdgeInsets.zero,
                                 ),
                                 autofocus: true,
-                                onSubmitted: (value) =>
-                                    _saveCoverImageName(coverImage, value),
+                                onSubmitted: (value) => _saveName(image, value),
                               )
                             : Text(
-                                coverImage.name,
+                                image.name,
                                 style: Theme.of(context).textTheme.bodyMedium,
                               ),
                         if (displayPath.isNotEmpty) ...[
@@ -288,9 +261,9 @@ class _CoverImageTabState extends State<CoverImageTab> {
                     ),
                   ),
                   GestureDetector(
-                    onTap: () => _toggleCoverImageEdit(coverImage),
+                    onTap: () => _toggleEdit(image),
                     child: Icon(
-                      _editingCoverImageId == coverImage.id
+                      _editingImageId == image.id
                           ? Icons.check
                           : Icons.edit_outlined,
                       size: 18,
@@ -298,27 +271,25 @@ class _CoverImageTabState extends State<CoverImageTab> {
                   ),
                   const SizedBox(width: 12),
                   GestureDetector(
-                    onTap: () => _deleteCoverImage(coverImage),
+                    onTap: () => _deleteImage(image),
                     child: const Icon(Icons.delete_outline, size: 18),
                   ),
                   const SizedBox(width: 12),
                   Icon(
-                    coverImage.isExpanded
-                        ? Icons.expand_less
-                        : Icons.expand_more,
+                    image.isExpanded ? Icons.expand_less : Icons.expand_more,
                     size: 20,
                   ),
                 ],
               ),
             ),
           ),
-          if (coverImage.isExpanded) ...[
+          if (image.isExpanded) ...[
             const Divider(height: 1),
             Padding(
               padding: const EdgeInsets.all(12),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(8),
-                child: _buildImagePreview(coverImage),
+                child: _buildImagePreview(image),
               ),
             ),
           ],
@@ -327,9 +298,9 @@ class _CoverImageTabState extends State<CoverImageTab> {
     );
   }
 
-  Widget _buildImagePreview(CoverImage coverImage) {
+  Widget _buildImagePreview(CoverImage image) {
     return FutureBuilder<Uint8List?>(
-      future: coverImage.resolveImageData(),
+      future: image.resolveImageData(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const SizedBox(
@@ -340,14 +311,14 @@ class _CoverImageTabState extends State<CoverImageTab> {
         final bytes = snapshot.data;
         if (bytes != null) {
           return Image.memory(bytes, fit: BoxFit.cover, alignment: Alignment.topCenter,
-              errorBuilder: (_, __, ___) => _imageErrorWidget());
+              errorBuilder: (_, __, ___) => _errorWidget());
         }
-        return _imageErrorWidget();
+        return _errorWidget();
       },
     );
   }
 
-  Widget _imageErrorWidget() {
+  Widget _errorWidget() {
     return Container(
       height: 200,
       color: Theme.of(context).colorScheme.surfaceContainerHighest,

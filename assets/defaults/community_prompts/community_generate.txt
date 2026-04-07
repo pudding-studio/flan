@@ -5,10 +5,11 @@ Format:
 [Comment]Auther:'author name'|Time:'YYYYMMDDHHmm'|Content:'comment text'
 
 Rules:
-- Generate 6–10 posts, most recent first
-- Each post may have 0–3 comments (placed on the lines immediately below the post)
+- Generate 4–5 posts, most recent first
+- Each post may have 2–3 comments (placed on the lines immediately below the post)
 - Content should be a brief summary
 - Time MUST be exactly 12 digits in 'YYYYMMDDHHmm' format (e.g. '202604041523')
 - Distribute times realistically around the current time
 - All post/comment times MUST be after the provided base time
+- The {{user}} character NEVER writes posts or comments. Do NOT use {{user}} as an author.
 - Output language MUST match the user's language (infer from the worldview/context provided)
