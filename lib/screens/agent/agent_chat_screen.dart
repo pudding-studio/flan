@@ -3,11 +3,14 @@ import 'package:provider/provider.dart';
 
 import '../../database/database_helper.dart';
 import '../../models/chat/chat_message.dart';
+import '../../models/chat/chat_model.dart';
+import '../../models/chat/unified_model.dart';
 import '../../providers/chat_model_provider.dart';
 import '../../services/agent/agent_service.dart';
 import '../../services/agent/agent_tool.dart';
 import '../../widgets/agent/tool_result_card.dart';
 import '../../widgets/common/common_appbar.dart';
+import '../../widgets/common/common_dropdown_button.dart';
 import '../../widgets/common/common_edit_text.dart';
 import '../../widgets/common/markdown_text.dart';
 
@@ -252,9 +255,11 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
             icon: Icons.delete_outline,
             onPressed: _messages.isEmpty ? null : _clearChat,
             tooltip: '대화 초기화',
+            offsetX: 26,
           ),
         ],
       ),
+      endDrawer: _buildModelDrawer(),
       body: Column(
         children: [
           Expanded(
@@ -347,6 +352,72 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
           const Divider(height: 16),
         ],
       ),
+    );
+  }
+
+  Widget _buildModelDrawer() {
+    final selectableProviders = ChatModelProvider.values
+        .where((p) => p != ChatModelProvider.all)
+        .toList();
+
+    return Drawer(
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Consumer<ChatModelSettingsProvider>(
+            builder: (context, provider, _) => Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  '사용 모델',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(fontSize: 16),
+                ),
+                const SizedBox(height: 16),
+                _buildSettingRow(
+                  label: '제조사',
+                  child: CommonDropdownButton<ChatModelProvider>(
+                    value: provider.selectedProvider == ChatModelProvider.all
+                        ? selectableProviders.first
+                        : provider.selectedProvider,
+                    items: selectableProviders,
+                    onChanged: (p) { if (p != null) provider.setProvider(p); },
+                    labelBuilder: (p) => p.displayName,
+                    size: CommonDropdownButtonSize.xsmall,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                _buildSettingRow(
+                  label: '모델',
+                  child: CommonDropdownButton<UnifiedModel>(
+                    value: provider.selectedModel,
+                    items: provider.availableModels,
+                    onChanged: (m) { if (m != null) provider.setModel(m); },
+                    labelBuilder: (m) => m.displayName,
+                    size: CommonDropdownButtonSize.xsmall,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSettingRow({required String label, required Widget child}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                fontWeight: FontWeight.w600,
+                fontSize: 14,
+              ),
+        ),
+        const SizedBox(height: 4),
+        child,
+      ],
     );
   }
 

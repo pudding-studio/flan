@@ -84,6 +84,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   List<PromptRegexRule> _regexRules = [];
   final FocusNode _messageFocusNode = FocusNode();
 
+  // Search
+  bool _isSearching = false;
+  final TextEditingController _searchController = TextEditingController();
+  final FocusNode _searchFocusNode = FocusNode();
+  List<int> _searchMatchIndices = [];
+  int _currentSearchIndex = -1;
+
   @override
   void initState() {
     super.initState();
@@ -110,11 +117,78 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
+  void _toggleSearch() {
+    setState(() {
+      _isSearching = !_isSearching;
+      if (!_isSearching) {
+        _searchController.clear();
+        _searchMatchIndices = [];
+        _currentSearchIndex = -1;
+      } else {
+        _searchFocusNode.requestFocus();
+      }
+    });
+  }
+
+  void _performSearch(String query) {
+    if (query.isEmpty) {
+      setState(() {
+        _searchMatchIndices = [];
+        _currentSearchIndex = -1;
+      });
+      return;
+    }
+
+    final lowerQuery = query.toLowerCase();
+    final matches = <int>[];
+    for (int i = 0; i < _messages.length; i++) {
+      if (_messages[i].content.toLowerCase().contains(lowerQuery)) {
+        matches.add(i);
+      }
+    }
+
+    setState(() {
+      _searchMatchIndices = matches;
+      _currentSearchIndex = matches.isNotEmpty ? 0 : -1;
+    });
+
+    if (matches.isNotEmpty) {
+      _scrollToSearchResult(0);
+    }
+  }
+
+  void _navigateSearch(int direction) {
+    if (_searchMatchIndices.isEmpty) return;
+    setState(() {
+      _currentSearchIndex =
+          (_currentSearchIndex + direction) % _searchMatchIndices.length;
+      if (_currentSearchIndex < 0) {
+        _currentSearchIndex = _searchMatchIndices.length - 1;
+      }
+    });
+    _scrollToSearchResult(_currentSearchIndex);
+  }
+
+  void _scrollToSearchResult(int searchIndex) {
+    final messageIndex = _searchMatchIndices[searchIndex];
+    // ListView is reversed, so convert index
+    final reversedIndex = _messages.length - 1 - messageIndex;
+    // Estimate scroll position
+    final estimatedOffset = reversedIndex * 80.0;
+    _scrollController.animateTo(
+      estimatedOffset.clamp(0, _scrollController.position.maxScrollExtent),
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOut,
+    );
+  }
+
   @override
   void dispose() {
     _messageFocusNode.removeListener(_onMessageFocusChanged);
     _messageFocusNode.dispose();
     _messageController.dispose();
+    _searchController.dispose();
+    _searchFocusNode.dispose();
     _scrollController.removeListener(_onScrollChanged);
     _scrollController.dispose();
     for (var controller in _editControllers.values) {
@@ -467,7 +541,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       final assistantMessageId = await _db.createChatMessage(assistantMessage);
 
-      await _saveMessageMetadata(assistantMessageId, responseText);
+      final pinCreated = await _saveMessageMetadata(assistantMessageId, responseText);
 
       // 채팅방 토큰 합산 업데이트
       await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
@@ -477,17 +551,19 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       );
       await _db.updateChatRoom(updatedChatRoom);
 
-      // 자동 요약 트리거 체크 (전역 설정)
-      final latestChatRoom = await _db.readChatRoom(widget.chatRoomId);
-      if (latestChatRoom != null) {
-        final shouldTrigger = await _autoSummaryService.shouldTriggerSummary(
-          chatRoomId: widget.chatRoomId,
-          currentTokenCount: latestChatRoom.totalTokenCount,
-        );
+      // 자동 요약 트리거 체크: 새 핀이 생성된 경우에만 실행
+      if (pinCreated) {
+        final latestChatRoom = await _db.readChatRoom(widget.chatRoomId);
+        if (latestChatRoom != null) {
+          final shouldTrigger = await _autoSummaryService.shouldTriggerSummary(
+            chatRoomId: widget.chatRoomId,
+            currentTokenCount: latestChatRoom.totalTokenCount,
+          );
 
-        if (shouldTrigger) {
-          if (mounted) setState(() => _sendingPhase = SendingPhase.summarizing);
-          await _autoSummaryService.generateAllPendingSummaries(chatRoomId: widget.chatRoomId);
+          if (shouldTrigger) {
+            if (mounted) setState(() => _sendingPhase = SendingPhase.summarizing);
+            await _autoSummaryService.generateAllPendingSummaries(chatRoomId: widget.chatRoomId);
+          }
         }
       }
 
@@ -625,7 +701,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
-  Future<void> _saveMessageMetadata(int messageId, String content) async {
+  /// Returns true if a new pin was created for this message.
+  Future<bool> _saveMessageMetadata(int messageId, String content) async {
     final previous = await _db.readLatestChatMessageMetadata(widget.chatRoomId);
     final metadata = MetadataParser.buildMetadata(
       chatMessageId: messageId,
@@ -662,6 +739,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     setState(() {
       _metadataMap[messageId] = finalMetadata.copyWith(id: metadataId);
     });
+    return shouldPin;
   }
 
   Future<void> _togglePin(int messageId) async {
@@ -702,7 +780,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               _buildMenuAppIcon(
                 context,
                 icon: Icons.forum_outlined,
-                label: '커뮤니티',
+                label: 'SNS',
                 onTap: () {
                   setState(() => _showMorePanel = false);
                   Navigator.push(
@@ -803,15 +881,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   Future<void> _onPromptChanged(int? promptId) async {
     if (_chatRoom == null) return;
-    final updated = ChatRoom(
-      id: _chatRoom!.id,
-      characterId: _chatRoom!.characterId,
-      name: _chatRoom!.name,
+    final updated = _chatRoom!.copyWith(
       selectedChatPromptId: promptId,
-      selectedPersonaId: _chatRoom!.selectedPersonaId,
-      selectedStartScenarioId: _chatRoom!.selectedStartScenarioId,
-      totalTokenCount: _chatRoom!.totalTokenCount,
-      createdAt: _chatRoom!.createdAt,
       updatedAt: DateTime.now(),
     );
     await _db.updateChatRoom(updated);
@@ -830,15 +901,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   Future<void> _onPersonaChanged(int? personaId) async {
     if (_chatRoom == null) return;
-    final updated = ChatRoom(
-      id: _chatRoom!.id,
-      characterId: _chatRoom!.characterId,
-      name: _chatRoom!.name,
-      selectedChatPromptId: _chatRoom!.selectedChatPromptId,
+    final updated = _chatRoom!.copyWith(
       selectedPersonaId: personaId,
-      selectedStartScenarioId: _chatRoom!.selectedStartScenarioId,
-      totalTokenCount: _chatRoom!.totalTokenCount,
-      createdAt: _chatRoom!.createdAt,
       updatedAt: DateTime.now(),
     );
     await _db.updateChatRoom(updated);
@@ -984,7 +1048,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     try {
       if (_chatRoom == null || _character == null) return;
 
-      // 새 채팅방 생성 (memo, summary, pinMode 포함)
+      // 새 채팅방 생성 (기존 설정 전체 복사, id 제외)
       final branchName = await _generateBranchName();
       final newChatRoom = ChatRoom(
         characterId: _chatRoom!.characterId,
@@ -992,9 +1056,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         selectedChatPromptId: _chatRoom!.selectedChatPromptId,
         selectedPersonaId: _chatRoom!.selectedPersonaId,
         selectedStartScenarioId: _chatRoom!.selectedStartScenarioId,
+        selectedConditionPresetId: _chatRoom!.selectedConditionPresetId,
         memo: _chatRoom!.memo,
         summary: _chatRoom!.summary,
         pinMode: _chatRoom!.pinMode,
+        autoPinByDate: _chatRoom!.autoPinByDate,
+        autoPinByLocation: _chatRoom!.autoPinByLocation,
+        autoPinByAi: _chatRoom!.autoPinByAi,
+        autoPinByMessageCount: _chatRoom!.autoPinByMessageCount,
+        selectedModelId: _chatRoom!.selectedModelId,
       );
 
       final newChatRoomId = await _db.createChatRoom(newChatRoom);
@@ -1429,6 +1499,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
     final isSummaryThreshold = _summaryThresholdIndex != null && index == _summaryThresholdIndex;
     final isSummarized = message.id != null && _summarizedMessageIds.contains(message.id!);
+    final isSearchMatch = _isSearching && _searchMatchIndices.contains(index);
+    final isCurrentSearchMatch = isSearchMatch &&
+        _currentSearchIndex >= 0 &&
+        _searchMatchIndices[_currentSearchIndex] == index;
 
     return Column(
       children: [
@@ -1437,6 +1511,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             horizontal: 16 + viewer.paragraphWidth,
             vertical: 0,
           ),
+          decoration: isCurrentSearchMatch
+              ? BoxDecoration(
+                  color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
+                )
+              : isSearchMatch
+                  ? BoxDecoration(
+                      color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.15),
+                    )
+                  : null,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1633,26 +1716,87 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         onAutoPinByMessageCountChanged: (v) => _onAutoPinOptionChanged(byMessageCount: v),
         onPresetChanged: _onPresetChanged,
       ),
-      appBar: CommonAppBar(
-        title: _character!.name,
-        titleWidget: GestureDetector(
-          onTap: () {
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => CharacterViewScreen(characterId: _character!.id!),
+      appBar: _isSearching
+          ? AppBar(
+              automaticallyImplyLeading: false,
+              titleSpacing: 0,
+              title: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back),
+                    onPressed: _toggleSearch,
+                    padding: const EdgeInsets.only(left: 16),
+                    visualDensity: VisualDensity.compact,
+                    constraints: const BoxConstraints(),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: TextField(
+                      controller: _searchController,
+                      focusNode: _searchFocusNode,
+                      decoration: const InputDecoration(
+                        hintText: '메시지 검색...',
+                        border: InputBorder.none,
+                      ),
+                      onChanged: _performSearch,
+                      textInputAction: TextInputAction.search,
+                    ),
+                  ),
+                  if (_searchMatchIndices.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 4),
+                      child: Text(
+                        '${_currentSearchIndex + 1}/${_searchMatchIndices.length}',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                  IconButton(
+                    icon: const Icon(Icons.keyboard_arrow_up),
+                    onPressed: () => _navigateSearch(-1),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.keyboard_arrow_down),
+                    onPressed: () => _navigateSearch(1),
+                    visualDensity: VisualDensity.compact,
+                  ),
+                  const SizedBox(width: 8),
+                ],
               ),
-            );
-          },
-          child: Row(
-            children: [
-              _buildCharacterAvatar(),
-              const SizedBox(width: 12),
-              Text(_character!.name),
-            ],
-          ),
-        ),
-      ),
+            )
+          : CommonAppBar(
+              title: _character!.name,
+              titleWidget: GestureDetector(
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => CharacterViewScreen(characterId: _character!.id!),
+                    ),
+                  );
+                },
+                child: Row(
+                  children: [
+                    _buildCharacterAvatar(),
+                    const SizedBox(width: 12),
+                    Flexible(
+                      child: Text(
+                        _character!.name,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                CommonAppBarIconButton(
+                  icon: Icons.search,
+                  onPressed: _toggleSearch,
+                  tooltip: '검색',
+                  offsetX: 20.0,
+                ),
+              ],
+            ),
       body: Column(
         children: [
           Expanded(
@@ -1776,27 +1920,40 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             child: SafeArea(
               child: Padding(
                 padding: const EdgeInsets.all(8.0),
-                child: CommonEditText(
-                  controller: _messageController,
-                  focusNode: _messageFocusNode,
-                  enabled: !_isSending,
-                  hintText: _sendingPhase == SendingPhase.preparing
-                      ? '메시지 생성 중...'
-                      : _sendingPhase == SendingPhase.waiting
-                          ? '응답 대기 중...'
-                          : _sendingPhase == SendingPhase.summarizing
-                              ? '요약 중...'
-                              : '메시지를 입력하세요',
-                  minLines: 1,
-                  maxLines: 5,
-                  textInputAction: TextInputAction.newline,
-                  suffixIcon: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Transform.translate(
-                        offset: const Offset(8, 0),
-                        child: IconButton(
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    IconButton(
+                      icon: AnimatedRotation(
+                        turns: _showMorePanel ? 0.125 : 0,
+                        duration: const Duration(milliseconds: 200),
+                        child: Icon(
+                          Icons.add,
+                          color: _showMorePanel
+                              ? Theme.of(context).colorScheme.primary
+                              : null,
+                        ),
+                      ),
+                      onPressed: _showMoreMenu,
+                      padding: const EdgeInsets.all(8),
+                      constraints: const BoxConstraints(),
+                    ),
+                    Expanded(
+                      child: CommonEditText(
+                        controller: _messageController,
+                        focusNode: _messageFocusNode,
+                        enabled: !_isSending,
+                        hintText: _sendingPhase == SendingPhase.preparing
+                            ? '메시지 생성 중...'
+                            : _sendingPhase == SendingPhase.waiting
+                                ? '응답 대기 중...'
+                                : _sendingPhase == SendingPhase.summarizing
+                                    ? '요약 중...'
+                                    : '메시지를 입력하세요',
+                        minLines: 1,
+                        maxLines: 5,
+                        textInputAction: TextInputAction.newline,
+                        suffixIcon: IconButton(
                           icon: _isSending
                               ? SizedBox(
                                   width: 24,
@@ -1814,18 +1971,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                           onPressed: _isSending ? null : _sendMessage,
                         ),
                       ),
-                      IconButton(
-                        icon: Icon(
-                          Icons.more_vert,
-                          color: _showMorePanel
-                              ? Theme.of(context).colorScheme.primary
-                              : null,
-                        ),
-                        onPressed: _showMoreMenu,
-                        padding: const EdgeInsets.only(left: 0, top: 8, right: 8, bottom: 8),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
