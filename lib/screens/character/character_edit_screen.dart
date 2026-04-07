@@ -1079,7 +1079,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
             controller: _communityMoodController,
             label: 'SNS 분위기',
             hintText: '예: 유머러스하고 친근한 분위기',
-            maxLines: 3,
+            maxLines: null,
           ),
           const SizedBox(height: 16),
           CommonCustomTextField(

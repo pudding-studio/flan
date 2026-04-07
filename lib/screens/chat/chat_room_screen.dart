@@ -73,6 +73,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   Map<String, String> _imagePathMap = {}; // image name → file path
   bool _isLoading = true;
   SendingPhase _sendingPhase = SendingPhase.none;
+  int _retryAttempt = 0;
   bool get _isSending => _sendingPhase != SendingPhase.none;
   int? _editingMessageId;
   final Map<int, TextEditingController> _editControllers = {};
@@ -528,55 +529,84 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       if (mounted) setState(() => _sendingPhase = SendingPhase.waiting);
 
-      final aiResponse = await _aiService.sendMessage(
-        systemPrompt: apiData.systemPrompt,
-        contents: apiData.contents,
-        model: _resolveModel(),
-        promptParameters: apiData.parameters,
-        chatRoomId: widget.chatRoomId,
-        characterId: _character?.id,
-      );
+      final modelProvider = context.read<ChatModelSettingsProvider>();
+      await modelProvider.initialized;
+      final model = _resolveModel();
+      final maxRetries = model.retryCount;
+      Object? lastError;
 
-      // Stage 3: Apply outputModify to AI response
-      final responseText = RegexProcessor.apply(aiResponse.text, apiData.regexRules, RegexTarget.outputModify);
+      for (int attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          if (attempt > 0) {
+            debugPrint('Retrying sendMessage (attempt ${attempt + 1}/${maxRetries + 1})');
+            if (mounted) setState(() {
+              _sendingPhase = SendingPhase.waiting;
+              _retryAttempt = attempt;
+            });
+          }
 
-      final assistantTokenCount = aiResponse.usageMetadata?.candidatesTokenCount ??
-          TokenCounter.estimateTokenCount(responseText, tokenizer: tokenizer);
-      final assistantMessage = ChatMessage(
-        chatRoomId: widget.chatRoomId,
-        role: MessageRole.assistant,
-        content: responseText,
-        tokenCount: assistantTokenCount,
-        usageMetadata: aiResponse.usageMetadata,
-        modelId: aiResponse.modelId,
-      );
-
-      final assistantMessageId = await _db.createChatMessage(assistantMessage);
-
-      final pinCreated = await _saveMessageMetadata(assistantMessageId, responseText);
-
-      // 채팅방 토큰 합산 업데이트
-      await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
-
-      final updatedChatRoom = _chatRoom!.copyWith(
-        updatedAt: DateTime.now(),
-      );
-      await _db.updateChatRoom(updatedChatRoom);
-
-      // 자동 요약 트리거 체크: 새 핀이 생성된 경우에만 실행
-      if (pinCreated) {
-        final latestChatRoom = await _db.readChatRoom(widget.chatRoomId);
-        if (latestChatRoom != null) {
-          final shouldTrigger = await _autoSummaryService.shouldTriggerSummary(
+          final aiResponse = await _aiService.sendMessage(
+            systemPrompt: apiData.systemPrompt,
+            contents: apiData.contents,
+            model: model,
+            promptParameters: apiData.parameters,
             chatRoomId: widget.chatRoomId,
-            currentTokenCount: latestChatRoom.totalTokenCount,
+            characterId: _character?.id,
           );
 
-          if (shouldTrigger) {
-            if (mounted) setState(() => _sendingPhase = SendingPhase.summarizing);
-            await _autoSummaryService.generateAllPendingSummaries(chatRoomId: widget.chatRoomId);
+          // Stage 3: Apply outputModify to AI response
+          final responseText = RegexProcessor.apply(aiResponse.text, apiData.regexRules, RegexTarget.outputModify);
+
+          final assistantTokenCount = aiResponse.usageMetadata?.candidatesTokenCount ??
+              TokenCounter.estimateTokenCount(responseText, tokenizer: tokenizer);
+          final assistantMessage = ChatMessage(
+            chatRoomId: widget.chatRoomId,
+            role: MessageRole.assistant,
+            content: responseText,
+            tokenCount: assistantTokenCount,
+            usageMetadata: aiResponse.usageMetadata,
+            modelId: aiResponse.modelId,
+          );
+
+          final assistantMessageId = await _db.createChatMessage(assistantMessage);
+
+          final pinCreated = await _saveMessageMetadata(assistantMessageId, responseText);
+
+          // 채팅방 토큰 합산 업데이트
+          await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
+
+          final updatedChatRoom = _chatRoom!.copyWith(
+            updatedAt: DateTime.now(),
+          );
+          await _db.updateChatRoom(updatedChatRoom);
+
+          // 자동 요약 트리거 체크: 새 핀이 생성된 경우에만 실행
+          if (pinCreated) {
+            final latestChatRoom = await _db.readChatRoom(widget.chatRoomId);
+            if (latestChatRoom != null) {
+              final shouldTrigger = await _autoSummaryService.shouldTriggerSummary(
+                chatRoomId: widget.chatRoomId,
+                currentTokenCount: latestChatRoom.totalTokenCount,
+              );
+
+              if (shouldTrigger) {
+                if (mounted) setState(() => _sendingPhase = SendingPhase.summarizing);
+                await _autoSummaryService.generateAllPendingSummaries(chatRoomId: widget.chatRoomId);
+              }
+            }
           }
+
+          lastError = null;
+          break;
+        } catch (e) {
+          lastError = e;
+          debugPrint('sendMessage attempt ${attempt + 1} failed: $e');
+          if (attempt >= maxRetries) break;
         }
+      }
+
+      if (lastError != null) {
+        throw lastError!;
       }
 
     } catch (e) {
@@ -887,6 +917,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     if (mounted) {
       setState(() {
         _sendingPhase = SendingPhase.none;
+        _retryAttempt = 0;
         if (wasScrolledUp) _hasNewMessage = true;
       });
     }
@@ -1006,40 +1037,64 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       if (mounted) setState(() => _sendingPhase = SendingPhase.waiting);
 
-      final aiResponse2 = await _aiService.sendMessage(
-        systemPrompt: apiData.systemPrompt,
-        contents: apiData.contents,
-        model: _resolveModel(),
-        promptParameters: apiData.parameters,
-        chatRoomId: widget.chatRoomId,
-        characterId: _character?.id,
-      );
+      final model = _resolveModel();
+      final maxRetries = model.retryCount;
+      Object? lastError;
 
-      // Stage 3: Apply outputModify to AI response
-      final responseText2 = RegexProcessor.apply(aiResponse2.text, apiData.regexRules, RegexTarget.outputModify);
+      for (int attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          if (attempt > 0) {
+            debugPrint('Retrying resendLastUserMessage (attempt ${attempt + 1}/${maxRetries + 1})');
+            if (mounted) setState(() => _sendingPhase = SendingPhase.waiting);
+          }
 
-      final tokenCount = aiResponse2.usageMetadata?.candidatesTokenCount ??
-          TokenCounter.estimateTokenCount(responseText2, tokenizer: tokenizer);
-      final assistantMessage = ChatMessage(
-        chatRoomId: widget.chatRoomId,
-        role: MessageRole.assistant,
-        content: responseText2,
-        tokenCount: tokenCount,
-        usageMetadata: aiResponse2.usageMetadata,
-        modelId: aiResponse2.modelId,
-      );
+          final aiResponse2 = await _aiService.sendMessage(
+            systemPrompt: apiData.systemPrompt,
+            contents: apiData.contents,
+            model: model,
+            promptParameters: apiData.parameters,
+            chatRoomId: widget.chatRoomId,
+            characterId: _character?.id,
+          );
 
-      final assistantMessageId = await _db.createChatMessage(assistantMessage);
+          // Stage 3: Apply outputModify to AI response
+          final responseText2 = RegexProcessor.apply(aiResponse2.text, apiData.regexRules, RegexTarget.outputModify);
 
-      await _saveMessageMetadata(assistantMessageId, responseText2);
+          final tokenCount = aiResponse2.usageMetadata?.candidatesTokenCount ??
+              TokenCounter.estimateTokenCount(responseText2, tokenizer: tokenizer);
+          final assistantMessage = ChatMessage(
+            chatRoomId: widget.chatRoomId,
+            role: MessageRole.assistant,
+            content: responseText2,
+            tokenCount: tokenCount,
+            usageMetadata: aiResponse2.usageMetadata,
+            modelId: aiResponse2.modelId,
+          );
 
-      // 채팅방 토큰 합산 업데이트
-      await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
+          final assistantMessageId = await _db.createChatMessage(assistantMessage);
 
-      final updatedChatRoom = _chatRoom!.copyWith(
-        updatedAt: DateTime.now(),
-      );
-      await _db.updateChatRoom(updatedChatRoom);
+          await _saveMessageMetadata(assistantMessageId, responseText2);
+
+          // 채팅방 토큰 합산 업데이트
+          await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
+
+          final updatedChatRoom = _chatRoom!.copyWith(
+            updatedAt: DateTime.now(),
+          );
+          await _db.updateChatRoom(updatedChatRoom);
+
+          lastError = null;
+          break;
+        } catch (e) {
+          lastError = e;
+          debugPrint('resendLastUserMessage attempt ${attempt + 1} failed: $e');
+          if (attempt >= maxRetries) break;
+        }
+      }
+
+      if (lastError != null) {
+        throw lastError!;
+      }
 
     } catch (e) {
       debugPrint('Error resending message: $e');
@@ -1234,35 +1289,63 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       if (mounted) setState(() => _sendingPhase = SendingPhase.waiting);
 
-      final aiResponse3 = await _aiService.sendMessage(
-        systemPrompt: apiData.systemPrompt,
-        contents: apiData.contents,
-        model: _resolveModel(),
-        promptParameters: apiData.parameters,
-        chatRoomId: widget.chatRoomId,
-        characterId: _character?.id,
-      );
+      final model = _resolveModel();
+      final maxRetries = model.retryCount;
+      Object? lastError;
 
-      // Stage 3: Apply outputModify to AI response
-      final responseText3 = RegexProcessor.apply(aiResponse3.text, apiData.regexRules, RegexTarget.outputModify);
+      for (int attempt = 0; attempt <= maxRetries; attempt++) {
+        try {
+          if (attempt > 0) {
+            debugPrint('Retrying regenerateMessage (attempt ${attempt + 1}/${maxRetries + 1})');
+            if (mounted) setState(() {
+              _sendingPhase = SendingPhase.waiting;
+              _retryAttempt = attempt;
+            });
+          }
 
-      final tokenCount = aiResponse3.usageMetadata?.candidatesTokenCount ??
-          TokenCounter.estimateTokenCount(responseText3, tokenizer: tokenizer);
-      final updatedMessage = message.copyWith(
-        content: responseText3,
-        tokenCount: tokenCount,
-        editedAt: DateTime.now(),
-        usageMetadata: aiResponse3.usageMetadata,
-        modelId: aiResponse3.modelId,
-      );
+          final aiResponse3 = await _aiService.sendMessage(
+            systemPrompt: apiData.systemPrompt,
+            contents: apiData.contents,
+            model: model,
+            promptParameters: apiData.parameters,
+            chatRoomId: widget.chatRoomId,
+            characterId: _character?.id,
+          );
 
-      await _db.updateChatMessage(updatedMessage);
+          // Stage 3: Apply outputModify to AI response
+          final responseText3 = RegexProcessor.apply(aiResponse3.text, apiData.regexRules, RegexTarget.outputModify);
 
-      await _db.deleteChatMessageMetadataByMessage(messageId);
-      await _saveMessageMetadata(messageId, responseText3);
+          final tokenCount = aiResponse3.usageMetadata?.candidatesTokenCount ??
+              TokenCounter.estimateTokenCount(responseText3, tokenizer: tokenizer);
+          final updatedMessage = message.copyWith(
+            content: responseText3,
+            tokenCount: tokenCount,
+            editedAt: DateTime.now(),
+            usageMetadata: aiResponse3.usageMetadata,
+            modelId: aiResponse3.modelId,
+          );
 
-      // 채팅방 토큰 합산 업데이트
-      await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
+          await _db.updateChatMessage(updatedMessage);
+
+          await _db.deleteChatMessageMetadataByMessage(messageId);
+          await _saveMessageMetadata(messageId, responseText3);
+
+          // 채팅방 토큰 합산 업데이트
+          await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
+
+          lastError = null;
+          break;
+        } catch (e) {
+          lastError = e;
+          debugPrint('regenerateMessage attempt ${attempt + 1} failed: $e');
+          if (attempt >= maxRetries) break;
+        }
+      }
+
+      if (lastError != null) {
+        throw lastError!;
+      }
+
     } catch (e) {
       debugPrint('Error regenerating message: $e');
       if (!mounted) return;
@@ -2007,7 +2090,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                         hintText: _sendingPhase == SendingPhase.preparing
                             ? '메시지 생성 중...'
                             : _sendingPhase == SendingPhase.waiting
-                                ? '응답 대기 중...'
+                                ? _retryAttempt > 0
+                                    ? '재전송 중($_retryAttempt)...'
+                                    : '응답 대기 중...'
                                 : _sendingPhase == SendingPhase.summarizing
                                     ? '요약 중...'
                                     : '메시지를 입력하세요',

@@ -88,7 +88,12 @@ class MainActivity : FlutterActivity() {
             val sourceFile = File(sourcePath)
             if (!sourceFile.exists()) return false
 
-            val mimeType = if (fileName.endsWith(".json")) "application/json" else "application/octet-stream"
+            val mimeType = when {
+                fileName.endsWith(".json") -> "application/json"
+                fileName.endsWith(".png") -> "image/png"
+                fileName.endsWith(".jpg") || fileName.endsWith(".jpeg") -> "image/jpeg"
+                else -> "application/octet-stream"
+            }
 
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
                 val contentValues = ContentValues().apply {

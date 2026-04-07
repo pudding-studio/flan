@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:archive/archive.dart';
 import 'package:image/image.dart' as img;
 import '../models/character/character.dart';
 import '../models/character/persona.dart';
@@ -284,7 +285,7 @@ class CharacterCardParser {
         if (uri.startsWith('data:')) {
           // Base64 data URL — extract mime type for extension
           final mimeMatch = RegExp(r'data:([^;]+);').firstMatch(uri);
-          ext = _mimeToExt(mimeMatch?.group(1));
+          ext = mimeToExt(mimeMatch?.group(1));
           final assetName = asset['name'] as String?;
           imageName = (assetName != null && assetName.isNotEmpty)
               ? assetName
@@ -345,7 +346,7 @@ class CharacterCardParser {
   }
 
   /// Maps MIME type string to a file extension.
-  static String _mimeToExt(String? mime) {
+  static String mimeToExt(String? mime) {
     if (mime == null) return 'bin';
     switch (mime.toLowerCase()) {
       case 'image/png': return 'png';
@@ -473,6 +474,123 @@ class CharacterCardParser {
       'data': data,
     };
   }
+
+  /// Character를 Character Card V3 형식으로 변환합니다 (data: URI 인라인 이미지 포함)
+  static Map<String, dynamic> toCharacterCardV3WithDataAssets({
+    required Character character,
+    List<Persona>? personas,
+    List<StartScenario>? startScenarios,
+    List<CharacterBook>? characterBooks,
+    List<({String name, String mimeType, Uint8List bytes, String imageType})>? imageAssets,
+  }) {
+    final v3 = toCharacterCardV3(
+      character: character,
+      personas: personas,
+      startScenarios: startScenarios,
+      characterBooks: characterBooks,
+    );
+
+    if (imageAssets != null && imageAssets.isNotEmpty) {
+      final data = v3['data'] as Map<String, dynamic>;
+      data['assets'] = imageAssets.map((asset) {
+        return {
+          'type': asset.imageType == 'cover' ? 'icon' : 'background',
+          'uri': 'data:${asset.mimeType};base64,${base64.encode(asset.bytes)}',
+          'name': asset.name,
+          'ext': mimeToExt(asset.mimeType),
+        };
+      }).toList();
+    }
+
+    return v3;
+  }
+
+  /// CHARX (ZIP 아카이브) 바이트를 생성합니다
+  /// [assetFiles]: (filename, mimeType, bytes, imageType) — assets/ 폴더에 포함될 이미지 파일 목록
+  static Uint8List buildCharxBytes({
+    required Character character,
+    List<Persona>? personas,
+    List<StartScenario>? startScenarios,
+    List<CharacterBook>? characterBooks,
+    List<({String filename, String mimeType, Uint8List bytes, String imageType})>? assetFiles,
+  }) {
+    final v3 = toCharacterCardV3(
+      character: character,
+      personas: personas,
+      startScenarios: startScenarios,
+      characterBooks: characterBooks,
+    );
+
+    if (assetFiles != null && assetFiles.isNotEmpty) {
+      final data = v3['data'] as Map<String, dynamic>;
+      data['assets'] = assetFiles.map((asset) {
+        final dotIdx = asset.filename.lastIndexOf('.');
+        final ext = dotIdx != -1 ? asset.filename.substring(dotIdx + 1) : 'bin';
+        final baseName = dotIdx != -1 ? asset.filename.substring(0, dotIdx) : asset.filename;
+        return {
+          'type': asset.imageType == 'cover' ? 'icon' : 'background',
+          'uri': 'embeded://assets/${asset.filename}',
+          'name': baseName,
+          'ext': ext,
+        };
+      }).toList();
+    }
+
+    final archive = Archive();
+    final cardBytes = utf8.encode(json.encode(v3));
+    archive.addFile(ArchiveFile('card.json', cardBytes.length, cardBytes));
+
+    if (assetFiles != null) {
+      for (final asset in assetFiles) {
+        final byteList = asset.bytes.toList();
+        archive.addFile(ArchiveFile('assets/${asset.filename}', byteList.length, byteList));
+      }
+    }
+
+    return Uint8List.fromList(ZipEncoder().encode(archive));
+  }
+
+  /// 이미지를 PNG로 변환합니다 (이미 PNG이면 그대로 반환)
+  static Uint8List? convertToPng(Uint8List imageBytes) {
+    if (_isPng(imageBytes)) return imageBytes;
+    try {
+      final decoded = img.decodeImage(imageBytes);
+      if (decoded == null) return null;
+      return Uint8List.fromList(img.encodePng(decoded));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// 이미지를 JPEG로 변환합니다 (이미 JPEG이면 그대로 반환)
+  static Uint8List? convertToJpeg(Uint8List imageBytes, {int quality = 90}) {
+    if (_isJpeg(imageBytes)) return imageBytes;
+    try {
+      final decoded = img.decodeImage(imageBytes);
+      if (decoded == null) return null;
+      return Uint8List.fromList(img.encodeJpg(decoded, quality: quality));
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// 이미지 바이트에서 MIME 타입을 추정합니다
+  static String detectMimeType(Uint8List bytes) {
+    if (_isPng(bytes)) return 'image/png';
+    if (_isJpeg(bytes)) return 'image/jpeg';
+    if (bytes.length >= 4 && bytes[0] == 0x52 && bytes[1] == 0x49 &&
+        bytes[2] == 0x46 && bytes[3] == 0x46) return 'image/webp';
+    if (bytes.length >= 4 && bytes[0] == 0x47 && bytes[1] == 0x49 &&
+        bytes[2] == 0x46 && bytes[3] == 0x38) return 'image/gif';
+    return 'application/octet-stream';
+  }
+
+  static bool _isPng(Uint8List bytes) =>
+      bytes.length >= 4 && bytes[0] == 0x89 && bytes[1] == 0x50 &&
+      bytes[2] == 0x4E && bytes[3] == 0x47;
+
+  static bool _isJpeg(Uint8List bytes) =>
+      bytes.length >= 2 && bytes[0] == 0xFF && bytes[1] == 0xD8;
 
   /// PNG 이미지에 Character Card 메타데이터를 임베드합니다
   /// V3 형식일 경우 ccv3와 chara 두 청크를 모두 삽입합니다

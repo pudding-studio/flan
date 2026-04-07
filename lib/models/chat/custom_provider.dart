@@ -8,6 +8,7 @@ class CustomProvider {
   final String baseUrl;
   final String apiKey;
   final ApiFormat apiFormat;
+  final int retryCount;
 
   const CustomProvider({
     required this.id,
@@ -15,6 +16,7 @@ class CustomProvider {
     required this.baseUrl,
     required this.apiKey,
     this.apiFormat = ApiFormat.openai,
+    this.retryCount = 0,
   });
 
   Map<String, dynamic> toJson() => {
@@ -23,6 +25,7 @@ class CustomProvider {
         'baseUrl': baseUrl,
         'apiKey': apiKey,
         'apiFormat': apiFormat.name,
+        'retryCount': retryCount,
       };
 
   factory CustomProvider.fromJson(Map<String, dynamic> json) => CustomProvider(
@@ -34,6 +37,7 @@ class CustomProvider {
           (f) => f.name == json['apiFormat'],
           orElse: () => ApiFormat.openai,
         ),
+        retryCount: json['retryCount'] as int? ?? 0,
       );
 
   CustomProvider copyWith({
@@ -41,6 +45,7 @@ class CustomProvider {
     String? baseUrl,
     String? apiKey,
     ApiFormat? apiFormat,
+    int? retryCount,
   }) =>
       CustomProvider(
         id: id,
@@ -48,6 +53,7 @@ class CustomProvider {
         baseUrl: baseUrl ?? this.baseUrl,
         apiKey: apiKey ?? this.apiKey,
         apiFormat: apiFormat ?? this.apiFormat,
+        retryCount: retryCount ?? this.retryCount,
       );
 }
 

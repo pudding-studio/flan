@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 import '../../utils/character_image_storage.dart';
@@ -87,21 +88,30 @@ class CoverImage {
       'name': name,
       'order': order,
       'isExpanded': isExpanded,
-      'imageData': imageData?.toList(),
+      'imageData': imageData != null ? base64.encode(imageData!) : null,
       'path': path,
       'imageType': imageType,
     };
   }
 
   factory CoverImage.fromJson(Map<String, dynamic> json) {
-    final imageDataList = json['imageData'] as List<dynamic>?;
+    Uint8List? parsedImageData;
+    final raw = json['imageData'];
+    if (raw is String) {
+      // base64 format (new)
+      parsedImageData = base64.decode(raw);
+    } else if (raw is List) {
+      // raw byte array format (legacy)
+      parsedImageData = Uint8List.fromList(raw.cast<int>());
+    }
+
     return CoverImage(
       id: json['id'] as int?,
       characterId: json['characterId'] as int,
       name: json['name'] as String,
       order: json['order'] as int,
       isExpanded: json['isExpanded'] as bool? ?? false,
-      imageData: imageDataList != null ? Uint8List.fromList(imageDataList.cast<int>()) : null,
+      imageData: parsedImageData,
       path: json['path'] as String?,
       imageType: (json['imageType'] as String?) ?? 'cover',
     );

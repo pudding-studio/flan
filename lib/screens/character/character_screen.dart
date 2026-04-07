@@ -20,6 +20,7 @@ import 'package:path/path.dart' as p;
 import '../../utils/common_dialog.dart';
 import '../../utils/character_card_parser.dart';
 import '../../utils/character_image_storage.dart';
+import '../../utils/streaming_zip_writer.dart';
 import 'character_edit_screen.dart';
 import 'character_view_screen.dart';
 import '../../widgets/character/character_card.dart';
@@ -343,77 +344,457 @@ class _CharacterScreenState extends State<CharacterScreen> {
     }
   }
 
+  // ─── Export: format selection dialog ───────────────────────────────────────
+
   Future<void> _exportCharacter(int characterId) async {
+    final format = await _showExportFormatDialog();
+    if (format == null || !mounted) return;
+
+    // Show loading indicator
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const PopScope(
+        canPop: false,
+        child: Center(child: CircularProgressIndicator()),
+      ),
+    );
+
     try {
-      // 캐릭터와 관련 데이터 로드
-      final character = await _db.readCharacter(characterId);
-      if (character == null) {
-        throw Exception('캐릭터를 찾을 수 없습니다');
-      }
-
-      final personas = await _db.readPersonas(characterId);
-      final startScenarios = await _db.readStartScenarios(characterId);
-      final characterBookFolders = await _db.readCharacterBookFolders(characterId);
-      final standaloneCharacterBooks = await _db.readCharacterBooks(characterId);
-      final coverImages = await _db.readCoverImages(characterId);
-
-      // 각 폴더의 캐릭터북 로드
-      for (final folder in characterBookFolders) {
-        folder.characterBooks.addAll(await _db.readCharacterBooksByFolder(folder.id!));
-      }
-
-      // JSON 생성
-      final jsonData = character.toJson(
-        personas: personas,
-        startScenarios: startScenarios,
-        characterBookFolders: characterBookFolders,
-        standaloneCharacterBooks: standaloneCharacterBooks,
-        coverImages: coverImages,
-      );
-
-      final jsonString = const JsonEncoder.withIndent('  ').convert(jsonData);
-      final fileName = '${character.name}.json';
-
-      // 파일 저장
-      if (Platform.isAndroid) {
-        const platform = MethodChannel('com.flanapp.flan/file_saver');
-        final result = await platform.invokeMethod('saveToDownloads', {
-          'fileName': fileName,
-          'content': jsonString,
-        });
-
-        if (result == true && mounted) {
-          final downloadsPath = '/storage/emulated/0/Download/$fileName';
-          CommonDialog.showSnackBar(
-            context: context,
-            message: '내보내기 완료: $downloadsPath',
-          );
-        } else if (mounted) {
-          CommonDialog.showSnackBar(
-            context: context,
-            message: '파일 저장에 실패했습니다',
-          );
-        }
-      } else if (Platform.isIOS) {
-        final directory = await getApplicationDocumentsDirectory();
-        final filePath = '${directory.path}/$fileName';
-        await File(filePath).writeAsString(jsonString);
-
-        if (mounted) {
-          CommonDialog.showSnackBar(
-            context: context,
-            message: '내보내기 완료: $filePath',
-          );
-        }
-      }
+      await _runExport(characterId, format);
     } catch (e) {
+      if (mounted) {
+        CommonDialog.showSnackBar(context: context, message: '내보내기 실패: $e');
+      }
+    } finally {
+      if (mounted) Navigator.pop(context);
+    }
+  }
+
+  /// Returns a format string or null if cancelled.
+  /// Formats: 'flan' | 'v2_png' | 'v3_charx' | 'v3_charx_jpeg' | 'v3_png' | 'v3_json'
+  Future<String?> _showExportFormatDialog() async {
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('내보내기 형식 선택'),
+        contentPadding: const EdgeInsets.symmetric(vertical: 8),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              title: const Text('Flan 형식'),
+              subtitle: const Text('앱 전용 JSON (이미지 포함)'),
+              onTap: () => Navigator.pop(ctx, 'flan'),
+            ),
+            ListTile(
+              title: const Text('캐릭터카드 v2'),
+              subtitle: const Text('PNG — 일부 데이터 잘릴 수 있음'),
+              onTap: () => Navigator.pop(ctx, 'v2_png'),
+            ),
+            const Divider(height: 1),
+            const Padding(
+              padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: Text('캐릭터카드 v3', style: TextStyle(fontWeight: FontWeight.bold)),
+              ),
+            ),
+            ListTile(
+              leading: const SizedBox(width: 16),
+              title: const Text('charx'),
+              onTap: () => Navigator.pop(ctx, 'v3_charx'),
+            ),
+            ListTile(
+              leading: const SizedBox(width: 16),
+              title: const Text('charx-JPEG'),
+              onTap: () => Navigator.pop(ctx, 'v3_charx_jpeg'),
+            ),
+            ListTile(
+              leading: const SizedBox(width: 16),
+              title: const Text('PNG'),
+              onTap: () => Navigator.pop(ctx, 'v3_png'),
+            ),
+            ListTile(
+              leading: const SizedBox(width: 16),
+              title: const Text('JSON'),
+              onTap: () => Navigator.pop(ctx, 'v3_json'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('취소'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ─── Export: data loading helper ────────────────────────────────────────────
+
+  Future<_CharacterExportData> _loadExportData(int characterId) async {
+    final character = await _db.readCharacter(characterId);
+    if (character == null) throw Exception('캐릭터를 찾을 수 없습니다');
+
+    final personas = await _db.readPersonas(characterId);
+    final startScenarios = await _db.readStartScenarios(characterId);
+    final characterBookFolders = await _db.readCharacterBookFolders(characterId);
+    final standaloneCharacterBooks = await _db.readCharacterBooks(characterId);
+    final coverImages = await _db.readCoverImages(characterId);
+    final additionalImages = await _db.readAdditionalImages(characterId);
+
+    for (final folder in characterBookFolders) {
+      folder.characterBooks.addAll(await _db.readCharacterBooksByFolder(folder.id!));
+    }
+
+    // Flatten all character books for CharacterCard formats
+    final allCharacterBooks = [
+      ...characterBookFolders.expand((f) => f.characterBooks),
+      ...standaloneCharacterBooks,
+    ];
+
+    // Merge cover + additional images for export
+    final allImages = [...coverImages, ...additionalImages];
+
+    return _CharacterExportData(
+      character: character,
+      personas: personas,
+      startScenarios: startScenarios,
+      characterBookFolders: characterBookFolders,
+      standaloneCharacterBooks: standaloneCharacterBooks,
+      allCharacterBooks: allCharacterBooks,
+      coverImages: allImages,
+    );
+  }
+
+  // ─── Export: file save helpers ───────────────────────────────────────────────
+
+  Future<void> _saveTextFile(String fileName, String content) async {
+    if (Platform.isAndroid) {
+      const platform = MethodChannel('com.flanapp.flan/file_saver');
+      final ok = await platform.invokeMethod<bool>('saveToDownloads', {
+        'fileName': fileName,
+        'content': content,
+      });
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '내보내기 실패: $e',
+          message: ok == true
+              ? '내보내기 완료: /storage/emulated/0/Download/$fileName'
+              : '파일 저장에 실패했습니다',
         );
       }
+    } else if (Platform.isIOS) {
+      final dir = await getApplicationDocumentsDirectory();
+      final path = '${dir.path}/$fileName';
+      await File(path).writeAsString(content);
+      if (mounted) {
+        CommonDialog.showSnackBar(context: context, message: '내보내기 완료: $path');
+      }
     }
+  }
+
+  Future<void> _saveBinaryFile(String fileName, List<int> bytes) async {
+    final tempDir = await getTemporaryDirectory();
+    final tempFile = File('${tempDir.path}/$fileName');
+    await tempFile.writeAsBytes(bytes);
+    try {
+      if (Platform.isAndroid) {
+        const platform = MethodChannel('com.flanapp.flan/file_saver');
+        final ok = await platform.invokeMethod<bool>('copyFileToDownloads', {
+          'sourcePath': tempFile.path,
+          'fileName': fileName,
+        });
+        if (mounted) {
+          CommonDialog.showSnackBar(
+            context: context,
+            message: ok == true
+                ? '내보내기 완료: /storage/emulated/0/Download/$fileName'
+                : '파일 저장에 실패했습니다',
+          );
+        }
+      } else if (Platform.isIOS) {
+        final dir = await getApplicationDocumentsDirectory();
+        final path = '${dir.path}/$fileName';
+        await tempFile.copy(path);
+        if (mounted) {
+          CommonDialog.showSnackBar(context: context, message: '내보내기 완료: $path');
+        }
+      }
+    } finally {
+      if (await tempFile.exists()) await tempFile.delete();
+    }
+  }
+
+  // ─── Export: format dispatch ─────────────────────────────────────────────────
+
+  Future<void> _runExport(int characterId, String format) async {
+    final data = await _loadExportData(characterId);
+
+    switch (format) {
+      case 'flan':
+        await _exportFlan(data);
+      case 'v2_png':
+        await _exportV2Png(data);
+      case 'v3_json':
+        await _exportV3Json(data);
+      case 'v3_png':
+        await _exportV3Png(data);
+      case 'v3_charx':
+        await _exportV3Charx(data);
+      case 'v3_charx_jpeg':
+        await _exportV3CharxJpeg(data);
+    }
+  }
+
+  // ─── Export: Flan format (ZIP: character.json + images/) ──────────────────
+
+  Future<void> _exportFlan(_CharacterExportData data) async {
+    // Build cover image entries WITHOUT imageData (references only)
+    final imageEntries = <CoverImage>[];
+    final imageFiles = <({String zipPath, CoverImage image})>[];
+
+    for (final image in data.coverImages) {
+      final ext = image.path != null
+          ? p.extension(image.path!).replaceFirst('.', '').toLowerCase()
+          : 'png';
+      final zipPath = 'images/${image.name}.${ext.isNotEmpty ? ext : 'png'}';
+
+      imageEntries.add(CoverImage(
+        characterId: image.characterId,
+        name: image.name,
+        order: image.order,
+        isExpanded: image.isExpanded,
+        imageType: image.imageType,
+      ));
+      imageFiles.add((zipPath: zipPath, image: image));
+    }
+
+    final jsonData = data.character.toJson(
+      personas: data.personas,
+      startScenarios: data.startScenarios,
+      characterBookFolders: data.characterBookFolders,
+      standaloneCharacterBooks: data.standaloneCharacterBooks,
+      coverImages: imageEntries,
+    );
+
+    // Stream to ZIP: character.json + image files (one at a time)
+    final tempDir = await getTemporaryDirectory();
+    final fileName = '${data.character.name}.flan';
+    final tempZipPath = '${tempDir.path}/$fileName';
+
+    final zipWriter = await StreamingZipWriter.open(tempZipPath);
+
+    final jsonBytes = utf8.encode(const JsonEncoder.withIndent('  ').convert(jsonData));
+    await zipWriter.addFile('character.json', jsonBytes);
+
+    for (final entry in imageFiles) {
+      final bytes = await entry.image.resolveImageData();
+      if (bytes == null) continue;
+      await zipWriter.addFile(entry.zipPath, bytes);
+    }
+
+    await zipWriter.close();
+
+    await _saveBinaryFile(fileName, await File(tempZipPath).readAsBytes());
+    await File(tempZipPath).delete();
+  }
+
+  // ─── Export: Character Card V2 PNG ──────────────────────────────────────────
+
+  Future<void> _exportV2Png(_CharacterExportData data) async {
+    final cardJson = CharacterCardParser.toCharacterCardV2(
+      character: data.character,
+      personas: data.personas,
+      startScenarios: data.startScenarios,
+      characterBooks: data.allCharacterBooks,
+    );
+
+    final coverBytes = await _resolveCoverPng(data);
+    final pngBytes = CharacterCardParser.embedMetadataInPng(coverBytes, cardJson);
+    if (pngBytes == null) throw Exception('PNG 메타데이터 삽입 실패');
+
+    await _saveBinaryFile('${data.character.name}.png', pngBytes);
+  }
+
+  // ─── Export: Character Card V3 JSON ─────────────────────────────────────────
+
+  Future<void> _exportV3Json(_CharacterExportData data) async {
+    final imageAssets = await _buildDataUriAssets(data);
+
+    final cardJson = CharacterCardParser.toCharacterCardV3WithDataAssets(
+      character: data.character,
+      personas: data.personas,
+      startScenarios: data.startScenarios,
+      characterBooks: data.allCharacterBooks,
+      imageAssets: imageAssets,
+    );
+
+    await _saveTextFile(
+      '${data.character.name}.json',
+      const JsonEncoder.withIndent('  ').convert(cardJson),
+    );
+  }
+
+  // ─── Export: Character Card V3 PNG ──────────────────────────────────────────
+
+  Future<void> _exportV3Png(_CharacterExportData data) async {
+    final imageAssets = await _buildDataUriAssets(data);
+
+    final cardJson = CharacterCardParser.toCharacterCardV3WithDataAssets(
+      character: data.character,
+      personas: data.personas,
+      startScenarios: data.startScenarios,
+      characterBooks: data.allCharacterBooks,
+      imageAssets: imageAssets,
+    );
+
+    final coverBytes = await _resolveCoverPng(data);
+    final pngBytes = CharacterCardParser.embedMetadataInPng(coverBytes, cardJson);
+    if (pngBytes == null) throw Exception('PNG 메타데이터 삽입 실패');
+
+    await _saveBinaryFile('${data.character.name}.png', pngBytes);
+  }
+
+  // ─── Export: Character Card V3 charx ────────────────────────────────────────
+
+  Future<void> _exportV3Charx(_CharacterExportData data) async {
+    final assetFiles = await _buildCharxAssets(data, asJpeg: false);
+
+    final charxBytes = CharacterCardParser.buildCharxBytes(
+      character: data.character,
+      personas: data.personas,
+      startScenarios: data.startScenarios,
+      characterBooks: data.allCharacterBooks,
+      assetFiles: assetFiles,
+    );
+
+    await _saveBinaryFile('${data.character.name}.charx', charxBytes);
+  }
+
+  // ─── Export: Character Card V3 charx-JPEG ───────────────────────────────────
+
+  Future<void> _exportV3CharxJpeg(_CharacterExportData data) async {
+    final assetFiles = await _buildCharxAssets(data, asJpeg: true);
+
+    final charxBytes = CharacterCardParser.buildCharxBytes(
+      character: data.character,
+      personas: data.personas,
+      startScenarios: data.startScenarios,
+      characterBooks: data.allCharacterBooks,
+      assetFiles: assetFiles,
+    );
+
+    // Polyglot: JPEG cover + ZIP concatenated
+    final List<int> polyglot;
+    if (assetFiles.isNotEmpty) {
+      polyglot = [...assetFiles.first.bytes, ...charxBytes];
+    } else {
+      polyglot = charxBytes;
+    }
+
+    await _saveBinaryFile('${data.character.name}.charx', polyglot);
+  }
+
+  // ─── Export: image helpers ───────────────────────────────────────────────────
+
+  /// Returns PNG bytes for the cover image (or a 1×1 white placeholder).
+  Future<Uint8List> _resolveCoverPng(_CharacterExportData data) async {
+    final covers = data.coverImages.where((i) => i.imageType == 'cover').toList()
+      ..sort((CoverImage a, CoverImage b) => a.order.compareTo(b.order));
+
+    final selected = covers.isEmpty ? null : (data.character.selectedCoverImageId != null
+        ? covers.firstWhere(
+            (i) => i.id == data.character.selectedCoverImageId,
+            orElse: () => covers.first,
+          )
+        : covers.first);
+
+    if (selected != null) {
+      final bytes = await selected.resolveImageData();
+      if (bytes != null) {
+        final png = CharacterCardParser.convertToPng(bytes);
+        if (png != null) return png;
+      }
+    }
+
+    // 1×1 white PNG placeholder
+    return _minimalPng();
+  }
+
+  /// Builds assets list with data: URIs (for JSON/PNG exports).
+  /// Uses raw bytes without re-encoding to avoid OOM.
+  Future<List<({String name, String mimeType, Uint8List bytes, String imageType})>> _buildDataUriAssets(
+      _CharacterExportData data) async {
+    final result = <({String name, String mimeType, Uint8List bytes, String imageType})>[];
+    final sorted = [...data.coverImages]
+      ..sort((CoverImage a, CoverImage b) => a.order.compareTo(b.order));
+
+    for (final image in sorted) {
+      final bytes = await image.resolveImageData();
+      if (bytes == null) continue;
+      final mime = CharacterCardParser.detectMimeType(bytes);
+      result.add((name: image.name, mimeType: mime, bytes: bytes, imageType: image.imageType));
+    }
+
+    return result;
+  }
+
+  /// Builds asset file list for CHARX archive.
+  /// Only converts the first cover image to JPEG when [asJpeg] is true; others pass through.
+  Future<List<({String filename, String mimeType, Uint8List bytes, String imageType})>> _buildCharxAssets(
+      _CharacterExportData data, {required bool asJpeg}) async {
+    final result = <({String filename, String mimeType, Uint8List bytes, String imageType})>[];
+    final sorted = [...data.coverImages]
+      ..sort((CoverImage a, CoverImage b) => a.order.compareTo(b.order));
+
+    bool firstCoverDone = false;
+    for (final image in sorted) {
+      final raw = await image.resolveImageData();
+      if (raw == null) continue;
+
+      final Uint8List bytes;
+      final String ext;
+      final String mime;
+      final bool isCover = image.imageType == 'cover';
+
+      if (asJpeg && isCover && !firstCoverDone) {
+        final jpeg = CharacterCardParser.convertToJpeg(raw);
+        if (jpeg == null) continue;
+        bytes = jpeg;
+        ext = 'jpg';
+        mime = 'image/jpeg';
+      } else {
+        bytes = raw;
+        final detected = CharacterCardParser.detectMimeType(raw);
+        ext = CharacterCardParser.mimeToExt(detected);
+        mime = detected;
+      }
+
+      final filename = isCover ? '${image.name}.$ext' : '${image.name}.$ext';
+      result.add((filename: filename, mimeType: mime, bytes: bytes, imageType: image.imageType));
+      if (isCover) firstCoverDone = true;
+    }
+
+    return result;
+  }
+
+  /// Returns a minimal 1×1 white PNG as a fallback cover.
+  Uint8List _minimalPng() {
+    // Pre-built 1×1 white PNG bytes
+    return Uint8List.fromList([
+      0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, // PNG signature
+      0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, // IHDR length + type
+      0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, // width=1, height=1
+      0x08, 0x02, 0x00, 0x00, 0x00, 0x90, 0x77, 0x53, // bit depth, color type, crc
+      0xDE, 0x00, 0x00, 0x00, 0x0C, 0x49, 0x44, 0x41, // IDAT length + type
+      0x54, 0x08, 0xD7, 0x63, 0xF8, 0xFF, 0xFF, 0x3F, // deflate stream
+      0x00, 0x05, 0xFE, 0x02, 0xFE, 0xDC, 0xCC, 0x59, // data + crc
+      0xE7, 0x00, 0x00, 0x00, 0x00, 0x49, 0x45, 0x4E, // IEND length + type
+      0x44, 0xAE, 0x42, 0x60, 0x82,                   // IEND crc
+    ]);
   }
 
   Future<void> _importCharacter() async {
@@ -423,6 +804,16 @@ class _CharacterScreenState extends State<CharacterScreen> {
       );
 
       if (result == null || result.files.isEmpty) return;
+
+      if (!mounted) return;
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => const PopScope(
+          canPop: false,
+          child: Center(child: CircularProgressIndicator()),
+        ),
+      );
 
       final file = File(result.files.single.path!);
       var extension = result.files.single.extension?.toLowerCase();
@@ -580,6 +971,76 @@ class _CharacterScreenState extends State<CharacterScreen> {
         );
         coverImages = allAssets.where((i) => i.imageType == 'cover').toList();
         additionalImages = allAssets.where((i) => i.imageType == 'additional').toList();
+      } else if (extension == 'flan') {
+        // Flan ZIP 형식: character.json + images/
+        final rawBytes = await file.readAsBytes();
+        final archive = ZipDecoder().decodeBytes(rawBytes, verify: false);
+
+        final charJsonFile = archive.findFile('character.json');
+        if (charJsonFile == null) {
+          throw FormatException('.flan 파일에서 character.json을 찾을 수 없습니다');
+        }
+
+        final jsonString = utf8.decode(charJsonFile.content as List<int>);
+        final jsonData = json.decode(jsonString) as Map<String, dynamic>;
+
+        character = Character.fromJson(jsonData);
+        personas = (jsonData['personas'] as List?)
+            ?.map((item) => Persona.fromJson(item as Map<String, dynamic>))
+            .toList();
+        startScenarios = (jsonData['startScenarios'] as List?)
+            ?.map((item) => StartScenario.fromJson(item as Map<String, dynamic>))
+            .toList();
+        characterBookFolders = (jsonData['characterBookFolders'] as List?)
+            ?.map((item) => CharacterBookFolder.fromJson(item as Map<String, dynamic>))
+            .toList() ?? (jsonData['lorebookFolders'] as List?)
+            ?.map((item) => CharacterBookFolder.fromJson(item as Map<String, dynamic>))
+            .toList();
+        standaloneCharacterBooks = (jsonData['standaloneCharacterBooks'] as List?)
+            ?.map((item) => CharacterBook.fromJson(item as Map<String, dynamic>))
+            .toList() ?? (jsonData['standaloneLorebooks'] as List?)
+            ?.map((item) => CharacterBook.fromJson(item as Map<String, dynamic>))
+            .toList();
+
+        // Restore images from ZIP entries
+        final jsonCoverImages = (jsonData['coverImages'] as List?) ?? [];
+        coverImages = [];
+        for (final imgJson in jsonCoverImages) {
+          final imgData = imgJson as Map<String, dynamic>;
+          final name = imgData['name'] as String? ?? 'image';
+          final imageType = (imgData['imageType'] as String?) ?? 'cover';
+          final order = imgData['order'] as int? ?? 0;
+
+          // Find matching image file in ZIP (images/{name}.*)
+          ArchiveFile? found;
+          for (final entry in archive) {
+            if (!entry.isFile) continue;
+            if (entry.name.startsWith('images/') &&
+                p.basenameWithoutExtension(entry.name) == name) {
+              found = entry;
+              break;
+            }
+          }
+
+          if (found != null) {
+            final imgBytes = Uint8List.fromList(found.content as List<int>);
+            final ext = p.extension(found.name).replaceFirst('.', '');
+            try {
+              final savedPath = await CharacterImageStorage.saveImage(
+                character.name, name, ext, imgBytes,
+              );
+              coverImages.add(CoverImage(
+                characterId: 0,
+                name: name,
+                order: order,
+                path: savedPath,
+                imageType: imageType,
+              ));
+            } catch (_) {
+              // Skip unreadable images
+            }
+          }
+        }
       } else {
         throw FormatException('지원하지 않는 파일 형식입니다');
       }
@@ -646,6 +1107,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
       await _loadCharacters();
 
       if (mounted) {
+        Navigator.pop(context); // dismiss loading
         CommonDialog.showSnackBar(
           context: context,
           message: '캐릭터를 성공적으로 가져왔습니다',
@@ -653,6 +1115,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
       }
     } catch (e) {
       if (mounted) {
+        Navigator.pop(context); // dismiss loading
         CommonDialog.showSnackBar(
           context: context,
           message: '캐릭터 가져오기 실패: $e',
@@ -1292,4 +1755,24 @@ class _CharacterScreenState extends State<CharacterScreen> {
       },
     );
   }
+}
+
+class _CharacterExportData {
+  final Character character;
+  final List<Persona> personas;
+  final List<StartScenario> startScenarios;
+  final List<CharacterBookFolder> characterBookFolders;
+  final List<CharacterBook> standaloneCharacterBooks;
+  final List<CharacterBook> allCharacterBooks;
+  final List<CoverImage> coverImages;
+
+  _CharacterExportData({
+    required this.character,
+    required this.personas,
+    required this.startScenarios,
+    required this.characterBookFolders,
+    required this.standaloneCharacterBooks,
+    required this.allCharacterBooks,
+    required this.coverImages,
+  });
 }
