@@ -56,13 +56,19 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
         _chatRoomId = roomId;
         _messages = messages;
       });
-      _scrollToBottom();
+      _scrollToBottom(force: true);
     }
   }
 
-  void _scrollToBottom() {
+  bool get _isNearBottom {
+    if (!_scrollController.hasClients) return true;
+    final pos = _scrollController.position;
+    return pos.maxScrollExtent - pos.pixels < 150;
+  }
+
+  void _scrollToBottom({bool force = false}) {
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
+      if (_scrollController.hasClients && (force || _isNearBottom)) {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
           duration: const Duration(milliseconds: 300),
