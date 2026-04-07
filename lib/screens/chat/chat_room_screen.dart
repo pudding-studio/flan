@@ -515,7 +515,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       await _db.deleteChatMessage(messageId);
       // 채팅방 토큰 합산 업데이트
       await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
-      await _loadChatData();
+      await _loadChatData(showLoading: false);
       if (!mounted) return;
       CommonDialog.showSnackBar(
         context: context,
@@ -609,7 +609,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       await _db.updateChatMessage(updatedMessage);
       await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
       _cancelEditMessage();
-      await _loadChatData();
+      await _loadChatData(showLoading: false);
       if (!mounted) return;
       CommonDialog.showSnackBar(
         context: context,
@@ -1620,7 +1620,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         selectedPersonaId: _chatRoom!.selectedPersonaId,
         initialTab: _drawerTab,
         onTabChanged: (tab) => _drawerTab = tab,
-        onChatRoomUpdated: _loadChatData,
+        onChatRoomUpdated: () => _loadChatData(showLoading: false),
         chatPrompts: _chatPrompts,
         personas: _personas,
         onModelChanged: _onModelChanged,
