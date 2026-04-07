@@ -798,9 +798,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Widget _buildModelDrawer() {
-    final selectableProviders = ChatModelProvider.values
-        .where((p) => p != ChatModelProvider.all)
-        .toList();
+    final selectableProviders = ChatModelProvider.values.toList();
 
     return Drawer(
       child: SafeArea(

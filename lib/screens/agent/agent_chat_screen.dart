@@ -356,9 +356,7 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
   }
 
   Widget _buildModelDrawer() {
-    final selectableProviders = ChatModelProvider.values
-        .where((p) => p != ChatModelProvider.all)
-        .toList();
+    final selectableProviders = ChatModelProvider.values.toList();
 
     return Drawer(
       child: SafeArea(
@@ -376,9 +374,7 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
                 _buildSettingRow(
                   label: '제조사',
                   child: CommonDropdownButton<ChatModelProvider>(
-                    value: provider.selectedProvider == ChatModelProvider.all
-                        ? selectableProviders.first
-                        : provider.selectedProvider,
+                    value: provider.selectedProvider,
                     items: selectableProviders,
                     onChanged: (p) { if (p != null) provider.setProvider(p); },
                     labelBuilder: (p) => p.displayName,

@@ -8,7 +8,6 @@ enum ApiFormat {
 }
 
 enum ChatModelProvider {
-  all('ALL'),
   googleAIStudio('Google AI Studio'),
   vertexAi('Vertex AI'),
   openai('OpenAI'),
@@ -278,9 +277,6 @@ enum ChatModel {
   const ChatModel(this.displayName, this.provider, this.modelId, this.apiFormat, this.pricing);
 
   static List<ChatModel> getModelsByProvider(ChatModelProvider provider) {
-    if (provider == ChatModelProvider.all) {
-      return ChatModel.values;
-    }
     return ChatModel.values
         .where((model) => model.provider == provider)
         .toList();

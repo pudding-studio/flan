@@ -589,12 +589,8 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
 
   Widget _buildChatSettings() {
     final modelProvider = context.watch<ChatModelSettingsProvider>();
-    final selectableProviders = ChatModelProvider.values
-        .where((p) => p != ChatModelProvider.all)
-        .toList();
-    final effectiveProvider = modelProvider.selectedProvider == ChatModelProvider.all
-        ? modelProvider.selectedModel.provider
-        : modelProvider.selectedProvider;
+    final selectableProviders = ChatModelProvider.values.toList();
+    final effectiveProvider = modelProvider.selectedProvider;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

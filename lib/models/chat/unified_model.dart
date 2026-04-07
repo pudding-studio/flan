@@ -90,13 +90,6 @@ class UnifiedModel {
       return UnifiedModel.fromCustomModel(m, provider: cp);
     }
 
-    if (provider == ChatModelProvider.all) {
-      return [
-        ...builtIn,
-        ...customModels.map(resolveCustom),
-      ];
-    }
-
     if (provider == ChatModelProvider.custom) {
       return customModels.map(resolveCustom).toList();
     }

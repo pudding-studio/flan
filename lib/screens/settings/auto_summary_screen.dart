@@ -514,7 +514,7 @@ _syncContentFromControllers();
             child: Builder(builder: (context) {
               final dropdownItems = <DropdownMenuItem<String>>[];
               for (final p in ChatModelProvider.values) {
-                if (p == ChatModelProvider.all || p == ChatModelProvider.custom) continue;
+                if (p == ChatModelProvider.custom) continue;
                 dropdownItems.add(DropdownMenuItem(
                   value: p.name,
                   child: Text(p.displayName),
