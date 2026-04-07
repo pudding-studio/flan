@@ -4,11 +4,11 @@ Format:
 [Comment]Auther:'author name'|Time:'YYYYMMDDHHmm'|Content:'comment text'
 
 Rules:
-- Generate at least 5 comments
+- Generate 3-5 comments
 - Comments should naturally react to the post content
 - Write from the perspective of characters within the worldview
 - Time MUST be exactly 12 digits in 'YYYYMMDDHHmm' format (e.g. '202604041523')
 - Distribute times realistically around the current time
 - All comment times MUST be after the provided base time
-- NEVER use 'Me', 'User', '나', or '사용자' as an author name
+- The {{user}} character NEVER writes posts or comments. Do NOT use {{user}} as an author.
 - Output language MUST match the user's language (infer from the worldview/context provided)

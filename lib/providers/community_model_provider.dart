@@ -13,6 +13,7 @@ class CommunityModelProvider extends ChangeNotifier {
   UnifiedModel _selectedModel = UnifiedModel.fromChatModel(ChatModel.geminiPro31Preview);
   List<CustomModel> _customModels = [];
   List<CustomProvider> _customProviders = [];
+  late final Future<void> initialized;
 
   ChatModelProvider get selectedProvider => _selectedProvider;
   UnifiedModel get selectedModel => _selectedModel;
@@ -24,7 +25,7 @@ class CommunityModelProvider extends ChangeNotifier {
       );
 
   CommunityModelProvider() {
-    _load();
+    initialized = _load();
   }
 
   Future<void> _load() async {

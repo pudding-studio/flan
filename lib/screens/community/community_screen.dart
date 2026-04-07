@@ -43,6 +43,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
   List<CommunityPost> _posts = [];
   bool _isLoading = true;
   bool _isGenerating = false;
+  bool _isSubmitting = false;
+
+  // Track newly created items for highlighting
+  final Set<int> _newPostIds = {};
+  final Set<int> _newCommentIds = {};
 
   // Draft state for retry on failure
   String _draftPostAuthor = '익명';
@@ -85,6 +90,22 @@ class _CommunityScreenState extends State<CommunityScreen> {
     });
   }
 
+  Future<UnifiedModel> _getModel() async {
+    final provider = context.read<CommunityModelProvider>();
+    await provider.initialized;
+    return provider.selectedModel;
+  }
+
+  String _appendCommunitySettings(String systemPrompt) {
+    if (_character?.communityMood?.isNotEmpty == true) {
+      systemPrompt += '\n- Community mood: ${_character!.communityMood}';
+    }
+    if (_character?.communityLanguage?.isNotEmpty == true) {
+      systemPrompt += '\n- Language: ${_character!.communityLanguage}';
+    }
+    return systemPrompt;
+  }
+
   String _buildWorldviewText() {
     final parts = <String>[];
 
@@ -123,23 +144,19 @@ class _CommunityScreenState extends State<CommunityScreen> {
       return;
     }
 
+    _newPostIds.clear();
+    _newCommentIds.clear();
     setState(() => _isGenerating = true);
 
     try {
-      final model = context.read<CommunityModelProvider>().selectedModel;
+      final model = await _getModel();
       final now = DateTime.now();
       final nowStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
       var systemPrompt = await rootBundle.loadString(
         'assets/defaults/community_prompts/community_generate.txt',
       );
-
-      if (_character?.communityMood?.isNotEmpty == true) {
-        systemPrompt += '\n- Community mood: ${_character!.communityMood}';
-      }
-      if (_character?.communityLanguage?.isNotEmpty == true) {
-        systemPrompt += '\n- Language: ${_character!.communityLanguage}';
-      }
+      systemPrompt = _appendCommunitySettings(systemPrompt);
 
       String latestPostInfo = '';
       if (_posts.isNotEmpty) {
@@ -170,13 +187,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
       final parsed = CommunityParser.parse(response.text, chatRoomId: widget.chatRoomId);
       for (final post in parsed) {
         final postId = await _db.createCommunityPost(post);
+        _newPostIds.add(postId);
         for (final comment in post.comments) {
-          await _db.createCommunityComment(CommunityComment(
+          final commentId = await _db.createCommunityComment(CommunityComment(
             postId: postId,
             author: comment.author,
             time: comment.time,
             content: comment.content,
           ));
+          _newCommentIds.add(commentId);
         }
       }
 
@@ -266,7 +285,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Future<void> _submitPost({required String author, required String title, required String content}) async {
-    setState(() => _isGenerating = true);
+    _newPostIds.clear();
+    _newCommentIds.clear();
+    setState(() => _isSubmitting = true);
     try {
       final replies = await _generatePostReplies(title: title, content: content);
 
@@ -279,13 +300,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
         content: content,
       );
       final postId = await _db.createCommunityPost(post);
+      _newPostIds.add(postId);
       for (final c in replies) {
-        await _db.createCommunityComment(CommunityComment(
+        final commentId = await _db.createCommunityComment(CommunityComment(
           postId: postId,
           author: c.author,
           time: c.time,
           content: c.content,
         ));
+        _newCommentIds.add(commentId);
       }
 
       _draftPostAuthor = '익명';
@@ -296,7 +319,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('등록 실패: $e')));
     } finally {
-      if (mounted) setState(() => _isGenerating = false);
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
@@ -374,7 +397,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Future<void> _submitComment({required CommunityPost post, required String author, required String content}) async {
-    setState(() => _isGenerating = true);
+    _newPostIds.clear();
+    _newCommentIds.clear();
+    setState(() => _isSubmitting = true);
     try {
       // Add user comment to post context for AI without saving to DB yet
       final now = DateTime.now();
@@ -401,9 +426,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
         time: now,
         content: content,
       );
-      await _db.createCommunityComment(userComment);
+      final userCommentId = await _db.createCommunityComment(userComment);
+      _newCommentIds.add(userCommentId);
       for (final c in aiReplies) {
-        await _db.createCommunityComment(c);
+        final commentId = await _db.createCommunityComment(c);
+        _newCommentIds.add(commentId);
       }
 
       _draftCommentAuthor.remove(post.id!);
@@ -413,7 +440,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('등록 실패: $e')));
     } finally {
-      if (mounted) setState(() => _isGenerating = false);
+      if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
@@ -421,16 +448,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
     required String title,
     required String content,
   }) async {
-    final model = context.read<CommunityModelProvider>().selectedModel;
+    final model = await _getModel();
     var systemPrompt = await rootBundle.loadString(
       'assets/defaults/community_prompts/post_replies.txt',
     );
-    if (_character?.communityMood?.isNotEmpty == true) {
-      systemPrompt += '\n- Community mood: ${_character!.communityMood}';
-    }
-    if (_character?.communityLanguage?.isNotEmpty == true) {
-      systemPrompt += '\n- Language: ${_character!.communityLanguage}';
-    }
+    systemPrompt = _appendCommunitySettings(systemPrompt);
     final now = DateTime.now();
     final nowStr = _nowString(now);
     final worldview = _buildWorldviewText();
@@ -455,13 +477,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Future<List<CommunityComment>> _generateCommentReplies({required CommunityPost post}) async {
-    final model = context.read<CommunityModelProvider>().selectedModel;
+    final model = await _getModel();
     var systemPrompt = await rootBundle.loadString(
       'assets/defaults/community_prompts/comment_replies.txt',
     );
-    if (_character?.communityMood?.isNotEmpty == true) {
-      systemPrompt += '\n- Community mood: ${_character!.communityMood}';
-    }
+    systemPrompt = _appendCommunitySettings(systemPrompt);
     if (_character?.communityLanguage?.isNotEmpty == true) {
       systemPrompt += '\n- Language: ${_character!.communityLanguage}';
     }
@@ -558,8 +578,20 @@ class _CommunityScreenState extends State<CommunityScreen> {
         actions: [
           Transform.translate(
               offset: const Offset(6, 0),
-              child: OutlinedButton(
-                onPressed: _isGenerating ? null : _regenerate,
+              child: _isSubmitting
+                  ? Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
+                      child: SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: onSecondary,
+                        ),
+                      ),
+                    )
+                  : OutlinedButton(
+                onPressed: _isGenerating ? null : _showWritePost,
                 style: OutlinedButton.styleFrom(
                   side: BorderSide(color: _isGenerating ? onSecondary.withValues(alpha: 0.4) : onSecondary),
                   shape: RoundedRectangleBorder(
@@ -570,7 +602,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
                 child: Text(
-                  'New',
+                  '게시글 작성',
                   style: TextStyle(
                     color: _isGenerating ? onSecondary.withValues(alpha: 0.4) : onSecondary,
                     fontWeight: FontWeight.bold,
@@ -586,25 +618,25 @@ class _CommunityScreenState extends State<CommunityScreen> {
         ],
       ),
       endDrawer: _buildModelDrawer(),
-      floatingActionButton: _isGenerating
-          ? null
-          : FloatingActionButton(
-              backgroundColor: Theme.of(context).colorScheme.secondary,
-              foregroundColor: Theme.of(context).colorScheme.onSecondary,
-              onPressed: _showWritePost,
-              child: const Icon(Icons.edit),
-            ),
-      body: _isLoading || _isGenerating
+      body: _isLoading
           ? const Center(child: CircularProgressIndicator())
-          : RefreshIndicator(
-              onRefresh: _regenerate,
-              child: _posts.isEmpty
-                  ? _buildEmptyState()
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      itemCount: _posts.length,
-                      itemBuilder: (context, i) => _buildPostCard(_posts[i]),
-                    ),
+          : Column(
+              children: [
+                if (_isGenerating)
+                  const LinearProgressIndicator(),
+                Expanded(
+                  child: RefreshIndicator(
+                    onRefresh: _regenerate,
+                    child: _posts.isEmpty
+                        ? _buildEmptyState()
+                        : ListView.builder(
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            itemCount: _posts.length,
+                            itemBuilder: (context, i) => _buildPostCard(_posts[i]),
+                          ),
+                  ),
+                ),
+              ],
             ),
     );
   }
@@ -641,16 +673,21 @@ class _CommunityScreenState extends State<CommunityScreen> {
   Widget _buildPostCard(CommunityPost post) {
     final secondaryContainer = Theme.of(context).colorScheme.secondaryContainer;
     final onSecondaryContainer = Theme.of(context).colorScheme.onSecondaryContainer;
+    final isNewPost = post.id != null && _newPostIds.contains(post.id);
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       child: Card(
-        color: Theme.of(context).colorScheme.surface,
+        color: isNewPost
+            ? Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.1)
+            : Theme.of(context).colorScheme.surface,
         elevation: 0,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(12),
           side: BorderSide(
-            color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
+            color: isNewPost
+                ? Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.5)
+                : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
           ),
         ),
         child: Padding(
@@ -745,8 +782,17 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Widget _buildComment(CommunityComment comment) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+    final isNewComment = comment.id != null && _newCommentIds.contains(comment.id);
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 6),
+      padding: isNewComment ? const EdgeInsets.all(6) : EdgeInsets.zero,
+      decoration: isNewComment
+          ? BoxDecoration(
+              color: Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(8),
+            )
+          : null,
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
