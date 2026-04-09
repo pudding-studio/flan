@@ -47,24 +47,11 @@ class AutoSummaryService {
   }
 
   /// Check if auto-summary should trigger (global settings, chatRoomId=0)
-  Future<bool> shouldTriggerSummary({
-    required int chatRoomId,
-    required int currentTokenCount,
-  }) async {
+  Future<bool> shouldTriggerSummary({required int chatRoomId}) async {
     final settings = await _db.getAutoSummarySettings(0);
     if (settings == null || !settings.isEnabled) return false;
-
-    // Agent mode: trigger on every pin creation regardless of token count
-    if (settings.isAgentEnabled) {
-      _log('Agent mode: triggering on pin creation');
-      return true;
-    }
-
-    final shouldTrigger = currentTokenCount >= settings.tokenThreshold;
-    if (shouldTrigger) {
-      _log('Trigger condition met: $currentTokenCount >= ${settings.tokenThreshold} tokens');
-    }
-    return shouldTrigger;
+    _log('Trigger condition met: auto-summary enabled');
+    return true;
   }
 
   /// Generate pending summaries only for pin ranges outside the token window.
@@ -97,21 +84,7 @@ class AutoSummaryService {
       return;
     }
 
-    // Find the token-window cutoff by counting from the end backwards
-    final cutoffMessageId = _findCutoffMessageId(allMessages, settings.tokenThreshold);
-    _log('Token cutoff messageId=$cutoffMessageId (threshold=${settings.tokenThreshold})');
-
-    // Only summarize pin ranges whose endPinId is at or before the cutoff
-    final eligiblePinIds = _filterPinsBeforeCutoff(
-      allMessages: allMessages,
-      pinnedMessageIds: pinnedMessageIds,
-      cutoffMessageId: cutoffMessageId,
-    );
-
-    if (eligiblePinIds.isEmpty) {
-      _log('No pin ranges outside token window, skipping');
-      return;
-    }
+    final eligiblePinIds = pinnedMessageIds;
 
     final existingSummaries = await _db.getChatSummaries(chatRoomId);
     final summarizedEndIds = existingSummaries.map((s) => s.endPinMessageId).toSet();
@@ -201,41 +174,6 @@ class AutoSummaryService {
     }
 
     _logSuccess('Summary generation complete: $generatedCount new summaries created');
-  }
-
-  /// Count tokens from the most recent message backwards and return the
-  /// message ID where cumulative tokens first reach or exceed the threshold.
-  /// Returns 0 if all messages fit within the threshold (nothing to summarize).
-  int _findCutoffMessageId(List<ChatMessage> allMessages, int tokenThreshold) {
-    int cumulative = 0;
-    for (int i = allMessages.length - 1; i >= 0; i--) {
-      cumulative += allMessages[i].tokenCount;
-      if (cumulative >= tokenThreshold) {
-        return allMessages[i].id ?? 0;
-      }
-    }
-    return 0;
-  }
-
-  /// Return only pinned message IDs whose position is at or before the cutoff.
-  List<int> _filterPinsBeforeCutoff({
-    required List<ChatMessage> allMessages,
-    required List<int> pinnedMessageIds,
-    required int cutoffMessageId,
-  }) {
-    if (cutoffMessageId == 0) return [];
-
-    final cutoffIdx = allMessages.indexWhere((m) => m.id == cutoffMessageId);
-    if (cutoffIdx == -1) return [];
-
-    final result = <int>[];
-    for (final pinId in pinnedMessageIds) {
-      final pinIdx = allMessages.indexWhere((m) => m.id == pinId);
-      if (pinIdx != -1 && pinIdx <= cutoffIdx) {
-        result.add(pinId);
-      }
-    }
-    return result;
   }
 
   /// Load keyword map for keyword substitution in summary prompts

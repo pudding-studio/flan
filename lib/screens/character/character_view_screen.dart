@@ -253,13 +253,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
         selectedStartScenarioId: _selectedScenarioIndex != null
             ? _startScenarios[_selectedScenarioIndex!].id
             : null,
-        pinMode: prefs.getString('default_pin_mode') ?? 'auto',
-        autoPinByDate: prefs.getBool('default_auto_pin_by_date') ?? false,
-        autoPinByLocation: prefs.getBool('default_auto_pin_by_location') ?? false,
-        autoPinByAi: prefs.getBool('default_auto_pin_by_ai') ?? false,
-        autoPinByMessageCount: prefs.getBool('default_auto_pin_by_message_count_enabled') ?? true
-            ? (prefs.getInt('default_auto_pin_by_message_count') ?? 10)
-            : null,
+        autoPinByMessageCount: prefs.getInt('default_auto_pin_by_message_count') ?? 10,
       );
 
       final chatRoomId = await paginationDb.createChatRoom(chatRoom);

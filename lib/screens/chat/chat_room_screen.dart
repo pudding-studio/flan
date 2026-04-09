@@ -286,20 +286,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           ? await _db.readPromptRegexRules(chatRoom.selectedChatPromptId!)
           : <PromptRegexRule>[];
 
-      // Load summarized message IDs and calculate threshold index
+      // Load summarized message IDs
       final summarizedIds = await _autoSummaryService.getSummarizedMessageIds(widget.chatRoomId);
-      int? summaryThresholdIndex;
-      final summarySettings = await _db.getAutoSummarySettings(0);
-      if (summarySettings != null && summarySettings.isEnabled && messages.isNotEmpty) {
-        int cumulative = 0;
-        for (int i = messages.length - 1; i >= 0; i--) {
-          cumulative += messages[i].tokenCount;
-          if (cumulative >= summarySettings.tokenThreshold) {
-            summaryThresholdIndex = i;
-            break;
-          }
-        }
-      }
+      const int? summaryThresholdIndex = null;
 
       if (!mounted) return;
 
@@ -650,7 +639,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             if (latestChatRoom != null) {
               final shouldTrigger = await _autoSummaryService.shouldTriggerSummary(
                 chatRoomId: widget.chatRoomId,
-                currentTokenCount: latestChatRoom.totalTokenCount,
               );
 
               if (shouldTrigger) {
@@ -836,26 +824,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       previous: previous,
     );
 
-    final isAutoMode = _chatRoom?.pinMode != 'manual';
     bool shouldPin = false;
-    if (isAutoMode && _chatRoom != null) {
-      shouldPin = MetadataParser.shouldAutoPinWithOptions(
-        metadata,
-        previous,
-        byDate: _chatRoom!.autoPinByDate,
-        byLocation: _chatRoom!.autoPinByLocation,
-      );
-      // AI 자동 핀: 【📌|ON】 태그 감지
-      if (!shouldPin && _chatRoom!.autoPinByAi) {
-        final aiPin = MetadataParser.parseAiPinTag(content);
-        if (aiPin == true) shouldPin = true;
-      }
-      // 메시지 수 기준 자동 핀
-      if (!shouldPin && _chatRoom!.autoPinByMessageCount != null && _chatRoom!.autoPinByMessageCount! > 0) {
-        final count = await _db.countMetadataSinceLastPin(widget.chatRoomId);
-        if (count >= _chatRoom!.autoPinByMessageCount!) {
-          shouldPin = true;
-        }
+    if (_chatRoom != null && _chatRoom!.autoPinByMessageCount != null && _chatRoom!.autoPinByMessageCount! > 0) {
+      final count = await _db.countMetadataSinceLastPin(widget.chatRoomId);
+      if (count >= _chatRoom!.autoPinByMessageCount!) {
+        shouldPin = true;
       }
     }
     final finalMetadata = shouldPin ? metadata.copyWith(isPinned: true) : metadata;
@@ -1061,28 +1034,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     });
   }
 
-  Future<void> _onPinModeChanged(String mode) async {
+  Future<void> _onAutoPinMessageCountChanged(int? count) async {
     if (_chatRoom == null) return;
     final updated = _chatRoom!.copyWith(
-      pinMode: mode,
-      updatedAt: DateTime.now(),
-    );
-    await _db.updateChatRoom(updated);
-    setState(() => _chatRoom = updated);
-  }
-
-  Future<void> _onAutoPinOptionChanged({
-    bool? byDate,
-    bool? byLocation,
-    bool? byAi,
-    int? byMessageCount,
-  }) async {
-    if (_chatRoom == null) return;
-    final updated = _chatRoom!.copyWith(
-      autoPinByDate: byDate,
-      autoPinByLocation: byLocation,
-      autoPinByAi: byAi,
-      autoPinByMessageCount: byMessageCount,
+      autoPinByMessageCount: count,
       updatedAt: DateTime.now(),
     );
     await _db.updateChatRoom(updated);
@@ -1237,10 +1192,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         selectedConditionPresetId: _chatRoom!.selectedConditionPresetId,
         memo: _chatRoom!.memo,
         summary: _chatRoom!.summary,
-        pinMode: _chatRoom!.pinMode,
-        autoPinByDate: _chatRoom!.autoPinByDate,
-        autoPinByLocation: _chatRoom!.autoPinByLocation,
-        autoPinByAi: _chatRoom!.autoPinByAi,
         autoPinByMessageCount: _chatRoom!.autoPinByMessageCount,
         selectedModelId: _chatRoom!.selectedModelId,
         modelPreset: _chatRoom!.modelPreset,
@@ -1932,11 +1883,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         onModelPresetChanged: _onModelPresetChanged,
         onPromptChanged: _onPromptChanged,
         onPersonaChanged: _onPersonaChanged,
-        onPinModeChanged: _onPinModeChanged,
-        onAutoPinByDateChanged: (v) => _onAutoPinOptionChanged(byDate: v),
-        onAutoPinByLocationChanged: (v) => _onAutoPinOptionChanged(byLocation: v),
-        onAutoPinByAiChanged: (v) => _onAutoPinOptionChanged(byAi: v),
-        onAutoPinByMessageCountChanged: (v) => _onAutoPinOptionChanged(byMessageCount: v),
+        onAutoPinByMessageCountChanged: _onAutoPinMessageCountChanged,
         onPresetChanged: _onPresetChanged,
       ),
       appBar: _isSearching

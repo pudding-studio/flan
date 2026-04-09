@@ -47,7 +47,6 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
   UnifiedModel _selectedModel = UnifiedModel.fromChatModel(ChatModel.geminiFlash3Preview);
   List<CustomModel> _customModels = [];
   List<CustomProvider> _customProviders = [];
-  late TextEditingController _tokenThresholdController;
   AutoSummarySettings? _existingSettings;
   bool _isLoading = true;
 
@@ -58,12 +57,7 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
   );
   final _maxOutputTokensController = TextEditingController(text: '10000');
 
-  // Pin defaults (global only)
-  String _pinMode = 'auto';
-  bool _autoPinByDate = false;
-  bool _autoPinByLocation = false;
-  bool _autoPinByAi = false;
-  bool _autoPinByMessageCountEnabled = true;
+  // Message count default (global only)
   final _autoPinByMessageCountController = TextEditingController(text: '10');
 
   // Drag state
@@ -77,7 +71,6 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _tokenThresholdController = TextEditingController(text: '5000');
     _loadSettings();
   }
 
@@ -85,13 +78,7 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
     try {
       if (widget.chatRoomId == 0) {
         final prefs = await SharedPreferences.getInstance();
-        _pinMode = prefs.getString('default_pin_mode') ?? 'auto';
-        _autoPinByDate = prefs.getBool('default_auto_pin_by_date') ?? false;
-        _autoPinByLocation = prefs.getBool('default_auto_pin_by_location') ?? false;
-        _autoPinByAi = prefs.getBool('default_auto_pin_by_ai') ?? false;
         final msgCount = prefs.getInt('default_auto_pin_by_message_count');
-        _autoPinByMessageCountEnabled =
-            prefs.getBool('default_auto_pin_by_message_count_enabled') ?? true;
         _autoPinByMessageCountController.text = msgCount?.toString() ?? '10';
       }
 
@@ -134,7 +121,6 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
           _useSubModel = settings.useSubModel;
           _selectedModel = resolvedModel;
           _selectedProvider = resolvedModel.provider;
-          _tokenThresholdController.text = settings.tokenThreshold.toString();
 
           if (settings.parameters != null && settings.parameters!.isNotEmpty) {
             _parameters =
@@ -190,8 +176,7 @@ _syncContentFromControllers();
       isAgentEnabled: _isAgentEnabled,
       useSubModel: _useSubModel,
       summaryModel: _selectedModel.id,
-      tokenThreshold:
-          int.tryParse(_tokenThresholdController.text) ?? 5000,
+      tokenThreshold: 0,
       summaryPrompt: '',
       parameters: jsonEncode(_parameters.toJson()),
       summaryPromptItems: SummaryPromptItem.listToJson(_promptItems),
@@ -205,19 +190,9 @@ _syncContentFromControllers();
 
     if (widget.chatRoomId == 0) {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('default_pin_mode', _pinMode);
-      await prefs.setBool('default_auto_pin_by_date', _autoPinByDate);
-      await prefs.setBool('default_auto_pin_by_location', _autoPinByLocation);
-      await prefs.setBool('default_auto_pin_by_ai', _autoPinByAi);
-      await prefs.setBool(
-          'default_auto_pin_by_message_count_enabled', _autoPinByMessageCountEnabled);
-      if (_autoPinByMessageCountEnabled) {
-        final msgCount = int.tryParse(_autoPinByMessageCountController.text);
-        if (msgCount != null && msgCount > 0) {
-          await prefs.setInt('default_auto_pin_by_message_count', msgCount);
-        } else {
-          await prefs.remove('default_auto_pin_by_message_count');
-        }
+      final msgCount = int.tryParse(_autoPinByMessageCountController.text);
+      if (msgCount != null && msgCount > 0) {
+        await prefs.setInt('default_auto_pin_by_message_count', msgCount);
       } else {
         await prefs.remove('default_auto_pin_by_message_count');
       }
@@ -421,7 +396,6 @@ _syncContentFromControllers();
   @override
   void dispose() {
     _tabController.dispose();
-    _tokenThresholdController.dispose();
     _maxOutputTokensController.dispose();
     _autoPinByMessageCountController.dispose();
     for (final controller in _itemContentControllers.values) {
@@ -600,101 +574,21 @@ _syncContentFromControllers();
           ],
           const Divider(),
           _buildSectionHeader('자동 요약 시작 조건'),
+        ],
+        if (widget.chatRoomId == 0) ...[
+          const Divider(),
+          _buildSectionHeader('요약 주기'),
           Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: CommonEditText(
-              controller: _tokenThresholdController,
+              controller: _autoPinByMessageCountController,
               keyboardType: TextInputType.number,
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
               ],
-              hintText: '토큰 수를 입력하세요',
+              hintText: 'N개 메시지마다 자동 요약',
             ),
           ),
-        ],
-        if (widget.chatRoomId == 0) ...[
-          const Divider(),
-          _buildSectionHeader('핀 기본 설정'),
-          _buildListTile(
-            icon: Icons.push_pin,
-            title: '핀 모드',
-            trailing: DropdownButton<String>(
-              value: _pinMode,
-              underline: const SizedBox(),
-              borderRadius: BorderRadius.circular(16),
-              items: const [
-                DropdownMenuItem(value: 'auto', child: Text('자동')),
-                DropdownMenuItem(value: 'manual', child: Text('수동')),
-              ],
-              onChanged: (value) {
-                if (value != null) {
-                  setState(() {
-                    _pinMode = value;
-                  });
-                }
-              },
-            ),
-          ),
-          if (_pinMode == 'auto') ...[
-            SwitchListTile(
-              secondary: const Icon(Icons.calendar_today),
-              title: const Text('날짜 기준'),
-              subtitle: const Text('날짜 메타데이터로 자동 핀 생성'),
-              value: _autoPinByDate,
-              onChanged: (value) {
-                setState(() {
-                  _autoPinByDate = value;
-                });
-              },
-            ),
-            SwitchListTile(
-              secondary: const Icon(Icons.location_on),
-              title: const Text('장소 기준'),
-              subtitle: const Text('장소 메타데이터로 자동 핀 생성'),
-              value: _autoPinByLocation,
-              onChanged: (value) {
-                setState(() {
-                  _autoPinByLocation = value;
-                });
-              },
-            ),
-            SwitchListTile(
-              secondary: const Icon(Icons.smart_toy),
-              title: const Text('AI 자동'),
-              subtitle: const Text('AI가 자동으로 핀 생성'),
-              value: _autoPinByAi,
-              onChanged: (value) {
-                setState(() {
-                  _autoPinByAi = value;
-                });
-              },
-            ),
-            SwitchListTile(
-              secondary: const Icon(Icons.format_list_numbered),
-              title: const Text('메시지 수 기준'),
-              subtitle: const Text('N개 메시지마다 자동 핀 생성'),
-              value: _autoPinByMessageCountEnabled,
-              onChanged: (value) {
-                setState(() {
-                  _autoPinByMessageCountEnabled = value;
-                });
-              },
-            ),
-            if (_autoPinByMessageCountEnabled)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: CommonEditText(
-                  controller: _autoPinByMessageCountController,
-                  hintText: '메시지 수를 입력하세요',
-                  size: CommonEditTextSize.small,
-                  keyboardType: TextInputType.number,
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                  ],
-                ),
-              ),
-          ],
         ],
         const SizedBox(height: 32),
       ],
@@ -1139,15 +1033,4 @@ _syncContentFromControllers();
     );
   }
 
-  Widget _buildListTile({
-    required IconData icon,
-    required String title,
-    Widget? trailing,
-  }) {
-    return ListTile(
-      leading: Icon(icon),
-      title: Text(title),
-      trailing: trailing,
-    );
-  }
 }

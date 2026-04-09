@@ -2067,7 +2067,6 @@ class DatabaseHelper {
     final chatRoom = ChatRoom(
       characterId: agentCharacterId,
       name: 'Flan Agent',
-      pinMode: 'manual',
     );
 
     final map = chatRoom.toMap();

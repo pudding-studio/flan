@@ -47,10 +47,6 @@ class ChatRoomDrawer extends StatefulWidget {
   final ValueChanged<String> onModelPresetChanged;
   final ValueChanged<int?> onPromptChanged;
   final ValueChanged<int?> onPersonaChanged;
-  final ValueChanged<String> onPinModeChanged;
-  final ValueChanged<bool> onAutoPinByDateChanged;
-  final ValueChanged<bool> onAutoPinByLocationChanged;
-  final ValueChanged<bool> onAutoPinByAiChanged;
   final ValueChanged<int?> onAutoPinByMessageCountChanged;
   final ValueChanged<int?> onPresetChanged;
 
@@ -68,10 +64,6 @@ class ChatRoomDrawer extends StatefulWidget {
     required this.onModelPresetChanged,
     required this.onPromptChanged,
     required this.onPersonaChanged,
-    required this.onPinModeChanged,
-    required this.onAutoPinByDateChanged,
-    required this.onAutoPinByLocationChanged,
-    required this.onAutoPinByAiChanged,
     required this.onAutoPinByMessageCountChanged,
     required this.onPresetChanged,
   });
@@ -726,70 +718,21 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
         ],
         const SizedBox(height: 8),
         _buildVerticalSettingRow(
-          label: '핀 모드',
-          child: CommonDropdownButton<String>(
-            value: widget.chatRoom.pinMode,
-            items: const ['auto', 'manual'],
-            onChanged: (mode) {
-              if (mode != null) widget.onPinModeChanged(mode);
-            },
-            labelBuilder: (mode) => mode == 'auto' ? '자동' : '수동',
-            size: CommonDropdownButtonSize.xsmall,
+          label: '요약 메시지 수',
+          child: SizedBox(
+            width: double.infinity,
+            child: CommonEditText(
+              controller: _pinMessageCountController,
+              hintText: '메시지 수',
+              size: CommonEditTextSize.small,
+              keyboardType: TextInputType.number,
+              onChanged: (value) {
+                final count = int.tryParse(value);
+                widget.onAutoPinByMessageCountChanged(count != null && count > 0 ? count : null);
+              },
+            ),
           ),
         ),
-        if (widget.chatRoom.pinMode == 'auto') ...[
-          const SizedBox(height: 4),
-          _buildToggleRow(
-            label: '날짜 기준',
-            value: widget.chatRoom.autoPinByDate,
-            onChanged: widget.onAutoPinByDateChanged,
-          ),
-          _buildToggleRow(
-            label: '장소 기준',
-            value: widget.chatRoom.autoPinByLocation,
-            onChanged: widget.onAutoPinByLocationChanged,
-          ),
-          _buildToggleRow(
-            label: 'AI 자동',
-            value: widget.chatRoom.autoPinByAi,
-            onChanged: widget.onAutoPinByAiChanged,
-          ),
-          _buildToggleRow(
-            label: '메시지 수 기준',
-            value: widget.chatRoom.autoPinByMessageCount != null,
-            onChanged: (value) {
-              if (value) {
-                _pinMessageCountController.text = '10';
-                widget.onAutoPinByMessageCountChanged(10);
-              } else {
-                _pinMessageCountController.clear();
-                widget.onAutoPinByMessageCountChanged(null);
-              }
-            },
-          ),
-          if (widget.chatRoom.autoPinByMessageCount != null)
-            Padding(
-              padding: const EdgeInsets.only(left: 32),
-              child: _buildVerticalSettingRow(
-                label: '요약 메시지 수',
-                child: SizedBox(
-                  width: double.infinity,
-                  child: CommonEditText(
-                    controller: _pinMessageCountController,
-                    hintText: '메시지 수',
-                    size: CommonEditTextSize.small,
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) {
-                      final count = int.tryParse(value);
-                      if (count != null && count > 0) {
-                        widget.onAutoPinByMessageCountChanged(count);
-                      }
-                    },
-                  ),
-                ),
-              ),
-            ),
-        ],
       ],
     );
   }
@@ -1021,40 +964,6 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
         const SizedBox(height: 4),
         child,
       ],
-    );
-  }
-
-  Widget _buildToggleRow({
-    required String label,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 0),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 3,
-            child: Text(label, style: _subLabelStyle),
-          ),
-          Expanded(
-            flex: 1,
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: SizedBox(
-                height: 28,
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Switch(
-                    value: value,
-                    onChanged: onChanged,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
