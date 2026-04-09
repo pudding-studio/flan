@@ -15,6 +15,7 @@ import '../models/chat/custom_provider.dart';
 import '../models/chat/unified_model.dart';
 import '../models/prompt/prompt_parameters.dart';
 import '../utils/prompt_builder.dart';
+import 'agent_summary_service.dart';
 import 'ai_service.dart';
 
 class AutoSummaryService {
@@ -52,6 +53,13 @@ class AutoSummaryService {
   }) async {
     final settings = await _db.getAutoSummarySettings(0);
     if (settings == null || !settings.isEnabled) return false;
+
+    // Agent mode: trigger on every pin creation regardless of token count
+    if (settings.isAgentEnabled) {
+      _log('Agent mode: triggering on pin creation');
+      return true;
+    }
+
     final shouldTrigger = currentTokenCount >= settings.tokenThreshold;
     if (shouldTrigger) {
       _log('Trigger condition met: $currentTokenCount >= ${settings.tokenThreshold} tokens');
@@ -67,6 +75,13 @@ class AutoSummaryService {
   }) async {
     final settings = await _db.getAutoSummarySettings(0);
     if (settings == null || !settings.isEnabled) return;
+
+    if (settings.isAgentEnabled) {
+      _log('Agent mode enabled, delegating to AgentSummaryService');
+      final agentService = AgentSummaryService();
+      await agentService.processAgentSummary(chatRoomId: chatRoomId);
+      return;
+    }
 
     _log('Starting summary generation for chatRoom=$chatRoomId');
 
