@@ -716,23 +716,6 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
           const SizedBox(height: 8),
           _buildPresetSection(),
         ],
-        const SizedBox(height: 8),
-        _buildVerticalSettingRow(
-          label: '요약 메시지 수',
-          child: SizedBox(
-            width: double.infinity,
-            child: CommonEditText(
-              controller: _pinMessageCountController,
-              hintText: '메시지 수',
-              size: CommonEditTextSize.small,
-              keyboardType: TextInputType.number,
-              onChanged: (value) {
-                final count = int.tryParse(value);
-                widget.onAutoPinByMessageCountChanged(count != null && count > 0 ? count : null);
-              },
-            ),
-          ),
-        ),
       ],
     );
   }
@@ -1313,6 +1296,26 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
                 );
               }
             },
+          ),
+        if (_autoSummaryEnabled)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: _buildVerticalSettingRow(
+              label: '요약 메시지 수',
+              child: SizedBox(
+                width: double.infinity,
+                child: CommonEditText(
+                  controller: _pinMessageCountController,
+                  hintText: '메시지 수',
+                  size: CommonEditTextSize.small,
+                  keyboardType: TextInputType.number,
+                  onChanged: (value) {
+                    final count = int.tryParse(value);
+                    widget.onAutoPinByMessageCountChanged(count != null && count > 0 ? count : null);
+                  },
+                ),
+              ),
+            ),
           ),
         const Divider(height: 1),
         // Content area
