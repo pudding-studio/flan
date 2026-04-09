@@ -295,6 +295,7 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
       endDrawer: _buildModelDrawer(),
       body: Column(
         children: [
+          _buildHelpBanner(),
           Expanded(
             child: _messages.isEmpty
                 ? _buildEmptyState()
@@ -310,6 +311,29 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
                   ),
           ),
           _buildInputArea(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHelpBanner() {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      color: colorScheme.primaryContainer.withValues(alpha: 0.3),
+      child: Row(
+        children: [
+          Icon(Icons.auto_awesome, size: 18, color: colorScheme.primary),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Flan Agent는 캐릭터를 생성하거나 편집할 수 있습니다. 원하는 캐릭터 제작 및 수정을 요청해 보세요.',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: colorScheme.onSurface,
+                  ),
+            ),
+          ),
         ],
       ),
     );

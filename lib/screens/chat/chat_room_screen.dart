@@ -41,6 +41,8 @@ import 'widgets/chat_bottom_panel.dart';
 import 'widgets/chat_room_drawer.dart';
 import '../character/character_view_screen.dart';
 import '../community/community_screen.dart';
+import '../news/news_screen.dart';
+import '../diary/diary_screen.dart';
 
 enum SendingPhase { none, preparing, waiting, summarizing }
 
@@ -761,6 +763,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     text = RegexProcessor.apply(text, _regexRules, RegexTarget.displayModify);
     // <img="이름"> → 캐릭터 이미지가 있으면 로컬 이미지로 변환, 없으면 삭제
     text = text.replaceAllMapped(_imgTagPattern, (match) {
+      if (_chatRoom?.showImages == false) return '';
       final name = match.group(1)!;
       final path = _imagePathMap[name];
       if (path != null) {
@@ -768,6 +771,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       }
       return '';
     });
+    if (_chatRoom?.showImages == false) {
+      text = text.replaceAll(_imageMarkdownPattern, '');
+    }
     return text;
   }
 
@@ -940,6 +946,40 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               ),
               _buildMenuAppIcon(
                 context,
+                icon: Icons.newspaper_outlined,
+                label: 'News',
+                onTap: () {
+                  setState(() => _showMorePanel = false);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => NewsScreen(
+                        characterId: _character!.id!,
+                        chatRoomId: widget.chatRoomId,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              _buildMenuAppIcon(
+                context,
+                icon: Icons.auto_stories_outlined,
+                label: 'Diary',
+                onTap: () {
+                  setState(() => _showMorePanel = false);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => DiaryScreen(
+                        characterId: _character!.id!,
+                        chatRoomId: widget.chatRoomId,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              _buildMenuAppIcon(
+                context,
                 icon: Icons.text_fields,
                 label: '텍스트 설정',
                 onTap: () {
@@ -1060,6 +1100,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     if (_chatRoom == null) return;
     final updated = _chatRoom!.copyWith(
       selectedConditionPresetId: presetId,
+      updatedAt: DateTime.now(),
+    );
+    await _db.updateChatRoom(updated);
+    setState(() => _chatRoom = updated);
+  }
+
+  Future<void> _onShowImagesChanged(bool value) async {
+    if (_chatRoom == null) return;
+    final updated = _chatRoom!.copyWith(
+      showImages: value,
       updatedAt: DateTime.now(),
     );
     await _db.updateChatRoom(updated);
@@ -1931,6 +1981,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         onPersonaChanged: _onPersonaChanged,
         onAutoPinByMessageCountChanged: _onAutoPinMessageCountChanged,
         onPresetChanged: _onPresetChanged,
+        onShowImagesChanged: _onShowImagesChanged,
       ),
       appBar: _isSearching
           ? AppBar(

@@ -40,7 +40,7 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
   late TabController _tabController;
 
   bool _isEnabled = true;
-  bool _isAgentEnabled = false;
+  bool _isAgentEnabled = true;
   bool _useSubModel = false;
   ChatModelProvider _selectedProvider = ChatModelProvider.googleAIStudio;
   String? _selectedCustomProviderId;

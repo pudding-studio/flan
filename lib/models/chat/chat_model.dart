@@ -100,6 +100,13 @@ enum ChatModel {
     ApiFormat.gemini,
     ModelPricing(inputPrice: 0.15, cachedInputPrice: 0.015, outputPrice: 0.60, thinkingOutputPrice: 3.50),
   ),
+  geminiFlashLite31Preview(
+    'Gemini 3.1 Flash Lite Preview',
+    ChatModelProvider.googleAIStudio,
+    'gemini-3.1-flash-lite-preview',
+    ApiFormat.gemini,
+    ModelPricing(inputPrice: 0.25, cachedInputPrice: 0.025, outputPrice: 1.50),
+  ),
   geminiFlashLite25(
     'Gemini 2.5 Flash Lite',
     ChatModelProvider.googleAIStudio,
@@ -144,6 +151,13 @@ enum ChatModel {
     ApiFormat.gemini,
     ModelPricing(inputPrice: 0.15, cachedInputPrice: 0.015, outputPrice: 0.60, thinkingOutputPrice: 3.50),
   ),
+  vertexGeminiFlashLite31Preview(
+    'Gemini 3.1 Flash Lite Preview',
+    ChatModelProvider.vertexAi,
+    'gemini-3.1-flash-lite-preview',
+    ApiFormat.gemini,
+    ModelPricing(inputPrice: 0.25, cachedInputPrice: 0.025, outputPrice: 1.50),
+  ),
   vertexGeminiFlashLite25(
     'Gemini 2.5 Flash Lite',
     ChatModelProvider.vertexAi,
@@ -153,6 +167,27 @@ enum ChatModel {
   ),
 
   // OpenAI models
+  gpt54(
+    'GPT-5.4',
+    ChatModelProvider.openai,
+    'gpt-5.4',
+    ApiFormat.openai,
+    ModelPricing(inputPrice: 2.50, cachedInputPrice: 0.625, outputPrice: 15.00),
+  ),
+  gpt54Mini(
+    'GPT-5.4 Mini',
+    ChatModelProvider.openai,
+    'gpt-5.4-mini',
+    ApiFormat.openai,
+    ModelPricing(inputPrice: 0.75, cachedInputPrice: 0.075, outputPrice: 4.50),
+  ),
+  gpt54Nano(
+    'GPT-5.4 Nano',
+    ChatModelProvider.openai,
+    'gpt-5.4-nano',
+    ApiFormat.openai,
+    ModelPricing(inputPrice: 0.20, cachedInputPrice: 0.02, outputPrice: 1.25),
+  ),
   o3(
     'o3',
     ChatModelProvider.openai,
@@ -224,6 +259,13 @@ enum ChatModel {
     'claude-opus-4-6',
     ApiFormat.claude,
     ModelPricing(inputPrice: 5.00, cachedInputPrice: 0.50, outputPrice: 25.00),
+  ),
+  claudeSonnet46(
+    'Claude Sonnet 4.6',
+    ChatModelProvider.anthropic,
+    'claude-sonnet-4-6',
+    ApiFormat.claude,
+    ModelPricing(inputPrice: 3.00, cachedInputPrice: 0.30, outputPrice: 15.00),
   ),
   claudeOpus45(
     'Claude Opus 4.5',
