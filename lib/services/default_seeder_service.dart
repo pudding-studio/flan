@@ -25,7 +25,6 @@ class DefaultSeederService {
     if (seededVersion == currentVersion) return;
 
     await seedDefaultChatPrompts();
-    await seedDefaultCharacters();
 
     await prefs.setString(_seededAppVersionKey, currentVersion);
   }

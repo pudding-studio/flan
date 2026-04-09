@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:file_picker/file_picker.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -23,7 +22,6 @@ const String _tutorialCompletedKey = 'tutorial_completed';
 const String showAgentHighlightKey = 'show_agent_highlight';
 
 Future<bool> isTutorialCompleted() async {
-  if (kDebugMode) return false;
   final prefs = await SharedPreferences.getInstance();
   return prefs.getBool(_tutorialCompletedKey) ?? false;
 }
