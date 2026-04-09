@@ -454,9 +454,19 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           : '$rawSystemPrompt\n\n$agentContext';
     }
 
-    // Exclude summarized messages from chat history
-    final summarizedIds = await _autoSummaryService.getSummarizedMessageIds(widget.chatRoomId);
-    final allExcludeIds = {...summarizedIds, ...?excludeMessageIds};
+    // Exclude old messages from chat history
+    Set<int> contextExcludeIds;
+    if (summarySettings != null && summarySettings.isAgentEnabled) {
+      // Agent mode: keep messages from 2 summary periods ago onwards
+      final period = _chatRoom!.autoPinByMessageCount ?? 10;
+      contextExcludeIds = await _autoSummaryService.getAgentModeExcludeIds(
+        chatRoomId: widget.chatRoomId,
+        period: period,
+      );
+    } else {
+      contextExcludeIds = await _autoSummaryService.getSummarizedMessageIds(widget.chatRoomId);
+    }
+    final allExcludeIds = {...contextExcludeIds, ...?excludeMessageIds};
 
     final chatHistoryMap = await _buildChatHistoryMap(
       chatPrompt: chatPrompt,

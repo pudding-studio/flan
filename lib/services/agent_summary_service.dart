@@ -17,7 +17,6 @@ class AgentSummaryService {
   final AiService _aiService = AiService();
 
   static const String _logTag = 'AgentSummary';
-  static const int _messageCount = 10;
 
   void _log(String message) {
     developer.log(
@@ -88,14 +87,17 @@ class AgentSummaryService {
   /// Build context for AI extraction: recent messages + existing entries
   Future<_AgentContext> _buildContext(int chatRoomId) async {
     final allMessages = await _db.readChatMessagesByChatRoom(chatRoomId);
-    final recentMessages = allMessages.length > _messageCount
-        ? allMessages.sublist(allMessages.length - _messageCount)
+
+    // Use autoPinByMessageCount as the extraction range
+    final chatRoom = await _db.readChatRoom(chatRoomId);
+    final period = chatRoom?.autoPinByMessageCount ?? 10;
+    final recentMessages = allMessages.length > period
+        ? allMessages.sublist(allMessages.length - period)
         : allMessages;
 
     final existingEntries = await _db.getAgentEntries(chatRoomId);
 
     // Load character info for context
-    final chatRoom = await _db.readChatRoom(chatRoomId);
     String characterName = '';
     String userName = '';
     if (chatRoom != null) {

@@ -409,6 +409,33 @@ class AutoSummaryService {
     return updated;
   }
 
+  /// Get message IDs to exclude in agent mode.
+  /// Keeps messages from max(0, lastPinIndex - 2*period) onwards.
+  Future<Set<int>> getAgentModeExcludeIds({
+    required int chatRoomId,
+    required int period,
+  }) async {
+    final allMessages = await _db.readChatMessagesByChatRoom(chatRoomId);
+    if (allMessages.isEmpty) return {};
+
+    final pinnedMessageIds = await _getPinnedMessageIds(chatRoomId);
+    if (pinnedMessageIds.isEmpty) return {};
+
+    final lastPinId = pinnedMessageIds.last;
+    final lastPinIdx = allMessages.indexWhere((m) => m.id == lastPinId);
+    if (lastPinIdx == -1) return {};
+
+    final startIdx = (lastPinIdx - 2 * period).clamp(0, allMessages.length);
+    if (startIdx == 0) return {};
+
+    final excludeIds = <int>{};
+    for (int i = 0; i < startIdx; i++) {
+      if (allMessages[i].id != null) excludeIds.add(allMessages[i].id!);
+    }
+    _log('Agent mode: excluding ${excludeIds.length} messages before index $startIdx (lastPin=$lastPinIdx, period=$period)');
+    return excludeIds;
+  }
+
   /// Get all message IDs covered by existing summaries
   Future<Set<int>> getSummarizedMessageIds(int chatRoomId) async {
     final summaries = await _db.getChatSummaries(chatRoomId);
