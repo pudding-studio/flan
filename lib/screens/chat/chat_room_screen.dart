@@ -99,6 +99,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   List<(int msgIdx, int occIdx)> _searchMatches = [];
   int _currentSearchIndex = -1;
   GlobalKey _searchHighlightKey = GlobalKey();
+  bool _highlightKeyActive = false;
 
   @override
   void initState() {
@@ -195,23 +196,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final (messageIndex, _) = _searchMatches[searchIndex];
     final listIndex = _messages.length - 1 - messageIndex;
 
-    setState(() {
-      _searchHighlightKey = GlobalKey();
-    });
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      // Key is on screen → ensureVisible directly
-      if (_searchHighlightKey.currentContext != null) {
-        Scrollable.ensureVisible(
-          _searchHighlightKey.currentContext!,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-          alignment: 0.0,
-        );
-        return;
-      }
-      // Off screen → bring item into view, then ensureVisible
-      _itemScrollController.jumpTo(index: listIndex, alignment: 0.5);
+    void doEnsureVisible() {
+      setState(() {
+        _searchHighlightKey = GlobalKey();
+        _highlightKeyActive = true;
+      });
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (_searchHighlightKey.currentContext != null) {
           Scrollable.ensureVisible(
@@ -219,10 +208,28 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             duration: const Duration(milliseconds: 300),
             curve: Curves.easeOut,
             alignment: 0.0,
-          );
+          ).then((_) {
+            if (mounted) setState(() => _highlightKeyActive = false);
+          });
+        } else {
+          setState(() => _highlightKeyActive = false);
         }
       });
-    });
+    }
+
+    // Check if the item is already on screen
+    final positions = _itemPositionsListener.itemPositions.value;
+    final isOnScreen = positions.any((p) => p.index == listIndex);
+
+    if (isOnScreen) {
+      doEnsureVisible();
+    } else {
+      // Jump first, wait for settle, then assign key
+      _itemScrollController.jumpTo(index: listIndex, alignment: 0.5);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        doEnsureVisible();
+      });
+    }
   }
 
   @override
@@ -1735,7 +1742,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       ? Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.7)
                       : null,
                   currentOccurrence: currentOccurrenceInMsg,
-                  highlightKey: isCurrentSearchMatch ? _searchHighlightKey : null,
+                  highlightKey: (isCurrentSearchMatch && _highlightKeyActive) ? _searchHighlightKey : null,
                 ),
                 if (MetadataParser.parseCharacterTags(message.content).isNotEmpty)
                   const SizedBox(height: 4),
