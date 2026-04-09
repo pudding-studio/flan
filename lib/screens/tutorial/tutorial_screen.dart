@@ -379,8 +379,6 @@ class _TutorialScreenState extends State<TutorialScreen> {
 
   bool _canProceed() {
     switch (_currentPage) {
-      case 1:
-        return _apiKeySaved;
       default:
         return true;
     }
