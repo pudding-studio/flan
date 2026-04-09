@@ -23,6 +23,7 @@ import '../models/chat/chat_room_summary.dart';
 import '../models/chat/chat_summary.dart';
 import '../models/community/community_post.dart';
 import '../models/community/community_comment.dart';
+import '../models/diary/diary_entry.dart';
 import '../utils/metadata_parser.dart';
 
 class DatabaseHelper {
@@ -43,7 +44,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 49,
+      version: 50,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -553,6 +554,24 @@ class DatabaseHelper {
     await db.execute('''
       CREATE INDEX idx_post_id_community_comments
       ON community_comments (post_id)
+    ''');
+
+    // Diary tables
+    await db.execute('''
+      CREATE TABLE diary_entries (
+        id $idType,
+        chat_room_id $intType,
+        author $textType,
+        title $textType,
+        content $textType,
+        date $textType,
+        created_at $textType,
+        FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE
+      )
+    ''');
+    await db.execute('''
+      CREATE INDEX idx_diary_entries_chat_room_date
+      ON diary_entries (chat_room_id, date)
     ''');
   }
 
@@ -1308,6 +1327,25 @@ class DatabaseHelper {
       ''');
       await db.execute('''
         ALTER TABLE community_posts ADD COLUMN favorite_used INTEGER NOT NULL DEFAULT 0
+      ''');
+    }
+
+    if (oldVersion < 50) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS diary_entries (
+          id $idType,
+          chat_room_id $intType,
+          author $textType,
+          title $textType,
+          content $textType,
+          date $textType,
+          created_at $textType,
+          FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE
+        )
+      ''');
+      await db.execute('''
+        CREATE INDEX IF NOT EXISTS idx_diary_entries_chat_room_date
+        ON diary_entries (chat_room_id, date)
       ''');
     }
   }
@@ -3049,6 +3087,56 @@ class DatabaseHelper {
       'UPDATE community_posts SET favorite_used = 1 WHERE id IN ($placeholders)',
       postIds,
     );
+  }
+
+  // ==================== 다이어리 CRUD ====================
+
+  Future<int> createDiaryEntry(DiaryEntry entry) async {
+    final db = await database;
+    final map = entry.toMap();
+    map.remove('id');
+    return await db.insert('diary_entries', map);
+  }
+
+  Future<List<DiaryEntry>> readDiaryEntries(int chatRoomId) async {
+    final db = await database;
+    final maps = await db.query(
+      'diary_entries',
+      where: 'chat_room_id = ?',
+      whereArgs: [chatRoomId],
+      orderBy: 'date DESC, created_at DESC',
+    );
+    return maps.map((m) => DiaryEntry.fromMap(m)).toList();
+  }
+
+  Future<List<DiaryEntry>> readDiaryEntriesByDate(int chatRoomId, String date) async {
+    final db = await database;
+    final maps = await db.query(
+      'diary_entries',
+      where: 'chat_room_id = ? AND date = ?',
+      whereArgs: [chatRoomId, date],
+      orderBy: 'created_at ASC',
+    );
+    return maps.map((m) => DiaryEntry.fromMap(m)).toList();
+  }
+
+  Future<List<String>> readDiaryDates(int chatRoomId) async {
+    final db = await database;
+    final maps = await db.rawQuery(
+      'SELECT DISTINCT date FROM diary_entries WHERE chat_room_id = ? ORDER BY date DESC',
+      [chatRoomId],
+    );
+    return maps.map((m) => m['date'] as String).toList();
+  }
+
+  Future<void> deleteDiaryEntry(int id) async {
+    final db = await database;
+    await db.delete('diary_entries', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> deleteDiaryEntries(int chatRoomId) async {
+    final db = await database;
+    await db.delete('diary_entries', where: 'chat_room_id = ?', whereArgs: [chatRoomId]);
   }
 
   // ==================== 유틸리티 ====================
