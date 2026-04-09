@@ -82,7 +82,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
   final _thinkingMaxTokensController = TextEditingController();
 
   bool get _isEditing => widget.prompt != null;
-  bool get _isReadOnly => widget.prompt?.isDefault ?? false;
+  bool get _isReadOnly => false;
 
   @override
   void initState() {
