@@ -123,6 +123,8 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
 
     if (text.isEmpty && !isRetry) return;
 
+    final chatModelProvider = context.read<ChatModelSettingsProvider>();
+    await chatModelProvider.initialized;
     final model = _resolveModel();
 
     setState(() => _isSending = true);

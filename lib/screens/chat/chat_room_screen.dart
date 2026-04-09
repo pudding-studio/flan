@@ -553,6 +553,20 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     setState(() => _sendingPhase = SendingPhase.preparing);
 
     try {
+      // Fetch and prepend unused favorite community posts
+      final favoritePosts = await _db.readUnusedFavoritePosts(widget.chatRoomId);
+      String favoritePrefix = '';
+      if (favoritePosts.isNotEmpty) {
+        final parts = favoritePosts.map((p) {
+          final buf = StringBuffer('[${p.author}] ${p.title}\n${p.content}');
+          for (final c in p.comments) {
+            buf.write('\n  ㄴ ${c.author}: ${c.content}');
+          }
+          return buf.toString();
+        });
+        favoritePrefix = '【SNS|${parts.join('\n\n')}】';
+      }
+
       final tokenizerProvider = context.read<TokenizerProvider>();
       final tokenizer = tokenizerProvider.selectedTokenizer;
       String combinedUserMessage;
@@ -560,9 +574,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       if (_messages.isNotEmpty && _messages.last.role == MessageRole.user) {
         final lastUserMessage = _messages.last;
-        combinedUserMessage = text.isEmpty
+        final baseContent = text.isEmpty
             ? lastUserMessage.content
             : '${lastUserMessage.content}\n$text';
+        combinedUserMessage = favoritePrefix.isNotEmpty
+            ? '$favoritePrefix\n\n$baseContent'
+            : baseContent;
 
         final tokenCount = TokenCounter.estimateTokenCount(combinedUserMessage, tokenizer: tokenizer);
         final updatedUserMessage = lastUserMessage.copyWith(
@@ -573,15 +590,22 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         await _db.updateChatMessage(updatedUserMessage);
         excludeId = lastUserMessage.id!;
       } else {
-        combinedUserMessage = text;
-        final tokenCount = TokenCounter.estimateTokenCount(text, tokenizer: tokenizer);
+        combinedUserMessage = favoritePrefix.isNotEmpty
+            ? '$favoritePrefix\n\n$text'
+            : text;
+        final tokenCount = TokenCounter.estimateTokenCount(combinedUserMessage, tokenizer: tokenizer);
         final userMessage = ChatMessage(
           chatRoomId: widget.chatRoomId,
           role: MessageRole.user,
-          content: text,
+          content: combinedUserMessage,
           tokenCount: tokenCount,
         );
         excludeId = await _db.createChatMessage(userMessage);
+      }
+
+      // Mark favorite posts as used
+      if (favoritePosts.isNotEmpty) {
+        await _db.markFavoritePostsAsUsed(favoritePosts.map((p) => p.id!).toList());
       }
 
       _messageController.clear();

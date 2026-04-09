@@ -43,7 +43,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 48,
+      version: 49,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -530,6 +530,8 @@ class DatabaseHelper {
         time $textType,
         content $textType,
         created_at $textType,
+        is_favorited $boolType,
+        favorite_used $boolType,
         FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE
       )
     ''');
@@ -1297,6 +1299,15 @@ class DatabaseHelper {
       await db.execute('''
         CREATE INDEX idx_agent_entries_active
         ON agent_entries (chat_room_id, is_active)
+      ''');
+    }
+
+    if (oldVersion < 49) {
+      await db.execute('''
+        ALTER TABLE community_posts ADD COLUMN is_favorited INTEGER NOT NULL DEFAULT 0
+      ''');
+      await db.execute('''
+        ALTER TABLE community_posts ADD COLUMN favorite_used INTEGER NOT NULL DEFAULT 0
       ''');
     }
   }
@@ -2992,6 +3003,52 @@ class DatabaseHelper {
   Future<void> deleteCommunityPosts(int chatRoomId) async {
     final db = await database;
     await db.delete('community_posts', where: 'chat_room_id = ?', whereArgs: [chatRoomId]);
+  }
+
+  Future<void> togglePostFavorite(int postId, bool isFavorited) async {
+    final db = await database;
+    await db.update(
+      'community_posts',
+      {'is_favorited': isFavorited ? 1 : 0},
+      where: 'id = ?',
+      whereArgs: [postId],
+    );
+  }
+
+  Future<List<CommunityPost>> readUnusedFavoritePosts(int chatRoomId) async {
+    final db = await database;
+    final maps = await db.query(
+      'community_posts',
+      where: 'chat_room_id = ? AND is_favorited = 1 AND favorite_used = 0',
+      whereArgs: [chatRoomId],
+      orderBy: 'time ASC',
+    );
+    final posts = maps.map((m) => CommunityPost.fromMap(m)).toList();
+
+    if (posts.isNotEmpty) {
+      final postIds = posts.map((p) => p.id!).toList();
+      final placeholders = List.filled(postIds.length, '?').join(', ');
+      final commentMaps = await db.rawQuery(
+        'SELECT * FROM community_comments WHERE post_id IN ($placeholders)',
+        postIds,
+      );
+      final comments = commentMaps.map((m) => CommunityComment.fromMap(m)).toList();
+      for (final post in posts) {
+        post.comments = comments.where((c) => c.postId == post.id).toList();
+      }
+    }
+
+    return posts;
+  }
+
+  Future<void> markFavoritePostsAsUsed(List<int> postIds) async {
+    if (postIds.isEmpty) return;
+    final db = await database;
+    final placeholders = List.filled(postIds.length, '?').join(', ');
+    await db.rawUpdate(
+      'UPDATE community_posts SET favorite_used = 1 WHERE id IN ($placeholders)',
+      postIds,
+    );
   }
 
   // ==================== 유틸리티 ====================

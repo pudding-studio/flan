@@ -96,6 +96,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final communityProvider = context.read<CommunityModelProvider>();
     final chatProvider = context.read<ChatModelSettingsProvider>();
     await communityProvider.initialized;
+    await chatProvider.initialized;
     switch (communityProvider.modelPreset) {
       case ModelPreset.primary:
         return chatProvider.selectedModel;
@@ -563,6 +564,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
     await _load(showLoading: false);
   }
 
+  Future<void> _toggleFavorite(CommunityPost post) async {
+    final newValue = !post.isFavorited;
+    await _db.togglePostFavorite(post.id!, newValue);
+    await _load(showLoading: false);
+  }
+
   String _nowString(DateTime now) =>
       '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} '
       '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
@@ -707,6 +714,20 @@ class _CommunityScreenState extends State<CommunityScreen> {
             children: [
               Row(
                 children: [
+                  InkWell(
+                    onTap: () => _toggleFavorite(post),
+                    borderRadius: BorderRadius.circular(4),
+                    child: Icon(
+                      post.isFavorited ? Icons.star : Icons.star_border,
+                      size: 18,
+                      color: post.favoriteUsed
+                          ? Theme.of(context).colorScheme.tertiary
+                          : post.isFavorited
+                              ? Colors.amber
+                              : Theme.of(context).colorScheme.outline,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
                     decoration: BoxDecoration(
