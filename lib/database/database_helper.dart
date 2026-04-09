@@ -442,7 +442,7 @@ class DatabaseHelper {
         id $idType,
         chat_room_id $intType,
         is_enabled $boolType DEFAULT 1,
-        is_agent_enabled $boolType DEFAULT 0,
+        is_agent_enabled $boolType DEFAULT 1,
         use_sub_model $boolType DEFAULT 0,
         summary_model $textType DEFAULT 'gemini-2.0-flash-exp',
         token_threshold INTEGER NOT NULL DEFAULT 5000,
