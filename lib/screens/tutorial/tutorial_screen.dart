@@ -5,12 +5,19 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../models/chat/chat_model.dart';
 import '../../models/chat/unified_model.dart';
 import '../../providers/chat_model_provider.dart';
 import '../../services/vertex_auth_service.dart';
 import '../../utils/common_dialog.dart';
 import '../settings/api_key_screen.dart';
+
+class _HelpStep {
+  final String label;
+  final String? url;
+  const _HelpStep(this.label, [this.url]);
+}
 
 const String _tutorialCompletedKey = 'tutorial_completed';
 const String showAgentHighlightKey = 'show_agent_highlight';
@@ -528,35 +535,52 @@ class _TutorialScreenState extends State<TutorialScreen> {
     );
   }
 
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
   Widget _buildApiKeyHelpCard(ThemeData theme, ColorScheme colorScheme) {
     final String helpTitle;
-    final String helpContent;
+    final List<_HelpStep> steps;
 
     switch (_selectedApiKeyType) {
       case ApiKeyType.googleAiStudio:
         helpTitle = 'Google AI Studio API 키 발급';
-        helpContent = '1. Google AI Studio (aistudio.google.com) 접속\n'
-            '2. Get API Key 클릭\n'
-            '3. Create API Key 선택\n'
-            '4. 생성된 키를 복사하여 위에 붙여넣기';
+        steps = [
+          _HelpStep('Google AI Studio 접속', 'https://aistudio.google.com'),
+          const _HelpStep('결제 계정 생성 (유료 모델 사용 시 필요)'),
+          const _HelpStep('Get API Key 클릭'),
+          const _HelpStep('Create API Key 선택'),
+          const _HelpStep('생성된 키를 복사하여 위에 붙여넣기'),
+        ];
       case ApiKeyType.vertexAi:
         helpTitle = 'Vertex AI 서비스 계정 설정';
-        helpContent = '1. Google Cloud Console 접속\n'
-            '2. IAM → 서비스 계정 → 계정 생성\n'
-            '3. Vertex AI User 역할 부여\n'
-            '4. 키 만들기 → JSON → 다운로드';
+        steps = [
+          _HelpStep('Google Cloud Console 접속', 'https://console.cloud.google.com'),
+          _HelpStep('결제 계정 생성 및 프로젝트에 연결', 'https://console.cloud.google.com/billing'),
+          const _HelpStep('IAM → 서비스 계정 → 계정 생성'),
+          const _HelpStep('Vertex AI User 역할 부여'),
+          const _HelpStep('키 만들기 → JSON → 다운로드'),
+        ];
       case ApiKeyType.openai:
         helpTitle = 'OpenAI API 키 발급';
-        helpContent = '1. platform.openai.com 접속\n'
-            '2. API Keys 메뉴 선택\n'
-            '3. Create new secret key 클릭\n'
-            '4. 생성된 키를 복사하여 위에 붙여넣기';
+        steps = [
+          _HelpStep('OpenAI Platform 접속', 'https://platform.openai.com'),
+          const _HelpStep('API Keys 메뉴 선택'),
+          const _HelpStep('Create new secret key 클릭'),
+          const _HelpStep('생성된 키를 복사하여 위에 붙여넣기'),
+        ];
       case ApiKeyType.anthropic:
         helpTitle = 'Anthropic API 키 발급';
-        helpContent = '1. console.anthropic.com 접속\n'
-            '2. API Keys 메뉴 선택\n'
-            '3. Create Key 클릭\n'
-            '4. 생성된 키를 복사하여 위에 붙여넣기';
+        steps = [
+          _HelpStep('Anthropic Console 접속', 'https://console.anthropic.com'),
+          const _HelpStep('API Keys 메뉴 선택'),
+          const _HelpStep('Create Key 클릭'),
+          const _HelpStep('생성된 키를 복사하여 위에 붙여넣기'),
+        ];
     }
 
     return Container(
@@ -573,16 +597,66 @@ class _TutorialScreenState extends State<TutorialScreen> {
               Icon(Icons.info_outline,
                   size: 18, color: colorScheme.onSurfaceVariant),
               const SizedBox(width: 8),
-              Text(helpTitle, style: theme.textTheme.titleSmall),
+              Expanded(
+                child: Text(helpTitle, style: theme.textTheme.titleSmall),
+              ),
             ],
           ),
-          const SizedBox(height: 8),
-          Text(
-            helpContent,
-            style: theme.textTheme.bodySmall?.copyWith(
-              color: colorScheme.onSurfaceVariant,
-            ),
-          ),
+          const SizedBox(height: 12),
+          ...steps.asMap().entries.map((entry) {
+            final index = entry.key;
+            final step = entry.value;
+            final hasLink = step.url != null;
+
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 6),
+              child: InkWell(
+                onTap: hasLink ? () => _openUrl(step.url!) : null,
+                borderRadius: BorderRadius.circular(6),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 2),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      SizedBox(
+                        width: 20,
+                        child: Text(
+                          '${index + 1}.',
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Text(
+                          step.label,
+                          style: theme.textTheme.bodySmall?.copyWith(
+                            color: hasLink
+                                ? colorScheme.primary
+                                : colorScheme.onSurfaceVariant,
+                            decoration: hasLink
+                                ? TextDecoration.underline
+                                : null,
+                            decorationColor:
+                                hasLink ? colorScheme.primary : null,
+                          ),
+                        ),
+                      ),
+                      if (hasLink)
+                        Padding(
+                          padding: const EdgeInsets.only(left: 4),
+                          child: Icon(
+                            Icons.open_in_new,
+                            size: 12,
+                            color: colorScheme.primary,
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          }),
         ],
       ),
     );
