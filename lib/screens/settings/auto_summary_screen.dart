@@ -47,6 +47,7 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
   UnifiedModel _selectedModel = UnifiedModel.fromChatModel(ChatModel.geminiFlash3Preview);
   List<CustomModel> _customModels = [];
   List<CustomProvider> _customProviders = [];
+  late TextEditingController _tokenThresholdController;
   AutoSummarySettings? _existingSettings;
   bool _isLoading = true;
 
@@ -71,6 +72,7 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _tokenThresholdController = TextEditingController(text: '20000');
     _loadSettings();
   }
 
@@ -121,6 +123,7 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
           _useSubModel = settings.useSubModel;
           _selectedModel = resolvedModel;
           _selectedProvider = resolvedModel.provider;
+          _tokenThresholdController.text = settings.tokenThreshold.toString();
 
           if (settings.parameters != null && settings.parameters!.isNotEmpty) {
             _parameters =
@@ -176,7 +179,7 @@ _syncContentFromControllers();
       isAgentEnabled: _isAgentEnabled,
       useSubModel: _useSubModel,
       summaryModel: _selectedModel.id,
-      tokenThreshold: 0,
+      tokenThreshold: int.tryParse(_tokenThresholdController.text) ?? 20000,
       summaryPrompt: '',
       parameters: jsonEncode(_parameters.toJson()),
       summaryPromptItems: SummaryPromptItem.listToJson(_promptItems),
@@ -396,6 +399,7 @@ _syncContentFromControllers();
   @override
   void dispose() {
     _tabController.dispose();
+    _tokenThresholdController.dispose();
     _maxOutputTokensController.dispose();
     _autoPinByMessageCountController.dispose();
     for (final controller in _itemContentControllers.values) {
@@ -574,6 +578,18 @@ _syncContentFromControllers();
           ],
           const Divider(),
           _buildSectionHeader('자동 요약 시작 조건'),
+          Padding(
+            padding:
+                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            child: CommonEditText(
+              controller: _tokenThresholdController,
+              keyboardType: TextInputType.number,
+              inputFormatters: [
+                FilteringTextInputFormatter.digitsOnly,
+              ],
+              hintText: '토큰 수를 입력하세요',
+            ),
+          ),
         ],
         if (widget.chatRoomId == 0) ...[
           const Divider(),

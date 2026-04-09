@@ -286,9 +286,20 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           ? await _db.readPromptRegexRules(chatRoom.selectedChatPromptId!)
           : <PromptRegexRule>[];
 
-      // Load summarized message IDs
+      // Load summarized message IDs and calculate threshold index
       final summarizedIds = await _autoSummaryService.getSummarizedMessageIds(widget.chatRoomId);
-      const int? summaryThresholdIndex = null;
+      int? summaryThresholdIndex;
+      final summarySettings = await _db.getAutoSummarySettings(0);
+      if (summarySettings != null && summarySettings.isEnabled && messages.isNotEmpty) {
+        int cumulative = 0;
+        for (int i = messages.length - 1; i >= 0; i--) {
+          cumulative += messages[i].tokenCount;
+          if (cumulative >= summarySettings.tokenThreshold) {
+            summaryThresholdIndex = i;
+            break;
+          }
+        }
+      }
 
       if (!mounted) return;
 
@@ -639,6 +650,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             if (latestChatRoom != null) {
               final shouldTrigger = await _autoSummaryService.shouldTriggerSummary(
                 chatRoomId: widget.chatRoomId,
+                currentTokenCount: latestChatRoom.totalTokenCount,
               );
 
               if (shouldTrigger) {
