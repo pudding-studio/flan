@@ -23,6 +23,23 @@ const String showAgentHighlightKey = 'show_agent_highlight';
 
 Future<bool> isTutorialCompleted() async {
   final prefs = await SharedPreferences.getInstance();
+
+  // Check if any API key is registered
+  for (final type in ApiKeyType.values) {
+    final multiKeys = prefs.getString(type.multiStorageKey);
+    if (multiKeys != null) {
+      final List<dynamic> decoded = jsonDecode(multiKeys);
+      if (decoded.isNotEmpty) return true;
+    }
+  }
+
+  // Check if custom models exist (user has their own endpoint)
+  final customModels = prefs.getString('custom_models');
+  if (customModels != null) {
+    final List<dynamic> decoded = jsonDecode(customModels);
+    if (decoded.isNotEmpty) return true;
+  }
+
   return prefs.getBool(_tutorialCompletedKey) ?? false;
 }
 
