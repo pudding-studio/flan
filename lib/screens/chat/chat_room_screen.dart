@@ -41,6 +41,7 @@ import 'widgets/chat_bottom_panel.dart';
 import 'widgets/chat_room_drawer.dart';
 import '../character/character_view_screen.dart';
 import '../community/community_screen.dart';
+import '../news/news_screen.dart';
 import '../diary/diary_screen.dart';
 
 enum SendingPhase { none, preparing, waiting, summarizing }
@@ -932,6 +933,23 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     context,
                     MaterialPageRoute(
                       builder: (_) => CommunityScreen(
+                        characterId: _character!.id!,
+                        chatRoomId: widget.chatRoomId,
+                      ),
+                    ),
+                  );
+                },
+              ),
+              _buildMenuAppIcon(
+                context,
+                icon: Icons.newspaper_outlined,
+                label: 'News',
+                onTap: () {
+                  setState(() => _showMorePanel = false);
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (_) => NewsScreen(
                         characterId: _character!.id!,
                         chatRoomId: widget.chatRoomId,
                       ),

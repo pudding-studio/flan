@@ -24,6 +24,7 @@ import '../models/chat/chat_summary.dart';
 import '../models/community/community_post.dart';
 import '../models/community/community_comment.dart';
 import '../models/diary/diary_entry.dart';
+import '../models/news/news_article.dart';
 import '../utils/metadata_parser.dart';
 
 class DatabaseHelper {
@@ -44,7 +45,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 50,
+      version: 51,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -572,6 +573,32 @@ class DatabaseHelper {
     await db.execute('''
       CREATE INDEX idx_diary_entries_chat_room_date
       ON diary_entries (chat_room_id, date)
+    ''');
+
+    // News tables
+    await db.execute('''
+      CREATE TABLE news_articles (
+        id $idType,
+        chat_room_id $intType,
+        topic $textType,
+        tone $textType,
+        author $textType,
+        title $textType,
+        time $textType,
+        content $textType,
+        created_at $textType,
+        agent_entry_id INTEGER,
+        FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE,
+        FOREIGN KEY (agent_entry_id) REFERENCES agent_entries (id) ON DELETE SET NULL
+      )
+    ''');
+    await db.execute('''
+      CREATE INDEX idx_news_articles_chat_room
+      ON news_articles (chat_room_id)
+    ''');
+    await db.execute('''
+      CREATE INDEX idx_news_articles_agent_entry
+      ON news_articles (agent_entry_id)
     ''');
   }
 
@@ -1346,6 +1373,33 @@ class DatabaseHelper {
       await db.execute('''
         CREATE INDEX IF NOT EXISTS idx_diary_entries_chat_room_date
         ON diary_entries (chat_room_id, date)
+      ''');
+    }
+
+    if (oldVersion < 51) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS news_articles (
+          id $idType,
+          chat_room_id $intType,
+          topic $textType,
+          tone $textType,
+          author $textType,
+          title $textType,
+          time $textType,
+          content $textType,
+          created_at $textType,
+          agent_entry_id INTEGER,
+          FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE,
+          FOREIGN KEY (agent_entry_id) REFERENCES agent_entries (id) ON DELETE SET NULL
+        )
+      ''');
+      await db.execute('''
+        CREATE INDEX IF NOT EXISTS idx_news_articles_chat_room
+        ON news_articles (chat_room_id)
+      ''');
+      await db.execute('''
+        CREATE INDEX IF NOT EXISTS idx_news_articles_agent_entry
+        ON news_articles (agent_entry_id)
       ''');
     }
   }
@@ -3137,6 +3191,45 @@ class DatabaseHelper {
   Future<void> deleteDiaryEntries(int chatRoomId) async {
     final db = await database;
     await db.delete('diary_entries', where: 'chat_room_id = ?', whereArgs: [chatRoomId]);
+  }
+
+  // ==================== 뉴스 CRUD ====================
+
+  Future<int> createNewsArticle(NewsArticle article) async {
+    final db = await database;
+    final map = article.toMap();
+    map.remove('id');
+    return await db.insert('news_articles', map);
+  }
+
+  Future<List<NewsArticle>> readNewsArticles(int chatRoomId) async {
+    final db = await database;
+    final maps = await db.query(
+      'news_articles',
+      where: 'chat_room_id = ?',
+      whereArgs: [chatRoomId],
+      orderBy: 'time DESC',
+    );
+    return maps.map((m) => NewsArticle.fromMap(m)).toList();
+  }
+
+  Future<List<int>> getNewsArticleAgentEntryIds(int chatRoomId) async {
+    final db = await database;
+    final maps = await db.rawQuery(
+      'SELECT DISTINCT agent_entry_id FROM news_articles WHERE chat_room_id = ? AND agent_entry_id IS NOT NULL',
+      [chatRoomId],
+    );
+    return maps.map((m) => m['agent_entry_id'] as int).toList();
+  }
+
+  Future<void> deleteNewsArticle(int id) async {
+    final db = await database;
+    await db.delete('news_articles', where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> deleteNewsArticles(int chatRoomId) async {
+    final db = await database;
+    await db.delete('news_articles', where: 'chat_room_id = ?', whereArgs: [chatRoomId]);
   }
 
   // ==================== 유틸리티 ====================

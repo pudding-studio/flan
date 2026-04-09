@@ -4,10 +4,11 @@ import 'package:provider/provider.dart';
 import '../../database/database_helper.dart';
 import '../../models/character/character.dart';
 import '../../models/character/start_scenario.dart';
-import '../../models/chat/chat_message.dart';
+import '../../models/chat/agent_entry.dart';
 import '../../models/chat/chat_room.dart';
 import '../../models/chat/chat_summary.dart';
 import '../../models/community/community_post.dart';
+import '../../models/news/news_article.dart';
 import '../../models/community/community_comment.dart';
 import '../../models/chat/chat_model.dart';
 import '../../models/chat/model_preset.dart';
@@ -41,7 +42,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
   ChatRoom? _chatRoom;
   StartScenario? _selectedScenario;
   List<ChatSummary> _chatSummaries = [];
-  List<ChatMessage> _recentMessages = [];
+  List<AgentEntry> _agentEntries = [];
+  List<NewsArticle> _newsArticles = [];
   List<CommunityPost> _posts = [];
   bool _isLoading = true;
   bool _isGenerating = false;
@@ -70,8 +72,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
       _db.readCharacter(widget.characterId),
       _db.readChatRoom(widget.chatRoomId),
       _db.getChatSummaries(widget.chatRoomId),
-      _db.readRecentAssistantMessages(widget.chatRoomId, 5),
       _db.readCommunityPosts(widget.chatRoomId),
+      _db.getAgentEntries(widget.chatRoomId),
+      _db.readNewsArticles(widget.chatRoomId),
     ]);
     if (!mounted) return;
     final chatRoom = results[1] as ChatRoom?;
@@ -86,8 +89,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
       _selectedScenario = scenario;
       final allSummaries = results[2] as List<ChatSummary>;
       _chatSummaries = allSummaries.length > 5 ? allSummaries.sublist(allSummaries.length - 5) : allSummaries;
-      _recentMessages = results[3] as List<ChatMessage>;
-      _posts = results[4] as List<CommunityPost>;
+      _posts = results[3] as List<CommunityPost>;
+      _agentEntries = results[4] as List<AgentEntry>;
+      _newsArticles = results[5] as List<NewsArticle>;
       _isLoading = false;
     });
   }
@@ -137,9 +141,14 @@ class _CommunityScreenState extends State<CommunityScreen> {
       parts.add('## Detailed Summaries\n$summaryText');
     }
 
-    if (_recentMessages.isNotEmpty) {
-      final recentText = _recentMessages.map((m) => m.content).join('\n\n---\n\n');
-      parts.add('## Recent Conversations\n$recentText');
+    if (_agentEntries.isNotEmpty) {
+      final entryText = _agentEntries.map((e) => '### ${e.entryType.displayName}: ${e.name}\n${e.toReadableText()}').join('\n\n');
+      parts.add('## Agent Entries\n$entryText');
+    }
+
+    if (_newsArticles.isNotEmpty) {
+      final newsText = _newsArticles.take(10).map((a) => '### [${a.topic}] ${a.title}\n${a.content}').join('\n\n');
+      parts.add('## Recent News\n$newsText');
     }
 
     return parts.join('\n\n');
@@ -176,8 +185,18 @@ class _CommunityScreenState extends State<CommunityScreen> {
         latestPostInfo = '\nBase time (generate only after this time): $latestStr\n';
       }
 
+      String previousPosts = '';
+      if (_posts.isNotEmpty) {
+        final recent = _posts.take(10).map((p) {
+          final comments = p.comments.map((c) => '  - ${c.author}: ${c.content}').join('\n');
+          return '- [${p.author}] ${p.title}: ${p.content}${comments.isNotEmpty ? '\n$comments' : ''}';
+        }).join('\n');
+        previousPosts = '\n## Previously Published Posts (DO NOT repeat similar topics or content)\n$recent\n';
+      }
+
       final userMessage =
           'Current time: $nowStr\n$latestPostInfo\n'
+          '$previousPosts\n'
           'Based on the worldview and chat summary below, generate community posts.\n\n'
           '$worldview';
 

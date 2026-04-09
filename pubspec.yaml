@@ -86,6 +86,7 @@ flutter:
     - assets/defaults/agent_summary_prompts/
     - assets/defaults/community_prompts/
     - assets/defaults/diary_prompts/
+    - assets/defaults/news_prompts/
 
 flutter_launcher_icons:
   android: true
