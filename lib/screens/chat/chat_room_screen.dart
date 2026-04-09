@@ -771,6 +771,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       }
       return '';
     });
+    if (_chatRoom?.showImages == false) {
+      text = text.replaceAll(_imageMarkdownPattern, '');
+    }
     return text;
   }
 

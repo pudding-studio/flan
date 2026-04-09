@@ -580,18 +580,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
               ),
               const SizedBox(height: 24),
               _buildChatSettings(),
-              const SizedBox(height: 16),
-              SwitchListTile(
-                secondary: const Icon(Icons.image_outlined),
-                title: const Text('이미지 보기'),
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                value: widget.chatRoom.showImages,
-                onChanged: (value) {
-                  widget.onShowImagesChanged(value);
-                },
-              ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
               InkWell(
                 onTap: () => setState(() => _memoExpanded = !_memoExpanded),
                 child: Row(
@@ -779,6 +768,25 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
             ),
           ),
         ],
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Text('이미지 보기', style: _fieldLabelStyle),
+            const Spacer(),
+            SizedBox(
+              height: 28,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Switch(
+                  value: widget.chatRoom.showImages,
+                  onChanged: (value) {
+                    widget.onShowImagesChanged(value);
+                  },
+                ),
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
