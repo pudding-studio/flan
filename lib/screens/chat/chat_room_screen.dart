@@ -660,6 +660,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             }
           }
 
+          // Future plan: agent summary 이후에 실행하여 우선순위를 보장
+          final agentSettings = await _db.getAutoSummarySettings(0);
+          if (agentSettings != null && agentSettings.isAgentEnabled) {
+            final agentService = AgentSummaryService();
+            await agentService.processFuturePlan(widget.chatRoomId, responseText);
+          }
+
           lastError = null;
           break;
         } catch (e) {
@@ -1146,6 +1153,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             updatedAt: DateTime.now(),
           );
           await _db.updateChatRoom(updatedChatRoom);
+
+          // Future plan: AI 응답에서 [PLAN: ...] 파싱하여 활성화
+          final agentSettings2 = await _db.getAutoSummarySettings(0);
+          if (agentSettings2 != null && agentSettings2.isAgentEnabled) {
+            final agentService = AgentSummaryService();
+            await agentService.processFuturePlan(widget.chatRoomId, responseText2);
+          }
 
           lastError = null;
           break;

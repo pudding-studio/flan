@@ -450,20 +450,71 @@ class AgentSummaryService {
     }
   }
 
+  static final _futurePlanPattern = RegExp(r'【PLAN\|([^】]+)】');
+
+  /// Parse 【PLAN|...】 tag from AI response and activate matching entries
+  Future<void> processFuturePlan(int chatRoomId, String responseText) async {
+    final match = _futurePlanPattern.firstMatch(responseText);
+    if (match == null) return;
+
+    final keywords = match.group(1)!
+        .split(',')
+        .map((k) => k.trim())
+        .where((k) => k.isNotEmpty)
+        .toList();
+    if (keywords.isEmpty) return;
+
+    _log('Future plan found: $keywords');
+
+    await _db.deactivateAllAgentEntries(chatRoomId);
+
+    final allEntries = await _db.getAgentEntries(chatRoomId);
+    for (final entry in allEntries) {
+      if (keywords.any((k) => entry.name == k || entry.name.contains(k) || k.contains(entry.name))) {
+        if (entry.id != null) {
+          await _db.setAgentEntryActive(entry.id!, true);
+        }
+      }
+    }
+
+    _logSuccess('Future plan applied: ${keywords.length} keywords matched');
+  }
+
   /// Build active entries text for prompt injection
   Future<String> buildActiveEntriesText(int chatRoomId) async {
-    final activeEntries = await _db.getAgentEntries(chatRoomId, isActive: true);
-    if (activeEntries.isEmpty) return '';
+    final allEntries = await _db.getAgentEntries(chatRoomId);
+    if (allEntries.isEmpty) return '';
 
     final buffer = StringBuffer();
-    buffer.writeln('[World Context - Agent Summary]');
+    buffer.writeln('### 참고자료');
 
     for (final type in AgentEntryType.values) {
-      final entries = activeEntries.where((e) => e.entryType == type).toList();
-      if (entries.isEmpty) continue;
-      buffer.writeln('\n## ${type.displayName}');
-      for (final entry in entries) {
-        buffer.writeln(entry.toReadableText());
+      final typeEntries = allEntries.where((e) => e.entryType == type).toList();
+      if (typeEntries.isEmpty) continue;
+
+      final activeEntries = typeEntries.where((e) => e.isActive).toList();
+
+      buffer.writeln('\n#### ${type.displayName}');
+      buffer.writeln('##### 목록');
+
+      if (type == AgentEntryType.episode) {
+        for (int i = 0; i < typeEntries.length; i++) {
+          buffer.writeln('${i + 1}. ${typeEntries[i].name}');
+        }
+        if (activeEntries.isNotEmpty) {
+          buffer.writeln('##### 내용');
+          for (int i = 0; i < activeEntries.length; i++) {
+            buffer.writeln('${i + 1}. ${activeEntries[i].toReadableText()}');
+          }
+        }
+      } else {
+        buffer.writeln(typeEntries.map((e) => e.name).join(', '));
+        if (activeEntries.isNotEmpty) {
+          buffer.writeln('##### 내용');
+          for (int i = 0; i < activeEntries.length; i++) {
+            buffer.writeln('${i + 1}. ${activeEntries[i].toReadableText()}');
+          }
+        }
       }
     }
 
