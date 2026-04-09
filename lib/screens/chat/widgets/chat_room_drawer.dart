@@ -49,6 +49,7 @@ class ChatRoomDrawer extends StatefulWidget {
   final ValueChanged<int?> onPersonaChanged;
   final ValueChanged<int?> onAutoPinByMessageCountChanged;
   final ValueChanged<int?> onPresetChanged;
+  final ValueChanged<bool> onShowImagesChanged;
 
   const ChatRoomDrawer({
     super.key,
@@ -66,6 +67,7 @@ class ChatRoomDrawer extends StatefulWidget {
     required this.onPersonaChanged,
     required this.onAutoPinByMessageCountChanged,
     required this.onPresetChanged,
+    required this.onShowImagesChanged,
   });
 
   @override
@@ -578,7 +580,18 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
               ),
               const SizedBox(height: 24),
               _buildChatSettings(),
-              const SizedBox(height: 24),
+              const SizedBox(height: 16),
+              SwitchListTile(
+                secondary: const Icon(Icons.image_outlined),
+                title: const Text('이미지 보기'),
+                dense: true,
+                contentPadding: EdgeInsets.zero,
+                value: widget.chatRoom.showImages,
+                onChanged: (value) {
+                  widget.onShowImagesChanged(value);
+                },
+              ),
+              const SizedBox(height: 16),
               InkWell(
                 onTap: () => setState(() => _memoExpanded = !_memoExpanded),
                 child: Row(

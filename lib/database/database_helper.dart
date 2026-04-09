@@ -45,7 +45,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 51,
+      version: 52,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -353,6 +353,7 @@ class DatabaseHelper {
         selected_condition_preset_id INTEGER,
         selected_model_id TEXT,
         model_preset TEXT NOT NULL DEFAULT 'primary',
+        show_images INTEGER NOT NULL DEFAULT 1,
         created_at $textType,
         updated_at $textType,
         FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE,
@@ -1400,6 +1401,12 @@ class DatabaseHelper {
       await db.execute('''
         CREATE INDEX IF NOT EXISTS idx_news_articles_agent_entry
         ON news_articles (agent_entry_id)
+      ''');
+    }
+
+    if (oldVersion < 52) {
+      await db.execute('''
+        ALTER TABLE chat_rooms ADD COLUMN show_images INTEGER NOT NULL DEFAULT 1
       ''');
     }
   }

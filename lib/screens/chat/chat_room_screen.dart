@@ -763,6 +763,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     text = RegexProcessor.apply(text, _regexRules, RegexTarget.displayModify);
     // <img="이름"> → 캐릭터 이미지가 있으면 로컬 이미지로 변환, 없으면 삭제
     text = text.replaceAllMapped(_imgTagPattern, (match) {
+      if (_chatRoom?.showImages == false) return '';
       final name = match.group(1)!;
       final path = _imagePathMap[name];
       if (path != null) {
@@ -1096,6 +1097,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     if (_chatRoom == null) return;
     final updated = _chatRoom!.copyWith(
       selectedConditionPresetId: presetId,
+      updatedAt: DateTime.now(),
+    );
+    await _db.updateChatRoom(updated);
+    setState(() => _chatRoom = updated);
+  }
+
+  Future<void> _onShowImagesChanged(bool value) async {
+    if (_chatRoom == null) return;
+    final updated = _chatRoom!.copyWith(
+      showImages: value,
       updatedAt: DateTime.now(),
     );
     await _db.updateChatRoom(updated);
@@ -1967,6 +1978,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         onPersonaChanged: _onPersonaChanged,
         onAutoPinByMessageCountChanged: _onAutoPinMessageCountChanged,
         onPresetChanged: _onPresetChanged,
+        onShowImagesChanged: _onShowImagesChanged,
       ),
       appBar: _isSearching
           ? AppBar(
