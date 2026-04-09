@@ -40,6 +40,7 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
   late TabController _tabController;
 
   bool _isEnabled = true;
+  bool _isAgentEnabled = false;
   bool _useSubModel = false;
   ChatModelProvider _selectedProvider = ChatModelProvider.googleAIStudio;
   String? _selectedCustomProviderId;
@@ -129,6 +130,7 @@ class _AutoSummaryScreenState extends State<AutoSummaryScreen>
 
         setState(() {
           _isEnabled = settings.isEnabled;
+          _isAgentEnabled = settings.isAgentEnabled;
           _useSubModel = settings.useSubModel;
           _selectedModel = resolvedModel;
           _selectedProvider = resolvedModel.provider;
@@ -185,6 +187,7 @@ _syncContentFromControllers();
       id: _existingSettings?.id,
       chatRoomId: widget.chatRoomId,
       isEnabled: _isEnabled,
+      isAgentEnabled: _isAgentEnabled,
       useSubModel: _useSubModel,
       summaryModel: _selectedModel.id,
       tokenThreshold:
@@ -510,6 +513,17 @@ _syncContentFromControllers();
           },
         ),
         if (_isEnabled) ...[
+          SwitchListTile(
+            secondary: const Icon(Icons.smart_toy_outlined),
+            title: const Text('에이전트 모드'),
+            subtitle: const Text('구조화된 세계관 데이터를 자동으로 관리합니다'),
+            value: _isAgentEnabled,
+            onChanged: (value) {
+              setState(() {
+                _isAgentEnabled = value;
+              });
+            },
+          ),
           const Divider(),
           _buildSectionHeader('요약 모델'),
           SwitchListTile(
