@@ -691,7 +691,28 @@ class _TutorialScreenState extends State<TutorialScreen> {
             title: '모델 설정',
             description: '채팅과 보조 기능에 사용할 AI 모델을 선택해주세요.',
           ),
-          const SizedBox(height: 28),
+          const SizedBox(height: 20),
+
+          // Provider selector
+          SingleChildScrollView(
+            scrollDirection: Axis.horizontal,
+            child: Row(
+              children: ApiKeyType.values.map((type) {
+                final isSelected = _selectedApiKeyType == type;
+                return Padding(
+                  padding: const EdgeInsets.only(right: 8),
+                  child: FilterChip(
+                    label: Text(type.displayName),
+                    selected: isSelected,
+                    onSelected: (_) {
+                      if (!isSelected) _onApiKeyTypeChanged(type);
+                    },
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
+          const SizedBox(height: 20),
 
           // Main model
           Row(
