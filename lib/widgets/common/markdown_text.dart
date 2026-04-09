@@ -12,6 +12,11 @@ class MarkdownText extends StatelessWidget {
   final TextStyle? baseStyle;
   final TextAlign textAlign;
   final double paragraphSpacing;
+  final String? highlightQuery;
+  final Color? highlightColor;
+  final Color? currentHighlightColor;
+  final int currentOccurrence;
+  final GlobalKey? highlightKey;
 
   const MarkdownText({
     super.key,
@@ -19,6 +24,11 @@ class MarkdownText extends StatelessWidget {
     this.baseStyle,
     this.textAlign = TextAlign.left,
     this.paragraphSpacing = 0,
+    this.highlightQuery,
+    this.highlightColor,
+    this.currentHighlightColor,
+    this.currentOccurrence = -1,
+    this.highlightKey,
   });
 
   @override
@@ -56,36 +66,100 @@ class MarkdownText extends StatelessWidget {
     );
   }
 
+  /// Returns (highlighted spans, number of occurrences consumed).
+  /// [occOffset] is the occurrence index of the first match in this batch.
+  (List<InlineSpan>, int) _withHighlight(List<InlineSpan> spans, int occOffset) {
+    final query = highlightQuery;
+    final color = highlightColor;
+    if (query == null || query.isEmpty || color == null) return (spans, 0);
+
+    final lowerQuery = query.toLowerCase();
+    final result = <InlineSpan>[];
+    int occCount = 0;
+
+    for (final span in spans) {
+      if (span is TextSpan && span.text != null && span.children == null) {
+        final text = span.text!;
+        final lowerText = text.toLowerCase();
+        int start = 0;
+
+        while (true) {
+          final matchIndex = lowerText.indexOf(lowerQuery, start);
+          if (matchIndex == -1) {
+            if (start < text.length) {
+              result.add(TextSpan(text: text.substring(start), style: span.style));
+            }
+            break;
+          }
+          if (matchIndex > start) {
+            result.add(TextSpan(text: text.substring(start, matchIndex), style: span.style));
+          }
+          final isCurrent = (occOffset + occCount) == currentOccurrence;
+          final bgColor = isCurrent ? (currentHighlightColor ?? color) : color;
+          result.add(TextSpan(
+            text: text.substring(matchIndex, matchIndex + query.length),
+            style: (span.style ?? const TextStyle()).copyWith(
+              backgroundColor: bgColor,
+              decoration: isCurrent ? TextDecoration.underline : null,
+              decorationColor: isCurrent ? bgColor : null,
+              decorationThickness: isCurrent ? 2.5 : null,
+            ),
+          ));
+          occCount++;
+          start = matchIndex + query.length;
+        }
+      } else {
+        result.add(span);
+      }
+    }
+
+    return (result, occCount);
+  }
+
   Widget _buildTextContent(
     String content,
     TextStyle style,
     Color primaryColor,
     Color tertiaryColor,
   ) {
-    if (paragraphSpacing <= 0) {
-      final spans = _parse(content, style, primaryColor, tertiaryColor);
+    // Always split by newlines when search key is active,
+    // so the key lands on the exact matching line.
+    final paragraphs = content.split('\n');
+    if (paragraphs.length <= 1 && highlightKey == null) {
+      final (spans, _) = _withHighlight(_parse(content, style, primaryColor, tertiaryColor), 0);
       return RichText(
         textAlign: textAlign,
         text: TextSpan(children: spans),
       );
     }
 
-    final paragraphs = content.split('\n');
+    bool keyAssigned = false;
+    int occOffset = 0;
+    final widgets = <Widget>[];
+    for (int i = 0; i < paragraphs.length; i++) {
+      if (i > 0 && paragraphSpacing > 0) widgets.add(SizedBox(height: paragraphSpacing));
+      final (spans, count) = _withHighlight(
+        _parse(paragraphs[i], style, primaryColor, tertiaryColor), occOffset,
+      );
+      // Attach key to the paragraph containing the current occurrence
+      final hasCurrentOcc = highlightKey != null &&
+          !keyAssigned &&
+          currentOccurrence >= 0 &&
+          currentOccurrence >= occOffset &&
+          currentOccurrence < occOffset + count;
+      if (hasCurrentOcc) keyAssigned = true;
+      widgets.add(RichText(
+        key: hasCurrentOcc ? highlightKey : null,
+        textAlign: textAlign,
+        text: TextSpan(children: spans),
+      ));
+      occOffset += count;
+    }
     return Column(
       crossAxisAlignment: textAlign == TextAlign.left
           ? CrossAxisAlignment.start
           : CrossAxisAlignment.stretch,
-      children: [
-        for (int i = 0; i < paragraphs.length; i++) ...[
-          if (i > 0) SizedBox(height: paragraphSpacing),
-          RichText(
-            textAlign: textAlign,
-            text: TextSpan(
-              children: _parse(paragraphs[i], style, primaryColor, tertiaryColor),
-            ),
-          ),
-        ],
-      ],
+      children: widgets,
     );
   }
 
