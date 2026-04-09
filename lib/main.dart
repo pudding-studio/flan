@@ -18,6 +18,7 @@ import 'providers/community_model_provider.dart';
 import 'providers/diary_model_provider.dart';
 import 'database/database_helper.dart';
 import 'services/default_seeder_service.dart';
+import 'screens/tutorial/tutorial_screen.dart';
 
 void main() async {
   runZonedGuarded<Future<void>>(() async {
@@ -89,6 +90,7 @@ class MainScreen extends StatefulWidget {
 
 class _MainScreenState extends State<MainScreen> {
   int _currentIndex = 0;
+  bool? _tutorialCompleted;
 
   final List<Widget> _screens = const [
     CharacterScreen(),
@@ -97,7 +99,36 @@ class _MainScreenState extends State<MainScreen> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _checkTutorial();
+  }
+
+  Future<void> _checkTutorial() async {
+    final completed = await isTutorialCompleted();
+    if (mounted) {
+      setState(() => _tutorialCompleted = completed);
+    }
+  }
+
+  void _onTutorialComplete() {
+    setState(() {
+      _tutorialCompleted = true;
+      _currentIndex = 0;
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    if (_tutorialCompleted == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
+    if (_tutorialCompleted == false) {
+      return TutorialScreen(onComplete: _onTutorialComplete);
+    }
     return Scaffold(
       body: _screens[_currentIndex],
       bottomNavigationBar: Container(

@@ -27,6 +27,7 @@ import '../../widgets/character/character_card.dart';
 import '../../widgets/character/character_list_item.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../agent/agent_chat_screen.dart';
+import '../tutorial/tutorial_screen.dart' show showAgentHighlightKey;
 
 class CharacterScreen extends StatefulWidget {
   const CharacterScreen({super.key});
@@ -54,12 +55,23 @@ class _CharacterScreenState extends State<CharacterScreen> {
   Map<int, Uint8List?> _characterCoverImages = {};
   bool _isEditMode = false;
   final Set<int> _selectedCharacterIds = {};
+  bool _showAgentHighlight = false;
 
   @override
   void initState() {
     super.initState();
     _loadPreferences();
     _loadCharacters();
+    _checkAgentHighlight();
+  }
+
+  Future<void> _checkAgentHighlight() async {
+    final prefs = await SharedPreferences.getInstance();
+    final show = prefs.getBool(showAgentHighlightKey) ?? false;
+    if (show && mounted) {
+      setState(() => _showAgentHighlight = true);
+      await prefs.remove(showAgentHighlightKey);
+    }
   }
 
   Future<void> _loadPreferences() async {
@@ -1155,20 +1167,33 @@ class _CharacterScreenState extends State<CharacterScreen> {
         onClosePressed: _toggleEditMode,
         actions: [
           if (!_isEditMode)
-            CommonAppBarIconButton(
-              icon: Icons.auto_awesome,
-              offsetX: 10.0,
-              onPressed: () async {
-                await Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const AgentChatScreen(),
+            _showAgentHighlight
+                ? _AgentHighlightButton(
+                    onPressed: () async {
+                      setState(() => _showAgentHighlight = false);
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AgentChatScreen(),
+                        ),
+                      );
+                      _loadCharacters();
+                    },
+                  )
+                : CommonAppBarIconButton(
+                    icon: Icons.auto_awesome,
+                    offsetX: 10.0,
+                    onPressed: () async {
+                      await Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => const AgentChatScreen(),
+                        ),
+                      );
+                      _loadCharacters();
+                    },
+                    tooltip: 'Flan Agent',
                   ),
-                );
-                _loadCharacters();
-              },
-              tooltip: 'Flan Agent',
-            ),
           if (!_isEditMode)
             CommonAppBarIconButton(
               icon: Icons.edit_outlined,
@@ -1775,4 +1800,78 @@ class _CharacterExportData {
     required this.allCharacterBooks,
     required this.coverImages,
   });
+}
+
+class _AgentHighlightButton extends StatefulWidget {
+  final VoidCallback onPressed;
+  const _AgentHighlightButton({required this.onPressed});
+
+  @override
+  State<_AgentHighlightButton> createState() => _AgentHighlightButtonState();
+}
+
+class _AgentHighlightButtonState extends State<_AgentHighlightButton>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller;
+  late final Animation<double> _scaleAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat(reverse: true);
+    _scaleAnimation = Tween<double>(begin: 1.0, end: 1.25).animate(
+      CurvedAnimation(parent: _controller, curve: Curves.easeInOut),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Transform.translate(
+      offset: const Offset(10.0, 0),
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          // Pulsing background circle
+          AnimatedBuilder(
+            animation: _scaleAnimation,
+            builder: (context, child) {
+              return Container(
+                width: 36 * _scaleAnimation.value,
+                height: 36 * _scaleAnimation.value,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: colorScheme.primary.withValues(
+                    alpha: 0.2 * (2.0 - _scaleAnimation.value),
+                  ),
+                ),
+              );
+            },
+          ),
+          // Tooltip + button
+          Tooltip(
+            message: '여기를 눌러 캐릭터를 만들어보세요!',
+            triggerMode: TooltipTriggerMode.manual,
+            showDuration: const Duration(seconds: 5),
+            child: IconButton(
+              icon: Icon(Icons.auto_awesome, color: colorScheme.primary),
+              onPressed: widget.onPressed,
+              padding: EdgeInsets.zero,
+              visualDensity: VisualDensity.compact,
+              constraints: const BoxConstraints(),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
