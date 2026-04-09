@@ -15,6 +15,7 @@ import '../models/chat/custom_provider.dart';
 import '../models/chat/unified_model.dart';
 import '../models/prompt/prompt_parameters.dart';
 import '../utils/prompt_builder.dart';
+import 'agent_summary_service.dart';
 import 'ai_service.dart';
 
 class AutoSummaryService {
@@ -52,6 +53,12 @@ class AutoSummaryService {
   }) async {
     final settings = await _db.getAutoSummarySettings(0);
     if (settings == null || !settings.isEnabled) return false;
+
+    if (settings.isAgentEnabled) {
+      _log('Agent mode: triggering on pin creation');
+      return true;
+    }
+
     final shouldTrigger = currentTokenCount >= settings.tokenThreshold;
     if (shouldTrigger) {
       _log('Trigger condition met: $currentTokenCount >= ${settings.tokenThreshold} tokens');
@@ -68,6 +75,13 @@ class AutoSummaryService {
     final settings = await _db.getAutoSummarySettings(0);
     if (settings == null || !settings.isEnabled) return;
 
+    if (settings.isAgentEnabled) {
+      _log('Agent mode enabled, delegating to AgentSummaryService');
+      final agentService = AgentSummaryService();
+      await agentService.processAgentSummary(chatRoomId: chatRoomId);
+      return;
+    }
+
     _log('Starting summary generation for chatRoom=$chatRoomId');
 
     final allMessages = await _db.readChatMessagesByChatRoom(chatRoomId);
@@ -82,11 +96,11 @@ class AutoSummaryService {
       return;
     }
 
-    // Find the token-window cutoff by counting from the end backwards
+    // Find the token-window cutoff
     final cutoffMessageId = _findCutoffMessageId(allMessages, settings.tokenThreshold);
     _log('Token cutoff messageId=$cutoffMessageId (threshold=${settings.tokenThreshold})');
 
-    // Only summarize pin ranges whose endPinId is at or before the cutoff
+    // Only pins outside the token window (at or before the cutoff)
     final eligiblePinIds = _filterPinsBeforeCutoff(
       allMessages: allMessages,
       pinnedMessageIds: pinnedMessageIds,
@@ -100,6 +114,15 @@ class AutoSummaryService {
 
     final existingSummaries = await _db.getChatSummaries(chatRoomId);
     final summarizedEndIds = existingSummaries.map((s) => s.endPinMessageId).toSet();
+
+    // Detect user-deleted summaries: if the latest eligible pin is already
+    // summarized, any older unsummarized pin was intentionally deleted by the
+    // user — skip them all.
+    final latestEligiblePin = eligiblePinIds.last;
+    final hasLatestSummary = summarizedEndIds.contains(latestEligiblePin);
+    if (hasLatestSummary) {
+      _log('Latest eligible pin already summarized, skipping older gaps (user-deleted)');
+    }
 
     // Parse parameters
     PromptParameters? promptParameters;
@@ -121,6 +144,8 @@ class AutoSummaryService {
     int generatedCount = 0;
     for (final endPinId in eligiblePinIds) {
       if (summarizedEndIds.contains(endPinId)) continue;
+      // If the latest eligible pin is summarized, older gaps are user-deleted
+      if (hasLatestSummary) continue;
 
       final pinIndex = pinnedMessageIds.indexOf(endPinId);
       final startPinId = pinIndex == 0 ? 0 : pinnedMessageIds[pinIndex - 1];
@@ -382,6 +407,33 @@ class AutoSummaryService {
 
     _logSuccess('Summary #${summary.id} regenerated, tokens: ${response.usageMetadata?.totalTokenCount ?? 0}');
     return updated;
+  }
+
+  /// Get message IDs to exclude in agent mode.
+  /// Keeps messages from max(0, lastPinIndex - 2*period) onwards.
+  Future<Set<int>> getAgentModeExcludeIds({
+    required int chatRoomId,
+    required int period,
+  }) async {
+    final allMessages = await _db.readChatMessagesByChatRoom(chatRoomId);
+    if (allMessages.isEmpty) return {};
+
+    final pinnedMessageIds = await _getPinnedMessageIds(chatRoomId);
+    if (pinnedMessageIds.isEmpty) return {};
+
+    final lastPinId = pinnedMessageIds.last;
+    final lastPinIdx = allMessages.indexWhere((m) => m.id == lastPinId);
+    if (lastPinIdx == -1) return {};
+
+    final startIdx = (lastPinIdx - 2 * period).clamp(0, allMessages.length);
+    if (startIdx == 0) return {};
+
+    final excludeIds = <int>{};
+    for (int i = 0; i < startIdx; i++) {
+      if (allMessages[i].id != null) excludeIds.add(allMessages[i].id!);
+    }
+    _log('Agent mode: excluding ${excludeIds.length} messages before index $startIdx (lastPin=$lastPinIdx, period=$period)');
+    return excludeIds;
   }
 
   /// Get all message IDs covered by existing summaries

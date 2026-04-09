@@ -17,6 +17,7 @@ import '../models/chat/chat_room.dart';
 import '../models/chat/chat_message.dart';
 import '../models/chat/chat_log.dart';
 import '../models/chat/chat_message_metadata.dart';
+import '../models/chat/agent_entry.dart';
 import '../models/chat/auto_summary_settings.dart';
 import '../models/chat/chat_room_summary.dart';
 import '../models/chat/chat_summary.dart';
@@ -42,7 +43,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 47,
+      version: 49,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -438,6 +439,7 @@ class DatabaseHelper {
         id $idType,
         chat_room_id $intType,
         is_enabled $boolType DEFAULT 1,
+        is_agent_enabled $boolType DEFAULT 0,
         use_sub_model $boolType DEFAULT 0,
         summary_model $textType DEFAULT 'gemini-2.0-flash-exp',
         token_threshold INTEGER NOT NULL DEFAULT 5000,
@@ -487,6 +489,37 @@ class DatabaseHelper {
       ON chat_summaries (end_pin_message_id)
     ''');
 
+    // Agent entries table
+    await db.execute('''
+      CREATE TABLE agent_entries (
+        id $idType,
+        chat_room_id $intType,
+        entry_type $textType,
+        name $textType,
+        data $textType,
+        is_active $boolType DEFAULT 1,
+        related_names $textTypeNullable,
+        created_at $textType,
+        updated_at $textType,
+        FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE
+      )
+    ''');
+
+    await db.execute('''
+      CREATE INDEX idx_agent_entries_chat_room
+      ON agent_entries (chat_room_id)
+    ''');
+
+    await db.execute('''
+      CREATE INDEX idx_agent_entries_type
+      ON agent_entries (chat_room_id, entry_type)
+    ''');
+
+    await db.execute('''
+      CREATE INDEX idx_agent_entries_active
+      ON agent_entries (chat_room_id, is_active)
+    ''');
+
     // Community tables
     await db.execute('''
       CREATE TABLE community_posts (
@@ -497,6 +530,8 @@ class DatabaseHelper {
         time $textType,
         content $textType,
         created_at $textType,
+        is_favorited $boolType,
+        favorite_used $boolType,
         FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE
       )
     ''');
@@ -1228,6 +1263,51 @@ class DatabaseHelper {
     if (oldVersion < 47) {
       await db.execute('''
         ALTER TABLE chat_rooms ADD COLUMN model_preset TEXT NOT NULL DEFAULT 'primary'
+      ''');
+    }
+
+    if (oldVersion < 48) {
+      await db.execute('''
+        ALTER TABLE auto_summary_settings ADD COLUMN is_agent_enabled INTEGER NOT NULL DEFAULT 0
+      ''');
+
+      await db.execute('''
+        CREATE TABLE agent_entries (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          chat_room_id INTEGER NOT NULL,
+          entry_type TEXT NOT NULL,
+          name TEXT NOT NULL,
+          data TEXT NOT NULL,
+          is_active INTEGER NOT NULL DEFAULT 1,
+          related_names TEXT,
+          created_at TEXT NOT NULL,
+          updated_at TEXT NOT NULL,
+          FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE
+        )
+      ''');
+
+      await db.execute('''
+        CREATE INDEX idx_agent_entries_chat_room
+        ON agent_entries (chat_room_id)
+      ''');
+
+      await db.execute('''
+        CREATE INDEX idx_agent_entries_type
+        ON agent_entries (chat_room_id, entry_type)
+      ''');
+
+      await db.execute('''
+        CREATE INDEX idx_agent_entries_active
+        ON agent_entries (chat_room_id, is_active)
+      ''');
+    }
+
+    if (oldVersion < 49) {
+      await db.execute('''
+        ALTER TABLE community_posts ADD COLUMN is_favorited INTEGER NOT NULL DEFAULT 0
+      ''');
+      await db.execute('''
+        ALTER TABLE community_posts ADD COLUMN favorite_used INTEGER NOT NULL DEFAULT 0
       ''');
     }
   }
@@ -1998,7 +2078,6 @@ class DatabaseHelper {
     final chatRoom = ChatRoom(
       characterId: agentCharacterId,
       name: 'Flan Agent',
-      pinMode: 'manual',
     );
 
     final map = chatRoom.toMap();
@@ -2582,6 +2661,104 @@ class DatabaseHelper {
     );
   }
 
+  // ==================== Agent 엔트리 CRUD ====================
+
+  Future<int> createAgentEntry(AgentEntry entry) async {
+    final db = await database;
+    final map = entry.toMap();
+    map.remove('id');
+    return await db.insert('agent_entries', map);
+  }
+
+  Future<List<AgentEntry>> getAgentEntries(
+    int chatRoomId, {
+    AgentEntryType? type,
+    bool? isActive,
+  }) async {
+    final db = await database;
+    String where = 'chat_room_id = ?';
+    final whereArgs = <dynamic>[chatRoomId];
+
+    if (type != null) {
+      where += ' AND entry_type = ?';
+      whereArgs.add(type.name);
+    }
+    if (isActive != null) {
+      where += ' AND is_active = ?';
+      whereArgs.add(isActive ? 1 : 0);
+    }
+
+    final result = await db.query(
+      'agent_entries',
+      where: where,
+      whereArgs: whereArgs,
+      orderBy: 'created_at ASC',
+    );
+    return result.map((map) => AgentEntry.fromMap(map)).toList();
+  }
+
+  Future<AgentEntry?> getAgentEntryByName(
+    int chatRoomId,
+    String name,
+    AgentEntryType type,
+  ) async {
+    final db = await database;
+    final result = await db.query(
+      'agent_entries',
+      where: 'chat_room_id = ? AND name = ? AND entry_type = ?',
+      whereArgs: [chatRoomId, name, type.name],
+    );
+    if (result.isNotEmpty) {
+      return AgentEntry.fromMap(result.first);
+    }
+    return null;
+  }
+
+  Future<int> updateAgentEntry(AgentEntry entry) async {
+    final db = await database;
+    return await db.update(
+      'agent_entries',
+      entry.toMap(),
+      where: 'id = ?',
+      whereArgs: [entry.id],
+    );
+  }
+
+  Future<int> deleteAgentEntry(int id) async {
+    final db = await database;
+    return await db.delete(
+      'agent_entries',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> setAgentEntryActive(int id, bool isActive) async {
+    final db = await database;
+    return await db.update(
+      'agent_entries',
+      {
+        'is_active': isActive ? 1 : 0,
+        'updated_at': DateTime.now().toIso8601String(),
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> deactivateAllAgentEntries(int chatRoomId) async {
+    final db = await database;
+    return await db.update(
+      'agent_entries',
+      {
+        'is_active': 0,
+        'updated_at': DateTime.now().toIso8601String(),
+      },
+      where: 'chat_room_id = ?',
+      whereArgs: [chatRoomId],
+    );
+  }
+
   // ==================== 통계 ====================
 
   Future<List<Map<String, dynamic>>> getMessageStatsByDateAndModel({
@@ -2826,6 +3003,52 @@ class DatabaseHelper {
   Future<void> deleteCommunityPosts(int chatRoomId) async {
     final db = await database;
     await db.delete('community_posts', where: 'chat_room_id = ?', whereArgs: [chatRoomId]);
+  }
+
+  Future<void> togglePostFavorite(int postId, bool isFavorited) async {
+    final db = await database;
+    await db.update(
+      'community_posts',
+      {'is_favorited': isFavorited ? 1 : 0},
+      where: 'id = ?',
+      whereArgs: [postId],
+    );
+  }
+
+  Future<List<CommunityPost>> readUnusedFavoritePosts(int chatRoomId) async {
+    final db = await database;
+    final maps = await db.query(
+      'community_posts',
+      where: 'chat_room_id = ? AND is_favorited = 1 AND favorite_used = 0',
+      whereArgs: [chatRoomId],
+      orderBy: 'time ASC',
+    );
+    final posts = maps.map((m) => CommunityPost.fromMap(m)).toList();
+
+    if (posts.isNotEmpty) {
+      final postIds = posts.map((p) => p.id!).toList();
+      final placeholders = List.filled(postIds.length, '?').join(', ');
+      final commentMaps = await db.rawQuery(
+        'SELECT * FROM community_comments WHERE post_id IN ($placeholders)',
+        postIds,
+      );
+      final comments = commentMaps.map((m) => CommunityComment.fromMap(m)).toList();
+      for (final post in posts) {
+        post.comments = comments.where((c) => c.postId == post.id).toList();
+      }
+    }
+
+    return posts;
+  }
+
+  Future<void> markFavoritePostsAsUsed(List<int> postIds) async {
+    if (postIds.isEmpty) return;
+    final db = await database;
+    final placeholders = List.filled(postIds.length, '?').join(', ');
+    await db.rawUpdate(
+      'UPDATE community_posts SET favorite_used = 1 WHERE id IN ($placeholders)',
+      postIds,
+    );
   }
 
   // ==================== 유틸리티 ====================

@@ -2,6 +2,7 @@ class AutoSummarySettings {
   final int? id;
   final int chatRoomId;
   final bool isEnabled;
+  final bool isAgentEnabled;
   final bool useSubModel;
   final String summaryModel;
   final int tokenThreshold;
@@ -15,6 +16,7 @@ class AutoSummarySettings {
     this.id,
     required this.chatRoomId,
     this.isEnabled = true,
+    this.isAgentEnabled = false,
     this.useSubModel = false,
     this.summaryModel = 'geminiFlash3Preview',
     this.tokenThreshold = 5000,
@@ -31,6 +33,7 @@ class AutoSummarySettings {
       id: map['id'] as int?,
       chatRoomId: map['chat_room_id'] as int,
       isEnabled: (map['is_enabled'] as int? ?? 1) == 1,
+      isAgentEnabled: (map['is_agent_enabled'] as int? ?? 0) == 1,
       useSubModel: (map['use_sub_model'] as int? ?? 0) == 1,
       summaryModel: map['summary_model'] as String? ?? 'geminiFlash3Preview',
       tokenThreshold: map['token_threshold'] as int? ?? 5000,
@@ -48,6 +51,7 @@ class AutoSummarySettings {
       'id': id,
       'chat_room_id': chatRoomId,
       'is_enabled': isEnabled ? 1 : 0,
+      'is_agent_enabled': isAgentEnabled ? 1 : 0,
       'use_sub_model': useSubModel ? 1 : 0,
       'summary_model': summaryModel,
       'token_threshold': tokenThreshold,
@@ -63,6 +67,7 @@ class AutoSummarySettings {
     int? id,
     int? chatRoomId,
     bool? isEnabled,
+    bool? isAgentEnabled,
     bool? useSubModel,
     String? summaryModel,
     int? tokenThreshold,
@@ -76,6 +81,7 @@ class AutoSummarySettings {
       id: id ?? this.id,
       chatRoomId: chatRoomId ?? this.chatRoomId,
       isEnabled: isEnabled ?? this.isEnabled,
+      isAgentEnabled: isAgentEnabled ?? this.isAgentEnabled,
       useSubModel: useSubModel ?? this.useSubModel,
       summaryModel: summaryModel ?? this.summaryModel,
       tokenThreshold: tokenThreshold ?? this.tokenThreshold,

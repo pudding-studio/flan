@@ -25,6 +25,7 @@ class PromptBuilder {
     Map<int, ChatMessageMetadata>? summaryMetadataMap,
     List<PromptCondition>? conditions,
     Map<int, String>? conditionStates,
+    String? agentContext,
   }) {
     final keywords = buildKeywordMap(
       character: character,
@@ -34,6 +35,7 @@ class PromptBuilder {
       chatRoom: chatRoom,
       summaries: summaries,
       summaryMetadataMap: summaryMetadataMap,
+      agentContext: agentContext,
     );
 
     // Add condition variable keywords
@@ -74,6 +76,7 @@ class PromptBuilder {
     Map<int, ChatMessageMetadata>? summaryMetadataMap,
     List<PromptCondition>? conditions,
     Map<int, String>? conditionStates,
+    String? agentContext,
   }) {
     final keywords = buildKeywordMap(
       character: character,
@@ -83,6 +86,7 @@ class PromptBuilder {
       chatRoom: chatRoom,
       summaries: summaries,
       summaryMetadataMap: summaryMetadataMap,
+      agentContext: agentContext,
     );
 
     // Add condition variable keywords
@@ -264,6 +268,7 @@ class PromptBuilder {
     ChatRoom? chatRoom,
     List<ChatSummary>? summaries,
     Map<int, ChatMessageMetadata>? summaryMetadataMap,
+    String? agentContext,
   }) {
     // Phase 1: identity keywords that other values may reference
     final baseKeywords = {
@@ -288,6 +293,7 @@ class PromptBuilder {
       'start_setting': resolve(startScenario?.startSetting ?? ''),
       'chat_memo': resolve(chatRoom?.memo ?? ''),
       'chat_historys': resolve(_buildChatHistorysText(summaries, summaryMetadataMap)),
+      'agent_context': resolve(agentContext ?? ''),
     };
   }
 

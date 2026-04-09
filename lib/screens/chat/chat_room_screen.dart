@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../widgets/common/markdown_text.dart';
 import '../../models/chat/chat_room.dart';
 import '../../models/chat/chat_message.dart';
@@ -23,6 +24,7 @@ import '../../utils/prompt_builder.dart';
 import '../../utils/common_dialog.dart';
 import '../../utils/token_counter.dart';
 import '../../services/ai_service.dart';
+import '../../services/agent_summary_service.dart';
 import '../../services/auto_summary_service.dart';
 import '../../models/chat/chat_message_metadata.dart';
 import '../../models/chat/chat_summary.dart';
@@ -62,7 +64,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   final AiService _aiService = AiService();
   final AutoSummaryService _autoSummaryService = AutoSummaryService();
   final TextEditingController _messageController = TextEditingController();
-  final ScrollController _scrollController = ScrollController();
+  final ItemScrollController _itemScrollController = ItemScrollController();
+  final ItemPositionsListener _itemPositionsListener = ItemPositionsListener.create();
 
   ChatRoom? _chatRoom;
   Character? _character;
@@ -92,21 +95,25 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   bool _isSearching = false;
   final TextEditingController _searchController = TextEditingController();
   final FocusNode _searchFocusNode = FocusNode();
-  List<int> _searchMatchIndices = [];
+  // Each entry: (messageIndex, occurrenceIndex within that message)
+  List<(int msgIdx, int occIdx)> _searchMatches = [];
   int _currentSearchIndex = -1;
+  GlobalKey _searchHighlightKey = GlobalKey();
+  bool _highlightKeyActive = false;
 
   @override
   void initState() {
     super.initState();
     _messageFocusNode.addListener(_onMessageFocusChanged);
-    _scrollController.addListener(_onScrollChanged);
+    _itemPositionsListener.itemPositions.addListener(_onScrollChanged);
     _loadChatData();
   }
 
   void _onScrollChanged() {
-    final show = _scrollController.hasClients &&
-        _scrollController.position.maxScrollExtent > 0 &&
-        _scrollController.offset > 200;
+    final positions = _itemPositionsListener.itemPositions.value;
+    if (positions.isEmpty) return;
+    final minIndex = positions.map((p) => p.index).reduce((a, b) => a < b ? a : b);
+    final show = minIndex > 3;
     if (show != _showScrollButtons || (!show && _hasNewMessage)) {
       setState(() {
         _showScrollButtons = show;
@@ -126,7 +133,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       _isSearching = !_isSearching;
       if (!_isSearching) {
         _searchController.clear();
-        _searchMatchIndices = [];
+        _searchMatches = [];
         _currentSearchIndex = -1;
       } else {
         _searchFocusNode.requestFocus();
@@ -134,25 +141,37 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     });
   }
 
+  static final _imageMarkdownPattern = RegExp(r'!\[[^\]]*\]\([^)]+\)');
+
   void _performSearch(String query) {
     if (query.isEmpty) {
       setState(() {
-        _searchMatchIndices = [];
+        _searchMatches = [];
         _currentSearchIndex = -1;
       });
       return;
     }
 
     final lowerQuery = query.toLowerCase();
-    final matches = <int>[];
+    final matches = <(int, int)>[];
     for (int i = 0; i < _messages.length; i++) {
-      if (_messages[i].content.toLowerCase().contains(lowerQuery)) {
-        matches.add(i);
+      // Strip image markdown to match what MarkdownText actually renders as text
+      var displayText = _buildDisplayContent(_messages[i].content);
+      displayText = displayText.replaceAll(_imageMarkdownPattern, '');
+      final lowerContent = displayText.toLowerCase();
+      int start = 0;
+      int occIdx = 0;
+      while (true) {
+        final pos = lowerContent.indexOf(lowerQuery, start);
+        if (pos == -1) break;
+        matches.add((i, occIdx));
+        occIdx++;
+        start = pos + lowerQuery.length;
       }
     }
 
     setState(() {
-      _searchMatchIndices = matches;
+      _searchMatches = matches;
       _currentSearchIndex = matches.isNotEmpty ? 0 : -1;
     });
 
@@ -162,28 +181,55 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   void _navigateSearch(int direction) {
-    if (_searchMatchIndices.isEmpty) return;
+    if (_searchMatches.isEmpty) return;
     setState(() {
       _currentSearchIndex =
-          (_currentSearchIndex + direction) % _searchMatchIndices.length;
+          (_currentSearchIndex + direction) % _searchMatches.length;
       if (_currentSearchIndex < 0) {
-        _currentSearchIndex = _searchMatchIndices.length - 1;
+        _currentSearchIndex = _searchMatches.length - 1;
       }
     });
     _scrollToSearchResult(_currentSearchIndex);
   }
 
   void _scrollToSearchResult(int searchIndex) {
-    final messageIndex = _searchMatchIndices[searchIndex];
-    // ListView is reversed, so convert index
-    final reversedIndex = _messages.length - 1 - messageIndex;
-    // Estimate scroll position
-    final estimatedOffset = reversedIndex * 80.0;
-    _scrollController.animateTo(
-      estimatedOffset.clamp(0, _scrollController.position.maxScrollExtent),
-      duration: const Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
+    final (messageIndex, _) = _searchMatches[searchIndex];
+    final listIndex = _messages.length - 1 - messageIndex;
+
+    void doEnsureVisible() {
+      setState(() {
+        _searchHighlightKey = GlobalKey();
+        _highlightKeyActive = true;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (_searchHighlightKey.currentContext != null) {
+          Scrollable.ensureVisible(
+            _searchHighlightKey.currentContext!,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.easeOut,
+            alignment: 0.0,
+          ).then((_) {
+            if (mounted) setState(() => _highlightKeyActive = false);
+          });
+        } else {
+          setState(() => _highlightKeyActive = false);
+        }
+      });
+    }
+
+    // Check if the item is already on screen
+    final positions = _itemPositionsListener.itemPositions.value;
+    final isOnScreen = positions.any((p) => p.index == listIndex);
+
+    if (isOnScreen) {
+      doEnsureVisible();
+    } else {
+      // Jump first, wait for settle, then assign key
+      _itemScrollController.jumpTo(index: listIndex, alignment: 0.5);
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        doEnsureVisible();
+      });
+    }
   }
 
   @override
@@ -193,8 +239,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     _messageController.dispose();
     _searchController.dispose();
     _searchFocusNode.dispose();
-    _scrollController.removeListener(_onScrollChanged);
-    _scrollController.dispose();
+    _itemPositionsListener.itemPositions.removeListener(_onScrollChanged);
     for (var controller in _editControllers.values) {
       controller.dispose();
     }
@@ -377,8 +422,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       }
     }
 
+    // Load agent context if agent mode is enabled
+    String? agentContext;
+    final summarySettings = await _db.getAutoSummarySettings(0);
+    if (summarySettings != null && summarySettings.isAgentEnabled) {
+      final agentService = AgentSummaryService();
+      agentContext = await agentService.buildActiveEntriesText(widget.chatRoomId);
+    }
+
     // Stage 1+2: Build frame and apply keyword substitution
-    final rawSystemPrompt = PromptBuilder.buildSystemPrompt(
+    String rawSystemPrompt = PromptBuilder.buildSystemPrompt(
       chatPrompt: chatPrompt,
       character: _character!,
       persona: persona,
@@ -389,11 +442,31 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       summaryMetadataMap: summaryMetadataMap,
       conditions: conditions,
       conditionStates: conditionStates,
+      agentContext: agentContext,
     );
 
-    // Exclude summarized messages from chat history
-    final summarizedIds = await _autoSummaryService.getSummarizedMessageIds(widget.chatRoomId);
-    final allExcludeIds = {...summarizedIds, ...?excludeMessageIds};
+    // Auto-append agent context if it wasn't consumed by {{agent_context}} keyword
+    if (agentContext != null &&
+        agentContext.isNotEmpty &&
+        !rawSystemPrompt.contains(agentContext)) {
+      rawSystemPrompt = rawSystemPrompt.isEmpty
+          ? agentContext
+          : '$rawSystemPrompt\n\n$agentContext';
+    }
+
+    // Exclude old messages from chat history
+    Set<int> contextExcludeIds;
+    if (summarySettings != null && summarySettings.isAgentEnabled) {
+      // Agent mode: keep messages from 2 summary periods ago onwards
+      final period = _chatRoom!.autoPinByMessageCount ?? 10;
+      contextExcludeIds = await _autoSummaryService.getAgentModeExcludeIds(
+        chatRoomId: widget.chatRoomId,
+        period: period,
+      );
+    } else {
+      contextExcludeIds = await _autoSummaryService.getSummarizedMessageIds(widget.chatRoomId);
+    }
+    final allExcludeIds = {...contextExcludeIds, ...?excludeMessageIds};
 
     final chatHistoryMap = await _buildChatHistoryMap(
       chatPrompt: chatPrompt,
@@ -421,6 +494,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       summaryMetadataMap: summaryMetadataMap,
       conditions: conditions,
       conditionStates: conditionStates,
+      agentContext: agentContext,
     );
 
     // Stage 3: Apply sendDataModify to the fully assembled prompt data
@@ -489,6 +563,20 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     setState(() => _sendingPhase = SendingPhase.preparing);
 
     try {
+      // Fetch and prepend unused favorite community posts
+      final favoritePosts = await _db.readUnusedFavoritePosts(widget.chatRoomId);
+      String favoritePrefix = '';
+      if (favoritePosts.isNotEmpty) {
+        final parts = favoritePosts.map((p) {
+          final buf = StringBuffer('[${p.author}] ${p.title}\n${p.content}');
+          for (final c in p.comments) {
+            buf.write('\n  ㄴ ${c.author}: ${c.content}');
+          }
+          return buf.toString();
+        });
+        favoritePrefix = '【SNS|${parts.join('\n\n')}】';
+      }
+
       final tokenizerProvider = context.read<TokenizerProvider>();
       final tokenizer = tokenizerProvider.selectedTokenizer;
       String combinedUserMessage;
@@ -496,9 +584,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       if (_messages.isNotEmpty && _messages.last.role == MessageRole.user) {
         final lastUserMessage = _messages.last;
-        combinedUserMessage = text.isEmpty
+        final baseContent = text.isEmpty
             ? lastUserMessage.content
             : '${lastUserMessage.content}\n$text';
+        combinedUserMessage = favoritePrefix.isNotEmpty
+            ? '$favoritePrefix\n\n$baseContent'
+            : baseContent;
 
         final tokenCount = TokenCounter.estimateTokenCount(combinedUserMessage, tokenizer: tokenizer);
         final updatedUserMessage = lastUserMessage.copyWith(
@@ -509,15 +600,22 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         await _db.updateChatMessage(updatedUserMessage);
         excludeId = lastUserMessage.id!;
       } else {
-        combinedUserMessage = text;
-        final tokenCount = TokenCounter.estimateTokenCount(text, tokenizer: tokenizer);
+        combinedUserMessage = favoritePrefix.isNotEmpty
+            ? '$favoritePrefix\n\n$text'
+            : text;
+        final tokenCount = TokenCounter.estimateTokenCount(combinedUserMessage, tokenizer: tokenizer);
         final userMessage = ChatMessage(
           chatRoomId: widget.chatRoomId,
           role: MessageRole.user,
-          content: text,
+          content: combinedUserMessage,
           tokenCount: tokenCount,
         );
         excludeId = await _db.createChatMessage(userMessage);
+      }
+
+      // Mark favorite posts as used
+      if (favoritePosts.isNotEmpty) {
+        await _db.markFavoritePostsAsUsed(favoritePosts.map((p) => p.id!).toList());
       }
 
       _messageController.clear();
@@ -594,6 +692,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 await _autoSummaryService.generateAllPendingSummaries(chatRoomId: widget.chatRoomId);
               }
             }
+          }
+
+          // Future plan: agent summary 이후에 실행하여 우선순위를 보장
+          final agentSettings = await _db.getAutoSummarySettings(0);
+          if (agentSettings != null && agentSettings.isAgentEnabled) {
+            final agentService = AgentSummaryService();
+            await agentService.processFuturePlan(widget.chatRoomId, responseText);
           }
 
           lastError = null;
@@ -765,26 +870,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       previous: previous,
     );
 
-    final isAutoMode = _chatRoom?.pinMode != 'manual';
     bool shouldPin = false;
-    if (isAutoMode && _chatRoom != null) {
-      shouldPin = MetadataParser.shouldAutoPinWithOptions(
-        metadata,
-        previous,
-        byDate: _chatRoom!.autoPinByDate,
-        byLocation: _chatRoom!.autoPinByLocation,
-      );
-      // AI 자동 핀: 【📌|ON】 태그 감지
-      if (!shouldPin && _chatRoom!.autoPinByAi) {
-        final aiPin = MetadataParser.parseAiPinTag(content);
-        if (aiPin == true) shouldPin = true;
-      }
-      // 메시지 수 기준 자동 핀
-      if (!shouldPin && _chatRoom!.autoPinByMessageCount != null && _chatRoom!.autoPinByMessageCount! > 0) {
-        final count = await _db.countMetadataSinceLastPin(widget.chatRoomId);
-        if (count >= _chatRoom!.autoPinByMessageCount!) {
-          shouldPin = true;
-        }
+    if (_chatRoom != null && _chatRoom!.autoPinByMessageCount != null && _chatRoom!.autoPinByMessageCount! > 0) {
+      final count = await _db.countMetadataSinceLastPin(widget.chatRoomId);
+      if (count >= _chatRoom!.autoPinByMessageCount!) {
+        shouldPin = true;
       }
     }
     final finalMetadata = shouldPin ? metadata.copyWith(isPinned: true) : metadata;
@@ -990,28 +1080,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     });
   }
 
-  Future<void> _onPinModeChanged(String mode) async {
+  Future<void> _onAutoPinMessageCountChanged(int? count) async {
     if (_chatRoom == null) return;
     final updated = _chatRoom!.copyWith(
-      pinMode: mode,
-      updatedAt: DateTime.now(),
-    );
-    await _db.updateChatRoom(updated);
-    setState(() => _chatRoom = updated);
-  }
-
-  Future<void> _onAutoPinOptionChanged({
-    bool? byDate,
-    bool? byLocation,
-    bool? byAi,
-    int? byMessageCount,
-  }) async {
-    if (_chatRoom == null) return;
-    final updated = _chatRoom!.copyWith(
-      autoPinByDate: byDate,
-      autoPinByLocation: byLocation,
-      autoPinByAi: byAi,
-      autoPinByMessageCount: byMessageCount,
+      autoPinByMessageCount: count,
       updatedAt: DateTime.now(),
     );
     await _db.updateChatRoom(updated);
@@ -1082,6 +1154,13 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             updatedAt: DateTime.now(),
           );
           await _db.updateChatRoom(updatedChatRoom);
+
+          // Future plan: AI 응답에서 [PLAN: ...] 파싱하여 활성화
+          final agentSettings2 = await _db.getAutoSummarySettings(0);
+          if (agentSettings2 != null && agentSettings2.isAgentEnabled) {
+            final agentService = AgentSummaryService();
+            await agentService.processFuturePlan(widget.chatRoomId, responseText2);
+          }
 
           lastError = null;
           break;
@@ -1159,10 +1238,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         selectedConditionPresetId: _chatRoom!.selectedConditionPresetId,
         memo: _chatRoom!.memo,
         summary: _chatRoom!.summary,
-        pinMode: _chatRoom!.pinMode,
-        autoPinByDate: _chatRoom!.autoPinByDate,
-        autoPinByLocation: _chatRoom!.autoPinByLocation,
-        autoPinByAi: _chatRoom!.autoPinByAi,
         autoPinByMessageCount: _chatRoom!.autoPinByMessageCount,
         selectedModelId: _chatRoom!.selectedModelId,
         modelPreset: _chatRoom!.modelPreset,
@@ -1634,10 +1709,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
     final isSummaryThreshold = _summaryThresholdIndex != null && index == _summaryThresholdIndex;
     final isSummarized = message.id != null && _summarizedMessageIds.contains(message.id!);
-    final isSearchMatch = _isSearching && _searchMatchIndices.contains(index);
-    final isCurrentSearchMatch = isSearchMatch &&
-        _currentSearchIndex >= 0 &&
-        _searchMatchIndices[_currentSearchIndex] == index;
+    final isSearchMatch = _isSearching && _searchMatches.any((m) => m.$1 == index);
+    final currentMatch = _currentSearchIndex >= 0 ? _searchMatches[_currentSearchIndex] : null;
+    final isCurrentSearchMatch = isSearchMatch && currentMatch?.$1 == index;
+    // Which occurrence within this message is the current one (-1 if none)
+    final currentOccurrenceInMsg = isCurrentSearchMatch ? currentMatch!.$2 : -1;
 
     return Column(
       children: [
@@ -1646,15 +1722,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             horizontal: 16 + viewer.paragraphWidth,
             vertical: 0,
           ),
-          decoration: isCurrentSearchMatch
-              ? BoxDecoration(
-                  color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.3),
-                )
-              : isSearchMatch
-                  ? BoxDecoration(
-                      color: Theme.of(context).colorScheme.primaryContainer.withValues(alpha: 0.15),
-                    )
-                  : null,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -1678,6 +1745,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   ),
                   textAlign: viewer.textAlign,
                   paragraphSpacing: viewer.paragraphSpacing,
+                  highlightQuery: isSearchMatch ? _searchController.text : null,
+                  highlightColor: isSearchMatch
+                      ? Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.35)
+                      : null,
+                  currentHighlightColor: isCurrentSearchMatch
+                      ? Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.7)
+                      : null,
+                  currentOccurrence: currentOccurrenceInMsg,
+                  highlightKey: (isCurrentSearchMatch && _highlightKeyActive) ? _searchHighlightKey : null,
                 ),
                 if (MetadataParser.parseCharacterTags(message.content).isNotEmpty)
                   const SizedBox(height: 4),
@@ -1853,11 +1929,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         onModelPresetChanged: _onModelPresetChanged,
         onPromptChanged: _onPromptChanged,
         onPersonaChanged: _onPersonaChanged,
-        onPinModeChanged: _onPinModeChanged,
-        onAutoPinByDateChanged: (v) => _onAutoPinOptionChanged(byDate: v),
-        onAutoPinByLocationChanged: (v) => _onAutoPinOptionChanged(byLocation: v),
-        onAutoPinByAiChanged: (v) => _onAutoPinOptionChanged(byAi: v),
-        onAutoPinByMessageCountChanged: (v) => _onAutoPinOptionChanged(byMessageCount: v),
+        onAutoPinByMessageCountChanged: _onAutoPinMessageCountChanged,
         onPresetChanged: _onPresetChanged,
       ),
       appBar: _isSearching
@@ -1886,11 +1958,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                       textInputAction: TextInputAction.search,
                     ),
                   ),
-                  if (_searchMatchIndices.isNotEmpty)
+                  if (_searchMatches.isNotEmpty)
                     Padding(
                       padding: const EdgeInsets.only(right: 4),
                       child: Text(
-                        '${_currentSearchIndex + 1}/${_searchMatchIndices.length}',
+                        '${_currentSearchIndex + 1}/${_searchMatches.length}',
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     ),
@@ -1950,8 +2022,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   onTap: () {
                     if (_showMorePanel) setState(() => _showMorePanel = false);
                   },
-                  child: ListView.builder(
-                    controller: _scrollController,
+                  child: ScrollablePositionedList.builder(
+                    itemScrollController: _itemScrollController,
+                    itemPositionsListener: _itemPositionsListener,
                     reverse: true,
                     itemCount: _messages.length + 1,
                     itemBuilder: (context, index) {
@@ -1972,8 +2045,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                         child: InkWell(
                           borderRadius: BorderRadius.circular(20),
                           onTap: () {
-                            _scrollController.animateTo(
-                              0,
+                            _itemScrollController.scrollTo(
+                              index: 0,
                               duration: const Duration(milliseconds: 300),
                               curve: Curves.easeOut,
                             );
@@ -2026,8 +2099,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                         _buildScrollButton(
                           icon: Icons.keyboard_arrow_up,
                           onPressed: () {
-                            _scrollController.animateTo(
-                              _scrollController.position.maxScrollExtent,
+                            _itemScrollController.scrollTo(
+                              index: _messages.length,
                               duration: const Duration(milliseconds: 300),
                               curve: Curves.easeOut,
                             );
@@ -2037,8 +2110,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                         _buildScrollButton(
                           icon: Icons.keyboard_arrow_down,
                           onPressed: () {
-                            _scrollController.animateTo(
-                              0,
+                            _itemScrollController.scrollTo(
+                              index: 0,
                               duration: const Duration(milliseconds: 300),
                               curve: Curves.easeOut,
                             );

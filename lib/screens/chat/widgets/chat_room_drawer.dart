@@ -16,6 +16,7 @@ import '../../../models/prompt/prompt_condition_preset_value.dart';
 import '../../../models/chat/chat_model.dart';
 import '../../../models/chat/model_preset.dart';
 import '../../../providers/chat_model_provider.dart';
+import '../../../models/chat/agent_entry.dart';
 import '../../../services/auto_summary_service.dart';
 import '../../../utils/common_dialog.dart';
 import '../../../widgets/common/common_dropdown_button.dart';
@@ -46,10 +47,6 @@ class ChatRoomDrawer extends StatefulWidget {
   final ValueChanged<String> onModelPresetChanged;
   final ValueChanged<int?> onPromptChanged;
   final ValueChanged<int?> onPersonaChanged;
-  final ValueChanged<String> onPinModeChanged;
-  final ValueChanged<bool> onAutoPinByDateChanged;
-  final ValueChanged<bool> onAutoPinByLocationChanged;
-  final ValueChanged<bool> onAutoPinByAiChanged;
   final ValueChanged<int?> onAutoPinByMessageCountChanged;
   final ValueChanged<int?> onPresetChanged;
 
@@ -67,10 +64,6 @@ class ChatRoomDrawer extends StatefulWidget {
     required this.onModelPresetChanged,
     required this.onPromptChanged,
     required this.onPersonaChanged,
-    required this.onPinModeChanged,
-    required this.onAutoPinByDateChanged,
-    required this.onAutoPinByLocationChanged,
-    required this.onAutoPinByAiChanged,
     required this.onAutoPinByMessageCountChanged,
     required this.onPresetChanged,
   });
@@ -116,6 +109,17 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   final Set<int> _regeneratingSummaryIds = {};
   final AutoSummaryService _autoSummaryService = AutoSummaryService();
 
+  // Agent mode state
+  bool _autoSummaryEnabled = false;
+  bool _agentEnabled = false;
+  int _agentSubTabIndex = 0;
+  List<AgentEntry> _agentEntries = [];
+  final Map<int, TextEditingController> _agentEntryControllers = {};
+  final Set<int> _expandedAgentEntryIds = {};
+  final Set<int> _editingAgentEntryIds = {};
+  final Map<int, Map<String, TextEditingController>> _agentEditControllers = {};
+  final Map<int, TextEditingController> _agentNameEditControllers = {};
+
   bool _isLoading = true;
   bool _isAddingSummary = false;
 
@@ -150,6 +154,10 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
     for (final c in _summaryControllers.values) {
       c.dispose();
     }
+    for (final c in _agentEntryControllers.values) {
+      c.dispose();
+    }
+    _disposeAllAgentEditControllers();
     super.dispose();
   }
 
@@ -214,10 +222,24 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
       }
     }
 
+    // Load agent settings and entries
+    final summarySettings = await _db.getAutoSummarySettings(0);
+    final agentEntries = await _db.getAgentEntries(widget.chatRoom.id!);
+    for (final entry in agentEntries) {
+      if (entry.id != null && !_agentEntryControllers.containsKey(entry.id)) {
+        _agentEntryControllers[entry.id!] = TextEditingController(
+          text: entry.toReadableText(),
+        );
+      }
+    }
+
     setState(() {
       _folders = folders;
       _standaloneBooks = standaloneBooks;
       _summaries = summaries;
+      _autoSummaryEnabled = summarySettings?.isEnabled ?? false;
+      _agentEnabled = summarySettings?.isAgentEnabled ?? false;
+      _agentEntries = agentEntries;
       _isLoading = false;
     });
   }
@@ -698,72 +720,6 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
           const SizedBox(height: 8),
           _buildPresetSection(),
         ],
-        const SizedBox(height: 8),
-        _buildVerticalSettingRow(
-          label: '핀 모드',
-          child: CommonDropdownButton<String>(
-            value: widget.chatRoom.pinMode,
-            items: const ['auto', 'manual'],
-            onChanged: (mode) {
-              if (mode != null) widget.onPinModeChanged(mode);
-            },
-            labelBuilder: (mode) => mode == 'auto' ? '자동' : '수동',
-            size: CommonDropdownButtonSize.xsmall,
-          ),
-        ),
-        if (widget.chatRoom.pinMode == 'auto') ...[
-          const SizedBox(height: 4),
-          _buildToggleRow(
-            label: '날짜 기준',
-            value: widget.chatRoom.autoPinByDate,
-            onChanged: widget.onAutoPinByDateChanged,
-          ),
-          _buildToggleRow(
-            label: '장소 기준',
-            value: widget.chatRoom.autoPinByLocation,
-            onChanged: widget.onAutoPinByLocationChanged,
-          ),
-          _buildToggleRow(
-            label: 'AI 자동',
-            value: widget.chatRoom.autoPinByAi,
-            onChanged: widget.onAutoPinByAiChanged,
-          ),
-          _buildToggleRow(
-            label: '메시지 수 기준',
-            value: widget.chatRoom.autoPinByMessageCount != null,
-            onChanged: (value) {
-              if (value) {
-                _pinMessageCountController.text = '10';
-                widget.onAutoPinByMessageCountChanged(10);
-              } else {
-                _pinMessageCountController.clear();
-                widget.onAutoPinByMessageCountChanged(null);
-              }
-            },
-          ),
-          if (widget.chatRoom.autoPinByMessageCount != null)
-            Padding(
-              padding: const EdgeInsets.only(left: 32),
-              child: _buildVerticalSettingRow(
-                label: '요약 메시지 수',
-                child: SizedBox(
-                  width: double.infinity,
-                  child: CommonEditText(
-                    controller: _pinMessageCountController,
-                    hintText: '메시지 수',
-                    size: CommonEditTextSize.small,
-                    keyboardType: TextInputType.number,
-                    onChanged: (value) {
-                      final count = int.tryParse(value);
-                      if (count != null && count > 0) {
-                        widget.onAutoPinByMessageCountChanged(count);
-                      }
-                    },
-                  ),
-                ),
-              ),
-            ),
-        ],
       ],
     );
   }
@@ -995,40 +951,6 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
         const SizedBox(height: 4),
         child,
       ],
-    );
-  }
-
-  Widget _buildToggleRow({
-    required String label,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 0),
-      child: Row(
-        children: [
-          Expanded(
-            flex: 3,
-            child: Text(label, style: _subLabelStyle),
-          ),
-          Expanded(
-            flex: 1,
-            child: Align(
-              alignment: Alignment.centerRight,
-              child: SizedBox(
-                height: 28,
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  child: Switch(
-                    value: value,
-                    onChanged: onChanged,
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -1345,6 +1267,72 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   // ==================== 요약 탭 ====================
 
   Widget _buildSummaryTab() {
+    return Column(
+      children: [
+        // Toggles
+        SwitchListTile(
+          secondary: const Icon(Icons.auto_awesome, size: 20),
+          title: const Text('자동 요약'),
+          dense: true,
+          value: _autoSummaryEnabled,
+          onChanged: (value) async {
+            setState(() => _autoSummaryEnabled = value);
+            final settings = await _db.getAutoSummarySettings(0);
+            if (settings != null) {
+              await _db.updateAutoSummarySettings(
+                settings.copyWith(isEnabled: value),
+              );
+            }
+          },
+        ),
+        if (_autoSummaryEnabled)
+          SwitchListTile(
+            secondary: const Icon(Icons.smart_toy_outlined, size: 20),
+            title: const Text('에이전트 모드'),
+            dense: true,
+            value: _agentEnabled,
+            onChanged: (value) async {
+              setState(() => _agentEnabled = value);
+              final settings = await _db.getAutoSummarySettings(0);
+              if (settings != null) {
+                await _db.updateAutoSummarySettings(
+                  settings.copyWith(isAgentEnabled: value),
+                );
+              }
+            },
+          ),
+        if (_autoSummaryEnabled)
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+            child: _buildVerticalSettingRow(
+              label: '요약 메시지 수',
+              child: SizedBox(
+                width: double.infinity,
+                child: CommonEditText(
+                  controller: _pinMessageCountController,
+                  hintText: '메시지 수',
+                  size: CommonEditTextSize.small,
+                  keyboardType: TextInputType.number,
+                  onChanged: (value) {
+                    final count = int.tryParse(value);
+                    widget.onAutoPinByMessageCountChanged(count != null && count > 0 ? count : null);
+                  },
+                ),
+              ),
+            ),
+          ),
+        const Divider(height: 1),
+        // Content area
+        Expanded(
+          child: _autoSummaryEnabled && _agentEnabled
+              ? _buildAgentView()
+              : _buildClassicSummaryView(),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildClassicSummaryView() {
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Column(
       children: [
@@ -1448,6 +1436,449 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
         _buildAddSummaryButton(),
       ],
     );
+  }
+
+  // ==================== Agent 뷰 ====================
+
+  static const _agentTabTypes = AgentEntryType.values;
+  static const _agentTabIcons = [
+    Icons.auto_stories,
+    Icons.person_outline,
+    Icons.place_outlined,
+    Icons.inventory_2_outlined,
+    Icons.emoji_events_outlined,
+  ];
+
+  Widget _buildAgentView() {
+    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
+    return Column(
+      children: [
+        // Sub-tab chips
+        SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          child: Row(
+            children: List.generate(_agentTabTypes.length, (i) {
+              final type = _agentTabTypes[i];
+              final count = _agentEntries.where((e) => e.entryType == type).length;
+              return Padding(
+                padding: const EdgeInsets.only(right: 6),
+                child: FilterChip(
+                  avatar: Icon(_agentTabIcons[i], size: 16),
+                  label: Text('${type.displayName} ($count)'),
+                  selected: _agentSubTabIndex == i,
+                  onSelected: (_) => setState(() => _agentSubTabIndex = i),
+                  visualDensity: VisualDensity.compact,
+                ),
+              );
+            }),
+          ),
+        ),
+        const Divider(height: 1),
+        // Entry list for selected type
+        Expanded(
+          child: _buildAgentEntryList(
+            _agentTabTypes[_agentSubTabIndex],
+            bottomInset,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildAgentEntryList(AgentEntryType type, double bottomInset) {
+    final entries = _agentEntries.where((e) => e.entryType == type).toList();
+
+    if (entries.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Text(
+            '${type.displayName} 데이터가 없습니다.\n채팅을 진행하면 자동으로 생성됩니다.',
+            textAlign: TextAlign.center,
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + bottomInset),
+      itemCount: entries.length,
+      itemBuilder: (context, index) {
+        final entry = entries[index];
+        final isExpanded = _expandedAgentEntryIds.contains(entry.id);
+
+        return CommonEditableExpandableItem(
+          key: ValueKey('agent_${entry.id}'),
+          icon: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                _agentTabIcons[_agentTabTypes.indexOf(type)],
+                size: 20,
+                color: entry.isActive
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              const SizedBox(width: 4),
+              Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: entry.isActive
+                      ? Colors.green
+                      : Theme.of(context).colorScheme.outlineVariant,
+                ),
+              ),
+            ],
+          ),
+          name: entry.name,
+          isExpanded: isExpanded,
+          showNameField: false,
+          onToggleExpanded: () {
+            setState(() {
+              if (isExpanded) {
+                _expandedAgentEntryIds.remove(entry.id!);
+              } else {
+                _expandedAgentEntryIds.add(entry.id!);
+              }
+            });
+          },
+          onDelete: () => _deleteAgentEntry(entry),
+          onEdit: _editingAgentEntryIds.contains(entry.id)
+              ? null
+              : () => _editAgentEntry(entry),
+          content: _editingAgentEntryIds.contains(entry.id)
+              ? _buildAgentEntryEditContent(entry)
+              : Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Active toggle
+                    Row(
+                      children: [
+                        Text(
+                          entry.isActive ? '활성' : '비활성',
+                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: entry.isActive
+                                ? Colors.green
+                                : Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                        ),
+                        const Spacer(),
+                        Switch(
+                          value: entry.isActive,
+                          onChanged: (value) => _toggleAgentEntryActive(entry, value),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    // Data fields
+                    ..._buildAgentEntryFields(entry),
+                  ],
+                ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAgentEntryEditContent(AgentEntry entry) {
+    final id = entry.id!;
+    final nameCtrl = _agentNameEditControllers[id]!;
+    final controllers = _agentEditControllers[id]!;
+    final fieldDefs = _agentFieldDefs(entry.entryType);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '이름',
+          style: Theme.of(context).textTheme.labelSmall?.copyWith(
+            color: Theme.of(context).colorScheme.primary,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        const SizedBox(height: 4),
+        CommonEditText(
+          controller: nameCtrl,
+          hintText: '이름',
+          size: CommonEditTextSize.small,
+        ),
+        ...fieldDefs.map((def) {
+          final (key, label, _) = def;
+          return Padding(
+            padding: const EdgeInsets.only(top: 10),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  label,
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                CommonEditText(
+                  controller: controllers[key],
+                  hintText: label,
+                  maxLines: null,
+                  minLines: 1,
+                  size: CommonEditTextSize.small,
+                ),
+              ],
+            ),
+          );
+        }),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          children: [
+            TextButton(
+              onPressed: () => _cancelEditAgentEntry(id),
+              child: const Text('취소'),
+            ),
+            const SizedBox(width: 8),
+            FilledButton(
+              onPressed: () => _saveAgentEntry(entry),
+              child: const Text('저장'),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  List<Widget> _buildAgentEntryFields(AgentEntry entry) {
+    final fields = <Widget>[];
+    final data = entry.data;
+
+    void addField(String label, dynamic value) {
+      if (value == null) return;
+      final text = value is List ? value.join(', ') : value.toString();
+      if (text.isEmpty) return;
+      fields.add(Padding(
+        padding: const EdgeInsets.only(bottom: 6),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                color: Theme.of(context).colorScheme.primary,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              text,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+          ],
+        ),
+      ));
+    }
+
+    switch (entry.entryType) {
+      case AgentEntryType.episode:
+        addField('날짜/시간', data['date_range']);
+        addField('등장인물', data['characters']);
+        addField('장소', data['locations']);
+        addField('요약', data['summary_text']);
+      case AgentEntryType.character:
+        addField('외형', data['appearance']);
+        addField('성격', data['personality']);
+        addField('과거', data['past']);
+        addField('능력', data['abilities']);
+        addField('작중행적', data['story_actions']);
+        addField('대사 스타일', data['dialogue_style']);
+        addField('소지품', data['possessions']);
+      case AgentEntryType.location:
+        addField('위치', data['parent_location']);
+        addField('특징', data['features']);
+        if (data['ascii_map'] != null) addField('맵', data['ascii_map']);
+        addField('관련 에피소드', data['related_episodes']);
+      case AgentEntryType.item:
+        addField('키워드', data['keywords']);
+        addField('특징', data['features']);
+        addField('관련 에피소드', data['related_episodes']);
+      case AgentEntryType.event:
+        addField('일시', data['datetime']);
+        addField('개요', data['overview']);
+        addField('결과', data['result']);
+        addField('관련 에피소드', data['related_episodes']);
+    }
+
+    // Related names (cross-references)
+    if (entry.relatedNames.isNotEmpty) {
+      fields.add(Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: Wrap(
+          spacing: 4,
+          runSpacing: 4,
+          children: entry.relatedNames.map((name) {
+            return Chip(
+              label: Text(name),
+              visualDensity: VisualDensity.compact,
+              labelStyle: Theme.of(context).textTheme.labelSmall,
+              padding: EdgeInsets.zero,
+              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+            );
+          }).toList(),
+        ),
+      ));
+    }
+
+    return fields;
+  }
+
+  Future<void> _toggleAgentEntryActive(AgentEntry entry, bool isActive) async {
+    if (entry.id == null) return;
+    await _db.setAgentEntryActive(entry.id!, isActive);
+    await _loadData();
+  }
+
+  List<(String, String, bool)> _agentFieldDefs(AgentEntryType type) {
+    switch (type) {
+      case AgentEntryType.episode:
+        return [
+          ('date_range', '날짜/시간', false),
+          ('characters', '등장인물 (쉼표 구분)', true),
+          ('locations', '장소 (쉼표 구분)', true),
+          ('summary_text', '요약', false),
+        ];
+      case AgentEntryType.character:
+        return [
+          ('appearance', '외형', false),
+          ('personality', '성격', false),
+          ('past', '과거', false),
+          ('abilities', '능력', false),
+          ('story_actions', '작중행적', false),
+          ('dialogue_style', '대사 스타일', false),
+          ('possessions', '소지품 (쉼표 구분)', true),
+        ];
+      case AgentEntryType.location:
+        return [
+          ('parent_location', '위치', false),
+          ('features', '특징', false),
+          ('ascii_map', '맵', false),
+          ('related_episodes', '관련 에피소드 (쉼표 구분)', true),
+        ];
+      case AgentEntryType.item:
+        return [
+          ('keywords', '키워드', false),
+          ('features', '특징', false),
+          ('related_episodes', '관련 에피소드 (쉼표 구분)', true),
+        ];
+      case AgentEntryType.event:
+        return [
+          ('datetime', '일시', false),
+          ('overview', '개요', false),
+          ('result', '결과', false),
+          ('related_episodes', '관련 에피소드 (쉼표 구분)', true),
+        ];
+    }
+  }
+
+  void _initAgentEditControllers(AgentEntry entry) {
+    final id = entry.id!;
+    final data = entry.data;
+    final fieldDefs = _agentFieldDefs(entry.entryType);
+
+    _agentNameEditControllers[id] = TextEditingController(text: entry.name);
+    _agentEditControllers[id] = {
+      for (final (key, _, isList) in fieldDefs)
+        key: TextEditingController(
+          text: isList
+              ? ((data[key] as List?)?.join(', ') ?? '')
+              : (data[key]?.toString() ?? ''),
+        ),
+    };
+  }
+
+  void _disposeAgentEditControllers(int id) {
+    _agentNameEditControllers[id]?.dispose();
+    _agentNameEditControllers.remove(id);
+    final controllers = _agentEditControllers.remove(id);
+    if (controllers != null) {
+      for (final c in controllers.values) { c.dispose(); }
+    }
+  }
+
+  void _disposeAllAgentEditControllers() {
+    for (final id in _agentEditControllers.keys.toList()) {
+      _disposeAgentEditControllers(id);
+    }
+  }
+
+  void _editAgentEntry(AgentEntry entry) {
+    final id = entry.id!;
+    setState(() {
+      _editingAgentEntryIds.add(id);
+      _expandedAgentEntryIds.add(id);
+      _initAgentEditControllers(entry);
+    });
+  }
+
+  void _cancelEditAgentEntry(int id) {
+    setState(() {
+      _editingAgentEntryIds.remove(id);
+      _disposeAgentEditControllers(id);
+    });
+  }
+
+  Future<void> _saveAgentEntry(AgentEntry entry) async {
+    final id = entry.id!;
+    final nameCtrl = _agentNameEditControllers[id];
+    final controllers = _agentEditControllers[id];
+    if (nameCtrl == null || controllers == null) return;
+
+    final fieldDefs = _agentFieldDefs(entry.entryType);
+    final updatedData = Map<String, dynamic>.from(entry.data);
+
+    for (final (key, _, isList) in fieldDefs) {
+      final text = controllers[key]!.text.trim();
+      if (text.isEmpty) {
+        updatedData.remove(key);
+      } else if (isList) {
+        updatedData[key] = text.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+      } else {
+        updatedData[key] = text;
+      }
+    }
+
+    final updatedEntry = entry.copyWith(
+      name: nameCtrl.text.trim().isEmpty ? entry.name : nameCtrl.text.trim(),
+      data: updatedData,
+      updatedAt: DateTime.now(),
+    );
+    await _db.updateAgentEntry(updatedEntry);
+
+    _cancelEditAgentEntry(id);
+    await _loadData();
+
+    if (!mounted) return;
+    CommonDialog.showSnackBar(context: context, message: '${updatedEntry.name} 저장됨');
+  }
+
+  Future<void> _deleteAgentEntry(AgentEntry entry) async {
+    if (entry.id == null) return;
+    final confirmed = await CommonDialog.showDeleteConfirmation(
+      context: context,
+      itemName: entry.name,
+    );
+    if (!confirmed) return;
+
+    await _db.deleteAgentEntry(entry.id!);
+    _agentEntryControllers[entry.id!]?.dispose();
+    _agentEntryControllers.remove(entry.id!);
+    await _loadData();
+
+    if (!mounted) return;
+    CommonDialog.showSnackBar(context: context, message: '${entry.name} 삭제됨');
   }
 
   Widget _buildAddSummaryButton() {
