@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../constants/ui_constants.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../models/character/start_scenario.dart';
 import '../../../utils/common_dialog.dart';
 import '../../../widgets/common/common_button.dart';
@@ -51,11 +52,12 @@ class _StartScenarioTabState extends State<StartScenarioTab> {
   }
 
   void _addStartScenario() {
+    final l10n = AppLocalizations.of(context);
     setState(() {
       final newScenario = StartScenario(
         id: _getNextTempId(),
         characterId: -1, // Will be set when saving
-        name: '새 시작설정',
+        name: l10n.startScenarioNewName,
         order: widget.startScenarios.length,
         isExpanded: true,
       );
@@ -81,23 +83,24 @@ class _StartScenarioTabState extends State<StartScenarioTab> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.all(UIConstants.spacing20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 5),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5),
             child: CommonTitleMedium(
-              text: '시작설정',
-              helpMessage: '대화의 시작 설정 정보를 추가할 수 있습니다.',
+              text: l10n.startScenarioTitle,
+              helpMessage: l10n.startScenarioTitleHelp,
             ),
           ),
           const SizedBox(height: 8),
           Expanded(
             child: widget.startScenarios.isEmpty
-                ? const Center(
-                    child: Text('시작설정 항목이 없습니다'),
+                ? Center(
+                    child: Text(l10n.startScenarioEmpty),
                   )
                 : ListView.builder(
                     itemCount: widget.startScenarios.length,
@@ -112,7 +115,7 @@ class _StartScenarioTabState extends State<StartScenarioTab> {
             child: CommonButton.filled(
               onPressed: _addStartScenario,
               icon: Icons.add,
-              label: '시작설정 추가',
+              label: l10n.startScenarioAddButton,
             ),
           ),
         ],
@@ -139,7 +142,7 @@ class _StartScenarioTabState extends State<StartScenarioTab> {
         });
       },
       onDelete: () => _deleteStartScenario(scenario),
-      nameHint: '시작설정 이름',
+      nameHint: AppLocalizations.of(context).startScenarioNameHint,
       onNameChanged: (value) {
         scenario.name = value;
         _notifyUpdate();
@@ -155,6 +158,7 @@ class _StartScenarioTabState extends State<StartScenarioTab> {
   }
 
   Widget _buildStartSettingField(StartScenario scenario) {
+    final l10n = AppLocalizations.of(context);
     final key = 'scenario_${scenario.id}_start_setting';
     final controller = _getFieldController(key, scenario.startSetting ?? '');
 
@@ -164,7 +168,7 @@ class _StartScenarioTabState extends State<StartScenarioTab> {
         Row(
           children: [
             Text(
-              '시작 설정',
+              l10n.startScenarioStartSettingLabel,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -174,15 +178,18 @@ class _StartScenarioTabState extends State<StartScenarioTab> {
               onTap: () {
                 showDialog(
                   context: context,
-                  builder: (context) => AlertDialog(
-                    content: const Text('해당 내용은 요약 이전에 삽입되고 삭제되지 않습니다.'),
-                    actions: [
-                      TextButton(
-                        onPressed: () => Navigator.pop(context),
-                        child: const Text('확인'),
-                      ),
-                    ],
-                  ),
+                  builder: (context) {
+                    final dialogL10n = AppLocalizations.of(context);
+                    return AlertDialog(
+                      content: Text(dialogL10n.startScenarioStartSettingInfo),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: Text(dialogL10n.commonConfirm),
+                        ),
+                      ],
+                    );
+                  },
                 );
               },
               child: Icon(
@@ -196,7 +203,7 @@ class _StartScenarioTabState extends State<StartScenarioTab> {
         const SizedBox(height: 2),
         CommonEditText(
           controller: controller,
-          hintText: '시작 설정 내용을 입력해주세요',
+          hintText: l10n.startScenarioStartSettingHint,
           size: CommonEditTextSize.small,
           maxLines: null,
           minLines: 5,
@@ -211,6 +218,7 @@ class _StartScenarioTabState extends State<StartScenarioTab> {
   }
 
   Widget _buildStartMessageField(StartScenario scenario) {
+    final l10n = AppLocalizations.of(context);
     final key = 'scenario_${scenario.id}_start_message';
     final controller = _getFieldController(key, scenario.startMessage ?? '');
 
@@ -218,7 +226,7 @@ class _StartScenarioTabState extends State<StartScenarioTab> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '시작 메시지',
+          l10n.startScenarioStartMessageLabel,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -226,7 +234,7 @@ class _StartScenarioTabState extends State<StartScenarioTab> {
         const SizedBox(height: 2),
         CommonEditText(
           controller: controller,
-          hintText: '시작 메시지를 입력해주세요',
+          hintText: l10n.startScenarioStartMessageHint,
           size: CommonEditTextSize.small,
           maxLines: null,
           minLines: 5,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../widgets/common/common_custom_text_field.dart';
 import '../../../constants/ui_constants.dart';
 
@@ -20,6 +21,7 @@ class ProfileTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Form(
       key: formKey,
       child: ListView(
@@ -27,14 +29,14 @@ class ProfileTab extends StatelessWidget {
         children: [
           CommonCustomTextField(
             controller: nameController,
-            label: '이름',
-            helpText: '캐릭터의 고유한 이름을 입력해주세요.',
-            hintText: '캐릭터의 이름을 입력해주세요.',
+            label: l10n.profileTabLabelName,
+            helpText: l10n.profileTabNameHelp,
+            hintText: l10n.profileTabNameHint,
             maxLines: null,
             showCounter: true,
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return '캐릭터 이름을 입력해주세요';
+                return l10n.profileTabNameValidation;
               }
               return null;
             },
@@ -42,27 +44,27 @@ class ProfileTab extends StatelessWidget {
           const SizedBox(height: UIConstants.spacing20),
           CommonCustomTextField(
             controller: nicknameController,
-            label: '닉네임',
-            helpText: '프롬프트에서 {{char}} 대신 사용할 호칭입니다. 비워두면 이름이 사용됩니다.',
-            hintText: '캐릭터의 닉네임을 입력해주세요.',
+            label: l10n.profileTabLabelNickname,
+            helpText: l10n.profileTabNicknameHelp,
+            hintText: l10n.profileTabNicknameHint,
             maxLines: null,
             showCounter: true,
           ),
           const SizedBox(height: UIConstants.spacing20),
           CommonCustomTextField(
             controller: creatorNotesController,
-            label: '한 줄 소개',
-            helpText: '캐릭터를 간단히 설명하는 한 문장을 작성해주세요.',
-            hintText: '어떤 캐릭터인지 설명할 수 있는 간단한 소개를 입력해주세요.',
+            label: l10n.profileTabLabelCreatorNotes,
+            helpText: l10n.profileTabCreatorNotesHelp,
+            hintText: l10n.profileTabCreatorNotesHint,
             maxLines: null,
             showCounter: true,
           ),
           const SizedBox(height: UIConstants.spacing20),
           CommonCustomTextField(
             controller: keywordsController,
-            label: '키워드',
-            helpText: '캐릭터를 나타내는 키워드를 쉼표(,)로 구분하여 입력해주세요.',
-            hintText: '키워드 입력 예시: 판타지, 남자',
+            label: l10n.profileTabLabelKeywords,
+            helpText: l10n.profileTabKeywordsHelp,
+            hintText: l10n.profileTabKeywordsHint,
             maxLines: null,
             showCounter: true,
           ),

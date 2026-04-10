@@ -6,6 +6,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../constants/ui_constants.dart';
+import '../../l10n/app_localizations.dart';
 import '../../database/database_helper.dart';
 import '../../models/chat/chat_model.dart';
 import '../../models/chat/custom_model.dart';
@@ -286,11 +287,12 @@ _syncContentFromControllers();
         });
 
         if (mounted) {
+          final l10n = AppLocalizations.of(context);
           CommonDialog.showSnackBar(
             context: context,
             message: result == true
-                ? 'Download/$fileName에 저장되었습니다'
-                : '저장에 실패했습니다',
+                ? l10n.characterExportSuccessAndroid(fileName)
+                : l10n.autoSummarySaveFailed,
           );
         }
       } else if (Platform.isIOS) {
@@ -302,7 +304,7 @@ _syncContentFromControllers();
         if (mounted) {
           CommonDialog.showSnackBar(
             context: context,
-            message: '$filePath에 저장되었습니다',
+            message: AppLocalizations.of(context).characterExportSuccessIos(filePath),
           );
         }
       }
@@ -310,18 +312,19 @@ _syncContentFromControllers();
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '요약 프롬프트 내보내기 실패: $e',
+          message: AppLocalizations.of(context).autoSummaryExportFailed(e.toString()),
         );
       }
     }
   }
 
   Future<void> _resetToDefaultPrompt() async {
+    final l10n = AppLocalizations.of(context);
     final confirm = await CommonDialog.showConfirmation(
       context: context,
-      title: '초기화',
-      content: '요약 프롬프트를 최신 기본 프롬프트로 되돌리시겠습니까?',
-      confirmText: '초기화',
+      title: l10n.autoSummaryResetTitle,
+      content: l10n.autoSummaryResetContent,
+      confirmText: l10n.autoSummaryResetConfirm,
       isDestructive: true,
     );
     if (confirm != true) return;
@@ -336,20 +339,21 @@ _syncContentFromControllers();
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '요약 프롬프트가 초기화되었습니다',
+          message: l10n.autoSummaryResetSuccess,
         );
       }
     } catch (e) {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '요약 프롬프트 초기화에 실패했습니다: $e',
+          message: l10n.autoSummaryResetFailed(e.toString()),
         );
       }
     }
   }
 
   Future<void> _importSummaryPrompt() async {
+    final l10n = AppLocalizations.of(context);
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.any,
@@ -365,14 +369,14 @@ _syncContentFromControllers();
       if (decoded is List) {
         jsonList = decoded;
       } else {
-        throw const FormatException('올바른 요약 프롬프트 형식이 아닙니다');
+        throw FormatException(l10n.autoSummaryInvalidFormat);
       }
 
       final items =
           jsonList.map((e) => SummaryPromptItem.fromJson(e)).toList();
 
       if (items.isEmpty) {
-        throw const FormatException('프롬프트 항목이 비어있습니다');
+        throw FormatException(l10n.autoSummaryEmptyItems);
       }
 
       setState(() {
@@ -383,14 +387,14 @@ _syncContentFromControllers();
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '요약 프롬프트를 가져왔습니다',
+          message: l10n.autoSummaryImportSuccess,
         );
       }
     } catch (e) {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '요약 프롬프트 가져오기 실패: $e',
+          message: l10n.autoSummaryImportFailed(e.toString()),
         );
       }
     }
@@ -410,9 +414,10 @@ _syncContentFromControllers();
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     if (_isLoading) {
       return Scaffold(
-        appBar: const CommonAppBar(title: '자동 요약'),
+        appBar: CommonAppBar(title: l10n.autoSummaryTitle),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -426,7 +431,7 @@ _syncContentFromControllers();
       },
       child: Scaffold(
         appBar: CommonAppBar(
-          title: '자동 요약',
+          title: l10n.autoSummaryTitle,
           showBackButton: false,
           showCloseButton: true,
           onClosePressed: _saveAndPop,
@@ -438,25 +443,10 @@ _syncContentFromControllers();
               tabAlignment: TabAlignment.start,
               overlayColor: WidgetStateProperty.all(Colors.transparent),
               splashFactory: NoSplash.splashFactory,
-              tabs: const [
-                Tab(
-                  child: SizedBox(
-                    width: 65,
-                    child: Center(child: Text('기본정보')),
-                  ),
-                ),
-                Tab(
-                  child: SizedBox(
-                    width: 65,
-                    child: Center(child: Text('파라미터')),
-                  ),
-                ),
-                Tab(
-                  child: SizedBox(
-                    width: 65,
-                    child: Center(child: Text('프롬프트')),
-                  ),
-                ),
+              tabs: [
+                Tab(text: l10n.autoSummaryTabBasic),
+                Tab(text: l10n.autoSummaryTabParameters),
+                Tab(text: l10n.autoSummaryTabPrompt),
               ],
             ),
           ),
@@ -476,13 +466,14 @@ _syncContentFromControllers();
   // ==================== Tab 1: Basic Info ====================
 
   Widget _buildBasicInfoTab() {
+    final l10n = AppLocalizations.of(context);
     return ListView(
       children: [
-        _buildSectionHeader('자동 요약 설정'),
+        _buildSectionHeader(l10n.autoSummarySection),
         SwitchListTile(
           secondary: const Icon(Icons.auto_awesome),
-          title: const Text('자동 요약'),
-          subtitle: const Text('토큰 수 초과 시 자동으로 요약을 생성합니다'),
+          title: Text(l10n.autoSummaryEnableTitle),
+          subtitle: Text(l10n.autoSummaryEnableSubtitle),
           value: _isEnabled,
           onChanged: (value) {
             setState(() {
@@ -493,8 +484,8 @@ _syncContentFromControllers();
         if (_isEnabled) ...[
           SwitchListTile(
             secondary: const Icon(Icons.smart_toy_outlined),
-            title: const Text('에이전트 모드'),
-            subtitle: const Text('구조화된 세계관 데이터를 자동으로 관리합니다'),
+            title: Text(l10n.autoSummaryAgentTitle),
+            subtitle: Text(l10n.autoSummaryAgentSubtitle),
             value: _isAgentEnabled,
             onChanged: (value) {
               setState(() {
@@ -503,11 +494,11 @@ _syncContentFromControllers();
             },
           ),
           const Divider(),
-          _buildSectionHeader('요약 모델'),
+          _buildSectionHeader(l10n.autoSummaryModelSection),
           SwitchListTile(
             secondary: const Icon(Icons.swap_horiz),
-            title: const Text('보조 모델 사용'),
-            subtitle: const Text('채팅 모델 설정의 보조 모델을 사용합니다'),
+            title: Text(l10n.autoSummaryUseSubModel),
+            subtitle: Text(l10n.autoSummaryUseSubModelSubtitle),
             value: _useSubModel,
             onChanged: (value) {
               setState(() {
@@ -577,7 +568,7 @@ _syncContentFromControllers();
             _buildModelDropdown(),
           ],
           const Divider(),
-          _buildSectionHeader('자동 요약 시작 조건'),
+          _buildSectionHeader(l10n.autoSummaryStartCondition),
           Padding(
             padding:
                 const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -587,13 +578,13 @@ _syncContentFromControllers();
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
               ],
-              hintText: '토큰 수를 입력하세요',
+              hintText: l10n.autoSummaryTokenHint,
             ),
           ),
         ],
         if (widget.chatRoomId == 0) ...[
           const Divider(),
-          _buildSectionHeader('요약 주기'),
+          _buildSectionHeader(l10n.autoSummaryPeriod),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             child: CommonEditText(
@@ -602,7 +593,7 @@ _syncContentFromControllers();
               inputFormatters: [
                 FilteringTextInputFormatter.digitsOnly,
               ],
-              hintText: 'N개 메시지마다 자동 요약',
+              hintText: 'N',
             ),
           ),
         ],
@@ -614,16 +605,17 @@ _syncContentFromControllers();
   // ==================== Tab 2: Parameters ====================
 
   Widget _buildParametersTab() {
+    final l10n = AppLocalizations.of(context);
     return ListView(
       padding: const EdgeInsets.all(UIConstants.spacing20),
       children: [
         const CommonInfoBox(
-          message: 'AI 모델의 생성 파라미터를 설정합니다. 모델에 따라 지원되는 파라미터가 다를 수 있습니다.',
+          message: '',
         ),
         const SizedBox(height: 24),
         CommonParameterTextField(
-          label: '최대 응답 크기',
-          helpText: '생성할 수 있는 최대 토큰 수입니다.',
+          label: l10n.autoSummaryMaxResponseSize,
+          helpText: l10n.autoSummaryMaxResponseHelp,
           controller: _maxOutputTokensController,
           onChanged: (value) {
             setState(() {
@@ -633,13 +625,13 @@ _syncContentFromControllers();
         ),
         const SizedBox(height: UIConstants.spacing20),
         CommonParameterSlider(
-          label: '온도',
+          label: l10n.autoSummaryTemperature,
           value: _parameters.temperature,
           defaultValue: 1.0,
           min: 0.0,
           max: 2.0,
           divisions: 40,
-          helpText: '값이 높을수록 더 창의적이고 다양한 응답을 생성합니다.',
+          helpText: l10n.autoSummaryTemperatureHelp,
           onChanged: (value) {
             setState(() {
               _parameters = _parameters.copyWith(temperature: value);
@@ -654,7 +646,7 @@ _syncContentFromControllers();
           min: 0.0,
           max: 1.0,
           divisions: 100,
-          helpText: '누적 확률 임계값입니다. 값이 낮을수록 더 집중된 응답을 생성합니다.',
+          helpText: l10n.autoSummaryTopPHelp,
           onChanged: (value) {
             setState(() {
               _parameters = _parameters.copyWith(topP: value);
@@ -670,7 +662,7 @@ _syncContentFromControllers();
           max: 100.0,
           divisions: 99,
           decimalPlaces: 0,
-          helpText: '고려할 상위 토큰의 수입니다.',
+          helpText: l10n.autoSummaryTopKHelp,
           onChanged: (value) {
             setState(() {
               _parameters = _parameters.copyWith(topK: value?.round());
@@ -679,13 +671,13 @@ _syncContentFromControllers();
         ),
         const SizedBox(height: UIConstants.spacing20),
         CommonParameterSlider(
-          label: '프리센스 패널티',
+          label: l10n.autoSummaryPresencePenalty,
           value: _parameters.presencePenalty,
           defaultValue: 0.0,
           min: -2.0,
           max: 2.0,
           divisions: 80,
-          helpText: '양수 값은 새로운 주제를 장려하고, 음수 값은 기존 주제에 집중합니다.',
+          helpText: l10n.autoSummaryPresencePenaltyHelp,
           onChanged: (value) {
             setState(() {
               _parameters = _parameters.copyWith(presencePenalty: value);
@@ -694,13 +686,13 @@ _syncContentFromControllers();
         ),
         const SizedBox(height: UIConstants.spacing20),
         CommonParameterSlider(
-          label: '빈도 패널티',
+          label: l10n.autoSummaryFrequencyPenalty,
           value: _parameters.frequencyPenalty,
           defaultValue: 0.0,
           min: -2.0,
           max: 2.0,
           divisions: 80,
-          helpText: '양수 값은 반복을 줄이고, 음수 값은 반복을 증가시킵니다.',
+          helpText: l10n.autoSummaryFrequencyPenaltyHelp,
           onChanged: (value) {
             setState(() {
               _parameters = _parameters.copyWith(frequencyPenalty: value);
@@ -715,22 +707,21 @@ _syncContentFromControllers();
   // ==================== Tab 3: Prompt ====================
 
   Widget _buildPromptTab() {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.all(UIConstants.spacing20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const CommonInfoBox(
-            message: '요약 프롬프트 항목을 구성합니다. '
-                '"요약대상" 역할 위치에 요약할 메시지가 자동으로 삽입됩니다.\n\n'
-                '길게 눌러 순서를 변경할 수 있습니다.',
+          CommonInfoBox(
+            message: l10n.autoSummaryPromptHelp,
           ),
           const SizedBox(height: 8),
           Expanded(
             child: _promptItems.isEmpty
                 ? Center(
                     child: Text(
-                      '프롬프트 항목이 없습니다',
+                      l10n.autoSummaryNoItems,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: Theme.of(context)
                                 .colorScheme
@@ -756,26 +747,26 @@ _syncContentFromControllers();
                 child: OutlinedButton.icon(
                   onPressed: _addPromptItem,
                   icon: const Icon(Icons.add, size: 18),
-                  label: const Text('항목 추가'),
+                  label: Text(l10n.autoSummaryAddItem),
                 ),
               ),
               const SizedBox(width: 8),
               IconButton.outlined(
                 onPressed: _resetToDefaultPrompt,
                 icon: const Icon(Icons.refresh, size: 20),
-                tooltip: '기본 프롬프트로 초기화',
+                tooltip: l10n.autoSummaryResetDefault,
               ),
               const SizedBox(width: 4),
               IconButton.outlined(
                 onPressed: _importSummaryPrompt,
                 icon: const Icon(Icons.file_download_outlined, size: 20),
-                tooltip: '가져오기',
+                tooltip: l10n.autoSummaryImport,
               ),
               const SizedBox(width: 4),
               IconButton.outlined(
                 onPressed: _exportSummaryPrompt,
                 icon: const Icon(Icons.file_upload_outlined, size: 20),
-                tooltip: '내보내기',
+                tooltip: l10n.autoSummaryExport,
               ),
             ],
           ),
@@ -885,7 +876,7 @@ _syncContentFromControllers();
       },
       onDelete: () => _deletePromptItem(index),
       showNameField: true,
-      nameHint: '항목 이름 (예: 시스템 설정)',
+      nameHint: AppLocalizations.of(context).autoSummaryItemNameHint,
       onNameChanged: (value) {
         _promptItems[index] =
             item.copyWith(name: value.isEmpty ? null : value);
@@ -894,7 +885,7 @@ _syncContentFromControllers();
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '역할',
+            AppLocalizations.of(context).autoSummaryItemRole,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -938,7 +929,7 @@ _syncContentFromControllers();
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '요약할 메시지가 이 위치에 자동으로 삽입됩니다',
+                      AppLocalizations.of(context).autoSummaryTargetMessageInfo,
                       style: Theme.of(context)
                           .textTheme
                           .bodySmall
@@ -953,7 +944,7 @@ _syncContentFromControllers();
             )
           else ...[
             Text(
-              '프롬프트',
+              AppLocalizations.of(context).autoSummaryItemPrompt,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -961,7 +952,7 @@ _syncContentFromControllers();
             const SizedBox(height: 6),
             CommonEditText(
               controller: _itemContentControllers[index],
-              hintText: '프롬프트 내용을 입력하세요',
+              hintText: AppLocalizations.of(context).autoSummaryItemPromptHint,
               size: CommonEditTextSize.small,
               maxLines: null,
               minLines: 3,
@@ -998,7 +989,7 @@ _syncContentFromControllers();
       return Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
         child: Text(
-          '모델 없음',
+          AppLocalizations.of(context).autoSummaryNoModel,
           style: TextStyle(
             color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.5),
           ),

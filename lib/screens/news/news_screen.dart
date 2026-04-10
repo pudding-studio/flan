@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/app_localizations.dart';
 import '../../database/database_helper.dart';
 import '../../models/character/character.dart';
 import '../../models/character/start_scenario.dart';
@@ -43,15 +44,15 @@ class _NewsScreenState extends State<NewsScreen> {
 
   final Set<int> _newArticleIds = {};
 
-  static const _allTopics = ['정치', '사회', '연예', '경제', '문화'];
+  static const _allTopics = ['politics', 'society', 'entertainment', 'economy', 'culture'];
   static const _allTones = ['positive', 'negative', 'neutral'];
 
   static const _topicColors = {
-    '정치': Colors.red,
-    '사회': Colors.blue,
-    '연예': Colors.pink,
-    '경제': Colors.green,
-    '문화': Colors.purple,
+    'politics': Colors.red,
+    'society': Colors.blue,
+    'entertainment': Colors.pink,
+    'economy': Colors.green,
+    'culture': Colors.purple,
   };
 
   @override
@@ -129,7 +130,7 @@ class _NewsScreenState extends State<NewsScreen> {
     if (worldview.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('캐릭터 설명 또는 요약 내용을 먼저 작성해주세요.')),
+        SnackBar(content: Text(AppLocalizations.of(context).communityNeedDescription)),
       );
       return;
     }
@@ -197,7 +198,7 @@ class _NewsScreenState extends State<NewsScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('생성 실패: $e')),
+        SnackBar(content: Text(AppLocalizations.of(context).communityGenerateFailed(e.toString()))),
       );
     } finally {
       if (mounted) setState(() => _isGenerating = false);
@@ -265,14 +266,15 @@ class _NewsScreenState extends State<NewsScreen> {
 
   Future<void> _deleteArticle(NewsArticle article) async {
     if (article.id == null) return;
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('기사 삭제'),
-        content: const Text('이 기사를 삭제하시겠습니까?'),
+        title: Text(l10n.newsArticleDeleteTitle),
+        content: Text(l10n.newsArticleDeleteContent),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('취소')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('삭제')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.commonCancel)),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.commonDelete)),
         ],
       ),
     );
@@ -321,6 +323,7 @@ class _NewsScreenState extends State<NewsScreen> {
   }
 
   Widget _buildEmptyState() {
+    final l10n = AppLocalizations.of(context);
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
@@ -332,12 +335,12 @@ class _NewsScreenState extends State<NewsScreen> {
               Icon(Icons.newspaper_outlined,
                   size: 64, color: Theme.of(context).colorScheme.outlineVariant),
               const SizedBox(height: 16),
-              Text('아직 기사가 없습니다',
+              Text(l10n.newsEmptyTitle,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Theme.of(context).colorScheme.outline,
                       )),
               const SizedBox(height: 8),
-              Text('당겨서 뉴스를 불러오세요',
+              Text(l10n.newsEmptySubtitle,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.outline,
                       )),
@@ -349,6 +352,7 @@ class _NewsScreenState extends State<NewsScreen> {
   }
 
   Widget _buildArticleCard(NewsArticle article) {
+    final l10n = AppLocalizations.of(context);
     final isNew = article.id != null && _newArticleIds.contains(article.id);
     final topicColor = _topicColors[article.topic] ?? Colors.grey;
 
@@ -381,7 +385,7 @@ class _NewsScreenState extends State<NewsScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      article.topic,
+                      _topicDisplayName(article.topic, l10n),
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             color: topicColor,
                             fontWeight: FontWeight.bold,
@@ -437,6 +441,17 @@ class _NewsScreenState extends State<NewsScreen> {
         ),
       ),
     );
+  }
+
+  String _topicDisplayName(String topic, AppLocalizations l10n) {
+    switch (topic) {
+      case 'politics': return l10n.newsTopicPolitics;
+      case 'society': return l10n.newsTopicSociety;
+      case 'entertainment': return l10n.newsTopicEntertainment;
+      case 'economy': return l10n.newsTopicEconomy;
+      case 'culture': return l10n.newsTopicCulture;
+      default: return topic;
+    }
   }
 
   String _formatDate(DateTime dt) {

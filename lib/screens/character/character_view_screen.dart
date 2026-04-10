@@ -2,6 +2,7 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../l10n/app_localizations.dart';
 import '../../mixins/chat_room_pagination_mixin.dart';
 import '../../models/character/character.dart';
 import '../../models/character/cover_image.dart';
@@ -118,45 +119,46 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
     }
   }
 
-  String _formatDate(DateTime dateTime) {
+  String _formatDate(DateTime dateTime, AppLocalizations l10n) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
 
     if (difference.inDays == 0) {
-      return '오늘';
+      return l10n.chatDateToday;
     } else if (difference.inDays == 1) {
-      return '어제';
+      return l10n.chatDateYesterday;
     } else if (difference.inDays < 7) {
-      return '${difference.inDays}일 전';
+      return l10n.chatDateDaysAgo(difference.inDays);
     } else if (difference.inDays < 30) {
       final weeks = (difference.inDays / 7).floor();
-      return '$weeks주 전';
+      return l10n.chatDateWeeksAgo(weeks);
     } else if (difference.inDays < 365) {
       final months = (difference.inDays / 30).floor();
-      return '$months개월 전';
+      return l10n.chatDateMonthsAgo(months);
     } else {
       final years = (difference.inDays / 365).floor();
-      return '$years년 전';
+      return l10n.chatDateYearsAgo(years);
     }
   }
 
   Future<void> _showRenameChatRoomDialog(ChatRoom chatRoom) async {
+    final l10n = AppLocalizations.of(context);
     final controller = TextEditingController(text: chatRoom.name);
 
     try {
       final result = await showDialog<String>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('채팅방 이름 수정'),
+          title: Text(l10n.chatRoomRenameTitle),
           content: CommonEditText(
             controller: controller,
-            hintText: '채팅방 이름',
+            hintText: l10n.chatRoomRenameHint,
             size: CommonEditTextSize.medium,
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, null),
-              child: const Text('취소'),
+              child: Text(l10n.commonCancel),
             ),
             TextButton(
               onPressed: () {
@@ -167,7 +169,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
                   Navigator.pop(context, newName);
                 }
               },
-              child: const Text('확인'),
+              child: Text(l10n.commonConfirm),
             ),
           ],
         ),
@@ -185,7 +187,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
       if (!mounted) return;
       CommonDialog.showSnackBar(
         context: context,
-        message: '채팅방 이름 수정 중 오류가 발생했습니다',
+        message: l10n.chatRoomRenameFailed,
       );
     } finally {
       controller.dispose();
@@ -193,11 +195,12 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
   }
 
   Future<void> _showDeleteChatRoomDialog(ChatRoom chatRoom) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await CommonDialog.showConfirmation(
       context: context,
-      title: '채팅방 삭제',
-      content: '\'${chatRoom.name}\' 채팅방을 삭제하시겠습니까?\n모든 메시지가 삭제됩니다.',
-      confirmText: '삭제',
+      title: l10n.chatRoomDeleteTitle,
+      content: l10n.chatRoomDeleteOneContent(chatRoom.name),
+      confirmText: l10n.commonDelete,
       isDestructive: true,
     );
 
@@ -208,14 +211,14 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
         if (!mounted) return;
         CommonDialog.showSnackBar(
           context: context,
-          message: '채팅방이 삭제되었습니다',
+          message: l10n.chatRoomDeleted,
         );
       } catch (e) {
         debugPrint('Error deleting chat room: $e');
         if (!mounted) return;
         CommonDialog.showSnackBar(
           context: context,
-          message: '채팅방 삭제 중 오류가 발생했습니다',
+          message: l10n.chatRoomDeleteFailed,
         );
       }
     }
@@ -280,9 +283,9 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
       debugPrint('Error creating chat: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('채팅방 생성 중 오류가 발생했습니다'),
-          duration: Duration(seconds: 2),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).characterViewChatCreateFailed),
+          duration: const Duration(seconds: 2),
         ),
       );
     }
@@ -417,12 +420,13 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
 
     final scenario = _startScenarios[_selectedScenarioIndex!];
 
+    final l10n = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 16),
         if (scenario.startSetting != null && scenario.startSetting!.isNotEmpty) ...[
-          const CommonTitleMedium(text: '시작 상황'),
+          CommonTitleMedium(text: l10n.characterViewStartContext),
           const SizedBox(height: 8),
           Container(
             width: double.infinity,
@@ -439,7 +443,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
           const SizedBox(height: 16),
         ],
         if (scenario.startMessage != null && scenario.startMessage!.isNotEmpty) ...[
-          const CommonTitleMedium(text: '시작 메시지'),
+          CommonTitleMedium(text: l10n.characterViewStartMessage),
           const SizedBox(height: 8),
           Container(
             width: double.infinity,
@@ -474,6 +478,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
       );
     }
 
+    final l10n = AppLocalizations.of(context);
     if (_character == null) {
       return Scaffold(
         appBar: AppBar(
@@ -482,8 +487,8 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
             onPressed: () => Navigator.pop(context),
           ),
         ),
-        body: const Center(
-          child: Text('캐릭터를 불러올 수 없습니다'),
+        body: Center(
+          child: Text(l10n.chatRoomCannotLoad),
         ),
       );
     }
@@ -503,7 +508,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
           CommonAppBarIconButton(
             icon: Icons.edit_outlined,
             onPressed: _navigateToEdit,
-            tooltip: '편집',
+            tooltip: l10n.commonEdit,
             offsetX: 0.0,
           ),
         ],
@@ -513,9 +518,9 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
             offset: const Offset(0, -16),
             child: TabBar(
               controller: _tabController,
-              tabs: const [
-                Tab(text: '정보'),
-                Tab(text: '채팅'),
+              tabs: [
+                Tab(text: l10n.characterViewTabInfo),
+                Tab(text: l10n.characterViewTabChat),
               ],
               labelColor: Theme.of(context).colorScheme.primary,
               unselectedLabelColor: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -539,6 +544,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
   }
 
   Widget _buildInfoTab() {
+    final l10n = AppLocalizations.of(context);
     final keywords = _character!.tags;
 
     return Column(
@@ -547,13 +553,12 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
             child: ListView(
               padding: const EdgeInsets.all(16),
               children: [
-                // 표지 이미지
+                // Cover image
                 _buildCoverImage(),
                 const SizedBox(height: 24),
 
-                // 한 줄 소개
                 if (_character!.creatorNotes != null && _character!.creatorNotes!.isNotEmpty) ...[
-                  const CommonTitleMedium(text: '한 줄 소개'),
+                  CommonTitleMedium(text: l10n.characterViewTagline),
                   const SizedBox(height: 8),
                   Text(
                     _character!.creatorNotes!,
@@ -564,9 +569,8 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
                   const SizedBox(height: 24),
                 ],
 
-                // 키워드
                 if (keywords.isNotEmpty) ...[
-                  const CommonTitleMedium(text: '키워드'),
+                  CommonTitleMedium(text: l10n.characterViewKeywords),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
@@ -576,18 +580,16 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
                   const SizedBox(height: 24),
                 ],
 
-                // 페르소나 섹션
                 if (_personas.isNotEmpty) ...[
-                  const CommonTitleMedium(text: '페르소나'),
+                  CommonTitleMedium(text: l10n.characterViewPersona),
                   const SizedBox(height: 8),
                   _buildPersonaDropdown(),
                   _buildSelectedPersonaContent(),
                   const SizedBox(height: 24),
                 ],
 
-                // 시작 설정 섹션
                 if (_startScenarios.isNotEmpty) ...[
-                  const CommonTitleMedium(text: '시작 설정'),
+                  CommonTitleMedium(text: l10n.characterViewStartSetting),
                   const SizedBox(height: 8),
                   _buildStartScenarioDropdown(),
                   _buildSelectedScenarioContent(),
@@ -602,7 +604,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
               child: CommonButton.filled(
                 onPressed: _createNewChat,
                 icon: Icons.chat_bubble_outline,
-                label: '새 채팅',
+                label: l10n.characterViewNewChat,
               ),
             ),
           ),
@@ -611,6 +613,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
   }
 
   Widget _buildChatTab() {
+    final l10n = AppLocalizations.of(context);
     final screenWidth = MediaQuery.of(context).size.width;
     final horizontalPadding = screenWidth * 0.05;
 
@@ -626,7 +629,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
             ),
             const SizedBox(height: 16),
             Text(
-              '채팅방이 없습니다',
+              l10n.characterViewNoChats,
               style: TextStyle(
                 fontSize: 16,
                 color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.5),
@@ -634,7 +637,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
             ),
             const SizedBox(height: 8),
             Text(
-              '새 채팅을 시작해보세요',
+              l10n.characterViewStartNewChat,
               style: TextStyle(
                 fontSize: 14,
                 color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.4),
@@ -699,7 +702,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
                             ListTile(
                               contentPadding: EdgeInsets.zero,
                               leading: const Icon(Icons.edit_outlined),
-                              title: const Text('채팅방 이름 수정'),
+                              title: Text(l10n.chatRoomRenameTitle),
                               onTap: () {
                                 Navigator.pop(context);
                                 _showRenameChatRoomDialog(data.chatRoom);
@@ -712,7 +715,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
                                 color: Theme.of(context).colorScheme.error,
                               ),
                               title: Text(
-                                '삭제',
+                                l10n.commonDelete,
                                 style: TextStyle(
                                   color: Theme.of(context).colorScheme.error,
                                 ),
@@ -732,8 +735,8 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
                   title: data.chatRoom.name,
                   lastMessage: data.lastMessage != null
                       ? MetadataParser.removeMetadataTags(data.lastMessage!.content)
-                      : '메시지가 없습니다',
-                  date: _formatDate(data.chatRoom.updatedAt),
+                      : l10n.chatNoMessages,
+                  date: _formatDate(data.chatRoom.updatedAt, l10n),
                   imageData: data.coverImage?.imageData,
                   messageCount: data.messageCount,
                   tokenCount: data.tokenCount,
@@ -751,7 +754,7 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
             child: CommonButton.filled(
               onPressed: _createNewChat,
               icon: Icons.chat_bubble_outline,
-              label: '새 채팅',
+              label: l10n.characterViewNewChat,
             ),
           ),
         ),

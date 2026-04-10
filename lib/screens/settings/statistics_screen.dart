@@ -1,17 +1,17 @@
 import 'package:flutter/material.dart';
 import '../../database/database_helper.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/chat/chat_model.dart';
 import '../../models/chat/custom_model.dart';
 import '../../widgets/common/common_appbar.dart';
 
 enum _Period {
-  week('7일', 7),
-  month('30일', 30),
-  all('전체', null);
+  week(7),
+  month(30),
+  all(null);
 
-  final String label;
   final int? days;
-  const _Period(this.label, this.days);
+  const _Period(this.days);
 }
 
 class _ModelStats {
@@ -148,15 +148,16 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: const CommonAppBar(title: '통계'),
+      appBar: CommonAppBar(title: l10n.statisticsTitle),
       body: Column(
         children: [
           _buildPeriodSelector(),
           if (_isLoading)
             const Expanded(child: Center(child: CircularProgressIndicator()))
           else if (_dailyStats.isEmpty)
-            const Expanded(child: Center(child: Text('데이터가 없습니다')))
+            Expanded(child: Center(child: Text(l10n.statisticsNoData)))
           else ...[
             _buildSummaryCards(),
             const Divider(height: 1),
@@ -167,12 +168,21 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
     );
   }
 
+  String _periodLabel(_Period p, AppLocalizations l10n) {
+    switch (p) {
+      case _Period.week: return l10n.statisticsPeriod7Days;
+      case _Period.month: return l10n.statisticsPeriod30Days;
+      case _Period.all: return l10n.statisticsPeriodAll;
+    }
+  }
+
   Widget _buildPeriodSelector() {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       child: SegmentedButton<_Period>(
         segments: _Period.values
-            .map((p) => ButtonSegment(value: p, label: Text(p.label)))
+            .map((p) => ButtonSegment(value: p, label: Text(_periodLabel(p, l10n))))
             .toList(),
         selected: {_period},
         onSelectionChanged: (selected) {
@@ -184,13 +194,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   Widget _buildSummaryCards() {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
       child: Row(
         children: [
           Expanded(
             child: _SummaryCard(
-              label: '예상 비용',
+              label: l10n.statisticsCost,
               value: _formatCost(_grandTotalCost),
               icon: Icons.attach_money,
             ),
@@ -198,7 +209,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           const SizedBox(width: 8),
           Expanded(
             child: _SummaryCard(
-              label: '총 토큰',
+              label: l10n.statisticsTokens,
               value: _formatTokens(_grandTotalTokens),
               icon: Icons.token,
             ),
@@ -206,7 +217,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
           const SizedBox(width: 8),
           Expanded(
             child: _SummaryCard(
-              label: '메시지',
+              label: l10n.statisticsMessages,
               value: '$_grandTotalMessages',
               icon: Icons.chat_bubble_outline,
             ),
@@ -296,9 +307,10 @@ class _DailyStatsCardState extends State<_DailyStatsCard> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colorScheme = Theme.of(context).colorScheme;
     final stats = widget.stats;
-    final dateLabel = _formatDate(stats.date);
+    final dateLabel = _formatDate(stats.date, l10n);
 
     return Column(
       children: [
@@ -318,9 +330,9 @@ class _DailyStatsCardState extends State<_DailyStatsCard> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${stats.modelStats.length}개 모델 · '
-                        '${_formatTokens(stats.totalTokens)} 토큰 · '
-                        '${stats.totalMessages}개 메시지',
+                        '${l10n.statisticsDailyModels(stats.modelStats.length)} · '
+                        '${l10n.statisticsDailyTokens(_formatTokens(stats.totalTokens))} · '
+                        '${l10n.statisticsDailyMessages(stats.totalMessages)}',
                         style: TextStyle(
                           fontSize: 12,
                           color: colorScheme.onSurfaceVariant,
@@ -354,10 +366,10 @@ class _DailyStatsCardState extends State<_DailyStatsCard> {
     );
   }
 
-  static String _formatDate(String yyyyMmDd) {
+  static String _formatDate(String yyyyMmDd, AppLocalizations l10n) {
     final parts = yyyyMmDd.split('-');
     if (parts.length != 3) return yyyyMmDd;
-    return '${parts[0]}년 ${int.parse(parts[1])}월 ${int.parse(parts[2])}일';
+    return l10n.statisticsDateFormat(parts[0], parts[1], parts[2]);
   }
 
   static String _formatCost(double cost) {
@@ -382,6 +394,7 @@ class _ModelStatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Container(
@@ -401,7 +414,7 @@ class _ModelStatsRow extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 2),
-                _buildTokenDetail(colorScheme),
+                _buildTokenDetail(colorScheme, l10n),
               ],
             ),
           ),
@@ -418,7 +431,7 @@ class _ModelStatsRow extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                '${model.messageCount}개',
+                l10n.statisticsModelMessages(model.messageCount),
                 style: TextStyle(
                   fontSize: 11,
                   color: colorScheme.onSurfaceVariant,
@@ -431,15 +444,15 @@ class _ModelStatsRow extends StatelessWidget {
     );
   }
 
-  Widget _buildTokenDetail(ColorScheme colorScheme) {
+  Widget _buildTokenDetail(ColorScheme colorScheme, AppLocalizations l10n) {
     final parts = <String>[];
-    parts.add('입력 ${_formatTokens(model.promptTokens)}');
-    parts.add('출력 ${_formatTokens(model.outputTokens)}');
+    parts.add('${l10n.statisticsTokenInput} ${_formatTokens(model.promptTokens)}');
+    parts.add('${l10n.statisticsTokenOutput} ${_formatTokens(model.outputTokens)}');
     if (model.cachedTokens > 0) {
-      parts.add('캐시 ${_formatTokens(model.cachedTokens)}');
+      parts.add('${l10n.statisticsTokenCached} ${_formatTokens(model.cachedTokens)}');
     }
     if (model.thinkingTokens > 0) {
-      parts.add('사고 ${_formatTokens(model.thinkingTokens)}');
+      parts.add('${l10n.statisticsTokenThinking} ${_formatTokens(model.thinkingTokens)}');
     }
 
     return Text(

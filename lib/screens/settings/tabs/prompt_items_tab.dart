@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../constants/ui_constants.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../models/prompt/prompt_condition.dart';
 import '../../../models/prompt/prompt_condition_option.dart';
 import '../../../models/prompt/prompt_item.dart';
@@ -68,6 +69,7 @@ class PromptItemsTab extends StatefulWidget {
 class _PromptItemsTabState extends State<PromptItemsTab> {
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.all(UIConstants.spacing20),
       child: ListView(
@@ -83,13 +85,11 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
             readOnly: widget.readOnly,
           ),
           const SizedBox(height: 12),
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 5),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5),
             child: CommonTitleMedium(
-              text: '프롬프트 항목',
-              helpMessage: 'AI에게 전달될 프롬프트 항목들을 추가하세요. '
-                  '순서대로 전달됩니다.\n\n'
-                  '길게 눌러 순서를 변경할 수 있습니다.',
+              text: l10n.promptItemsTitle,
+              helpMessage: l10n.promptItemsTitleHelp,
             ),
           ),
           const SizedBox(height: 8),
@@ -123,13 +123,13 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
             onAddItem: widget.readOnly ? (_) {} : widget.onAddItem,
             onAddFolder: widget.readOnly ? () {} : widget.onAddFolder,
             itemTypeKey: 'promptItem',
-            addItemLabel: '항목 추가',
-            addFolderLabel: '폴더 추가',
+            addItemLabel: l10n.promptItemsAddItem,
+            addFolderLabel: l10n.promptItemsAddFolder,
             readOnly: widget.readOnly,
             shrinkWrap: true,
-            emptyWidget: const CommonEmptyState(
+            emptyWidget: CommonEmptyState(
               icon: Icons.chat_bubble_outline,
-              message: '프롬프트 항목이 없습니다',
+              message: l10n.promptItemsEmpty,
             ),
           ),
         ],
@@ -138,6 +138,7 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
   }
 
   Widget _buildItemCard(BuildContext context, PromptItem item, PromptItemFolder? folder) {
+    final l10n = AppLocalizations.of(context);
     final disabledColor = Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5);
 
     final isVisuallyEnabled = item.enableMode != EnableMode.disabled;
@@ -178,7 +179,7 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
       },
       onDelete: widget.readOnly ? () {} : () => widget.onDeleteItem(item),
       showDeleteButton: !widget.readOnly,
-      nameHint: '항목 이름 (예: 시스템 설정, 캐릭터 성격)',
+      nameHint: l10n.promptItemsNameHint,
       onNameChanged: (value) {
         if (folder != null) {
           final index = folder.items.indexOf(item);
@@ -197,7 +198,7 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            '활성화',
+            l10n.promptItemsLabelEnable,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -233,7 +234,7 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
           ],
           const SizedBox(height: UIConstants.spacing12),
           Text(
-            '역할',
+            l10n.promptItemsLabelRole,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.w600,
                 ),
@@ -267,7 +268,7 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
             _buildChatSettings(item, folder)
           else ...[
             Text(
-              '프롬프트',
+              l10n.promptItemsLabelPrompt,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -275,7 +276,7 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
             const SizedBox(height: 6),
             CommonEditText(
               controller: widget.contentControllers[item.id],
-              hintText: 'AI의 역할과 응답 방식을 정의하세요',
+              hintText: l10n.promptItemsPromptHint,
               size: CommonEditTextSize.small,
               maxLines: null,
               minLines: 5,
@@ -303,6 +304,7 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
   }
 
   Widget _buildConditionSelector(PromptItem item, PromptItemFolder? folder) {
+    final l10n = AppLocalizations.of(context);
     final labelStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
           fontWeight: FontWeight.w600,
         );
@@ -321,13 +323,13 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('조건 선택', style: labelStyle),
+        Text(l10n.promptItemsConditionSelect, style: labelStyle),
         const SizedBox(height: 6),
         CommonDropdownButton<PromptCondition>(
           value: selectedCondition,
           items: selectableConditions,
           size: CommonDropdownButtonSize.xsmall,
-          hintText: '조건을 선택하세요',
+          hintText: l10n.promptItemsConditionSelectHint,
           onChanged: widget.readOnly
               ? null
               : (value) {
@@ -351,12 +353,12 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
                     );
                   }
                 },
-          labelBuilder: (c) => c.name.isEmpty ? '이름 없음' : c.name,
+          labelBuilder: (c) => c.name.isEmpty ? l10n.promptItemsConditionNoName : c.name,
         ),
         if (selectedCondition != null) ...[
           const SizedBox(height: UIConstants.spacing12),
           if (selectedCondition.type == ConditionType.toggle) ...[
-            Text('조건 값', style: labelStyle),
+            Text(l10n.promptItemsConditionValue, style: labelStyle),
             const SizedBox(height: 6),
             CommonSegmentedButton<String>(
               values: const ['true', 'false'],
@@ -370,12 +372,12 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
                         item.copyWith(conditionValue: selected),
                       );
                     },
-              labelBuilder: (v) => v == 'true' ? '활성화' : '비활성화',
+              labelBuilder: (v) => v == 'true' ? l10n.promptItemsConditionEnabled : l10n.promptItemsConditionDisabled,
             ),
           ],
           if (selectedCondition.type == ConditionType.singleSelect &&
               selectedCondition.options.isNotEmpty) ...[
-            Text('선택 항목', style: labelStyle),
+            Text(l10n.promptItemsSingleSelectItems, style: labelStyle),
             const SizedBox(height: 6),
             CommonDropdownButton<PromptConditionOption>(
               value: selectedCondition.options.cast<PromptConditionOption?>().firstWhere(
@@ -384,7 +386,7 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
               ),
               items: selectedCondition.options,
               size: CommonDropdownButtonSize.xsmall,
-              hintText: '항목을 선택하세요',
+              hintText: l10n.promptItemsSingleSelectHint,
               onChanged: widget.readOnly
                   ? null
                   : (value) {
@@ -405,6 +407,7 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
   }
 
   Widget _buildChatSettings(PromptItem item, PromptItemFolder? folder) {
+    final l10n = AppLocalizations.of(context);
     final labelStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
           fontWeight: FontWeight.w600,
         );
@@ -412,7 +415,7 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('설정', style: labelStyle),
+        Text(l10n.promptItemsChatSettings, style: labelStyle),
         const SizedBox(height: 6),
         CommonSegmentedButton<ChatSettingMode>(
           values: ChatSettingMode.values,
@@ -434,10 +437,10 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
           ),
           const SizedBox(height: UIConstants.spacing12),
           if (item.chatRangeType == ChatRangeType.recent) ...[
-            Text('최근 채팅 포함 개수', style: labelStyle),
+            Text(l10n.promptItemsRecentChatCount, style: labelStyle),
             const SizedBox(height: 6),
             CommonEditText(
-              hintText: '개수',
+              hintText: l10n.promptItemsRecentChatCountHint,
               size: CommonEditTextSize.small,
               initialValue: item.recentChatCount?.toString(),
               keyboardType: TextInputType.number,
@@ -449,10 +452,10 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
             ),
           ],
           if (item.chatRangeType == ChatRangeType.middle || item.chatRangeType == ChatRangeType.old) ...[
-            Text('이전 채팅 시작 위치', style: labelStyle),
+            Text(l10n.promptItemsChatStartPos, style: labelStyle),
             const SizedBox(height: 6),
             CommonEditText(
-              hintText: '시작 위치',
+              hintText: l10n.promptItemsChatStartPosHint,
               size: CommonEditTextSize.small,
               initialValue: item.chatStartPosition?.toString(),
               keyboardType: TextInputType.number,
@@ -465,10 +468,10 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
           ],
           if (item.chatRangeType == ChatRangeType.middle) ...[
             const SizedBox(height: UIConstants.spacing12),
-            Text('이전 채팅 마지막 위치', style: labelStyle),
+            Text(l10n.promptItemsChatEndPos, style: labelStyle),
             const SizedBox(height: 6),
             CommonEditText(
-              hintText: '마지막 위치',
+              hintText: l10n.promptItemsChatEndPosHint,
               size: CommonEditTextSize.small,
               initialValue: item.chatEndPosition?.toString(),
               keyboardType: TextInputType.number,

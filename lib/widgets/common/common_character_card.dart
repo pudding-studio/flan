@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../utils/metadata_parser.dart';
 
 class CommonCharacterCard extends StatelessWidget {
@@ -37,7 +38,7 @@ class CommonCharacterCard extends StatelessWidget {
             Text.rich(
               TextSpan(children: [
                 TextSpan(
-                  text: '의상 ',
+                  text: AppLocalizations.of(context).characterCardOutfitLabel,
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold,
                       color: colorScheme.onSurface),
                 ),
@@ -53,7 +54,7 @@ class CommonCharacterCard extends StatelessWidget {
             Text.rich(
               TextSpan(children: [
                 TextSpan(
-                  text: '메모 ',
+                  text: AppLocalizations.of(context).characterCardMemoLabel,
                   style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold,
                       color: colorScheme.onSurface),
                 ),

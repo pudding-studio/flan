@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../../constants/ui_constants.dart';
+import '../../l10n/app_localizations.dart';
 import 'common_button.dart';
 
 /// 통합 리스트 엔트리 (폴더 또는 standalone 아이템)
@@ -47,8 +48,8 @@ class CommonDraggableFolderList<TFolder, TItem> extends StatefulWidget {
   final VoidCallback onAddFolder;
 
   final String itemTypeKey;
-  final String addItemLabel;
-  final String addFolderLabel;
+  final String? addItemLabel;
+  final String? addFolderLabel;
   final List<Widget>? extraActions;
   final Widget? emptyWidget;
   final bool readOnly;
@@ -80,8 +81,8 @@ class CommonDraggableFolderList<TFolder, TItem> extends StatefulWidget {
     required this.onAddItem,
     required this.onAddFolder,
     required this.itemTypeKey,
-    this.addItemLabel = '항목 추가',
-    this.addFolderLabel = '폴더 추가',
+    this.addItemLabel,
+    this.addFolderLabel,
     this.extraActions,
     this.emptyWidget,
     this.readOnly = false,
@@ -223,11 +224,14 @@ class _CommonDraggableFolderListState<TFolder, TItem>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final addItemLabel = widget.addItemLabel ?? l10n.commonAddItem;
+    final addFolderLabel = widget.addFolderLabel ?? l10n.commonAddFolder;
     final isEmpty = widget.folders.isEmpty && widget.standaloneItems.isEmpty;
     final entries = _buildMixedEntries();
 
     final listWidget = isEmpty
-        ? (widget.emptyWidget ?? const Center(child: Text('항목이 없습니다')))
+        ? (widget.emptyWidget ?? Center(child: Text(l10n.commonEmptyList)))
         : ListView.builder(
             key: _listKey,
             controller: widget.shrinkWrap ? null : (widget.scrollController ?? _scrollController),
@@ -260,14 +264,14 @@ class _CommonDraggableFolderListState<TFolder, TItem>
                   child: CommonButton.outlined(
                     onPressed: widget.onAddFolder,
                     icon: Icons.folder_outlined,
-                    label: widget.addFolderLabel,
+                    label: addFolderLabel,
                   ),
                 ),
                 Expanded(
                   child: CommonButton.filled(
                     onPressed: () => widget.onAddItem(null),
                     icon: Icons.add,
-                    label: widget.addItemLabel,
+                    label: addItemLabel,
                   ),
                 ),
               ],
@@ -548,7 +552,7 @@ class _CommonDraggableFolderListState<TFolder, TItem>
                         onPressed: () => widget.onAddItem(folder),
                         icon: Icons.add,
                         iconSize: 16,
-                        label: widget.addItemLabel,
+                        label: widget.addItemLabel ?? AppLocalizations.of(context).commonAddItem,
                       ),
                     ),
                   ),

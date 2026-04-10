@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../constants/ui_constants.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../models/prompt/prompt_condition.dart';
 import '../../../models/prompt/prompt_condition_option.dart';
 import '../../../models/prompt/prompt_condition_preset.dart';
@@ -76,6 +77,7 @@ class _PromptOtherSettingsTabState extends State<PromptOtherSettingsTab> {
   }
 
   Widget _buildSectionHeader(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return InkWell(
       onTap: widget.onPresetsSectionToggle,
       borderRadius: BorderRadius.circular(UIConstants.borderRadiusMedium),
@@ -83,10 +85,9 @@ class _PromptOtherSettingsTabState extends State<PromptOtherSettingsTab> {
         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
         child: Row(
           children: [
-            const CommonTitleMedium(
-              text: '프롬프트 조건 프리셋',
-              helpMessage: '프롬프트 조건의 값을 미리 설정해둔 프리셋입니다.\n\n'
-                  '채팅 시 프리셋을 선택하면 조건 값이 일괄 적용됩니다.',
+            CommonTitleMedium(
+              text: l10n.promptPresetsTitle,
+              helpMessage: l10n.promptPresetsTitleHelp,
             ),
             const Spacer(),
             Icon(
@@ -109,7 +110,7 @@ class _PromptOtherSettingsTabState extends State<PromptOtherSettingsTab> {
         child: OutlinedButton.icon(
           onPressed: widget.onAddPreset,
           icon: const Icon(Icons.add, size: 18),
-          label: const Text('프리셋 추가'),
+          label: Text(AppLocalizations.of(context).promptPresetsAddButton),
           style: OutlinedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 12),
             shape: RoundedRectangleBorder(
@@ -206,7 +207,7 @@ class _PresetCardState extends State<_PresetCard> {
         size: UIConstants.iconSizeMedium,
         color: Theme.of(context).colorScheme.secondary,
       ),
-      name: preset.name.isEmpty ? '새 프리셋' : preset.name,
+      name: preset.name.isEmpty ? AppLocalizations.of(context).promptPresetsNewName : preset.name,
       isExpanded: preset.isExpanded,
       onToggleExpanded: () {
         if (preset.isExpanded) {
@@ -225,6 +226,7 @@ class _PresetCardState extends State<_PresetCard> {
   }
 
   Widget _buildContent(PromptConditionPreset preset) {
+    final l10n = AppLocalizations.of(context);
     final labelStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
           fontWeight: FontWeight.w600,
         );
@@ -232,11 +234,11 @@ class _PresetCardState extends State<_PresetCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('이름', style: labelStyle),
+        Text(l10n.promptPresetsLabelName, style: labelStyle),
         const SizedBox(height: 6),
         CommonEditText(
           size: CommonEditTextSize.small,
-          hintText: '프리셋 이름',
+          hintText: l10n.promptPresetsNameHint,
           initialValue: preset.name,
           enabled: !preset.isDefault && !widget.readOnly,
           onFocusLost: (value) {
@@ -251,7 +253,7 @@ class _PresetCardState extends State<_PresetCard> {
         ),
         if (widget.conditions.isNotEmpty) ...[
           const SizedBox(height: UIConstants.spacing16),
-          Text('조건 목록', style: labelStyle),
+          Text(l10n.promptPresetsLabelConditions, style: labelStyle),
           const SizedBox(height: 8),
           ...widget.conditions.map((condition) => _buildConditionRow(condition)),
         ],
@@ -280,7 +282,7 @@ class _PresetCardState extends State<_PresetCard> {
         children: [
           Expanded(
             child: Text(
-              condition.name.isEmpty ? '이름 없음' : condition.name,
+              condition.name.isEmpty ? AppLocalizations.of(context).promptPresetsConditionNoName : condition.name,
               style: Theme.of(context).textTheme.bodySmall,
             ),
           ),
@@ -307,6 +309,7 @@ class _PresetCardState extends State<_PresetCard> {
   }
 
   Widget _buildSingleSelectRow(PromptCondition condition) {
+    final l10n = AppLocalizations.of(context);
     final presetValue = _getValueForCondition(condition.id);
 
     final selectedOption = condition.options.cast<PromptConditionOption?>().firstWhere(
@@ -320,7 +323,7 @@ class _PresetCardState extends State<_PresetCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            condition.name.isEmpty ? '이름 없음' : condition.name,
+            condition.name.isEmpty ? l10n.promptPresetsConditionNoName : condition.name,
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 4),
@@ -328,7 +331,7 @@ class _PresetCardState extends State<_PresetCard> {
             value: selectedOption,
             items: condition.options,
             size: CommonDropdownButtonSize.xsmall,
-            hintText: '항목을 선택하세요',
+            hintText: l10n.promptPresetsSelectHint,
             onChanged: widget.readOnly
                 ? null
                 : (value) {
@@ -344,13 +347,14 @@ class _PresetCardState extends State<_PresetCard> {
   }
 
   Widget _buildVariableRow(PromptCondition condition) {
+    final l10n = AppLocalizations.of(context);
     final presetValue = _getValueForCondition(condition.id);
     final isCustom = presetValue?.value == PromptConditionPresetValue.customOptionKey;
 
-    // Build items list with "기타" appended
+    // Build items list with custom option appended
     final optionsWithCustom = [
       ...condition.options,
-      PromptConditionOption(id: -9999, name: '기타', order: condition.options.length),
+      PromptConditionOption(id: -9999, name: l10n.promptPresetsCustomLabel, order: condition.options.length),
     ];
 
     PromptConditionOption? selectedOption;
@@ -374,7 +378,7 @@ class _PresetCardState extends State<_PresetCard> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            condition.name.isEmpty ? '이름 없음' : condition.name,
+            condition.name.isEmpty ? l10n.promptPresetsConditionNoName : condition.name,
             style: Theme.of(context).textTheme.bodySmall,
           ),
           const SizedBox(height: 4),
@@ -382,7 +386,7 @@ class _PresetCardState extends State<_PresetCard> {
             value: selectedOption,
             items: optionsWithCustom,
             size: CommonDropdownButtonSize.xsmall,
-            hintText: '항목을 선택하세요',
+            hintText: l10n.promptPresetsSelectHint,
             onChanged: widget.readOnly
                 ? null
                 : (value) {
@@ -405,7 +409,7 @@ class _PresetCardState extends State<_PresetCard> {
           if (isCustom) ...[
             const SizedBox(height: 6),
             Text(
-              '직접입력',
+              l10n.promptPresetsCustomInputLabel,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -414,7 +418,7 @@ class _PresetCardState extends State<_PresetCard> {
             CommonEditText(
               controller: customController,
               size: CommonEditTextSize.small,
-              hintText: '값을 입력하세요',
+              hintText: l10n.promptPresetsCustomInputHint,
               enabled: !widget.readOnly,
               onFocusLost: (value) {
                 _setValueForCondition(

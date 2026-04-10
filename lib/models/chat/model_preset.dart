@@ -2,9 +2,9 @@ import 'chat_model.dart';
 import 'custom_provider.dart';
 
 enum ModelPreset {
-  primary('주 모델'),
-  secondary('보조 모델'),
-  custom('기타');
+  primary('Primary Model'),
+  secondary('Secondary Model'),
+  custom('Custom');
 
   final String displayName;
   const ModelPreset(this.displayName);

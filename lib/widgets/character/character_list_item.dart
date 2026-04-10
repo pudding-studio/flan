@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:typed_data';
+import '../../l10n/app_localizations.dart';
 import 'character_tag_chip.dart';
 
 class CharacterListItem extends StatelessWidget {
@@ -172,33 +173,33 @@ class CharacterListItem extends StatelessWidget {
                   PopupMenuItem<String>(
                     value: 'edit',
                     onTap: onEdit,
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(Icons.edit_outlined, size: 20),
-                        SizedBox(width: 12),
-                        Text('수정'),
+                        const Icon(Icons.edit_outlined, size: 20),
+                        const SizedBox(width: 12),
+                        Text(AppLocalizations.of(context).commonModify),
                       ],
                     ),
                   ),
                   PopupMenuItem<String>(
                     value: 'copy',
                     onTap: onCopy,
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(Icons.copy_outlined, size: 20),
-                        SizedBox(width: 12),
-                        Text('복사하기'),
+                        const Icon(Icons.copy_outlined, size: 20),
+                        const SizedBox(width: 12),
+                        Text(AppLocalizations.of(context).commonCopyItem),
                       ],
                     ),
                   ),
                   PopupMenuItem<String>(
                     value: 'export',
                     onTap: onExport,
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(Icons.upload_outlined, size: 20),
-                        SizedBox(width: 12),
-                        Text('내보내기'),
+                        const Icon(Icons.upload_outlined, size: 20),
+                        const SizedBox(width: 12),
+                        Text(AppLocalizations.of(context).commonExport),
                       ],
                     ),
                   ),
@@ -209,7 +210,7 @@ class CharacterListItem extends StatelessWidget {
                       children: [
                         Icon(Icons.delete_outline, size: 20, color: Theme.of(context).colorScheme.error),
                         const SizedBox(width: 12),
-                        Text('삭제', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                        Text(AppLocalizations.of(context).commonDelete, style: TextStyle(color: Theme.of(context).colorScheme.error)),
                       ],
                     ),
                   ),

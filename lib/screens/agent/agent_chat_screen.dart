@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../database/database_helper.dart';
 import '../../models/chat/chat_message.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -192,7 +193,7 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('오류: $e'),
+            content: Text(AppLocalizations.of(context).agentChatErrorPrefix(e.toString())),
             duration: const Duration(seconds: 3),
           ),
         );
@@ -247,20 +248,21 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
 
   Future<void> _clearChat() async {
     if (_chatRoomId == null) return;
+    final l10n = AppLocalizations.of(context);
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('대화 초기화'),
-        content: const Text('모든 대화 내용이 삭제됩니다. 계속하시겠습니까?'),
+        title: Text(l10n.agentChatResetTitle),
+        content: Text(l10n.agentChatResetContent),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('취소'),
+            child: Text(l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('삭제'),
+            child: Text(l10n.commonDelete),
           ),
         ],
       ),
@@ -280,6 +282,7 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: CommonAppBar(
         title: 'Flan Agent',
@@ -287,7 +290,7 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
           CommonAppBarIconButton(
             icon: Icons.delete_outline,
             onPressed: _messages.isEmpty ? null : _clearChat,
-            tooltip: '대화 초기화',
+            tooltip: l10n.agentChatResetTooltip,
             offsetX: 26,
           ),
         ],
@@ -328,7 +331,7 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Flan Agent는 캐릭터를 생성하거나 편집할 수 있습니다. 원하는 캐릭터 제작 및 수정을 요청해 보세요.',
+              AppLocalizations.of(context).agentChatDescription,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurface,
                   ),
@@ -358,7 +361,7 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            '캐릭터 생성, 수정, 편집을 도와드립니다',
+            AppLocalizations.of(context).agentChatIntro,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.5),
             ),
@@ -379,7 +382,7 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
         children: [
           // Role label
           Text(
-            isUser ? '나' : 'Agent',
+            isUser ? AppLocalizations.of(context).agentChatUserLabel : 'Agent',
             style: Theme.of(context).textTheme.labelSmall?.copyWith(
               color: isUser
                   ? Theme.of(context).colorScheme.primary
@@ -413,6 +416,7 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
   }
 
   Widget _buildModelDrawer() {
+    final l10n = AppLocalizations.of(context);
     return Drawer(
       child: SafeArea(
         child: Padding(
@@ -440,17 +444,21 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '사용 모델',
+                    l10n.agentChatUsedModel,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(fontSize: 16),
                   ),
                   const SizedBox(height: 16),
                   _buildSettingRow(
-                    label: '모델설정',
+                    label: l10n.agentChatModelPreset,
                     child: CommonDropdownButton<ModelPreset>(
                       value: _modelPreset,
                       items: ModelPreset.values,
                       onChanged: (p) { if (p != null) _setPreset(p); },
-                      labelBuilder: (p) => p.displayName,
+                      labelBuilder: (p) => switch (p) {
+                        ModelPreset.primary => l10n.modelPresetPrimary,
+                        ModelPreset.secondary => l10n.modelPresetSecondary,
+                        ModelPreset.custom => l10n.modelPresetCustom,
+                      },
                       size: CommonDropdownButtonSize.xsmall,
                     ),
                   ),
@@ -469,7 +477,7 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
                   if (_modelPreset == ModelPreset.custom) ...[
                     const SizedBox(height: 8),
                     _buildSettingRow(
-                      label: '제조사',
+                      label: l10n.agentChatProvider,
                       child: CommonDropdownButton<ProviderOption>(
                         value: currentProviderOption,
                         items: providerOptions,
@@ -487,7 +495,7 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
                     ),
                     const SizedBox(height: 8),
                     _buildSettingRow(
-                      label: '채팅 모델',
+                      label: l10n.agentChatModel,
                       child: CommonDropdownButton<UnifiedModel>(
                         value: provider.selectedModel,
                         items: provider.availableModels,
@@ -542,7 +550,9 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
             controller: _messageController,
             focusNode: _messageFocusNode,
             enabled: !_isSending,
-            hintText: _isSending ? '응답 대기 중...' : '메시지를 입력하세요',
+            hintText: _isSending
+                ? AppLocalizations.of(context).agentChatWaiting
+                : AppLocalizations.of(context).agentChatHint,
             minLines: 1,
             maxLines: 5,
             textInputAction: TextInputAction.newline,

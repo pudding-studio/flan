@@ -4,6 +4,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/chat/chat_model.dart';
 import '../../models/chat/unified_model.dart';
 import '../../providers/chat_model_provider.dart';
@@ -22,11 +23,12 @@ class ChatModelScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return DefaultTabController(
       length: 2,
       child: Scaffold(
         appBar: CommonAppBar(
-          title: '채팅 모델',
+          title: l10n.chatModelTitle,
           actions: [
             CommonAppBarIconButton(
               icon: Icons.add,
@@ -40,10 +42,10 @@ class ChatModelScreen extends StatelessWidget {
               },
             ),
           ],
-          bottom: const TabBar(
+          bottom: TabBar(
             tabs: [
-              Tab(text: '주 모델'),
-              Tab(text: '보조 모델'),
+              Tab(text: l10n.chatModelTabMain),
+              Tab(text: l10n.chatModelTabSub),
             ],
           ),
         ),
@@ -64,6 +66,7 @@ class _ModelTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Consumer<ChatModelSettingsProvider>(
       builder: (context, provider, child) {
         final currentProvider = isSubModel
@@ -105,14 +108,14 @@ class _ModelTab extends StatelessWidget {
         return ListView(
           children: [
             if (isSubModel)
-              const Padding(
-                padding: EdgeInsets.fromLTRB(16, 12, 16, 0),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
                 child: Text(
-                  '보조 모델은 SNS 요약 등에 사용됩니다.\n설정 시 해당 기능들의 기본 모델이 변경됩니다.',
-                  style: TextStyle(fontSize: 12, color: Colors.grey),
+                  l10n.chatModelSubInfo,
+                  style: const TextStyle(fontSize: 12, color: Colors.grey),
                 ),
               ),
-            _buildSectionHeader(context, '제조사'),
+            _buildSectionHeader(context, l10n.chatModelProviderSection),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: DropdownButton<String>(
@@ -147,7 +150,7 @@ class _ModelTab extends StatelessWidget {
               ),
             ),
             const Divider(),
-            _buildSectionHeader(context, '사용 모델'),
+            _buildSectionHeader(context, l10n.chatModelUsedModelSection),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: DropdownButton<UnifiedModel>(
@@ -179,18 +182,18 @@ class _ModelTab extends StatelessWidget {
             ),
             if (currentModel.isCustom) ...[
               const Divider(),
-              _buildSectionHeader(context, '모델 정보'),
-              _buildInfoTile(context, 'API 포맷', currentModel.apiFormat.displayName),
+              _buildSectionHeader(context, l10n.chatModelInfoSection),
+              _buildInfoTile(context, 'API', currentModel.apiFormat.displayName),
               if (currentModel.baseUrl != null)
                 _buildInfoTile(context, 'Base URL', currentModel.baseUrl!),
               _buildInfoTile(context, 'Model ID', currentModel.modelId),
             ],
             if (provider.customModels.isNotEmpty) ...[
               const Divider(),
-              _buildSectionHeader(context, '커스텀 모델 관리'),
+              _buildSectionHeader(context, l10n.chatModelManagement),
               ListTile(
                 leading: const Icon(Icons.settings),
-                title: const Text('커스텀 모델 관리'),
+                title: Text(l10n.chatModelManagement),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   Navigator.push(
@@ -357,7 +360,7 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
           if (mounted) {
             await CommonDialog.showInfo(
               context: context,
-              title: 'API 키 검증 실패',
+              title: AppLocalizations.of(context).apiKeyValidationFailed,
               content: validationError,
             );
           }
@@ -380,7 +383,7 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '${widget.apiKeyType.displayName} API 키가 저장되었습니다',
+          message: AppLocalizations.of(context).apiKeySaved(widget.apiKeyType.displayName),
         );
         setState(() {});
       }
@@ -388,7 +391,7 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: 'API 키 저장 실패: $e',
+          message: AppLocalizations.of(context).tutorialApiKeySaveFailed(e.toString()),
         );
       }
     } finally {
@@ -397,11 +400,12 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
   }
 
   Future<void> _deleteKey(int index) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await CommonDialog.showConfirmation(
       context: context,
-      title: 'API 키 삭제',
-      content: '이 API 키를 삭제하시겠습니까?',
-      confirmText: '삭제',
+      title: 'API key',
+      content: l10n.chatModelApiKeyDeleteContent,
+      confirmText: l10n.commonDelete,
       isDestructive: true,
     );
     if (confirmed != true) return;
@@ -427,7 +431,7 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: 'API 키가 삭제되었습니다',
+          message: 'API key deleted',
         );
         setState(() {});
       }
@@ -435,7 +439,7 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: 'API 키 삭제 실패: $e',
+          message: 'API key delete failed: $e',
         );
       }
     } finally {
@@ -450,7 +454,7 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
     if (mounted) {
       CommonDialog.showSnackBar(
         context: context,
-        message: 'API 키 ${index + 1}이(가) 활성화되었습니다',
+        message: 'API key ${index + 1} activated',
       );
     }
   }
@@ -484,7 +488,7 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
         if (mounted) {
           await CommonDialog.showInfo(
             context: context,
-            title: '서비스 계정 검증 실패',
+            title: AppLocalizations.of(context).chatModelVertexValidationFailed,
             content: validationError,
           );
         }
@@ -507,7 +511,7 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
         final email = VertexAuthService.extractClientEmail(jsonString) ?? '';
         CommonDialog.showSnackBar(
           context: context,
-          message: 'Vertex AI 서비스 계정이 등록되었습니다 ($email)',
+          message: '${AppLocalizations.of(context).tutorialVertexSaved} ($email)',
         );
         setState(() {});
       }
@@ -515,7 +519,7 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: 'JSON 파일 읽기 실패: $e',
+          message: AppLocalizations.of(context).tutorialJsonReadFailed(e.toString()),
         );
       }
     } finally {
@@ -529,7 +533,7 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
     if (projectId != null && email != null) {
       return '$projectId\n$email';
     }
-    return '(서비스 계정 JSON)';
+    return '(Service account JSON)';
   }
 
   String _obscureKey(String key) {
@@ -539,6 +543,7 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
       child: Form(
@@ -550,11 +555,11 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
               padding: const EdgeInsets.fromLTRB(0, 16, 0, 8),
               child: Row(
                 children: [
-                  const CommonTitleMedium(text: 'API 키'),
+                  const CommonTitleMedium(text: 'API key'),
                   const Spacer(),
                   if (_keys.isNotEmpty)
                     Text(
-                      '${_keys.length}개 등록됨',
+                      '${_keys.length}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
@@ -568,17 +573,15 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
               CommonCustomTextField(
                 controller: _apiKeyController,
                 label: _editingIndex != null
-                    ? 'Key ${_editingIndex! + 1} 수정'
-                    : '새 API 키',
-                helpText:
-                    '${widget.apiKeyType.displayName}에서 발급받은 API 키를 입력해주세요.',
-                hintText: 'API 키를 입력해주세요',
+                    ? 'Key ${_editingIndex! + 1}'
+                    : l10n.chatModelNewApiKey,
+                hintText: l10n.tutorialApiKeyHint,
                 maxLines: 1,
                 obscureText: true,
                 enableObscureToggle: true,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'API 키를 입력해주세요';
+                    return l10n.tutorialApiKeyEmpty;
                   }
                   return null;
                 },
@@ -592,7 +595,7 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
                     child: CommonButton.outlined(
                       onPressed: _cancelEditing,
                       icon: Icons.close,
-                      label: '취소',
+                      label: l10n.commonCancel,
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -606,8 +609,8 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
                         ? Icons.save
                         : (_isVertexAi ? Icons.upload_file : Icons.add),
                     label: _editingIndex != null
-                        ? '저장'
-                        : (_isVertexAi ? 'JSON 추가' : '키 추가'),
+                        ? l10n.commonSave
+                        : (_isVertexAi ? l10n.chatModelJsonAdd : l10n.chatModelKeyAdd),
                   ),
                 ),
               ],
@@ -623,7 +626,7 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Text(
-          '등록된 API 키가 없습니다',
+          AppLocalizations.of(context).chatModelNoApiKey,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -685,13 +688,13 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
                   IconButton(
                     icon: const Icon(Icons.edit_outlined, size: 18),
                     onPressed: () => _startEditing(index),
-                    tooltip: '수정',
+                    tooltip: AppLocalizations.of(context).commonEdit,
                     visualDensity: VisualDensity.compact,
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete_outline, size: 18),
                     onPressed: () => _deleteKey(index),
-                    tooltip: '삭제',
+                    tooltip: AppLocalizations.of(context).commonDelete,
                     visualDensity: VisualDensity.compact,
                   ),
                 ],

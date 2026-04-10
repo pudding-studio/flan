@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../../l10n/app_localizations.dart';
 import '../../constants/ui_constants.dart';
 import '../../constants/ai_model_constants.dart';
 import '../../database/database_helper.dart';
@@ -97,7 +98,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
       // New prompt: create default preset
       _presets.add(PromptConditionPreset(
         id: _getNextPresetTempId(),
-        name: '기본',
+        name: AppLocalizations.of(context).promptEditDefaultName,
         isDefault: true,
         order: 0,
       ));
@@ -200,7 +201,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
     if (_presets.isEmpty || !_presets.any((p) => p.isDefault)) {
       _presets.insert(0, PromptConditionPreset(
         id: _getNextPresetTempId(),
-        name: '기본',
+        name: AppLocalizations.of(context).promptEditDefaultName,
         isDefault: true,
         order: 0,
       ));
@@ -423,9 +424,10 @@ class _PromptEditScreenState extends State<PromptEditScreen>
       }
 
       if (mounted) {
+        final l10n = AppLocalizations.of(context);
         CommonDialog.showSnackBar(
           context: context,
-          message: '프롬프트가 ${_isEditing ? "수정" : "생성"}되었습니다',
+          message: _isEditing ? l10n.promptEditUpdated : l10n.promptEditCreated,
         );
         Navigator.pop(context, true);
       }
@@ -433,7 +435,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '프롬프트 저장 실패: $e',
+          message: AppLocalizations.of(context).promptEditSaveFailed(e.toString()),
         );
       }
     } finally {
@@ -477,10 +479,11 @@ class _PromptEditScreenState extends State<PromptEditScreen>
   }
 
   void _addFolder() {
+    final newFolderName = AppLocalizations.of(context).promptEditNewFolderName;
     setState(() {
       final newFolder = PromptItemFolder(
         id: _getNextFolderTempId(),
-        name: '새 폴더',
+        name: newFolderName,
         order: _getNextMixedOrder(),
         isExpanded: true,
       );
@@ -625,9 +628,10 @@ class _PromptEditScreenState extends State<PromptEditScreen>
   }
 
   Future<void> _deleteRegexRule(PromptRegexRule rule) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await CommonDialog.showDeleteConfirmation(
       context: context,
-      itemName: rule.name.isEmpty ? '정규식 규칙' : rule.name,
+      itemName: rule.name.isEmpty ? l10n.promptEditDefaultRuleName : rule.name,
     );
 
     if (confirmed) {
@@ -665,10 +669,10 @@ class _PromptEditScreenState extends State<PromptEditScreen>
 
   Future<void> _deletePreset(PromptConditionPreset preset) async {
     if (preset.isDefault) return;
-
+    final l10n = AppLocalizations.of(context);
     final confirmed = await CommonDialog.showDeleteConfirmation(
       context: context,
-      itemName: preset.name.isEmpty ? '프리셋' : preset.name,
+      itemName: preset.name.isEmpty ? l10n.promptEditDefaultPresetName : preset.name,
     );
 
     if (confirmed) {
@@ -679,9 +683,10 @@ class _PromptEditScreenState extends State<PromptEditScreen>
   }
 
   Future<void> _deleteCondition(PromptCondition condition) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await CommonDialog.showDeleteConfirmation(
       context: context,
-      itemName: condition.name.isEmpty ? '조건' : condition.name,
+      itemName: condition.name.isEmpty ? l10n.promptEditDefaultConditionName : condition.name,
     );
 
     if (confirmed) {
@@ -693,11 +698,12 @@ class _PromptEditScreenState extends State<PromptEditScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: CommonAppBar(
         title: _isReadOnly
-            ? '프롬프트 보기'
-            : (_isEditing ? '프롬프트 수정' : '새 프롬프트'),
+            ? l10n.promptEditTitleView
+            : (_isEditing ? l10n.promptEditTitleEdit : l10n.promptEditTitleNew),
         actions: [
           if (!_isReadOnly) ...[
             if (_isLoading)
@@ -724,37 +730,12 @@ class _PromptEditScreenState extends State<PromptEditScreen>
             tabAlignment: TabAlignment.start,
             overlayColor: WidgetStateProperty.all(Colors.transparent),
             splashFactory: NoSplash.splashFactory,
-            tabs: const [
-              Tab(
-                child: SizedBox(
-                  width: 65,
-                  child: Center(child: Text('기본정보')),
-                ),
-              ),
-              Tab(
-                child: SizedBox(
-                  width: 65,
-                  child: Center(child: Text('파라미터')),
-                ),
-              ),
-              Tab(
-                child: SizedBox(
-                  width: 65,
-                  child: Center(child: Text('프롬프트')),
-                ),
-              ),
-              Tab(
-                child: SizedBox(
-                  width: 65,
-                  child: Center(child: Text('정규식')),
-                ),
-              ),
-              Tab(
-                child: SizedBox(
-                  width: 65,
-                  child: Center(child: Text('기타설정')),
-                ),
-              ),
+            tabs: [
+              Tab(text: l10n.promptEditTabBasic),
+              Tab(text: l10n.promptEditTabParameters),
+              Tab(text: l10n.promptEditTabPrompt),
+              Tab(text: l10n.promptEditTabRegex),
+              Tab(text: l10n.promptEditTabOther),
             ],
           ),
         ),
@@ -816,6 +797,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
   }
 
   Widget _buildBasicInfoTab() {
+    final l10n = AppLocalizations.of(context);
     return IgnorePointer(
       ignoring: _isReadOnly,
       child: ListView(
@@ -823,15 +805,15 @@ class _PromptEditScreenState extends State<PromptEditScreen>
           children: [
             CommonCustomTextField(
               controller: _nameController,
-              label: '프롬프트 이름',
-              hintText: '예: 친근한 도우미, 전문가 모드',
+              label: l10n.promptEditNameLabel,
+              hintText: l10n.promptEditNameHint,
               maxLines: null,
               showCounter: true,
               validator: _isReadOnly
                   ? null
                   : (value) {
                       if (value == null || value.trim().isEmpty) {
-                        return '프롬프트 이름을 입력해주세요';
+                        return l10n.promptEditNameRequired;
                       }
                       return null;
                     },
@@ -844,46 +826,37 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                   padding: const EdgeInsets.symmetric(horizontal: CommonCustomTextField.labelHorizontalPadding),
                   child: Row(
                     children: [
-                      const CommonTitleMedium(text: '설명'),
-                      const SizedBox(width: 4),
-                      Text(
-                        '(선택)',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
-                      ),
+                      CommonTitleMedium(text: l10n.promptEditDescriptionTitle),
                     ],
                   ),
                 ),
                 const SizedBox(height: CommonCustomTextField.labelBottomSpacing),
                 CommonEditText(
                   controller: _descriptionController,
-                  hintText: '이 프롬프트에 대한 설명을 입력하세요',
+                  hintText: l10n.promptEditDescriptionHint,
                   size: CommonEditTextSize.medium,
                   maxLines: null,
                   minLines: 3,
                 ),
               ],
             ),
-            // TODO: 지원 모델 기능 구현 후 숨김 해제
           ],
       ),
     );
   }
 
   Widget _buildParametersTab() {
+    final l10n = AppLocalizations.of(context);
     return IgnorePointer(
       ignoring: _isReadOnly,
       child: ListView(
       padding: const EdgeInsets.all(UIConstants.spacing20),
       children: [
-        const CommonInfoBox(
-          message: 'AI 모델의 생성 파라미터를 설정합니다. 모델에 따라 지원되는 파라미터가 다를 수 있습니다.',
-        ),
+        const CommonInfoBox(message: ''),
         const SizedBox(height: 24),
         CommonParameterTextField(
-          label: '최대 입력 크기',
-          helpText: '입력할 수 있는 최대 토큰 수입니다.',
+          label: l10n.promptEditMaxInputSize,
+          helpText: l10n.promptEditMaxInputHelp,
           controller: _maxInputTokensController,
           onChanged: (value) {
             setState(() {
@@ -893,8 +866,8 @@ class _PromptEditScreenState extends State<PromptEditScreen>
         ),
         const SizedBox(height: UIConstants.spacing20),
         CommonParameterTextField(
-          label: '최대 응답 크기',
-          helpText: '생성할 수 있는 최대 토큰 수입니다.',
+          label: l10n.autoSummaryMaxResponseSize,
+          helpText: l10n.autoSummaryMaxResponseHelp,
           controller: _maxOutputTokensController,
           onChanged: (value) {
             setState(() {
@@ -904,8 +877,8 @@ class _PromptEditScreenState extends State<PromptEditScreen>
         ),
         const SizedBox(height: UIConstants.spacing20),
         CommonParameterTextField(
-          label: '사고토큰',
-          helpText: '사고에 사용할 토큰 수입니다.',
+          label: l10n.promptEditThinkingTokens,
+          helpText: l10n.promptEditThinkingHelp,
           controller: _thinkingTokensController,
           showCheckbox: true,
           isChecked: _parameters.thinkingTokens != null,
@@ -922,13 +895,13 @@ class _PromptEditScreenState extends State<PromptEditScreen>
         ),
         const SizedBox(height: UIConstants.spacing20),
         CommonParameterSlider(
-          label: '온도',
+          label: l10n.autoSummaryTemperature,
           value: _parameters.temperature,
           defaultValue: 1.0,
           min: 0.0,
           max: 2.0,
           divisions: 40,
-          helpText: '값이 높을수록 더 창의적이고 다양한 응답을 생성합니다.',
+          helpText: l10n.autoSummaryTemperatureHelp,
           onChanged: (value) {
             setState(() {
               _parameters = _parameters.copyWith(temperature: value);
@@ -943,7 +916,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
           min: 0.0,
           max: 1.0,
           divisions: 100,
-          helpText: '누적 확률 임계값입니다. 값이 낮을수록 더 집중된 응답을 생성합니다.',
+          helpText: l10n.autoSummaryTopPHelp,
           onChanged: (value) {
             setState(() {
               _parameters = _parameters.copyWith(topP: value);
@@ -959,7 +932,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
           max: 100.0,
           divisions: 99,
           decimalPlaces: 0,
-          helpText: '고려할 상위 토큰의 수입니다.',
+          helpText: l10n.autoSummaryTopKHelp,
           onChanged: (value) {
             setState(() {
               _parameters = _parameters.copyWith(topK: value?.round());
@@ -968,13 +941,13 @@ class _PromptEditScreenState extends State<PromptEditScreen>
         ),
         const SizedBox(height: UIConstants.spacing20),
         CommonParameterSlider(
-          label: '프리센스 패널티',
+          label: l10n.autoSummaryPresencePenalty,
           value: _parameters.presencePenalty,
           defaultValue: 0.0,
           min: -2.0,
           max: 2.0,
           divisions: 80,
-          helpText: '양수 값은 새로운 주제를 장려하고, 음수 값은 기존 주제에 집중합니다.',
+          helpText: l10n.autoSummaryPresencePenaltyHelp,
           onChanged: (value) {
             setState(() {
               _parameters = _parameters.copyWith(presencePenalty: value);
@@ -983,13 +956,13 @@ class _PromptEditScreenState extends State<PromptEditScreen>
         ),
         const SizedBox(height: UIConstants.spacing20),
         CommonParameterSlider(
-          label: '빈도 패널티',
+          label: l10n.autoSummaryFrequencyPenalty,
           value: _parameters.frequencyPenalty,
           defaultValue: 0.0,
           min: -2.0,
           max: 2.0,
           divisions: 80,
-          helpText: '양수 값은 반복을 줄이고, 음수 값은 반복을 증가시킵니다.',
+          helpText: l10n.autoSummaryFrequencyPenaltyHelp,
           onChanged: (value) {
             setState(() {
               _parameters = _parameters.copyWith(frequencyPenalty: value);
@@ -1006,6 +979,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
   }
 
   Widget _buildStopSequencesSection() {
+    final l10n = AppLocalizations.of(context);
     final sequences = _parameters.stopSequences ?? [];
     final controller = TextEditingController();
 
@@ -1013,16 +987,9 @@ class _PromptEditScreenState extends State<PromptEditScreen>
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '정지 문자열',
+          l10n.promptEditStopStrings,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
-              ),
-        ),
-        const SizedBox(height: 4),
-        Text(
-          'AI가 해당 문자열을 생성하면 응답을 중단합니다.',
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
         ),
         const SizedBox(height: 8),
@@ -1059,7 +1026,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                   controller: controller,
                   style: Theme.of(context).textTheme.bodySmall,
                   decoration: InputDecoration(
-                    hintText: '문자열 입력 후 추가',
+                    hintText: l10n.promptEditStopStringsHint,
                     hintStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
@@ -1106,6 +1073,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
   }
 
   Widget _buildThinkingSection() {
+    final l10n = AppLocalizations.of(context);
     return Container(
       decoration: BoxDecoration(
         border: Border.all(
@@ -1118,7 +1086,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
         child: ExpansionTile(
           title: Row(
             children: [
-              const CommonTitleMedium(text: '사고기능 구성'),
+              CommonTitleMedium(text: l10n.promptEditThinkingConfig),
               const SizedBox(width: 8),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
@@ -1142,10 +1110,9 @@ class _PromptEditScreenState extends State<PromptEditScreen>
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // TODO: 생각 포함 토글 기능 수정 후 숨김 해제
                   CommonParameterTextField(
-                    label: '생각토큰 수',
-                    helpText: '생각에 사용할 최대 토큰 수입니다.',
+                    label: l10n.promptEditThinkingTokenCount,
+                    helpText: l10n.promptEditThinkingTokenHelp,
                     controller: _thinkingMaxTokensController,
                     onChanged: (value) {
                       setState(() {
@@ -1157,9 +1124,9 @@ class _PromptEditScreenState extends State<PromptEditScreen>
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Padding(
-                        padding: EdgeInsets.symmetric(horizontal: CommonCustomTextField.labelHorizontalPadding),
-                        child: CommonTitleMedium(text: '생각 수준'),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: CommonCustomTextField.labelHorizontalPadding),
+                        child: CommonTitleMedium(text: l10n.promptEditThinkingLevel),
                       ),
                       const SizedBox(height: CommonCustomTextField.labelBottomSpacing),
                       CommonDropdownButton<ThinkingLevel>(

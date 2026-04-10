@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../providers/viewer_settings_provider.dart';
 
 class ChatBottomPanel extends StatelessWidget {
@@ -7,6 +8,7 @@ class ChatBottomPanel extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final viewer = context.watch<ViewerSettingsProvider>();
 
     return Container(
@@ -28,7 +30,7 @@ class ChatBottomPanel extends StatelessWidget {
             Padding(
               padding: const EdgeInsets.only(top: 8),
               child: Text(
-                '뷰어',
+                l10n.chatBottomPanelTitle,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.bold,
                 ),
@@ -42,28 +44,28 @@ class ChatBottomPanel extends StatelessWidget {
                   children: [
                     _buildAdjustRow(
                       context: context,
-                      label: '글자 크기',
+                      label: l10n.chatBottomPanelFontSize,
                       value: '${viewer.fontSize.toInt()}',
                       onMinus: () => viewer.adjustFontSize(-1),
                       onPlus: () => viewer.adjustFontSize(1),
                     ),
                     _buildAdjustRow(
                       context: context,
-                      label: '줄 간격',
+                      label: l10n.chatBottomPanelLineHeight,
                       value: viewer.lineHeight.toStringAsFixed(1),
                       onMinus: () => viewer.adjustLineHeight(-0.2),
                       onPlus: () => viewer.adjustLineHeight(0.2),
                     ),
                     _buildAdjustRow(
                       context: context,
-                      label: '문단 간격',
+                      label: l10n.chatBottomPanelParagraphSpacing,
                       value: '${viewer.paragraphSpacing.toInt()}',
                       onMinus: () => viewer.adjustParagraphSpacing(-4),
                       onPlus: () => viewer.adjustParagraphSpacing(4),
                     ),
                     _buildAdjustRow(
                       context: context,
-                      label: '문단 너비',
+                      label: l10n.chatBottomPanelParagraphWidth,
                       value: '${viewer.paragraphWidth.toInt()}',
                       onMinus: () => viewer.adjustParagraphWidth(-4),
                       onPlus: () => viewer.adjustParagraphWidth(4),
@@ -123,19 +125,20 @@ class ChatBottomPanel extends StatelessWidget {
   }
 
   Widget _buildAlignRow(BuildContext context, ViewerSettingsProvider viewer) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         children: [
           SizedBox(
             width: 80,
-            child: Text('문단 정렬', style: Theme.of(context).textTheme.bodySmall),
+            child: Text(l10n.chatBottomPanelParagraphAlign, style: Theme.of(context).textTheme.bodySmall),
           ),
           const Spacer(),
           SegmentedButton<bool>(
-            segments: const [
-              ButtonSegment(value: false, label: Text('왼쪽')),
-              ButtonSegment(value: true, label: Text('양쪽')),
+            segments: [
+              ButtonSegment(value: false, label: Text(l10n.chatBottomPanelAlignLeft)),
+              ButtonSegment(value: true, label: Text(l10n.chatBottomPanelAlignJustify)),
             ],
             selected: {viewer.isJustified},
             onSelectionChanged: (_) => viewer.toggleTextAlign(),

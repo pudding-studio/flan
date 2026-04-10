@@ -10,6 +10,8 @@ import '../models/chat/custom_model.dart';
 import '../models/chat/custom_provider.dart';
 import '../models/chat/unified_model.dart';
 import '../models/prompt/prompt_parameters.dart';
+import '../providers/tokenizer_provider.dart';
+import '../utils/token_counter.dart';
 import 'ai_service.dart';
 
 class AgentSummaryService {
@@ -482,8 +484,18 @@ class AgentSummaryService {
     _logSuccess('Future plan applied: ${keywords.length} keywords matched');
   }
 
-  /// Build active entries text for prompt injection
-  Future<String> buildActiveEntriesText(int chatRoomId) async {
+  /// Build active entries text for prompt injection.
+  ///
+  /// [episodeContentTokenBudget] limits how many tokens episode contents may
+  /// occupy. When null, all episodes are included. When non-null, episodes are
+  /// selected by priority (location-related → character-related → others) so
+  /// that the total fits within the budget. Selected episodes are always
+  /// emitted in chronological order (oldest first).
+  Future<String> buildActiveEntriesText(
+    int chatRoomId, {
+    int? episodeContentTokenBudget,
+    TokenizerType? tokenizer,
+  }) async {
     final allEntries = await _db.getAgentEntries(chatRoomId);
     if (allEntries.isEmpty) return '';
 
@@ -494,23 +506,31 @@ class AgentSummaryService {
       final typeEntries = allEntries.where((e) => e.entryType == type).toList();
       if (typeEntries.isEmpty) continue;
 
-      final activeEntries = typeEntries.where((e) => e.isActive).toList();
-
       buffer.writeln('\n#### ${type.displayName}');
       buffer.writeln('##### 목록');
 
       if (type == AgentEntryType.episode) {
+        // Episodes: chronological order (oldest first) for both list and content
+        typeEntries.sort((a, b) => a.createdAt.compareTo(b.createdAt));
+
         for (int i = 0; i < typeEntries.length; i++) {
           buffer.writeln('${i + 1}. ${typeEntries[i].name}');
         }
-        if (activeEntries.isNotEmpty) {
+
+        final selected = _selectEpisodesForContent(
+          typeEntries,
+          episodeContentTokenBudget,
+          tokenizer,
+        );
+        if (selected.isNotEmpty) {
           buffer.writeln('##### 내용');
-          for (int i = 0; i < activeEntries.length; i++) {
-            buffer.writeln('${i + 1}. ${activeEntries[i].toReadableText()}');
+          for (int i = 0; i < selected.length; i++) {
+            buffer.writeln('${i + 1}. ${selected[i].toReadableText()}');
           }
         }
       } else {
         buffer.writeln(typeEntries.map((e) => e.name).join(', '));
+        final activeEntries = typeEntries.where((e) => e.isActive).toList();
         if (activeEntries.isNotEmpty) {
           buffer.writeln('##### 내용');
           for (int i = 0; i < activeEntries.length; i++) {
@@ -521,6 +541,70 @@ class AgentSummaryService {
     }
 
     return buffer.toString();
+  }
+
+  /// Select episodes for the content section, fitting within [tokenBudget].
+  ///
+  /// - When [tokenBudget] is null, all episodes are returned.
+  /// - When [tokenBudget] is 0 or negative, no episodes are returned.
+  /// - When the full set fits, all are returned.
+  /// - Otherwise, episodes are prioritized:
+  ///     1. episodes referencing locations
+  ///     2. episodes referencing characters (and not already in 1)
+  ///     3. remaining episodes
+  ///   Within each priority bucket, chronological order is preserved.
+  ///   The returned list is always sorted chronologically (oldest first).
+  List<AgentEntry> _selectEpisodesForContent(
+    List<AgentEntry> chronologicalEpisodes,
+    int? tokenBudget,
+    TokenizerType? tokenizer,
+  ) {
+    if (tokenBudget == null) return chronologicalEpisodes;
+    if (tokenBudget <= 0) return const [];
+
+    final tokenCache = <AgentEntry, int>{};
+    int totalTokens = 0;
+    for (final ep in chronologicalEpisodes) {
+      final t = TokenCounter.estimateTokenCount(
+        ep.toReadableText(),
+        tokenizer: tokenizer,
+      );
+      tokenCache[ep] = t;
+      totalTokens += t;
+    }
+
+    if (totalTokens <= tokenBudget) return chronologicalEpisodes;
+
+    final priority1 = <AgentEntry>[];
+    final priority2 = <AgentEntry>[];
+    final priority3 = <AgentEntry>[];
+    for (final ep in chronologicalEpisodes) {
+      final hasLocations = ep.data['locations'] is List &&
+          (ep.data['locations'] as List).isNotEmpty;
+      final hasCharacters = ep.data['characters'] is List &&
+          (ep.data['characters'] as List).isNotEmpty;
+      if (hasLocations) {
+        priority1.add(ep);
+      } else if (hasCharacters) {
+        priority2.add(ep);
+      } else {
+        priority3.add(ep);
+      }
+    }
+
+    final selected = <AgentEntry>{};
+    int used = 0;
+    for (final group in [priority1, priority2, priority3]) {
+      for (final ep in group) {
+        final t = tokenCache[ep] ?? 0;
+        if (used + t <= tokenBudget) {
+          selected.add(ep);
+          used += t;
+        }
+      }
+    }
+
+    return chronologicalEpisodes.where(selected.contains).toList();
   }
 
   Future<UnifiedModel> _resolveModel(String storedValue) async {

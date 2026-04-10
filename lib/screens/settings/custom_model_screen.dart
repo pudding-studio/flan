@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/chat/chat_model.dart';
 import '../../models/chat/custom_model.dart';
 import '../../models/chat/custom_provider.dart';
@@ -21,9 +22,10 @@ class CustomModelScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: CommonAppBar(
-        title: '커스텀 모델',
+        title: l10n.customModelTitle,
         actions: [
           CommonAppBarIconButton(
             icon: Icons.file_download_outlined,
@@ -55,14 +57,14 @@ class CustomModelScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    '커스텀 제조사가 없습니다',
+                    l10n.customModelEmpty,
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    'OpenRouter, 로컬 LLM 등의 제조사를 추가하세요',
+                    'OpenRouter, Ollama, etc.',
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                           color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
@@ -71,7 +73,7 @@ class CustomModelScreen extends StatelessWidget {
                   CommonButton.filled(
                     onPressed: () => _openProviderEditor(context, null),
                     icon: Icons.add,
-                    label: '제조사 추가',
+                    label: l10n.customModelAddProvider,
                   ),
                 ],
               ),
@@ -127,14 +129,15 @@ class CustomModelScreen extends StatelessWidget {
     CustomProvider provider,
     int modelCount,
   ) async {
+    final l10n = AppLocalizations.of(context);
     final message = modelCount > 0
-        ? "'${provider.name}' 제조사와 하위 모델 $modelCount개를 삭제하시겠습니까?"
-        : "'${provider.name}' 제조사를 삭제하시겠습니까?";
+        ? l10n.customModelDeleteProviderWithModels(provider.name, modelCount)
+        : l10n.customModelDeleteProvider(provider.name);
     final confirmed = await CommonDialog.showConfirmation(
       context: context,
-      title: '제조사 삭제',
+      title: l10n.customModelDeleteProviderTitle,
       content: message,
-      confirmText: '삭제',
+      confirmText: l10n.commonDelete,
       isDestructive: true,
     );
     if (confirmed == true) {
@@ -147,11 +150,12 @@ class CustomModelScreen extends StatelessWidget {
     ChatModelSettingsProvider settingsProvider,
     CustomModel model,
   ) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await CommonDialog.showConfirmation(
       context: context,
-      title: '모델 삭제',
-      content: "'${model.displayName}' 모델을 삭제하시겠습니까?",
-      confirmText: '삭제',
+      title: l10n.customModelDeleteModelTitle,
+      content: l10n.customModelDeleteModel(model.displayName),
+      confirmText: l10n.commonDelete,
       isDestructive: true,
     );
     if (confirmed == true) {
@@ -160,6 +164,7 @@ class CustomModelScreen extends StatelessWidget {
   }
 
   Future<void> _exportToJson(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
     final provider = context.read<ChatModelSettingsProvider>();
     final providers = provider.customProviders;
     final models = provider.customModels;
@@ -167,7 +172,7 @@ class CustomModelScreen extends StatelessWidget {
     if (providers.isEmpty) {
       CommonDialog.showSnackBar(
         context: context,
-        message: '내보낼 커스텀 모델이 없습니다',
+        message: l10n.customModelNoExportable,
       );
       return;
     }
@@ -207,8 +212,8 @@ class CustomModelScreen extends StatelessWidget {
           CommonDialog.showSnackBar(
             context: context,
             message: result == true
-                ? 'Download/$fileName에 저장되었습니다'
-                : '저장에 실패했습니다',
+                ? l10n.characterExportSuccessAndroid(fileName)
+                : l10n.customModelSaveFailed,
           );
         }
       } else if (Platform.isIOS) {
@@ -220,7 +225,7 @@ class CustomModelScreen extends StatelessWidget {
         if (context.mounted) {
           CommonDialog.showSnackBar(
             context: context,
-            message: '$filePath에 저장되었습니다',
+            message: l10n.characterExportSuccessIos(filePath),
           );
         }
       }
@@ -228,13 +233,14 @@ class CustomModelScreen extends StatelessWidget {
       if (context.mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '내보내기 실패: $e',
+          message: l10n.customModelExportFailed(e.toString()),
         );
       }
     }
   }
 
   Future<void> _importFromJson(BuildContext context) async {
+    final l10n = AppLocalizations.of(context);
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -287,14 +293,14 @@ class CustomModelScreen extends StatelessWidget {
       if (context.mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '제조사 $providerCount개, 모델 $modelCount개를 가져왔습니다',
+          message: l10n.customModelImportSuccess(providerCount, modelCount),
         );
       }
     } catch (e) {
       if (context.mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '가져오기 실패: $e',
+          message: l10n.customModelImportFailed(e.toString()),
         );
       }
     }
@@ -335,7 +341,7 @@ class _ProviderCard extends StatelessWidget {
             leading: Icon(Icons.dns_outlined, color: colorScheme.primary),
             title: Text(provider.name),
             subtitle: Text(
-              '${provider.apiFormat.displayName} · ${models.length}개 모델',
+              AppLocalizations.of(context).customModelSubtitle(provider.apiFormat.displayName, models.length),
               style: textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),
@@ -389,7 +395,7 @@ class _ProviderCard extends StatelessWidget {
               child: TextButton.icon(
                 onPressed: onAddModel,
                 icon: const Icon(Icons.add, size: 18),
-                label: const Text('모델 추가'),
+                label: Text(AppLocalizations.of(context).customModelAddModel),
               ),
             ),
           ),
@@ -469,9 +475,10 @@ class _CustomProviderEditorScreenState
     }
 
     if (mounted) {
+      final l10n = AppLocalizations.of(context);
       CommonDialog.showSnackBar(
         context: context,
-        message: _isEditing ? '제조사가 수정되었습니다' : '제조사가 추가되었습니다',
+        message: _isEditing ? l10n.customModelProviderUpdated : l10n.customModelProviderAdded,
       );
       Navigator.pop(context);
     }
@@ -479,9 +486,10 @@ class _CustomProviderEditorScreenState
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: CommonAppBar(
-        title: _isEditing ? '제조사 수정' : '제조사 추가',
+        title: _isEditing ? l10n.customModelEditProvider : l10n.customModelAddProvider,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -492,12 +500,12 @@ class _CustomProviderEditorScreenState
             children: [
               CommonCustomTextField(
                 controller: _nameController,
-                label: '제조사 이름',
-                hintText: '예: OpenRouter',
+                label: l10n.customModelProviderName,
+                hintText: l10n.customModelProviderNameHint,
                 maxLines: 1,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return '제조사 이름을 입력해주세요';
+                    return l10n.customModelProviderNameRequired;
                   }
                   return null;
                 },
@@ -506,11 +514,11 @@ class _CustomProviderEditorScreenState
               CommonCustomTextField(
                 controller: _baseUrlController,
                 label: 'Base URL',
-                hintText: '예: https://openrouter.ai/api',
+                hintText: l10n.customModelEndpointHint,
                 maxLines: 1,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'Base URL을 입력해주세요';
+                    return 'Base URL required';
                   }
                   return null;
                 },
@@ -524,13 +532,13 @@ class _CustomProviderEditorScreenState
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return 'API Key를 입력해주세요';
+                    return 'API Key required';
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 24),
-              const CommonTitleMedium(text: 'API 포맷'),
+              const CommonTitleMedium(text: 'API'),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
@@ -546,20 +554,13 @@ class _CustomProviderEditorScreenState
                 }).toList(),
               ),
               const SizedBox(height: 24),
-              const CommonTitleMedium(text: '실패 시 재전송'),
-              const SizedBox(height: 4),
-              Text(
-                'API 호출 실패 시 자동으로 재시도할 횟수 (0 = 재시도 안 함)',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-              ),
+              CommonTitleMedium(text: l10n.customModelRetrySection),
               const SizedBox(height: 12),
               SizedBox(
                 width: 120,
                 child: CommonCustomTextField(
                   controller: _retryCountController,
-                  label: '재전송 횟수',
+                  label: l10n.customModelRetryCount,
                   hintText: '0',
                   maxLines: 1,
                 ),
@@ -568,7 +569,7 @@ class _CustomProviderEditorScreenState
               CommonButton.filled(
                 onPressed: _save,
                 icon: Icons.save,
-                label: _isEditing ? '수정' : '추가',
+                label: _isEditing ? l10n.customModelEdit : l10n.customModelAdd,
               ),
             ],
           ),
@@ -667,9 +668,10 @@ class _CustomModelEditorScreenState extends State<_CustomModelEditorScreen> {
     }
 
     if (mounted) {
+      final l10n = AppLocalizations.of(context);
       CommonDialog.showSnackBar(
         context: context,
-        message: _isEditing ? '모델이 수정되었습니다' : '모델이 추가되었습니다',
+        message: _isEditing ? l10n.customModelUpdated : l10n.customModelAdded,
       );
       Navigator.pop(context);
     }
@@ -677,9 +679,10 @@ class _CustomModelEditorScreenState extends State<_CustomModelEditorScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: CommonAppBar(
-        title: _isEditing ? '모델 수정' : '모델 추가',
+        title: _isEditing ? l10n.customModelEditModel : l10n.customModelAddModel,
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
@@ -690,12 +693,12 @@ class _CustomModelEditorScreenState extends State<_CustomModelEditorScreen> {
             children: [
               CommonCustomTextField(
                 controller: _nameController,
-                label: '모델 이름',
-                hintText: '예: GPT-4o',
+                label: l10n.customModelName,
+                hintText: l10n.customModelNameHint,
                 maxLines: 1,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return '모델 이름을 입력해주세요';
+                    return l10n.customModelNameRequired;
                   }
                   return null;
                 },
@@ -703,22 +706,21 @@ class _CustomModelEditorScreenState extends State<_CustomModelEditorScreen> {
               const SizedBox(height: 16),
               CommonCustomTextField(
                 controller: _modelIdController,
-                label: '모델 ID',
-                helpText: 'API 요청에 사용되는 모델 식별자',
-                hintText: '예: openai/gpt-4o',
+                label: l10n.customModelId,
+                hintText: l10n.customModelIdHint,
                 maxLines: 1,
                 validator: (value) {
                   if (value == null || value.trim().isEmpty) {
-                    return '모델 ID를 입력해주세요';
+                    return l10n.customModelIdRequired;
                   }
                   return null;
                 },
               ),
               const SizedBox(height: 24),
-              const CommonTitleMedium(text: '가격 (선택)'),
+              CommonTitleMedium(text: l10n.customModelPriceSection),
               const SizedBox(height: 4),
               Text(
-                '1M 토큰당 USD',
+                'USD / 1M tokens',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -758,7 +760,7 @@ class _CustomModelEditorScreenState extends State<_CustomModelEditorScreen> {
               CommonButton.filled(
                 onPressed: _save,
                 icon: Icons.save,
-                label: _isEditing ? '수정' : '추가',
+                label: _isEditing ? l10n.customModelEdit : l10n.customModelAdd,
               ),
             ],
           ),

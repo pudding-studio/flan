@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../constants/ui_constants.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../models/character/cover_image.dart';
 import '../../../utils/character_image_storage.dart';
 import '../../../utils/common_dialog.dart';
@@ -51,6 +52,7 @@ class _AdditionalImageTabState extends State<AdditionalImageTab> {
   }
 
   Future<void> _addImage() async {
+    final l10n = AppLocalizations.of(context);
     final XFile? picked = await _imagePicker.pickImage(
       source: ImageSource.gallery,
     );
@@ -77,7 +79,7 @@ class _AdditionalImageTabState extends State<AdditionalImageTab> {
           characterId: -1,
           name: originalName.isNotEmpty
               ? originalName
-              : '이미지 ${widget.images.length + 1}',
+              : l10n.additionalImageDefaultName(widget.images.length + 1),
           order: widget.images.length,
           path: filePath,
           imageType: 'additional',
@@ -90,7 +92,7 @@ class _AdditionalImageTabState extends State<AdditionalImageTab> {
       if (!mounted) return;
       CommonDialog.showSnackBar(
         context: context,
-        message: '이미지 저장 중 오류가 발생했습니다: $e',
+        message: AppLocalizations.of(context).additionalImageSaveError(e.toString()),
       );
     }
   }
@@ -153,22 +155,23 @@ class _AdditionalImageTabState extends State<AdditionalImageTab> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.all(UIConstants.spacing20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 5),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5),
             child: CommonTitleMedium(
-              text: '추가 이미지',
-              helpMessage: '캐릭터에 관련된 참고 이미지를 추가할 수 있습니다.',
+              text: l10n.additionalImageTitle,
+              helpMessage: l10n.additionalImageTitleHelp,
             ),
           ),
           const SizedBox(height: 8),
           Expanded(
             child: widget.images.isEmpty
-                ? const Center(child: Text('추가 이미지가 없습니다'))
+                ? Center(child: Text(l10n.additionalImageEmpty))
                 : ListView.builder(
                     itemCount: widget.images.length,
                     itemBuilder: (context, index) =>
@@ -181,7 +184,7 @@ class _AdditionalImageTabState extends State<AdditionalImageTab> {
             child: CommonButton.filled(
               onPressed: _addImage,
               icon: Icons.add,
-              label: '이미지 추가',
+              label: l10n.additionalImageAddButton,
             ),
           ),
         ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import 'common_custom_text_field.dart';
 import 'common_title_medium.dart';
 
@@ -26,7 +27,7 @@ class CommonParameterTextField extends StatelessWidget {
   final ValueChanged<int?>? onChanged;
 
   /// 힌트 텍스트
-  final String hintText;
+  final String? hintText;
 
   const CommonParameterTextField({
     super.key,
@@ -37,12 +38,13 @@ class CommonParameterTextField extends StatelessWidget {
     this.isChecked = true,
     this.onCheckboxChanged,
     this.onChanged,
-    this.hintText = '숫자 입력',
+    this.hintText,
   });
 
   @override
   Widget build(BuildContext context) {
     final isEnabled = !showCheckbox || isChecked;
+    final resolvedHintText = hintText ?? AppLocalizations.of(context).commonNumberHint;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -83,7 +85,7 @@ class CommonParameterTextField extends StatelessWidget {
                     : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.5),
               ),
           decoration: InputDecoration(
-            hintText: hintText,
+            hintText: resolvedHintText,
             hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),

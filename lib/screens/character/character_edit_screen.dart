@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../constants/ui_constants.dart';
+import '../../l10n/app_localizations.dart';
 import '../../providers/tokenizer_provider.dart';
 import '../../utils/token_counter.dart';
 import '../../database/database_helper.dart';
@@ -188,7 +189,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '데이터 로드 실패: $e',
+          message: AppLocalizations.of(context).characterEditDataLoadFailed(e.toString()),
         );
       }
     } finally {
@@ -469,15 +470,14 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
 
       // 편집 모드에서는 자동 저장 데이터가 있으면 복원 여부 묻기
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context);
 
       final shouldRestore = await CommonDialog.showConfirmation(
         context: context,
-        title: '작성 중인 데이터 발견',
-        content: '저장되지 않은 작성 중인 데이터가 있습니다.\n'
-            '마지막 작성 시간: ${_formatTimestamp(timestamp)}\n\n'
-            '불러오시겠습니까?',
-        confirmText: '불러오기',
-        cancelText: '취소',
+        title: l10n.characterEditDraftFoundTitle,
+        content: l10n.characterEditDraftFoundContent(_formatTimestamp(timestamp, l10n)),
+        confirmText: l10n.characterEditDraftLoad,
+        cancelText: l10n.commonCancel,
       );
 
       if (shouldRestore == true && mounted) {
@@ -576,18 +576,18 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     }
   }
 
-  String _formatTimestamp(DateTime timestamp) {
+  String _formatTimestamp(DateTime timestamp, AppLocalizations l10n) {
     final now = DateTime.now();
     final diff = now.difference(timestamp);
 
     if (diff.inMinutes < 1) {
-      return '방금 전';
+      return l10n.characterEditJustNow;
     } else if (diff.inHours < 1) {
-      return '${diff.inMinutes}분 전';
+      return l10n.characterEditMinutesAgo(diff.inMinutes);
     } else if (diff.inDays < 1) {
-      return '${diff.inHours}시간 전';
+      return l10n.characterEditHoursAgo(diff.inHours);
     } else {
-      return '${diff.inDays}일 전';
+      return l10n.characterEditDaysAgo(diff.inDays);
     }
   }
 
@@ -609,7 +609,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     if (_nameController.text.isEmpty) {
       CommonDialog.showSnackBar(
         context: context,
-        message: '캐릭터 이름을 입력해주세요',
+        message: AppLocalizations.of(context).characterEditNameRequired,
       );
       return;
     }
@@ -677,9 +677,10 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           _isSaving = false;
         });
 
+        final l10n = AppLocalizations.of(context);
         CommonDialog.showSnackBar(
           context: context,
-          message: _isEditMode ? '캐릭터가 수정되었습니다' : '캐릭터가 생성되었습니다',
+          message: _isEditMode ? l10n.characterEditUpdated : l10n.characterEditCreated,
         );
         Navigator.pop(context, true); // true를 반환하여 목록 새로고침 유도
       }
@@ -687,7 +688,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '저장 실패: $e',
+          message: AppLocalizations.of(context).characterEditSaveFailed(e.toString()),
         );
         setState(() {
           _isLoading = false;
@@ -962,11 +963,12 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Stack(
       children: [
         Scaffold(
           appBar: CommonAppBar(
-        title: _isEditMode ? '캐릭터 수정' : '캐릭터 만들기',
+        title: _isEditMode ? l10n.characterEditTitleEdit : l10n.characterEditTitleNew,
         actions: [
           CommonAppBarIconButton(
             icon: Icons.check,
@@ -981,15 +983,15 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
             tabAlignment: TabAlignment.start,
             overlayColor: WidgetStateProperty.all(Colors.transparent),
             splashFactory: NoSplash.splashFactory,
-            tabs: const [
-              Tab(text: '프로필'),
-              Tab(text: '캐릭터설정'),
-              Tab(text: '설정집'),
-              Tab(text: '페르소나'),
-              Tab(text: '시작설정'),
-              Tab(text: '표지이미지'),
-              Tab(text: '추가이미지'),
-              Tab(text: 'SNS'),
+            tabs: [
+              Tab(text: l10n.characterEditTabProfile),
+              Tab(text: l10n.characterEditTabCharacter),
+              Tab(text: l10n.characterEditTabLorebook),
+              Tab(text: l10n.characterEditTabPersona),
+              Tab(text: l10n.characterEditTabStartSetting),
+              Tab(text: l10n.characterEditTabCoverImage),
+              Tab(text: l10n.characterEditTabAdditionalImage),
+              const Tab(text: 'SNS'),
             ],
           ),
         ),
@@ -1059,33 +1061,34 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   }
 
   Widget _buildOtherTab() {
+    final l10n = AppLocalizations.of(context);
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CommonTitleMedium(
-            text: 'SNS 설정',
-            helpMessage: '캐릭터의 SNS 게시판 설정을 구성합니다.',
+            text: 'SNS',
+            helpMessage: l10n.characterEditSnsHelp,
           ),
           const SizedBox(height: 16),
           CommonCustomTextField(
             controller: _communityNameController,
-            label: 'SNS 이름',
-            hintText: '예: 자유게시판, 모험가 광장 등',
+            label: 'SNS',
+            hintText: l10n.characterEditSnsBoardHint,
           ),
           const SizedBox(height: 16),
           CommonCustomTextField(
             controller: _communityMoodController,
-            label: 'SNS 분위기',
-            hintText: '예: 유머러스하고 친근한 분위기',
+            label: 'SNS',
+            hintText: l10n.characterEditSnsToneHint,
             maxLines: null,
           ),
           const SizedBox(height: 16),
           CommonCustomTextField(
             controller: _communityLanguageController,
-            label: 'SNS 사용언어',
-            hintText: '사용자 언어 (현재는 한국어만 지원)',
+            label: 'SNS',
+            hintText: l10n.characterEditSnsLanguageHint,
           ),
         ],
       ),
@@ -1093,6 +1096,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   }
 
   Widget _buildProfileTab() {
+    final l10n = AppLocalizations.of(context);
     return Form(
       key: _formKey,
       child: ListView(
@@ -1100,14 +1104,14 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         children: [
           CommonCustomTextField(
             controller: _nameController,
-            label: '이름',
-            helpText: '캐릭터의 고유한 이름을 입력해주세요.',
-            hintText: '캐릭터의 이름을 입력해주세요.',
+            label: l10n.characterEditNameLabel,
+            helpText: l10n.characterEditNameHelpText,
+            hintText: l10n.characterEditNameHintText,
             maxLines: null,
             showCounter: true,
             validator: (value) {
               if (value == null || value.isEmpty) {
-                return '캐릭터 이름을 입력해주세요';
+                return l10n.characterEditNameRequired;
               }
               return null;
             },
@@ -1115,27 +1119,27 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           const SizedBox(height: UIConstants.spacing20),
           CommonCustomTextField(
             controller: _nicknameController,
-            label: '닉네임',
-            helpText: '프롬프트에서 {{char}} 대신 사용할 호칭입니다. 비워두면 이름이 사용됩니다.',
-            hintText: '캐릭터의 닉네임을 입력해주세요.',
+            label: l10n.characterEditNicknameLabel,
+            helpText: l10n.characterEditNicknameHelp,
+            hintText: l10n.characterEditNicknameHint,
             maxLines: null,
             showCounter: true,
           ),
           const SizedBox(height: UIConstants.spacing20),
           CommonCustomTextField(
             controller: _creatorNotesController,
-            label: '한 줄 소개',
-            helpText: '캐릭터를 간단히 설명하는 한 문장을 작성해주세요.',
-            hintText: '어떤 캐릭터인지 설명할 수 있는 간단한 소개를 입력해주세요.',
+            label: l10n.characterEditTaglineLabel,
+            helpText: l10n.characterEditTaglineHelp,
+            hintText: l10n.characterEditTaglineHint,
             maxLines: null,
             showCounter: true,
           ),
           const SizedBox(height: UIConstants.spacing20),
           CommonCustomTextField(
             controller: _keywordsController,
-            label: '키워드',
-            helpText: '캐릭터를 나타내는 키워드를 쉼표(,)로 구분하여 입력해주세요.',
-            hintText: '키워드 입력 예시: 판타지, 남자',
+            label: l10n.characterEditKeywordsLabel,
+            helpText: l10n.characterEditKeywordsHelp,
+            hintText: l10n.characterEditKeywordsHint,
             maxLines: null,
             showCounter: true,
           ),
@@ -1145,6 +1149,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   }
 
   Widget _buildDetailSettingsTab() {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.all(UIConstants.spacing20),
       child: Column(
@@ -1155,18 +1160,18 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const CommonTitleMedium(text: '세계관 설정'),
+                CommonTitleMedium(text: l10n.characterEditWorldSetting),
                 const SizedBox(width: 4),
                 GestureDetector(
                   onTap: () {
                     showDialog(
                       context: context,
                       builder: (context) => AlertDialog(
-                        content: const Text('캐릭터가 속한 세계관이나 배경 설정을 자유롭게 작성해주세요.'),
+                        content: Text(l10n.characterEditWorldSettingHelp),
                         actions: [
                           TextButton(
                             onPressed: () => Navigator.pop(context),
-                            child: const Text('확인'),
+                            child: Text(l10n.commonConfirm),
                           ),
                         ],
                       ),
@@ -1199,7 +1204,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           Expanded(
             child: CommonEditText(
               controller: _descriptionController,
-              hintText: '세계관 설정을 입력해주세요.',
+              hintText: l10n.characterEditWorldSettingHint,
               size: CommonEditTextSize.medium,
               expands: true,
               textAlignVertical: TextAlignVertical.top,

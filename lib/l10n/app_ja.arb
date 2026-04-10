@@ -1,0 +1,1325 @@
+{
+  "@@locale": "ja",
+
+  "navCharacter": "キャラクター",
+  "navChat": "チャット",
+  "navSettings": "設定",
+
+  "commonConfirm": "OK",
+  "commonCancel": "キャンセル",
+  "commonDelete": "削除",
+  "commonEdit": "編集",
+  "commonMore": "もっと見る",
+  "commonSave": "保存",
+  "commonRetry": "再試行",
+  "commonClose": "閉じる",
+  "commonCopy": "コピー",
+  "commonModify": "修正",
+  "commonCopyItem": "コピー",
+  "commonExport": "エクスポート",
+  "commonReset": "リセット",
+  "commonDefault": "デフォルト",
+  "commonLabelName": "名前",
+  "commonNumberHint": "数字を入力",
+  "commonAddItem": "項目を追加",
+  "commonAddFolder": "フォルダを追加",
+  "commonEmptyList": "項目がありません",
+  "commonDeleteConfirmTitle": "削除の確認",
+  "commonDeleteConfirmContent": "{itemName}を削除しますか？",
+  "@commonDeleteConfirmContent": {
+    "placeholders": {
+      "itemName": { "type": "String" }
+    }
+  },
+
+  "settingsTitle": "設定",
+  "settingsSectionGeneral": "一般",
+  "settingsSectionChat": "チャット",
+  "settingsSectionData": "データ",
+  "settingsSectionEtc": "その他",
+  "settingsSectionInfo": "情報",
+  "settingsTheme": "テーマ",
+  "settingsThemeSystem": "システム設定",
+  "settingsThemeLight": "ライトモード",
+  "settingsThemeDark": "ダークモード",
+  "settingsThemeColor": "テーマカラー",
+  "settingsThemeColorDefault": "デフォルト",
+  "settingsLanguage": "アプリ言語",
+  "settingsLanguageSystem": "システム設定",
+  "settingsAiResponseLanguage": "AI応答言語",
+  "settingsAiResponseLanguageAuto": "アプリ言語と同じ",
+  "languageKorean": "한국어",
+  "languageEnglish": "English",
+  "languageJapanese": "日本語",
+  "settingsApiKey": "APIキー登録",
+  "settingsChatModel": "チャットモデル",
+  "settingsTokenizer": "トークナイザー",
+  "settingsChatPrompt": "チャットプロンプト",
+  "settingsAutoSummary": "自動要約",
+  "settingsAutoSummarySubtitle": "グローバル自動要約設定",
+  "settingsBackup": "バックアップと復元",
+  "settingsBackupSubtitle": "データのエクスポート／インポート",
+  "settingsStatistics": "統計",
+  "settingsStatisticsSubtitle": "日付別モデル使用量とコスト",
+  "settingsLog": "ログ",
+  "settingsLogSubtitle": "APIリクエスト／レスポンスログの確認",
+  "settingsTutorial": "初期設定をやり直す",
+  "settingsTutorialSubtitle": "APIキー登録とモデル設定のチュートリアル",
+  "settingsAppInfo": "アプリ情報",
+  "settingsAppInfoSubtitle": "バージョン {version}",
+  "@settingsAppInfoSubtitle": {
+    "placeholders": {
+      "version": { "type": "String" }
+    }
+  },
+  "settingsTermsOfService": "利用規約",
+  "settingsPrivacyPolicy": "プライバシーポリシー",
+  "settingsAboutDescription": "AIキャラクターとチャットできるアプリです。",
+
+  "characterTitle": "キャラクター",
+  "characterSelectedCount": "{count}件選択中",
+  "@characterSelectedCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "characterEmptyTitle": "キャラクターがありません",
+  "characterEmptySubtitle": "+ ボタンを押して新しいキャラクターを追加しよう",
+  "characterDeleteSelectedTitle": "キャラクターを削除",
+  "characterDeleteSelectedContent": "選択した{count}件のキャラクターを削除しますか？関連データもすべて削除されます。",
+  "@characterDeleteSelectedContent": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "characterDeleteOneContent": "このキャラクターを削除しますか？関連データもすべて削除されます。",
+  "characterDeletedSelected": "選択したキャラクターを削除しました",
+  "characterDeleted": "キャラクターを削除しました",
+  "characterDeleteFailed": "キャラクターの削除に失敗しました: {error}",
+  "@characterDeleteFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "characterCopied": "キャラクターをコピーしました",
+  "characterCopyFailed": "キャラクターのコピーに失敗しました: {error}",
+  "@characterCopyFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "characterLoadFailed": "キャラクター一覧の読み込みに失敗しました: {error}",
+  "@characterLoadFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "characterReorderFailed": "並び替えに失敗しました: {error}",
+  "@characterReorderFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "characterImportSuccess": "キャラクターをインポートしました",
+  "characterImportFailed": "インポートに失敗しました: {error}",
+  "@characterImportFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "characterImport": "インポート",
+  "characterViewMode": "表示形式",
+  "characterViewGrid": "グリッド",
+  "characterViewList": "リスト",
+  "characterThemeSelect": "テーマを選択",
+  "characterFlanAgentTooltip": "Flan Agent",
+  "characterAgentHighlightTooltip": "ここをタップしてキャラクターを作ろう！",
+  "characterSortLabel": "並び替え: {label}",
+  "@characterSortLabel": {
+    "placeholders": {
+      "label": { "type": "String" }
+    }
+  },
+  "characterSortNameAsc": "名前 (昇順)",
+  "characterSortNameDesc": "名前 (降順)",
+  "characterSortUpdatedAtAsc": "更新日時 (古い順)",
+  "characterSortUpdatedAtDesc": "更新日時 (新しい順)",
+  "characterSortCreatedAtAsc": "作成日時 (古い順)",
+  "characterSortCreatedAtDesc": "作成日時 (新しい順)",
+  "characterSortCustom": "カスタム",
+
+  "chatTitle": "チャット",
+  "chatSelectedCount": "{count}件選択中",
+  "@chatSelectedCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "chatEmptyTitle": "チャットルームがありません",
+  "chatEmptySubtitle": "キャラクターを選んで新しいチャットを始めよう",
+  "chatNoMessages": "メッセージがありません",
+  "chatSortMethod": "並び替え",
+  "chatSortRecent": "最近の更新順",
+  "chatSortName": "名前順",
+  "chatSortMessageCount": "メッセージ数",
+  "chatRoomDeleteTitle": "チャットを削除",
+  "chatRoomDeleteSelectedContent": "選択した{count}件のチャットを削除しますか？\nすべてのメッセージが削除されます。",
+  "@chatRoomDeleteSelectedContent": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "chatRoomDeleteOneContent": "'{name}' を削除しますか？\nすべてのメッセージが削除されます。",
+  "@chatRoomDeleteOneContent": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "chatRoomDeletedSelected": "選択したチャットを削除しました",
+  "chatRoomDeleted": "チャットを削除しました",
+  "chatRoomDeleteFailed": "チャットの削除に失敗しました",
+  "chatRoomRenameTitle": "チャット名を変更",
+  "chatRoomRenameHint": "チャット名",
+  "chatRoomRenameFailed": "チャット名の変更に失敗しました",
+  "chatDateToday": "今日",
+  "chatDateYesterday": "昨日",
+  "chatDateDaysAgo": "{days}日前",
+  "@chatDateDaysAgo": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+  "chatDateWeeksAgo": "{weeks}週間前",
+  "@chatDateWeeksAgo": {
+    "placeholders": {
+      "weeks": { "type": "int" }
+    }
+  },
+  "chatDateMonthsAgo": "{months}ヶ月前",
+  "@chatDateMonthsAgo": {
+    "placeholders": {
+      "months": { "type": "int" }
+    }
+  },
+  "chatDateYearsAgo": "{years}年前",
+  "@chatDateYearsAgo": {
+    "placeholders": {
+      "years": { "type": "int" }
+    }
+  },
+
+  "tutorialPrevious": "戻る",
+  "tutorialNext": "次へ",
+  "tutorialStart": "はじめる",
+  "tutorialStep": "STEP {step}",
+  "@tutorialStep": {
+    "placeholders": {
+      "step": { "type": "int" }
+    }
+  },
+  "tutorialWelcomeTitle": "Flanへようこそ",
+  "tutorialWelcomeBody": "AIキャラクターと会話して、自分だけの世界を作ろう。\n簡単な初期設定を行います。",
+  "tutorialApiKeyTitle": "APIキー登録",
+  "tutorialApiKeyDesc": "AIモデルを使うにはAPIキーが必要です。\n使うサービスを選んでキーを登録してください。",
+  "tutorialApiKeyHint": "APIキーを入力してください",
+  "tutorialApiKeyEmpty": "APIキーを入力してください",
+  "tutorialApiKeySaved": "{provider} APIキーを保存しました",
+  "@tutorialApiKeySaved": {
+    "placeholders": {
+      "provider": { "type": "String" }
+    }
+  },
+  "tutorialVertexSaved": "Vertex AIサービスアカウントを登録しました",
+  "tutorialApiKeySaveFailed": "APIキーの保存に失敗しました: {error}",
+  "@tutorialApiKeySaveFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "tutorialVertexImport": "サービスアカウントJSONをインポート",
+  "tutorialVertexValidationFailed": "サービスアカウントの検証に失敗しました",
+  "tutorialJsonReadFailed": "JSONファイルの読み込みに失敗しました: {error}",
+  "@tutorialJsonReadFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "tutorialReRegister": "再登録",
+  "tutorialReInput": "再入力",
+  "tutorialModelTitle": "モデル設定",
+  "tutorialModelDesc": "チャットと補助機能に使うAIモデルを選んでください。",
+  "tutorialMainModel": "メインモデル",
+  "tutorialSubModel": "サブモデル",
+  "tutorialMainDescGemini": "チャットに使うモデルです。Gemini 3.1 Pro推奨。",
+  "tutorialSubDescGemini": "要約・SNS・ニュースなどに使います。Gemini 3 Flash推奨。",
+  "tutorialMainDescOpenai": "チャットに使うモデルです。GPT-5.4推奨。",
+  "tutorialSubDescOpenai": "要約・SNS・ニュースなどに使います。GPT-5.4 Mini推奨。",
+  "tutorialMainDescAnthropic": "チャットに使うモデルです。Claude Sonnet 4.6推奨。",
+  "tutorialSubDescAnthropic": "要約・SNS・ニュースなどに使います。Claude Haiku 4.5推奨。",
+  "tutorialModelRecommended": "おすすめ",
+  "tutorialCompleteTitle": "設定が完了しました！",
+  "tutorialCompleteSubtitle": "キャラクターを作ってみましょう",
+  "tutorialAgentBoxTitle": "Flan Agent",
+  "tutorialAgentBoxSubtitle": "キャラクタータブ上部の光るアイコンをタップしてみて",
+  "tutorialAgentBoxBody": "Agentに作りたいキャラクターを伝えてみよう！\n「ファンタジー世界のエルフの魔法使いを作って」のように自由にリクエストできます。",
+  "tutorialHelpGoogleAi": "Google AI Studio APIキーを取得",
+  "tutorialHelpVertex": "Vertex AIサービスアカウントを設定",
+  "tutorialHelpOpenai": "OpenAI APIキーを取得",
+  "tutorialHelpAnthropic": "Anthropic APIキーを取得",
+
+  "drawerTabInfo": "基本情報",
+  "drawerTabPersona": "ペルソナ",
+  "drawerTabCharacter": "キャラクター情報",
+  "drawerTabLorebook": "設定集",
+  "drawerTabSummary": "要約",
+  "drawerChatMemo": "チャットメモ",
+  "drawerMemoHint": "メモを入力",
+  "drawerChatSettings": "チャット設定",
+  "drawerModelPreset": "モデル設定",
+  "drawerProvider": "プロバイダー",
+  "drawerChatModel": "チャットモデル",
+  "drawerChatPrompt": "チャットプロンプト",
+  "drawerNone": "なし",
+  "drawerPromptPreset": "プロンプトプリセット",
+  "drawerShowImages": "画像を表示",
+  "drawerNoName": "名前なし",
+  "drawerSelectItem": "項目を選択",
+  "drawerOther": "その他",
+  "drawerEnterValue": "値を入力",
+  "drawerSelectPersona": "ペルソナを選択",
+  "drawerCreateNewPersona": "+ 新しいペルソナを作成",
+  "drawerNewPersona": "新しいペルソナ",
+  "drawerPersonaName": "ペルソナ名",
+  "drawerPersonaDescription": "ペルソナの説明",
+  "drawerPersonaDescriptionHint": "ペルソナの説明を入力",
+  "drawerCharacter": "キャラクター",
+  "drawerCharacterDescriptionHint": "キャラクター設定を入力",
+  "drawerLorebookEmpty": "設定集の項目がありません",
+  "drawerBookNameHint": "設定名",
+  "drawerBookActivationCondition": "発動条件",
+  "drawerBookSecondaryKey": "セカンダリキー",
+  "drawerBookActivationKey": "アクティベーションキー",
+  "drawerBookKeysHint": "カンマ区切りで入力",
+  "drawerBookSecondaryKeysHint": "カンマ区切りで入力 (例: 魔法, 戦闘)",
+  "drawerBookInsertionOrder": "挿入順",
+  "drawerBookContent": "内容",
+  "drawerBookContentHint": "設定内容を入力",
+  "drawerAutoSummary": "自動要約",
+  "drawerAgentMode": "エージェントモード",
+  "drawerSummaryMessageCount": "要約メッセージ数",
+  "drawerMessageCountHint": "メッセージ数",
+  "drawerAutoSummaryList": "自動要約一覧",
+  "drawerSummaryCount": "{count}件",
+  "@drawerSummaryCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "drawerNoSummaries": "自動要約がありません。\n設定から自動要約を有効にしてください。",
+  "drawerSummaryContentHint": "要約内容",
+  "drawerGenerating": "生成中...",
+  "drawerRegenerate": "再生成",
+  "drawerActive": "有効",
+  "drawerInactive": "無効",
+  "drawerNameLabel": "名前",
+  "drawerNameHint": "名前",
+  "drawerAddSummaryButton": "現在のメッセージ位置で要約を追加",
+  "drawerNoMessages": "メッセージがありません",
+  "drawerNoNewMessages": "要約する新しいメッセージがありません",
+  "drawerSummaryAdded": "要約を追加しました。内容を入力してください。",
+  "drawerSummaryAddFailed": "要約の追加に失敗しました: {error}",
+  "@drawerSummaryAddFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "drawerSummaryRegenerated": "要約を再生成しました",
+  "drawerSummaryRegenerateFailed": "要約の再生成に失敗しました: {error}",
+  "@drawerSummaryRegenerateFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "drawerSummaryItemName": "この要約",
+  "drawerSummaryDeleted": "要約を削除しました",
+  "drawerSummaryDeleteFailed": "要約の削除に失敗しました: {error}",
+  "@drawerSummaryDeleteFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "drawerAgentEntryEmpty": "{type}データがありません。\nチャットを進めると自動的に生成されます。",
+  "@drawerAgentEntryEmpty": {
+    "placeholders": {
+      "type": { "type": "String" }
+    }
+  },
+  "drawerAgentEntrySaved": "{name} を保存しました",
+  "@drawerAgentEntrySaved": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "drawerAgentEntryDeleted": "{name} を削除しました",
+  "@drawerAgentEntryDeleted": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+
+  "agentFieldDateRange": "日時",
+  "agentFieldCharacters": "登場人物",
+  "agentFieldCharactersList": "登場人物 (カンマ区切り)",
+  "agentFieldLocations": "場所",
+  "agentFieldLocationsList": "場所 (カンマ区切り)",
+  "agentFieldSummary": "要約",
+  "agentFieldAppearance": "外見",
+  "agentFieldPersonality": "性格",
+  "agentFieldPast": "過去",
+  "agentFieldAbilities": "能力",
+  "agentFieldStoryActions": "作中の行動",
+  "agentFieldDialogueStyle": "台詞スタイル",
+  "agentFieldPossessions": "所持品",
+  "agentFieldPossessionsList": "所持品 (カンマ区切り)",
+  "agentFieldParentLocation": "場所",
+  "agentFieldFeatures": "特徴",
+  "agentFieldAsciiMap": "マップ",
+  "agentFieldRelatedEpisodes": "関連エピソード",
+  "agentFieldRelatedEpisodesList": "関連エピソード (カンマ区切り)",
+  "agentFieldKeywords": "キーワード",
+  "agentFieldDatetime": "日時",
+  "agentFieldOverview": "概要",
+  "agentFieldResult": "結果",
+
+  "chatRoomNotFound": "チャットが見つかりません",
+  "chatRoomCannotLoad": "チャットを読み込めません",
+  "chatRoomMessageSendFailed": "メッセージの送信に失敗しました: {error}",
+  "@chatRoomMessageSendFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "chatRoomMessageItemName": "このメッセージ",
+  "chatRoomMessageDeleted": "メッセージを削除しました",
+  "chatRoomMessageDeleteFailed": "メッセージの削除に失敗しました",
+  "chatRoomMessageEdited": "メッセージを編集しました",
+  "chatRoomMessageEditFailed": "メッセージの編集に失敗しました",
+  "chatRoomMessageRetryFailed": "メッセージの再送信に失敗しました: {error}",
+  "@chatRoomMessageRetryFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "chatRoomMessageRegenerateFailed": "メッセージの再生成に失敗しました: {error}",
+  "@chatRoomMessageRegenerateFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "chatRoomTextSettings": "テキスト設定",
+  "chatRoomBranchTitle": "分岐を作成",
+  "chatRoomBranchContent": "このメッセージまでの内容で新しい分岐を作成しますか？",
+  "chatRoomBranchConfirm": "作成",
+  "chatRoomBranchCreated": "分岐を作成しました",
+  "chatRoomBranchFailed": "分岐の作成に失敗しました",
+  "chatRoomWarningTitle": "注意",
+  "chatRoomWarningDesc": "すべてのAI応答は自動生成されており、偏りや不正確な内容を含む場合があります。",
+  "chatRoomStartSetting": "開始設定",
+  "chatRoomNoStats": "統計情報がありません",
+  "chatRoomStatsTitle": "応答統計",
+  "chatRoomStatModel": "モデル",
+  "chatRoomStatInputTokens": "入力トークン",
+  "chatRoomStatCachedTokens": "キャッシュトークン",
+  "chatRoomStatCacheRatio": "キャッシュ率",
+  "chatRoomStatOutputTokens": "出力トークン",
+  "chatRoomStatThoughtTokens": "思考トークン",
+  "chatRoomStatThoughtRatio": "思考率",
+  "chatRoomStatTotalTokens": "合計トークン",
+  "chatRoomStatEstimatedCost": "推定コスト",
+  "chatRoomMessageSearch": "メッセージを検索...",
+  "chatRoomSearchTooltip": "検索",
+  "chatRoomNewMessages": "新しいメッセージ",
+  "chatRoomGenerating": "生成中...",
+  "chatRoomRetrying": "再送信中({attempt})...",
+  "@chatRoomRetrying": {
+    "placeholders": {
+      "attempt": { "type": "int" }
+    }
+  },
+  "chatRoomWaiting": "応答を待っています...",
+  "chatRoomSummarizing": "要約中...",
+  "chatRoomMessageHint": "メッセージを入力",
+  "chatRoomDayMon": "月",
+  "chatRoomDayTue": "火",
+  "chatRoomDayWed": "水",
+  "chatRoomDayThu": "木",
+  "chatRoomDayFri": "金",
+  "chatRoomDaySat": "土",
+  "chatRoomDaySun": "日",
+  "chatRoomDay": "昼",
+  "chatRoomNight": "夜",
+
+  "characterEditDataLoadFailed": "データの読み込みに失敗しました: {error}",
+  "@characterEditDataLoadFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "characterEditDraftFoundTitle": "未保存の下書きが見つかりました",
+  "characterEditDraftFoundContent": "保存されていない下書きがあります。\n最終編集日時: {timestamp}\n\n復元しますか？",
+  "@characterEditDraftFoundContent": {
+    "placeholders": {
+      "timestamp": { "type": "String" }
+    }
+  },
+  "characterEditDraftLoad": "復元",
+  "characterEditJustNow": "たった今",
+  "characterEditMinutesAgo": "{minutes}分前",
+  "@characterEditMinutesAgo": {
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+  "characterEditHoursAgo": "{hours}時間前",
+  "@characterEditHoursAgo": {
+    "placeholders": {
+      "hours": { "type": "int" }
+    }
+  },
+  "characterEditDaysAgo": "{days}日前",
+  "@characterEditDaysAgo": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+  "characterEditNameRequired": "キャラクター名を入力してください",
+  "characterEditCreated": "キャラクターを作成しました",
+  "characterEditUpdated": "キャラクターを更新しました",
+  "characterEditSaveFailed": "保存に失敗しました: {error}",
+  "@characterEditSaveFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "characterEditTitleNew": "キャラクターを作成",
+  "characterEditTitleEdit": "キャラクターを編集",
+  "characterEditTabProfile": "プロフィール",
+  "characterEditTabCharacter": "キャラクター設定",
+  "characterEditTabLorebook": "設定集",
+  "characterEditTabPersona": "ペルソナ",
+  "characterEditTabStartSetting": "開始設定",
+  "characterEditTabCoverImage": "カバー画像",
+  "characterEditTabAdditionalImage": "追加画像",
+  "characterEditSnsHelp": "このキャラクターのSNS掲示板設定を行います。",
+  "characterEditSnsBoardHint": "例: 自由掲示板、冒険者広場",
+  "characterEditSnsToneHint": "例: ユーモラスで親しみやすい雰囲気",
+  "characterEditSnsLanguageHint": "使用言語 (現在は韓国語のみ対応)",
+  "characterEditNameLabel": "名前",
+  "characterEditNameHelpText": "キャラクターの固有名を入力してください。",
+  "characterEditNameHintText": "キャラクターの名前を入力してください。",
+  "characterEditNicknameLabel": "ニックネーム",
+  "characterEditNicknameHelp": "プロンプトのchar変数の代わりに使う呼称です。空白の場合は名前が使われます。",
+  "characterEditNicknameHint": "キャラクターのニックネームを入力してください。",
+  "characterEditTaglineLabel": "一言紹介",
+  "characterEditTaglineHelp": "キャラクターを一言で表す文を書いてください。",
+  "characterEditTaglineHint": "キャラクターの簡単な紹介を入力してください。",
+  "characterEditKeywordsLabel": "キーワード",
+  "characterEditKeywordsHelp": "キャラクターを表すキーワードをカンマ(,)区切りで入力してください。",
+  "characterEditKeywordsHint": "例: ファンタジー, 男性",
+  "characterEditWorldSetting": "世界観設定",
+  "characterEditWorldSettingHelp": "このキャラクターが属する世界観や背景を自由に記述してください。",
+  "characterEditWorldSettingHint": "世界観設定を入力してください。",
+
+  "characterExportFormatTitle": "エクスポート形式を選択",
+  "characterExportFlanFormat": "Flan形式",
+  "characterExportFlanSubtitle": "アプリ専用JSON (画像含む)",
+  "characterExportV2Card": "キャラクターカード v2",
+  "characterExportV2Subtitle": "PNG — 一部データが切り捨てられる場合あり",
+  "characterExportV3Card": "キャラクターカード v3",
+  "characterExportSuccessAndroid": "エクスポート完了: /storage/emulated/0/Download/{fileName}",
+  "@characterExportSuccessAndroid": {
+    "placeholders": {
+      "fileName": { "type": "String" }
+    }
+  },
+  "characterExportSuccessIos": "エクスポート完了: {path}",
+  "@characterExportSuccessIos": {
+    "placeholders": {
+      "path": { "type": "String" }
+    }
+  },
+  "characterExportSaveFailed": "ファイルの保存に失敗しました",
+  "characterCoverDefault": "カバー 1",
+  "characterCopyName": "{name} (コピー)",
+  "@characterCopyName": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+
+  "autoSummaryTitle": "自動要約",
+  "autoSummarySaveFailed": "保存に失敗しました",
+  "autoSummaryExportFailed": "エクスポートに失敗しました: {error}",
+  "@autoSummaryExportFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "autoSummaryResetTitle": "リセット",
+  "autoSummaryResetContent": "要約プロンプトを最新のデフォルトに戻しますか？",
+  "autoSummaryResetConfirm": "リセット",
+  "autoSummaryResetSuccess": "要約プロンプトをリセットしました",
+  "autoSummaryResetFailed": "要約プロンプトのリセットに失敗しました: {error}",
+  "@autoSummaryResetFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "autoSummaryInvalidFormat": "無効な要約プロンプト形式です",
+  "autoSummaryEmptyItems": "プロンプト項目が空です",
+  "autoSummaryImportSuccess": "要約プロンプトをインポートしました",
+  "autoSummaryImportFailed": "インポートに失敗しました: {error}",
+  "@autoSummaryImportFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "autoSummaryTabBasic": "基本情報",
+  "autoSummaryTabParameters": "パラメーター",
+  "autoSummaryTabPrompt": "プロンプト",
+  "autoSummarySection": "自動要約設定",
+  "autoSummaryEnableTitle": "自動要約",
+  "autoSummaryEnableSubtitle": "トークン上限を超えると自動で要約を生成します",
+  "autoSummaryAgentTitle": "エージェントモード",
+  "autoSummaryAgentSubtitle": "構造化された世界観データを自動管理します",
+  "autoSummaryModelSection": "要約モデル",
+  "autoSummaryUseSubModel": "サブモデルを使用",
+  "autoSummaryUseSubModelSubtitle": "チャットモデル設定のサブモデルを使用します",
+  "autoSummaryStartCondition": "自動要約の開始条件",
+  "autoSummaryTokenHint": "トークン数を入力",
+  "autoSummaryPeriod": "要約の間隔",
+  "autoSummaryMaxResponseSize": "最大応答サイズ",
+  "autoSummaryMaxResponseHelp": "生成できる最大トークン数です。",
+  "autoSummaryTemperature": "温度",
+  "autoSummaryTemperatureHelp": "高い値ほど創造的で多様な応答を生成します。",
+  "autoSummaryTopPHelp": "累積確率のしきい値です。低い値ほど集中した応答を生成します。",
+  "autoSummaryTopKHelp": "考慮する上位トークンの数です。",
+  "autoSummaryPresencePenalty": "プレゼンスペナルティ",
+  "autoSummaryPresencePenaltyHelp": "正の値は新しいトピックを促し、負の値は既存のトピックに集中します。",
+  "autoSummaryFrequencyPenalty": "頻度ペナルティ",
+  "autoSummaryFrequencyPenaltyHelp": "正の値は繰り返しを減らし、負の値は繰り返しを増やします。",
+  "autoSummaryPromptHelp": "要約プロンプトの項目を設定します。「要約対象」の役割位置に要約するメッセージが自動で挿入されます。\n\n長押しで順番を変更できます。",
+  "autoSummaryNoItems": "プロンプト項目がありません",
+  "autoSummaryAddItem": "項目を追加",
+  "autoSummaryResetDefault": "デフォルトプロンプトにリセット",
+  "autoSummaryImport": "インポート",
+  "autoSummaryExport": "エクスポート",
+  "autoSummaryItemNameHint": "項目名 (例: システム設定)",
+  "autoSummaryItemRole": "役割",
+  "autoSummaryTargetMessageInfo": "要約するメッセージがここに自動挿入されます",
+  "autoSummaryItemPrompt": "プロンプト",
+  "autoSummaryItemPromptHint": "プロンプト内容を入力",
+  "autoSummaryNoModel": "モデルなし",
+
+  "customModelTitle": "カスタムモデル",
+  "customModelEmpty": "カスタムプロバイダーがありません",
+  "customModelAddProvider": "プロバイダーを追加",
+  "customModelEditProvider": "プロバイダーを編集",
+  "customModelDeleteProviderTitle": "プロバイダーを削除",
+  "customModelDeleteModelTitle": "モデルを削除",
+  "customModelNoExportable": "エクスポートできるカスタムモデルがありません",
+  "customModelSaveFailed": "保存に失敗しました",
+  "customModelExportFailed": "エクスポートに失敗しました: {error}",
+  "@customModelExportFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "customModelImportSuccess": "プロバイダー{providerCount}件、モデル{modelCount}件をインポートしました",
+  "@customModelImportSuccess": {
+    "placeholders": {
+      "providerCount": { "type": "int" },
+      "modelCount": { "type": "int" }
+    }
+  },
+  "customModelImportFailed": "インポートに失敗しました: {error}",
+  "@customModelImportFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "customModelAddModel": "モデルを追加",
+  "customModelEditModel": "モデルを編集",
+  "customModelProviderUpdated": "プロバイダーを更新しました",
+  "customModelProviderAdded": "プロバイダーを追加しました",
+  "customModelProviderName": "プロバイダー名",
+  "customModelProviderNameHint": "例: OpenRouter",
+  "customModelProviderNameRequired": "プロバイダー名を入力してください",
+  "customModelEndpointHint": "例: https://openrouter.ai/api",
+  "customModelRetrySection": "失敗時の再試行",
+  "customModelRetryCount": "再試行回数",
+  "customModelEdit": "編集",
+  "customModelAdd": "追加",
+  "customModelUpdated": "モデルを更新しました",
+  "customModelAdded": "モデルを追加しました",
+  "customModelName": "モデル名",
+  "customModelNameHint": "例: GPT-4o",
+  "customModelNameRequired": "モデル名を入力してください",
+  "customModelId": "モデルID",
+  "customModelIdHint": "例: openai/gpt-4o",
+  "customModelIdRequired": "モデルIDを入力してください",
+  "customModelPriceSection": "価格 (任意)",
+  "customModelDeleteProviderWithModels": "プロバイダー '{name}' とその配下の{count}件のモデルを削除しますか？",
+  "@customModelDeleteProviderWithModels": {
+    "placeholders": {
+      "name": { "type": "String" },
+      "count": { "type": "int" }
+    }
+  },
+  "customModelDeleteProvider": "プロバイダー '{name}' を削除しますか？",
+  "@customModelDeleteProvider": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "customModelDeleteModel": "モデル '{name}' を削除しますか？",
+  "@customModelDeleteModel": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+
+  "promptEditDefaultName": "デフォルト",
+  "promptEditNewFolderName": "新しいフォルダ",
+  "promptEditDefaultRuleName": "正規表現ルール",
+  "promptEditDefaultPresetName": "プリセット",
+  "promptEditDefaultConditionName": "条件",
+  "promptEditUpdated": "プロンプトを更新しました",
+  "promptEditCreated": "プロンプトを作成しました",
+  "promptEditSaveFailed": "プロンプトの保存に失敗しました: {error}",
+  "@promptEditSaveFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "promptEditTitleView": "プロンプトを表示",
+  "promptEditTitleEdit": "プロンプトを編集",
+  "promptEditTitleNew": "新しいプロンプト",
+  "promptEditTabBasic": "基本情報",
+  "promptEditTabParameters": "パラメーター",
+  "promptEditTabPrompt": "プロンプト",
+  "promptEditTabRegex": "正規表現",
+  "promptEditTabOther": "その他",
+  "promptEditNameLabel": "プロンプト名",
+  "promptEditNameHint": "例: フレンドリーアシスタント、専門家モード",
+  "promptEditNameRequired": "プロンプト名を入力してください",
+  "promptEditDescriptionTitle": "説明",
+  "promptEditDescriptionHint": "このプロンプトの説明を入力してください",
+  "promptEditMaxInputSize": "最大入力サイズ",
+  "promptEditMaxInputHelp": "入力できる最大トークン数です。",
+  "promptEditThinkingTokens": "思考トークン",
+  "promptEditThinkingHelp": "思考に使うトークン数です。",
+  "promptEditStopStrings": "停止文字列",
+  "promptEditStopStringsHint": "文字列を入力して追加",
+  "promptEditThinkingConfig": "思考機能の設定",
+  "promptEditThinkingTokenCount": "思考トークン数",
+  "promptEditThinkingTokenHelp": "思考に使う最大トークン数です。",
+  "promptEditThinkingLevel": "思考レベル",
+
+  "chatModelTitle": "チャットモデル",
+  "chatModelTabMain": "メインモデル",
+  "chatModelTabSub": "サブモデル",
+  "chatModelSubInfo": "サブモデルはSNS要約などに使われます。\n設定するとそれらの機能のデフォルトモデルが変更されます。",
+  "chatModelProviderSection": "プロバイダー",
+  "chatModelUsedModelSection": "使用中モデル",
+  "chatModelInfoSection": "モデル情報",
+  "chatModelManagement": "カスタムモデル管理",
+  "chatModelApiKeyDeleteContent": "このAPIキーを削除しますか？",
+  "chatModelVertexValidationFailed": "サービスアカウントの検証に失敗しました",
+  "chatModelNewApiKey": "新しいAPIキー",
+  "chatModelJsonAdd": "JSONを追加",
+  "chatModelKeyAdd": "キーを追加",
+  "chatModelNoApiKey": "登録されたAPIキーがありません",
+  "apiKeyMultiInfo": "プロバイダーごとに複数のAPIキーを登録できます。",
+
+  "chatPromptListLoadFailed": "プロンプト一覧の読み込みに失敗しました: {error}",
+  "@chatPromptListLoadFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "chatPromptSelectFailed": "プロンプトの選択に失敗しました: {error}",
+  "@chatPromptSelectFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "chatPromptDeleted": "プロンプトを削除しました",
+  "chatPromptDeleteFailed": "プロンプトの削除に失敗しました: {error}",
+  "@chatPromptDeleteFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "chatPromptDefaultSelect": "デフォルトプロンプトを選択",
+  "chatPromptEmpty": "空のプロンプト",
+  "chatPromptCopied": "プロンプトをコピーしました",
+  "chatPromptCopyFailed": "プロンプトのコピーに失敗しました: {error}",
+  "@chatPromptCopyFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "chatPromptResetTitle": "リセット",
+  "chatPromptResetContent": "すべてのデフォルトプロンプトを初期状態に戻しますか？",
+  "chatPromptResetSuccess": "デフォルトプロンプトをリセットしました",
+  "chatPromptResetFailed": "デフォルトプロンプトのリセットに失敗しました: {error}",
+  "@chatPromptResetFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "chatPromptExportFailed": "エクスポートに失敗しました: {error}",
+  "@chatPromptExportFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "chatPromptImportSuccess": "プロンプトをインポートしました",
+  "chatPromptImportFailed": "インポートに失敗しました: {error}",
+  "@chatPromptImportFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "chatPromptListEmpty": "プロンプトがありません",
+
+  "communityAnonymous": "匿名",
+  "communityNeedDescription": "先にキャラクターの説明または要約を記入してください。",
+  "communityGenerateFailed": "生成に失敗しました: {error}",
+  "@communityGenerateFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "communityRegisterFailed": "投稿に失敗しました: {error}",
+  "@communityRegisterFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "communityWritePost": "投稿を書く",
+  "communityNickname": "ニックネーム",
+  "communityTitle": "タイトル",
+  "communityContent": "内容",
+  "communityRegister": "投稿",
+  "communityWriteComment": "コメントを書く",
+  "communityCommentContent": "コメント",
+  "communityCommentDeleteTitle": "コメントを削除",
+  "communityCommentDeleteContent": "このコメントを削除しますか？",
+  "communityPostDeleteTitle": "投稿を削除",
+  "communityPostDeleteContent": "この投稿を削除しますか？",
+  "communityDefaultName": "自由掲示板",
+  "communitySettingsTooltip": "設定",
+  "communityNoPostsTitle": "まだ投稿がありません",
+  "communityNoPostsSubtitle": "引っ張って更新してください",
+  "communityCommentLabel": "コメントを追加",
+  "communityUsedModelSection": "使用中モデル",
+  "communityModelPreset": "モデル設定",
+  "communityProvider": "プロバイダー",
+  "communityChatModel": "チャットモデル",
+  "communitySettingsSection": "コミュニティ設定",
+  "communityNameLabel": "コミュニティ名",
+  "communityToneLabel": "コミュニティの雰囲気",
+  "communityLanguageLabel": "使用言語",
+
+  "characterViewTabInfo": "情報",
+  "characterViewTabChat": "チャット",
+  "characterViewTagline": "一言紹介",
+  "characterViewKeywords": "キーワード",
+  "characterViewPersona": "ペルソナ",
+  "characterViewStartSetting": "開始設定",
+  "characterViewStartContext": "開始状況",
+  "characterViewStartMessage": "開始メッセージ",
+  "characterViewNewChat": "新しいチャット",
+  "characterViewChatCreateFailed": "チャットの作成に失敗しました",
+  "characterViewNoChats": "チャットがありません",
+  "characterViewStartNewChat": "新しいチャットを始めよう",
+
+  "agentChatErrorPrefix": "エラー: {error}",
+  "@agentChatErrorPrefix": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "agentChatResetTitle": "会話をリセット",
+  "agentChatResetContent": "すべての会話履歴が削除されます。続けますか？",
+  "agentChatResetTooltip": "会話をリセット",
+  "agentChatIntro": "キャラクターの作成・編集・修正をお手伝いします",
+  "agentChatUserLabel": "私",
+  "agentChatUsedModel": "使用中モデル",
+  "agentChatModelPreset": "モデル設定",
+  "agentChatProvider": "プロバイダー",
+  "agentChatModel": "チャットモデル",
+  "agentChatWaiting": "応答を待っています...",
+  "agentChatHint": "メッセージを入力",
+
+  "diaryGenerateFailed": "日記の生成に失敗しました: {error}",
+  "@diaryGenerateFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "diaryGenerateTitle": "日記を生成",
+  "diaryGenerateContent": "{date}の日記を生成しますか？",
+  "@diaryGenerateContent": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "diaryDeleteTitle": "日記を削除",
+  "diaryDeleteContent": "この日記を削除しますか？",
+  "diaryRegenerateTitle": "日記を再生成",
+  "diaryRegenerateContent": "{date}の日記をすべて削除して再生成しますか？",
+  "@diaryRegenerateContent": {
+    "placeholders": {
+      "date": { "type": "String" }
+    }
+  },
+  "diarySettingsTooltip": "設定",
+  "diaryDaySun": "日",
+  "diaryDayMon": "月",
+  "diaryDayTue": "火",
+  "diaryDayWed": "水",
+  "diaryDayThu": "木",
+  "diaryDayFri": "金",
+  "diaryDaySat": "土",
+  "diarySelectDate": "日付を選択してください",
+  "diaryGenerating": "日記を生成しています...",
+  "diaryNoEntries": "まだ日記がありません",
+  "diaryRegenerateTooltip": "再生成",
+  "diaryUsedModel": "使用中モデル",
+  "diaryModelPreset": "モデル設定",
+  "diaryProvider": "プロバイダー",
+  "diaryChatModel": "チャットモデル",
+  "diarySettingsSection": "日記設定",
+  "diaryAutoGenerate": "自動生成",
+  "diaryAutoGenerateDesc": "チャット内の日付が変わると自動で日記を生成します。",
+
+  "characterBookInvalidFormat": "無効な設定集の形式です",
+  "characterBookNoImport": "インポートする設定がありません",
+  "characterBookImportFailed": "インポートに失敗しました: {error}",
+  "@characterBookImportFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "characterBookNoExport": "エクスポートする設定がありません",
+  "characterBookSaveFailed": "保存に失敗しました",
+  "characterBookExportFailed": "エクスポートに失敗しました: {error}",
+  "@characterBookExportFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "characterBookNewFolder": "新しいフォルダ",
+  "characterBookNewItem": "新しい設定",
+  "characterBookFolderDeleteTitle": "フォルダを削除",
+  "characterBookSection": "設定集",
+  "characterBookSectionHelp": "このキャラクターの世界観に関する情報を設定集に追加できます。\n\n長押しで順番を変更できます。",
+  "characterBookAddItem": "設定を追加",
+  "characterBookAddFolder": "フォルダを追加",
+  "characterBookEmpty": "設定集の項目がありません",
+  "characterBookNameHint": "設定名",
+  "characterBookActivationCondition": "発動条件",
+  "characterBookActivationKey": "アクティベーションキー",
+  "characterBookKeysHint": "カンマ区切りで入力 (例: 魔法, 戦闘)",
+  "characterBookSecondaryKey": "セカンダリキー",
+  "characterBookInsertionOrder": "挿入順",
+  "characterBookContent": "内容",
+  "characterBookContentHint": "設定内容を入力してください",
+
+  "newsArticleDeleteTitle": "記事を削除",
+  "newsArticleDeleteContent": "この記事を削除しますか？",
+  "newsEmptyTitle": "まだ記事がありません",
+  "newsEmptySubtitle": "引っ張ってニュースを読み込んでください",
+
+  "promptItemsTitle": "プロンプト項目",
+  "promptItemsTitleHelp": "AIに送るプロンプト項目を追加してください。順番通りに送信されます。\n\n長押しで順番を変更できます。",
+  "promptItemsAddItem": "項目を追加",
+  "promptItemsAddFolder": "フォルダを追加",
+  "promptItemsEmpty": "プロンプト項目がありません",
+  "promptItemsNameHint": "項目名 (例: システム設定, キャラクターの性格)",
+  "promptItemsLabelEnable": "有効",
+  "promptItemsLabelRole": "役割",
+  "promptItemsLabelPrompt": "プロンプト",
+  "promptItemsPromptHint": "AIの役割と応答スタイルを定義してください",
+  "promptItemsConditionSelect": "条件を選択",
+  "promptItemsConditionSelectHint": "条件を選択してください",
+  "promptItemsConditionNoName": "名前なし",
+  "promptItemsConditionValue": "条件の値",
+  "promptItemsConditionEnabled": "有効",
+  "promptItemsConditionDisabled": "無効",
+  "promptItemsSingleSelectItems": "選択項目",
+  "promptItemsSingleSelectHint": "項目を選択してください",
+  "promptItemsChatSettings": "設定",
+  "promptItemsRecentChatCount": "直近チャットの件数",
+  "promptItemsRecentChatCountHint": "件数",
+  "promptItemsChatStartPos": "以前のチャット開始位置",
+  "promptItemsChatStartPosHint": "開始位置",
+  "promptItemsChatEndPos": "以前のチャット終了位置",
+  "promptItemsChatEndPosHint": "終了位置",
+
+  "promptConditionsTitle": "プロンプト条件",
+  "promptConditionsTitleHelp": "プロンプトに適用する条件を設定します。\n\n• トグル: ON/OFFスイッチ\n• 一択選択: 複数の項目から一つを選択\n• 変数置換: 変数名を選択した項目に置き換える",
+  "promptConditionsAddButton": "条件を追加",
+  "promptConditionsNewName": "新しい条件",
+  "promptConditionsNameHint": "条件名 (例: 話し方, 雰囲気)",
+  "promptConditionsLabelType": "タイプ",
+  "promptConditionsLabelVarName": "変数名",
+  "promptConditionsVarNameHint": "変数名",
+  "promptConditionsLabelOptions": "選択肢",
+  "promptConditionsOptionsEmpty": "選択肢がありません",
+  "promptConditionsOptionAddHint": "選択肢名を入力",
+
+  "promptPresetsTitle": "プロンプト条件プリセット",
+  "promptPresetsTitleHelp": "プロンプト条件の値をあらかじめ設定したプリセットです。\n\nチャット中にプリセットを選ぶと条件値が一括適用されます。",
+  "promptPresetsAddButton": "プリセットを追加",
+  "promptPresetsNewName": "新しいプリセット",
+  "promptPresetsLabelName": "名前",
+  "promptPresetsNameHint": "プリセット名",
+  "promptPresetsLabelConditions": "条件一覧",
+  "promptPresetsConditionNoName": "名前なし",
+  "promptPresetsSelectHint": "項目を選択してください",
+  "promptPresetsCustomLabel": "その他",
+  "promptPresetsCustomInputLabel": "直接入力",
+  "promptPresetsCustomInputHint": "値を入力してください",
+
+  "promptRegexTitle": "正規表現ルール",
+  "promptRegexTitleHelp": "正規表現(RegExp)を使ってテキストを変換します。\n\nプロパティによって適用タイミングが異なります:\n• 入力文の修正: ユーザー入力テキストに適用\n• 出力文の修正: AI応答テキストに適用\n• 送信データの修正: API送信データに適用\n• 表示画面の修正: 画面表示時のみ適用",
+  "promptRegexEmpty": "正規表現ルールがありません",
+  "promptRegexRuleDefaultName": "ルール {index}",
+  "@promptRegexRuleDefaultName": {
+    "placeholders": {
+      "index": { "type": "int" }
+    }
+  },
+  "promptRegexNameHint": "ルール名 (例: OOC除去, タグ変換)",
+  "promptRegexLabelTarget": "対象",
+  "promptRegexLabelPattern": "正規表現パターン",
+  "promptRegexPatternHint": "例: \\(OOC:.*?\\)",
+  "promptRegexLabelReplacement": "変換形式",
+  "promptRegexReplacementHint": "マッチしたテキストがこの形式に変換されます\n\nキャプチャグループ: $1, $2, ...",
+  "promptRegexAddButton": "ルールを追加",
+
+  "backupTitle": "バックアップと復元",
+  "backupSectionTitle": "バックアップを作成",
+  "backupSectionDesc": "キャラクター(画像含む)、チャット履歴、プロンプト、カスタムモデル、設定など、すべてのデータを一つのファイルにエクスポートします。",
+  "backupCreateButton": "バックアップファイルを作成",
+  "backupRestoreTitle": "バックアップを復元",
+  "backupRestoreDesc": "バックアップの.zipファイルを選んでデータを復元します。(旧.dbファイルも対応)",
+  "backupRestoreWarning": "注意: 既存のデータはすべて削除されます。復元後はアプリの再起動が必要です。",
+  "backupRestoreButton": "バックアップファイルを選択",
+  "backupProcessing": "処理中...",
+  "backupSuccessDownloads": "バックアップ完了: Downloads/{fileName}",
+  "@backupSuccessDownloads": {
+    "placeholders": {
+      "fileName": { "type": "String" }
+    }
+  },
+  "backupSuccessIos": "バックアップ完了: {fileName}",
+  "@backupSuccessIos": {
+    "placeholders": {
+      "fileName": { "type": "String" }
+    }
+  },
+  "backupSaveFailed": "ファイルの保存に失敗しました",
+  "backupFailed": "バックアップに失敗しました: {error}",
+  "@backupFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "backupInvalidFile": ".zipまたは.dbのバックアップファイルを選択してください",
+  "backupZipNoDb": "ZIPファイルにbackup.dbが見つかりません",
+  "backupRestoreConfirmTitle": "バックアップを復元",
+  "backupRestoreConfirmContent": "バックアップ日時: {createdAt}\n\n既存のデータがすべて削除され、バックアップデータに置き換えられます。\n続けますか？",
+  "@backupRestoreConfirmContent": {
+    "placeholders": {
+      "createdAt": { "type": "String" }
+    }
+  },
+  "backupRestoreConfirmButton": "復元",
+  "backupRestoreSuccessTitle": "復元完了",
+  "backupRestoreSuccessContent": "バックアップデータを復元しました。\n変更を完全に反映するにはアプリを再起動してください。",
+  "backupRestoreFailed": "復元に失敗しました: {error}",
+  "@backupRestoreFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "backupCreatedAtUnknown": "不明",
+
+  "logTitle": "APIログ",
+  "logDeleteAllTooltip": "すべて削除",
+  "logInfoMessage": "APIリクエストとレスポンスのログを確認できます。\n7日以上経過したログは自動削除されます。",
+  "logEmpty": "ログがありません",
+  "logAutoSummaryLabel": "自動要約",
+  "logDeleteTitle": "ログを削除",
+  "logDeleteContent": "このログを削除しますか？",
+  "logDeleteSuccess": "ログを削除しました",
+  "logDeleteFailed": "ログの削除に失敗しました: {error}",
+  "@logDeleteFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "logDeleteAllTitle": "すべてのログを削除",
+  "logDeleteAllContent": "すべてのログを削除しますか？この操作は元に戻せません。",
+  "logDeleteAllSuccess": "すべてのログを削除しました",
+  "logLoadFailed": "ログの読み込みに失敗しました: {error}",
+  "@logLoadFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "logDetailTitle": "ログ詳細",
+  "logDetailInfoSection": "基本情報",
+  "logDetailTime": "時間",
+  "logDetailType": "タイプ",
+  "logDetailModel": "モデル",
+  "logDetailChatRoomId": "チャットルームID",
+  "logDetailCharacterId": "キャラクターID",
+  "logDetailCopied": "クリップボードにコピーしました",
+  "logDetailFormatLabel": "フォーマット",
+
+  "statisticsTitle": "統計",
+  "statisticsNoData": "データがありません",
+  "statisticsPeriod7Days": "7日",
+  "statisticsPeriod30Days": "30日",
+  "statisticsPeriodAll": "全期間",
+  "statisticsCost": "推定コスト",
+  "statisticsTokens": "合計トークン",
+  "statisticsMessages": "メッセージ",
+  "statisticsDailyTokens": "{tokens}トークン",
+  "@statisticsDailyTokens": {
+    "placeholders": {
+      "tokens": { "type": "String" }
+    }
+  },
+  "statisticsDailyMessages": "{count}件のメッセージ",
+  "@statisticsDailyMessages": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "statisticsModelMessages": "{count}件",
+  "@statisticsModelMessages": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "statisticsDailyModels": "{count}件のモデル",
+  "@statisticsDailyModels": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "statisticsDateFormat": "{year}年{month}月{day}日",
+  "@statisticsDateFormat": {
+    "placeholders": {
+      "year": { "type": "String" },
+      "month": { "type": "String" },
+      "day": { "type": "String" }
+    }
+  },
+  "statisticsTokenInput": "入力",
+  "statisticsTokenOutput": "出力",
+  "statisticsTokenCached": "キャッシュ",
+  "statisticsTokenThinking": "思考",
+
+  "tokenizerTitle": "トークナイザー",
+  "tokenizerSectionTitle": "トークナイザーを選択",
+  "tokenizerLabel": "トークナイザー",
+  "tokenizerDescription": "トークナイザーはテキストをトークンに変換する方式を決定します。モデルによって適切なトークナイザーが異なる場合があります。",
+
+  "profileTabLabelName": "名前",
+  "profileTabNameHelp": "キャラクターの固有名を入力してください。",
+  "profileTabNameHint": "キャラクターの名前を入力してください。",
+  "profileTabNameValidation": "キャラクター名を入力してください",
+  "profileTabLabelNickname": "ニックネーム",
+  "profileTabNicknameHelp": "プロンプトのchar変数の代わりに使う呼称です。空白の場合は名前が使われます。",
+  "profileTabNicknameHint": "キャラクターのニックネームを入力してください。",
+  "profileTabLabelCreatorNotes": "一言紹介",
+  "profileTabCreatorNotesHelp": "キャラクターを一言で表す文を書いてください。",
+  "profileTabCreatorNotesHint": "キャラクターの簡単な紹介を入力してください。",
+  "profileTabLabelKeywords": "キーワード",
+  "profileTabKeywordsHelp": "キャラクターを表すキーワードをカンマ(,)区切りで入力してください。",
+  "profileTabKeywordsHint": "例: ファンタジー, 男性",
+
+  "startScenarioTitle": "開始設定",
+  "startScenarioTitleHelp": "会話の開始設定情報を追加できます。",
+  "startScenarioEmpty": "開始設定がありません",
+  "startScenarioAddButton": "開始設定を追加",
+  "startScenarioNewName": "新しい開始設定",
+  "startScenarioNameHint": "開始設定名",
+  "startScenarioStartSettingLabel": "開始設定",
+  "startScenarioStartSettingInfo": "この内容は要約の前に挿入され、削除されません。",
+  "startScenarioStartSettingHint": "開始設定の内容を入力してください",
+  "startScenarioStartMessageLabel": "開始メッセージ",
+  "startScenarioStartMessageHint": "開始メッセージを入力してください",
+
+  "personaTitle": "ペルソナ",
+  "personaTitleHelp": "キャラクターのペルソナ情報を追加できます。",
+  "personaEmpty": "ペルソナがありません",
+  "personaAddButton": "ペルソナを追加",
+  "personaNewName": "新しいペルソナ",
+  "personaNameHint": "ペルソナ名",
+  "personaContentLabel": "内容",
+  "personaContentHint": "ペルソナの内容を入力してください",
+
+  "coverImageTitle": "カバー",
+  "coverImageTitleHelp": "キャラクターのカバー画像を追加できます。",
+  "coverImageEmpty": "カバー画像がありません",
+  "coverImageAddButton": "カバー画像を追加",
+  "coverImageDefaultName": "カバー {index}",
+  "@coverImageDefaultName": {
+    "placeholders": {
+      "index": { "type": "int" }
+    }
+  },
+  "coverImageSaveError": "画像の保存に失敗しました: {error}",
+  "@coverImageSaveError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+
+  "additionalImageTitle": "追加画像",
+  "additionalImageTitleHelp": "キャラクターに関連する参考画像を追加できます。",
+  "additionalImageEmpty": "追加画像がありません",
+  "additionalImageAddButton": "画像を追加",
+  "additionalImageDefaultName": "画像 {index}",
+  "@additionalImageDefaultName": {
+    "placeholders": {
+      "index": { "type": "int" }
+    }
+  },
+  "additionalImageSaveError": "画像の保存に失敗しました: {error}",
+  "@additionalImageSaveError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+
+  "detailSettingsTitle": "世界観設定",
+  "detailSettingsTitleHelp": "このキャラクターが属する世界観や背景を自由に記述してください。",
+  "detailSettingsHint": "世界観設定を入力してください。",
+
+  "chatBottomPanelTitle": "ビューアー",
+  "chatBottomPanelFontSize": "文字サイズ",
+  "chatBottomPanelLineHeight": "行間",
+  "chatBottomPanelParagraphSpacing": "段落間隔",
+  "chatBottomPanelParagraphWidth": "段落幅",
+  "chatBottomPanelParagraphAlign": "段落揃え",
+  "chatBottomPanelAlignLeft": "左揃え",
+  "chatBottomPanelAlignJustify": "両端揃え",
+
+  "tutorialStepGoogleAiAccess": "Google AI Studioにアクセス",
+  "tutorialStepGoogleAiPayment": "支払いアカウントを作成 (有料モデル使用時に必要)",
+  "tutorialStepGetApiKey": "Get API Keyをクリック",
+  "tutorialStepCreateApiKey": "Create API Keyを選択",
+  "tutorialStepCopyKey": "生成されたキーをコピーして上に貼り付け",
+  "tutorialStepVertexAccess": "Google Cloud Consoleにアクセス",
+  "tutorialStepVertexBilling": "支払いアカウントを作成してプロジェクトに連携",
+  "tutorialStepVertexServiceAccount": "IAM → サービスアカウント → アカウント作成",
+  "tutorialStepVertexRole": "Vertex AI Userロールを付与",
+  "tutorialStepVertexCreateKey": "キーを作成 → JSON → ダウンロード",
+  "tutorialStepOpenaiAccess": "OpenAI Platformにアクセス",
+  "tutorialStepApiKeysMenu": "API Keysメニューを選択",
+  "tutorialStepCreateSecretKey": "Create new secret keyをクリック",
+  "tutorialStepAnthropicAccess": "Anthropic Consoleにアクセス",
+  "tutorialStepAnthropicCreate": "Create Keyをクリック",
+  "tutorialModelPrice": "入力 {inputPrice}/1M · 出力 {outputPrice}/1M",
+  "@tutorialModelPrice": {
+    "placeholders": {
+      "inputPrice": { "type": "String" },
+      "outputPrice": { "type": "String" }
+    }
+  },
+
+  "legalDocumentKorean": "韓国語",
+
+  "newsTopicPolitics": "政治",
+  "newsTopicSociety": "社会",
+  "newsTopicEntertainment": "エンタメ",
+  "newsTopicEconomy": "経済",
+  "newsTopicCulture": "文化",
+
+  "toolListCharacters": "キャラクター一覧",
+  "toolGetCharacter": "キャラクター取得",
+  "toolCreateCharacter": "キャラクター作成",
+  "toolUpdateCharacter": "キャラクター更新",
+  "toolCreatePersona": "ペルソナ作成",
+  "toolUpdatePersona": "ペルソナ更新",
+  "toolDeletePersona": "ペルソナ削除",
+  "toolCreateStartScenario": "開始シナリオ作成",
+  "toolUpdateStartScenario": "開始シナリオ更新",
+  "toolDeleteStartScenario": "開始シナリオ削除",
+  "toolCreateCharacterBook": "設定集エントリ作成",
+  "toolUpdateCharacterBook": "設定集エントリ更新",
+  "toolDeleteCharacterBook": "設定集エントリ削除",
+
+  "apiKeyLoadFailed": "APIキーの読み込みに失敗しました: {error}",
+  "@apiKeyLoadFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "apiKeyServiceAccountLabel": "(サービスアカウントJSON)",
+  "apiKeyValidationFailed": "APIキーの検証に失敗しました",
+  "apiKeySaved": "{apiKeyType} APIキーを保存しました",
+  "@apiKeySaved": {
+    "placeholders": {
+      "apiKeyType": { "type": "String" }
+    }
+  },
+
+  "chatPromptEmptyHint": "+ ボタンを押して新しいプロンプトを追加しよう",
+  "chatPromptItemCount": "{count}件の項目",
+  "@chatPromptItemCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "customModelSubtitle": "{format} · {count}件のモデル",
+  "@customModelSubtitle": {
+    "placeholders": {
+      "format": { "type": "String" },
+      "count": { "type": "int" }
+    }
+  },
+
+  "agentChatDescription": "Flan Agentはキャラクターの作成・編集ができます。作りたいキャラクターや修正したい内容をリクエストしてみてください。",
+
+  "diaryTitle": "{author}の日記",
+  "@diaryTitle": {
+    "placeholders": {
+      "author": { "type": "String" }
+    }
+  },
+
+  "characterCardOutfitLabel": "衣装 ",
+  "characterCardMemoLabel": "メモ ",
+
+  "modelPresetPrimary": "メインモデル",
+  "modelPresetSecondary": "サブモデル",
+  "modelPresetCustom": "カスタム",
+
+  "agentEntryTypeEpisode": "要約",
+  "agentEntryTypeCharacter": "登場人物",
+  "agentEntryTypeLocation": "地域/場所",
+  "agentEntryTypeItem": "アイテム",
+  "agentEntryTypeEvent": "実績/出来事"
+}

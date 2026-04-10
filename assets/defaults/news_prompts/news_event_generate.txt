@@ -12,7 +12,7 @@ Rules:
 - negative: highlights damage, concern, or risk
 - neutral: factual reporting without emotional framing
 - Different journalists should author each article
-- Topic should be the most fitting category for the event from: 정치, 사회, 연예, 경제, 문화
+- Topic should be the most fitting category for the event from: politics, society, entertainment, economy, culture
 - Content should be 3-5 sentences in newspaper style
 - Time MUST be exactly 12 digits in 'YYYYMMDDHHmm' format
 - All article times MUST be after the provided base time

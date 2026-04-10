@@ -10,15 +10,15 @@ enum AgentEntryType {
   String get displayName {
     switch (this) {
       case AgentEntryType.episode:
-        return '요약';
+        return 'Summary';
       case AgentEntryType.character:
-        return '등장인물';
+        return 'Characters';
       case AgentEntryType.location:
-        return '지역/장소';
+        return 'Locations';
       case AgentEntryType.item:
-        return '물품';
+        return 'Items';
       case AgentEntryType.event:
-        return '업적/사건';
+        return 'Events';
     }
   }
 }
@@ -114,32 +114,32 @@ class AgentEntry {
 
     switch (entryType) {
       case AgentEntryType.episode:
-        if (data['date_range'] != null) buffer.writeln('날짜/시간: ${data['date_range']}');
-        if (data['characters'] != null) buffer.writeln('등장인물: ${(data['characters'] as List).join(', ')}');
-        if (data['locations'] != null) buffer.writeln('장소: ${(data['locations'] as List).join(', ')}');
-        if (data['summary_text'] != null) buffer.writeln('요약: ${data['summary_text']}');
+        if (data['date_range'] != null) buffer.writeln('Date/Time: ${data['date_range']}');
+        if (data['characters'] != null) buffer.writeln('Characters: ${(data['characters'] as List).join(', ')}');
+        if (data['locations'] != null) buffer.writeln('Locations: ${(data['locations'] as List).join(', ')}');
+        if (data['summary_text'] != null) buffer.writeln('Summary: ${data['summary_text']}');
       case AgentEntryType.character:
-        if (data['appearance'] != null) buffer.writeln('외형: ${data['appearance']}');
-        if (data['personality'] != null) buffer.writeln('성격: ${data['personality']}');
-        if (data['past'] != null) buffer.writeln('과거: ${data['past']}');
-        if (data['abilities'] != null) buffer.writeln('능력: ${data['abilities']}');
-        if (data['story_actions'] != null) buffer.writeln('작중행적: ${data['story_actions']}');
-        if (data['dialogue_style'] != null) buffer.writeln('대사 스타일: ${data['dialogue_style']}');
-        if (data['possessions'] != null) buffer.writeln('소지품: ${(data['possessions'] as List).join(', ')}');
+        if (data['appearance'] != null) buffer.writeln('Appearance: ${data['appearance']}');
+        if (data['personality'] != null) buffer.writeln('Personality: ${data['personality']}');
+        if (data['past'] != null) buffer.writeln('Background: ${data['past']}');
+        if (data['abilities'] != null) buffer.writeln('Abilities: ${data['abilities']}');
+        if (data['story_actions'] != null) buffer.writeln('Story Actions: ${data['story_actions']}');
+        if (data['dialogue_style'] != null) buffer.writeln('Dialogue Style: ${data['dialogue_style']}');
+        if (data['possessions'] != null) buffer.writeln('Possessions: ${(data['possessions'] as List).join(', ')}');
       case AgentEntryType.location:
-        if (data['parent_location'] != null) buffer.writeln('위치: ${data['parent_location']}');
-        if (data['features'] != null) buffer.writeln('특징: ${data['features']}');
-        if (data['ascii_map'] != null) buffer.writeln('맵:\n${data['ascii_map']}');
-        if (data['related_episodes'] != null) buffer.writeln('관련 에피소드: ${(data['related_episodes'] as List).join(', ')}');
+        if (data['parent_location'] != null) buffer.writeln('Parent Location: ${data['parent_location']}');
+        if (data['features'] != null) buffer.writeln('Features: ${data['features']}');
+        if (data['ascii_map'] != null) buffer.writeln('Map:\n${data['ascii_map']}');
+        if (data['related_episodes'] != null) buffer.writeln('Related Episodes: ${(data['related_episodes'] as List).join(', ')}');
       case AgentEntryType.item:
-        if (data['keywords'] != null) buffer.writeln('키워드: ${data['keywords']}');
-        if (data['features'] != null) buffer.writeln('특징: ${data['features']}');
-        if (data['related_episodes'] != null) buffer.writeln('관련 에피소드: ${(data['related_episodes'] as List).join(', ')}');
+        if (data['keywords'] != null) buffer.writeln('Keywords: ${data['keywords']}');
+        if (data['features'] != null) buffer.writeln('Features: ${data['features']}');
+        if (data['related_episodes'] != null) buffer.writeln('Related Episodes: ${(data['related_episodes'] as List).join(', ')}');
       case AgentEntryType.event:
-        if (data['datetime'] != null) buffer.writeln('일시: ${data['datetime']}');
-        if (data['overview'] != null) buffer.writeln('개요: ${data['overview']}');
-        if (data['result'] != null) buffer.writeln('결과: ${data['result']}');
-        if (data['related_episodes'] != null) buffer.writeln('관련 에피소드: ${(data['related_episodes'] as List).join(', ')}');
+        if (data['datetime'] != null) buffer.writeln('Date/Time: ${data['datetime']}');
+        if (data['overview'] != null) buffer.writeln('Overview: ${data['overview']}');
+        if (data['result'] != null) buffer.writeln('Result: ${data['result']}');
+        if (data['related_episodes'] != null) buffer.writeln('Related Episodes: ${(data['related_episodes'] as List).join(', ')}');
     }
 
     return buffer.toString();

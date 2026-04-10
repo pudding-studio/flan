@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../../l10n/app_localizations.dart';
 import '../../utils/common_dialog.dart';
 import '../../widgets/common/common_button.dart';
 import '../../widgets/common/common_custom_text_field.dart';
@@ -89,7 +90,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: 'API 키 불러오기 실패: $e',
+          message: AppLocalizations.of(context).apiKeyLoadFailed(e.toString()),
         );
       }
     } finally {
@@ -166,7 +167,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
           if (mounted) {
             await CommonDialog.showInfo(
               context: context,
-              title: 'API 키 검증 실패',
+              title: 'API key validation failed',
               content: validationError,
             );
           }
@@ -190,7 +191,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '${_selectedApiKeyType.displayName} API 키가 저장되었습니다',
+          message: AppLocalizations.of(context).tutorialApiKeySaved(_selectedApiKeyType.displayName),
         );
         setState(() {});
       }
@@ -198,7 +199,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: 'API 키 저장 실패: $e',
+          message: AppLocalizations.of(context).tutorialApiKeySaveFailed(e.toString()),
         );
       }
     } finally {
@@ -209,11 +210,12 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
   }
 
   Future<void> _deleteKey(int index) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await CommonDialog.showConfirmation(
       context: context,
-      title: 'API 키 삭제',
-      content: '이 API 키를 삭제하시겠습니까?',
-      confirmText: '삭제',
+      title: 'API key',
+      content: l10n.chatModelApiKeyDeleteContent,
+      confirmText: l10n.commonDelete,
       isDestructive: true,
     );
 
@@ -243,7 +245,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: 'API 키가 삭제되었습니다',
+          message: 'API key deleted',
         );
         setState(() {});
       }
@@ -251,7 +253,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: 'API 키 삭제 실패: $e',
+          message: 'API key delete failed: $e',
         );
       }
     } finally {
@@ -273,7 +275,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
     if (mounted) {
       CommonDialog.showSnackBar(
         context: context,
-        message: 'API 키 ${index + 1}이(가) 활성화되었습니다',
+        message: 'API key ${index + 1} activated',
       );
     }
   }
@@ -310,7 +312,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
         if (mounted) {
           await CommonDialog.showInfo(
             context: context,
-            title: '서비스 계정 검증 실패',
+            title: AppLocalizations.of(context).chatModelVertexValidationFailed,
             content: validationError,
           );
         }
@@ -334,7 +336,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
         final email = VertexAuthService.extractClientEmail(jsonString) ?? '';
         CommonDialog.showSnackBar(
           context: context,
-          message: 'Vertex AI 서비스 계정이 등록되었습니다 ($email)',
+          message: '${AppLocalizations.of(context).tutorialVertexSaved} ($email)',
         );
         setState(() {});
       }
@@ -342,7 +344,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: 'JSON 파일 읽기 실패: $e',
+          message: AppLocalizations.of(context).tutorialJsonReadFailed(e.toString()),
         );
       }
     } finally {
@@ -356,7 +358,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
     if (projectId != null && email != null) {
       return '$projectId\n$email';
     }
-    return '(서비스 계정 JSON)';
+    return AppLocalizations.of(context).apiKeyServiceAccountLabel;
   }
 
   String _obscureKey(String key) {
@@ -396,7 +398,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Text(
-          '등록된 API 키가 없습니다',
+          AppLocalizations.of(context).chatModelNoApiKey,
           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -464,13 +466,13 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
                   IconButton(
                     icon: const Icon(Icons.edit_outlined, size: 18),
                     onPressed: () => _startEditing(index),
-                    tooltip: '수정',
+                    tooltip: AppLocalizations.of(context).commonEdit,
                     visualDensity: VisualDensity.compact,
                   ),
                   IconButton(
                     icon: const Icon(Icons.delete_outline, size: 18),
                     onPressed: () => _deleteKey(index),
-                    tooltip: '삭제',
+                    tooltip: AppLocalizations.of(context).commonDelete,
                     visualDensity: VisualDensity.compact,
                   ),
                 ],
@@ -484,9 +486,10 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: CommonAppBar(
-        title: 'API 키 등록',
+        title: l10n.settingsApiKey,
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -497,11 +500,9 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const CommonSettingsInfoCard(
-                      title: 'API 키 정보',
-                      description: 'AI 모델을 사용하기 위해 API 키가 필요합니다.\n'
-                          '각 제공사별로 여러 개의 API 키를 등록할 수 있습니다.\n'
-                          'Vertex AI는 서비스 계정 JSON 파일이 필요합니다.',
+                    CommonSettingsInfoCard(
+                      title: l10n.settingsApiKey,
+                      description: l10n.apiKeyMultiInfo,
                     ),
                     const SizedBox(height: 24),
                     _buildApiKeyTypeSelector(context),
@@ -516,32 +517,30 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
                             ? Icons.refresh
                             : Icons.upload_file,
                         label: _editingIndex != null
-                            ? 'JSON 파일 교체'
-                            : 'JSON 파일 가져오기',
+                            ? l10n.tutorialReRegister
+                            : l10n.tutorialVertexImport,
                       ),
                       if (_editingIndex != null) ...[
                         const SizedBox(height: 8),
                         CommonButton.outlined(
                           onPressed: _cancelEditing,
                           icon: Icons.close,
-                          label: '취소',
+                          label: l10n.commonCancel,
                         ),
                       ],
                     ] else ...[
                       CommonCustomTextField(
                         controller: _apiKeyController,
                         label: _editingIndex != null
-                            ? 'Key ${_editingIndex! + 1} 수정'
-                            : '새 API 키',
-                        helpText:
-                            '${_selectedApiKeyType.displayName}에서 발급받은 API 키를 입력해주세요.',
-                        hintText: 'API 키를 입력해주세요',
+                            ? 'Key ${_editingIndex! + 1}'
+                            : l10n.chatModelNewApiKey,
+                        hintText: l10n.tutorialApiKeyHint,
                         maxLines: 1,
                         obscureText: true,
                         enableObscureToggle: true,
                         validator: (value) {
                           if (value == null || value.trim().isEmpty) {
-                            return 'API 키를 입력해주세요';
+                            return l10n.tutorialApiKeyEmpty;
                           }
                           return null;
                         },
@@ -554,7 +553,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
                               child: CommonButton.outlined(
                                 onPressed: _cancelEditing,
                                 icon: Icons.close,
-                                label: '취소',
+                                label: l10n.commonCancel,
                               ),
                             ),
                             const SizedBox(width: 12),
@@ -567,7 +566,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
                                   ? Icons.save
                                   : Icons.add,
                               label:
-                                  _editingIndex != null ? '저장' : '키 추가',
+                                  _editingIndex != null ? l10n.commonSave : l10n.chatModelKeyAdd,
                             ),
                           ),
                         ],

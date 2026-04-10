@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../constants/ui_constants.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../models/prompt/prompt_regex_rule.dart';
 import '../../../widgets/common/common_dropdown_button.dart';
 import '../../../widgets/common/common_editable_expandable_item.dart';
@@ -34,21 +35,17 @@ class PromptRegexTab extends StatefulWidget {
 class _PromptRegexTabState extends State<PromptRegexTab> {
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.all(UIConstants.spacing20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 5),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5),
             child: CommonTitleMedium(
-              text: '정규식 규칙',
-              helpMessage: '정규식(RegExp)을 사용하여 텍스트를 변환합니다.\n\n'
-                  '속성에 따라 적용 시점이 달라집니다:\n'
-                  '• 입력문 수정: 사용자 입력 텍스트에 적용\n'
-                  '• 출력문 수정: AI 응답 텍스트에 적용\n'
-                  '• 전송데이터 수정: API 전송 데이터에 적용\n'
-                  '• 출력화면 수정: 화면 표시 시에만 적용',
+              text: l10n.promptRegexTitle,
+              helpMessage: l10n.promptRegexTitleHelp,
             ),
           ),
           const SizedBox(height: 8),
@@ -64,9 +61,9 @@ class _PromptRegexTabState extends State<PromptRegexTab> {
   }
 
   Widget _buildEmptyState() {
-    return const CommonEmptyState(
+    return CommonEmptyState(
       icon: Icons.find_replace_outlined,
-      message: '정규식 규칙이 없습니다',
+      message: AppLocalizations.of(context).promptRegexEmpty,
     );
   }
 
@@ -81,6 +78,7 @@ class _PromptRegexTabState extends State<PromptRegexTab> {
   }
 
   Widget _buildRuleCard(PromptRegexRule rule, int index) {
+    final l10n = AppLocalizations.of(context);
     final labelStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
           fontWeight: FontWeight.w600,
         );
@@ -94,7 +92,7 @@ class _PromptRegexTabState extends State<PromptRegexTab> {
             ? Theme.of(context).colorScheme.onSurfaceVariant
             : Theme.of(context).colorScheme.secondary,
       ),
-      name: rule.name.isEmpty ? '규칙 ${index + 1}' : rule.name,
+      name: rule.name.isEmpty ? l10n.promptRegexRuleDefaultName(index + 1) : rule.name,
       isExpanded: rule.isExpanded,
       onToggleExpanded: () {
         if (rule.isExpanded) {
@@ -107,7 +105,7 @@ class _PromptRegexTabState extends State<PromptRegexTab> {
       },
       onDelete: widget.readOnly ? () {} : () => widget.onDeleteRule(rule),
       showDeleteButton: !widget.readOnly,
-      nameHint: '규칙 이름 (예: OOC 제거, 태그 변환)',
+      nameHint: l10n.promptRegexNameHint,
       onNameChanged: (value) {
         final idx = widget.rules.indexOf(rule);
         if (idx != -1) {
@@ -118,7 +116,7 @@ class _PromptRegexTabState extends State<PromptRegexTab> {
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('속성', style: labelStyle),
+          Text(l10n.promptRegexLabelTarget, style: labelStyle),
           const SizedBox(height: 6),
           CommonDropdownButton<RegexTarget>(
             value: rule.target,
@@ -140,21 +138,21 @@ class _PromptRegexTabState extends State<PromptRegexTab> {
             labelBuilder: (target) => target.displayName,
           ),
           const SizedBox(height: UIConstants.spacing12),
-          Text('정규식 패턴', style: labelStyle),
+          Text(l10n.promptRegexLabelPattern, style: labelStyle),
           const SizedBox(height: 6),
           CommonEditText(
             controller: widget.patternControllers[rule.id],
-            hintText: '예: \\(OOC:.*?\\)',
+            hintText: l10n.promptRegexPatternHint,
             size: CommonEditTextSize.small,
             maxLines: null,
             minLines: 1,
           ),
           const SizedBox(height: UIConstants.spacing12),
-          Text('변환 형식', style: labelStyle),
+          Text(l10n.promptRegexLabelReplacement, style: labelStyle),
           const SizedBox(height: 6),
           CommonEditText(
             controller: widget.replacementControllers[rule.id],
-            hintText: '정규식에 매칭된 텍스트가 이 형식으로 변환됩니다\n\n캡처 그룹: \$1, \$2, ...',
+            hintText: l10n.promptRegexReplacementHint,
             size: CommonEditTextSize.small,
             maxLines: null,
             minLines: 5,
@@ -172,7 +170,7 @@ class _PromptRegexTabState extends State<PromptRegexTab> {
         child: OutlinedButton.icon(
           onPressed: widget.onAddRule,
           icon: const Icon(Icons.add, size: 18),
-          label: const Text('규칙 추가'),
+          label: Text(AppLocalizations.of(context).promptRegexAddButton),
           style: OutlinedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 12),
             shape: RoundedRectangleBorder(

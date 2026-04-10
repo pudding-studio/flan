@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../mixins/chat_room_pagination_mixin.dart';
 import '../../widgets/chat/chat_room_card.dart';
 import '../../models/chat/chat_room.dart';
@@ -93,11 +94,13 @@ class _ChatScreenState extends State<ChatScreen> with ChatRoomPaginationMixin {
   Future<void> _deleteSelectedChatRooms() async {
     if (_selectedChatRoomIds.isEmpty) return;
 
+    final l10n = AppLocalizations.of(context);
     final confirmed = await CommonDialog.showConfirmation(
       context: context,
-      title: '채팅방 삭제',
-      content: '선택한 ${_selectedChatRoomIds.length}개의 채팅방을 삭제하시겠습니까?\n모든 메시지가 삭제됩니다.',
-      confirmText: '삭제',
+      title: l10n.chatRoomDeleteTitle,
+      content:
+          l10n.chatRoomDeleteSelectedContent(_selectedChatRoomIds.length),
+      confirmText: l10n.commonDelete,
       isDestructive: true,
     );
 
@@ -114,61 +117,62 @@ class _ChatScreenState extends State<ChatScreen> with ChatRoomPaginationMixin {
         if (!mounted) return;
         CommonDialog.showSnackBar(
           context: context,
-          message: '선택한 채팅방이 삭제되었습니다',
+          message: l10n.chatRoomDeletedSelected,
         );
       } catch (e) {
         debugPrint('Error deleting chat rooms: $e');
         if (!mounted) return;
         CommonDialog.showSnackBar(
           context: context,
-          message: '채팅방 삭제 중 오류가 발생했습니다',
+          message: l10n.chatRoomDeleteFailed,
         );
       }
     }
   }
 
-  String _formatDate(DateTime dateTime) {
+  String _formatDate(DateTime dateTime, AppLocalizations l10n) {
     final now = DateTime.now();
     final difference = now.difference(dateTime);
 
     if (difference.inDays == 0) {
-      return '오늘';
+      return l10n.chatDateToday;
     } else if (difference.inDays == 1) {
-      return '어제';
+      return l10n.chatDateYesterday;
     } else if (difference.inDays < 7) {
-      return '${difference.inDays}일 전';
+      return l10n.chatDateDaysAgo(difference.inDays);
     } else if (difference.inDays < 30) {
       final weeks = (difference.inDays / 7).floor();
-      return '$weeks주 전';
+      return l10n.chatDateWeeksAgo(weeks);
     } else if (difference.inDays < 365) {
       final months = (difference.inDays / 30).floor();
-      return '$months개월 전';
+      return l10n.chatDateMonthsAgo(months);
     } else {
       final years = (difference.inDays / 365).floor();
-      return '$years년 전';
+      return l10n.chatDateYearsAgo(years);
     }
   }
 
   Future<void> _showRenameChatRoomDialog(ChatRoom chatRoom) async {
+    final l10n = AppLocalizations.of(context);
     final controller = TextEditingController(text: chatRoom.name);
 
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('채팅방 이름 수정'),
+        title: Text(l10n.chatRoomRenameTitle),
         content: CommonEditText(
           controller: controller,
-          hintText: '채팅방 이름',
+          hintText: l10n.chatRoomRenameHint,
           size: CommonEditTextSize.medium,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('취소'),
+            child: Text(l10n.commonCancel),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: const Text('확인'),
+            child: Text(l10n.commonConfirm),
           ),
         ],
       ),
@@ -186,7 +190,7 @@ class _ChatScreenState extends State<ChatScreen> with ChatRoomPaginationMixin {
         if (!mounted) return;
         CommonDialog.showSnackBar(
           context: context,
-          message: '채팅방 이름 수정 중 오류가 발생했습니다',
+          message: l10n.chatRoomRenameFailed,
         );
       }
     }
@@ -195,11 +199,12 @@ class _ChatScreenState extends State<ChatScreen> with ChatRoomPaginationMixin {
   }
 
   Future<void> _showDeleteChatRoomDialog(ChatRoom chatRoom) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await CommonDialog.showConfirmation(
       context: context,
-      title: '채팅방 삭제',
-      content: '\'${chatRoom.name}\' 채팅방을 삭제하시겠습니까?\n모든 메시지가 삭제됩니다.',
-      confirmText: '삭제',
+      title: l10n.chatRoomDeleteTitle,
+      content: l10n.chatRoomDeleteOneContent(chatRoom.name),
+      confirmText: l10n.commonDelete,
       isDestructive: true,
     );
 
@@ -210,14 +215,14 @@ class _ChatScreenState extends State<ChatScreen> with ChatRoomPaginationMixin {
         if (!mounted) return;
         CommonDialog.showSnackBar(
           context: context,
-          message: '채팅방이 삭제되었습니다',
+          message: l10n.chatRoomDeleted,
         );
       } catch (e) {
         debugPrint('Error deleting chat room: $e');
         if (!mounted) return;
         CommonDialog.showSnackBar(
           context: context,
-          message: '채팅방 삭제 중 오류가 발생했습니다',
+          message: l10n.chatRoomDeleteFailed,
         );
       }
     }
@@ -225,14 +230,15 @@ class _ChatScreenState extends State<ChatScreen> with ChatRoomPaginationMixin {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final screenWidth = MediaQuery.of(context).size.width;
     final horizontalPadding = screenWidth * 0.05;
 
     return Scaffold(
       appBar: CommonAppBar(
         title: _isEditMode
-          ? '${_selectedChatRoomIds.length}개 선택됨'
-          : '채팅',
+          ? l10n.chatSelectedCount(_selectedChatRoomIds.length)
+          : l10n.chatTitle,
         showBackButton: false,
         showCloseButton: _isEditMode,
         onClosePressed: _toggleEditMode,
@@ -241,17 +247,17 @@ class _ChatScreenState extends State<ChatScreen> with ChatRoomPaginationMixin {
             CommonAppBarIconButton(
               icon: Icons.edit_outlined,
               onPressed: _toggleEditMode,
-              tooltip: '편집',
+              tooltip: l10n.commonEdit,
             ),
           if (_isEditMode)
             CommonAppBarIconButton(
               icon: Icons.delete_outline,
               onPressed: _selectedChatRoomIds.isEmpty ? null : _deleteSelectedChatRooms,
-              tooltip: '삭제',
+              tooltip: l10n.commonDelete,
             ),
           if (!_isEditMode)
             CommonAppBarPopupMenuButton<String>(
-              tooltip: '더보기',
+              tooltip: l10n.commonMore,
               onSelected: (String value) {
                 if (value == 'date' || value == 'name' || value == 'message_count') {
                   setState(() {
@@ -265,7 +271,7 @@ class _ChatScreenState extends State<ChatScreen> with ChatRoomPaginationMixin {
                   PopupMenuItem<String>(
                     enabled: false,
                     child: Text(
-                      '정렬방식',
+                      l10n.chatSortMethod,
                       style: TextStyle(
                         fontSize: 12,
                         color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
@@ -282,7 +288,7 @@ class _ChatScreenState extends State<ChatScreen> with ChatRoomPaginationMixin {
                         else
                           const SizedBox(width: 20),
                         const SizedBox(width: 12),
-                        const Text('최근 업데이트순'),
+                        Text(l10n.chatSortRecent),
                       ],
                     ),
                   ),
@@ -295,7 +301,7 @@ class _ChatScreenState extends State<ChatScreen> with ChatRoomPaginationMixin {
                         else
                           const SizedBox(width: 20),
                         const SizedBox(width: 12),
-                        const Text('이름순'),
+                        Text(l10n.chatSortName),
                       ],
                     ),
                   ),
@@ -308,7 +314,7 @@ class _ChatScreenState extends State<ChatScreen> with ChatRoomPaginationMixin {
                         else
                           const SizedBox(width: 20),
                         const SizedBox(width: 12),
-                        const Text('메시지 수'),
+                        Text(l10n.chatSortMessageCount),
                       ],
                     ),
                   ),
@@ -331,7 +337,7 @@ class _ChatScreenState extends State<ChatScreen> with ChatRoomPaginationMixin {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        '채팅방이 없습니다',
+                        l10n.chatEmptyTitle,
                         style: TextStyle(
                           fontSize: 16,
                           color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.5),
@@ -339,7 +345,7 @@ class _ChatScreenState extends State<ChatScreen> with ChatRoomPaginationMixin {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '캐릭터를 선택하여 새 채팅을 시작해보세요',
+                        l10n.chatEmptySubtitle,
                         style: TextStyle(
                           fontSize: 14,
                           color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.4),
@@ -403,7 +409,7 @@ class _ChatScreenState extends State<ChatScreen> with ChatRoomPaginationMixin {
                                   ListTile(
                                     contentPadding: EdgeInsets.zero,
                                     leading: const Icon(Icons.edit_outlined),
-                                    title: const Text('채팅방 이름 수정'),
+                                    title: Text(l10n.chatRoomRenameTitle),
                                     onTap: () {
                                       Navigator.pop(context);
                                       _showRenameChatRoomDialog(data.chatRoom);
@@ -416,7 +422,7 @@ class _ChatScreenState extends State<ChatScreen> with ChatRoomPaginationMixin {
                                       color: Theme.of(context).colorScheme.error,
                                     ),
                                     title: Text(
-                                      '삭제',
+                                      l10n.commonDelete,
                                       style: TextStyle(
                                         color: Theme.of(context).colorScheme.error,
                                       ),
@@ -436,8 +442,8 @@ class _ChatScreenState extends State<ChatScreen> with ChatRoomPaginationMixin {
                         title: data.chatRoom.name,
                         lastMessage: data.lastMessage != null
                             ? MetadataParser.removeMetadataTags(data.lastMessage!.content)
-                            : '메시지가 없습니다',
-                        date: _formatDate(data.chatRoom.updatedAt),
+                            : l10n.chatNoMessages,
+                        date: _formatDate(data.chatRoom.updatedAt, l10n),
                         imageData: data.coverImage?.imageData,
                         messageCount: data.messageCount,
                         tokenCount: data.tokenCount,

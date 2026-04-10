@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../database/database_helper.dart';
+import '../../l10n/app_localizations.dart';
 import '../../utils/common_dialog.dart';
 import '../../utils/streaming_zip_writer.dart';
 import '../../widgets/common/common_appbar.dart';
@@ -46,6 +47,7 @@ class _BackupScreenState extends State<BackupScreen> {
   ];
 
   Future<void> _createBackup() async {
+    final l10n = AppLocalizations.of(context);
     setState(() => _isProcessing = true);
 
     try {
@@ -123,12 +125,12 @@ class _BackupScreenState extends State<BackupScreen> {
         if (result == true && mounted) {
           CommonDialog.showSnackBar(
             context: context,
-            message: '백업 완료: Downloads/$fileName',
+            message: l10n.backupSuccessDownloads(fileName),
           );
         } else if (mounted) {
           CommonDialog.showSnackBar(
             context: context,
-            message: '파일 저장에 실패했습니다',
+            message: l10n.backupSaveFailed,
           );
         }
       } else if (Platform.isIOS) {
@@ -139,7 +141,7 @@ class _BackupScreenState extends State<BackupScreen> {
         if (mounted) {
           CommonDialog.showSnackBar(
             context: context,
-            message: '백업 완료: $fileName',
+            message: l10n.backupSuccessIos(fileName),
           );
         }
       }
@@ -147,7 +149,7 @@ class _BackupScreenState extends State<BackupScreen> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '백업 실패: $e',
+          message: l10n.backupFailed(e.toString()),
         );
       }
     } finally {
@@ -156,6 +158,7 @@ class _BackupScreenState extends State<BackupScreen> {
   }
 
   Future<void> _restoreBackup() async {
+    final l10n = AppLocalizations.of(context);
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.any,
@@ -173,7 +176,7 @@ class _BackupScreenState extends State<BackupScreen> {
         if (mounted) {
           CommonDialog.showSnackBar(
             context: context,
-            message: '.zip 또는 .db 백업 파일을 선택해주세요',
+            message: l10n.backupInvalidFile,
           );
         }
         return;
@@ -191,7 +194,7 @@ class _BackupScreenState extends State<BackupScreen> {
           if (mounted) {
             CommonDialog.showSnackBar(
               context: context,
-              message: 'ZIP 파일에서 backup.db를 찾을 수 없습니다',
+              message: l10n.backupZipNoDb,
             );
           }
           return;
@@ -202,7 +205,7 @@ class _BackupScreenState extends State<BackupScreen> {
       }
 
       // Read backup metadata to show info
-      String createdAt = '알 수 없음';
+      String createdAt = l10n.backupCreatedAtUnknown;
       try {
         final backupDb = await openDatabase(dbPathToRead, readOnly: true, singleInstance: false);
         final tables = await backupDb.rawQuery(
@@ -224,9 +227,9 @@ class _BackupScreenState extends State<BackupScreen> {
       if (!mounted) return;
       final confirm = await CommonDialog.showConfirmation(
         context: context,
-        title: '백업 복구',
-        content: '백업 일시: $createdAt\n\n기존 데이터가 모두 삭제되고 백업 데이터로 대체됩니다.\n계속하시겠습니까?',
-        confirmText: '복구',
+        title: l10n.backupRestoreConfirmTitle,
+        content: l10n.backupRestoreConfirmContent(createdAt),
+        confirmText: l10n.backupRestoreConfirmButton,
         isDestructive: true,
       );
 
@@ -332,15 +335,15 @@ class _BackupScreenState extends State<BackupScreen> {
       if (mounted) {
         await CommonDialog.showInfo(
           context: context,
-          title: '복구 완료',
-          content: '백업 데이터가 복구되었습니다.\n변경사항을 완전히 적용하려면 앱을 재시작해주세요.',
+          title: l10n.backupRestoreSuccessTitle,
+          content: l10n.backupRestoreSuccessContent,
         );
       }
     } catch (e) {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '복구 실패: $e',
+          message: l10n.backupRestoreFailed(e.toString()),
         );
       }
     } finally {
@@ -352,10 +355,11 @@ class _BackupScreenState extends State<BackupScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: const CommonAppBar(title: '백업 및 복구'),
+      appBar: CommonAppBar(title: AppLocalizations.of(context).backupTitle),
       body: Stack(
         children: [
           ListView(
@@ -372,7 +376,7 @@ class _BackupScreenState extends State<BackupScreen> {
                           Icon(Icons.backup, color: theme.colorScheme.primary),
                           const SizedBox(width: 8),
                           Text(
-                            '백업 생성',
+                            l10n.backupSectionTitle,
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
@@ -381,7 +385,7 @@ class _BackupScreenState extends State<BackupScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '캐릭터(이미지 포함), 채팅 기록, 프롬프트, 커스텀 모델, 설정 등 모든 데이터를 하나의 백업 파일로 내보냅니다.',
+                        l10n.backupSectionDesc,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
@@ -392,7 +396,7 @@ class _BackupScreenState extends State<BackupScreen> {
                         child: FilledButton.icon(
                           onPressed: _isProcessing ? null : _createBackup,
                           icon: const Icon(Icons.file_download),
-                          label: const Text('백업 파일 생성'),
+                          label: Text(l10n.backupCreateButton),
                         ),
                       ),
                     ],
@@ -411,7 +415,7 @@ class _BackupScreenState extends State<BackupScreen> {
                           Icon(Icons.restore, color: theme.colorScheme.primary),
                           const SizedBox(width: 8),
                           Text(
-                            '백업 복구',
+                            l10n.backupRestoreTitle,
                             style: theme.textTheme.titleMedium?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
@@ -420,14 +424,14 @@ class _BackupScreenState extends State<BackupScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '백업 .zip 파일을 선택하여 데이터를 복원합니다. (기존 .db 파일도 지원)',
+                        l10n.backupRestoreDesc,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.onSurfaceVariant,
                         ),
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '주의: 기존 데이터가 모두 삭제됩니다. 복구 후 앱 재시작이 필요합니다.',
+                        l10n.backupRestoreWarning,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: theme.colorScheme.error,
                         ),
@@ -438,7 +442,7 @@ class _BackupScreenState extends State<BackupScreen> {
                         child: OutlinedButton.icon(
                           onPressed: _isProcessing ? null : _restoreBackup,
                           icon: const Icon(Icons.file_upload),
-                          label: const Text('백업 파일 선택'),
+                          label: Text(l10n.backupRestoreButton),
                         ),
                       ),
                     ],
@@ -450,16 +454,16 @@ class _BackupScreenState extends State<BackupScreen> {
           if (_isProcessing)
             Container(
               color: Colors.black26,
-              child: const Center(
+              child: Center(
                 child: Card(
                   child: Padding(
-                    padding: EdgeInsets.all(24),
+                    padding: const EdgeInsets.all(24),
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 16),
-                        Text('처리 중...'),
+                        const CircularProgressIndicator(),
+                        const SizedBox(height: 16),
+                        Text(l10n.backupProcessing),
                       ],
                     ),
                   ),

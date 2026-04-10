@@ -2,6 +2,7 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 
+import '../../l10n/app_localizations.dart';
 import '../../services/agent/agent_tool.dart';
 
 class ToolResultCard extends StatefulWidget {
@@ -21,21 +22,25 @@ class ToolResultCard extends StatefulWidget {
 class _ToolResultCardState extends State<ToolResultCard> {
   bool _isExpanded = false;
 
-  static const _toolNames = {
-    'list_characters': '캐릭터 목록 조회',
-    'get_character': '캐릭터 상세 조회',
-    'create_character': '캐릭터 생성',
-    'update_character': '캐릭터 수정',
-    'create_persona': '페르소나 생성',
-    'update_persona': '페르소나 수정',
-    'delete_persona': '페르소나 삭제',
-    'create_start_scenario': '시작 시나리오 생성',
-    'update_start_scenario': '시작 시나리오 수정',
-    'delete_start_scenario': '시작 시나리오 삭제',
-    'create_character_book': '캐릭터북 생성',
-    'update_character_book': '캐릭터북 수정',
-    'delete_character_book': '캐릭터북 삭제',
-  };
+  String _localizedToolName(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    switch (widget.toolName) {
+      case 'list_characters': return l10n.toolListCharacters;
+      case 'get_character': return l10n.toolGetCharacter;
+      case 'create_character': return l10n.toolCreateCharacter;
+      case 'update_character': return l10n.toolUpdateCharacter;
+      case 'create_persona': return l10n.toolCreatePersona;
+      case 'update_persona': return l10n.toolUpdatePersona;
+      case 'delete_persona': return l10n.toolDeletePersona;
+      case 'create_start_scenario': return l10n.toolCreateStartScenario;
+      case 'update_start_scenario': return l10n.toolUpdateStartScenario;
+      case 'delete_start_scenario': return l10n.toolDeleteStartScenario;
+      case 'create_character_book': return l10n.toolCreateCharacterBook;
+      case 'update_character_book': return l10n.toolUpdateCharacterBook;
+      case 'delete_character_book': return l10n.toolDeleteCharacterBook;
+      default: return widget.toolName;
+    }
+  }
 
   static const _toolIcons = {
     'list_characters': Icons.list,
@@ -53,8 +58,6 @@ class _ToolResultCardState extends State<ToolResultCard> {
     'delete_character_book': Icons.delete_outline,
   };
 
-  String get _toolDisplayName =>
-      _toolNames[widget.toolName] ?? widget.toolName;
 
   IconData get _toolIcon {
     if (!widget.result.success) return Icons.error_outline;
@@ -94,7 +97,7 @@ class _ToolResultCardState extends State<ToolResultCard> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      '$_toolDisplayName: ${widget.result.message}',
+                      '${_localizedToolName(context)}: ${widget.result.message}',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: color,
                         fontWeight: FontWeight.w500,

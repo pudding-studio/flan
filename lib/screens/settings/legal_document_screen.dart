@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../l10n/app_localizations.dart';
 import '../../widgets/common/common_appbar.dart';
 
 class LegalDocumentScreen extends StatelessWidget {
@@ -31,7 +32,7 @@ class LegalDocumentScreen extends StatelessWidget {
         children: [
           ListTile(
             leading: const Icon(Icons.language),
-            title: const Text('한국어'),
+            title: Text(AppLocalizations.of(context).legalDocumentKorean),
             trailing: const Icon(Icons.open_in_new),
             onTap: () => _launchUrl(koreanUrl),
           ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../constants/ui_constants.dart';
+import '../../l10n/app_localizations.dart';
 import 'common_edit_text.dart';
 
 /// 이름 필드가 포함된 확장 가능한 리스트 아이템
@@ -224,14 +225,14 @@ class _CommonEditableExpandableItemState extends State<CommonEditableExpandableI
         children: [
           if (widget.showNameField && widget.onNameChanged != null && _nameController != null) ...[
             Text(
-              '이름',
+              AppLocalizations.of(context).commonLabelName,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
             ),
             const SizedBox(height: 6),
             CommonEditText(
-              hintText: widget.nameHint ?? '이름',
+              hintText: widget.nameHint ?? AppLocalizations.of(context).commonLabelName,
               size: CommonEditTextSize.small,
               controller: _nameController,
               onFocusLost: (value) {

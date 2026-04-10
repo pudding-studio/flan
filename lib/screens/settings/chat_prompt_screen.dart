@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
+import '../../l10n/app_localizations.dart';
 import '../../database/database_helper.dart';
 import '../../models/prompt/chat_prompt.dart';
 import '../../utils/common_dialog.dart';
@@ -41,7 +42,7 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '프롬프트 목록을 불러오는데 실패했습니다: $e',
+          message: AppLocalizations.of(context).chatPromptListLoadFailed(e.toString()),
         );
       }
     } finally {
@@ -57,7 +58,7 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '프롬프트 선택에 실패했습니다: $e',
+          message: AppLocalizations.of(context).chatPromptSelectFailed(e.toString()),
         );
       }
     }
@@ -76,14 +77,14 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
         if (mounted) {
           CommonDialog.showSnackBar(
             context: context,
-            message: '프롬프트가 삭제되었습니다',
+            message: AppLocalizations.of(context).chatPromptDeleted,
           );
         }
       } catch (e) {
         if (mounted) {
           CommonDialog.showSnackBar(
             context: context,
-            message: '프롬프트 삭제에 실패했습니다: $e',
+            message: AppLocalizations.of(context).chatPromptDeleteFailed(e.toString()),
           );
         }
       }
@@ -116,10 +117,11 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
     }
 
     // Multiple defaults: show selection dialog
+    final l10n = AppLocalizations.of(context);
     final selected = await showDialog<ChatPrompt?>(
       context: context,
       builder: (context) => SimpleDialog(
-        title: const Text('기본 프롬프트 선택'),
+        title: Text(l10n.chatPromptDefaultSelect),
         children: [
           ...defaults.map((prompt) =>
             SimpleDialogOption(
@@ -143,9 +145,9 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
           const Divider(),
           SimpleDialogOption(
             onPressed: () => Navigator.pop(context),
-            child: const ListTile(
-              leading: Icon(Icons.add),
-              title: Text('빈 프롬프트'),
+            child: ListTile(
+              leading: const Icon(Icons.add),
+              title: Text(l10n.chatPromptEmpty),
             ),
           ),
         ],
@@ -170,7 +172,7 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
       final standaloneItems = await _db.readStandalonePromptItems(sourcePrompt.id!);
 
       final duplicatedPrompt = ChatPrompt(
-        name: '${sourcePrompt.name} (복사본)',
+        name: AppLocalizations.of(context).characterCopyName(sourcePrompt.name),
         description: sourcePrompt.description,
         supportedModel: sourcePrompt.supportedModel,
         parameters: sourcePrompt.parameters,
@@ -235,14 +237,14 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '프롬프트가 복사되었습니다',
+          message: AppLocalizations.of(context).chatPromptCopied,
         );
       }
     } catch (e) {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '프롬프트 복사에 실패했습니다: $e',
+          message: AppLocalizations.of(context).chatPromptCopyFailed(e.toString()),
         );
       }
     }
@@ -327,7 +329,7 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '프롬프트 복사에 실패했습니다: $e',
+          message: AppLocalizations.of(context).chatPromptCopyFailed(e.toString()),
         );
       }
     }
@@ -374,11 +376,12 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
   }
 
   Future<void> _resetDefaultPrompts() async {
+    final l10n = AppLocalizations.of(context);
     final confirm = await CommonDialog.showConfirmation(
       context: context,
-      title: '초기화',
-      content: '모든 기본 프롬프트를 초기 상태로 되돌리시겠습니까?',
-      confirmText: '초기화',
+      title: l10n.chatPromptResetTitle,
+      content: l10n.chatPromptResetContent,
+      confirmText: l10n.chatPromptResetTitle,
       isDestructive: true,
     );
     if (confirm != true) return;
@@ -390,14 +393,14 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '기본 프롬프트가 초기화되었습니다',
+          message: l10n.chatPromptResetSuccess,
         );
       }
     } catch (e) {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '기본 프롬프트 초기화에 실패했습니다: $e',
+          message: l10n.chatPromptResetFailed(e.toString()),
         );
       }
     }
@@ -442,11 +445,12 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
         });
 
         if (mounted) {
+          final l10n = AppLocalizations.of(context);
           CommonDialog.showSnackBar(
             context: context,
             message: result == true
-              ? 'Download/$fileName에 저장되었습니다'
-              : '저장에 실패했습니다',
+              ? l10n.characterExportSuccessAndroid(fileName)
+              : l10n.autoSummarySaveFailed,
           );
         }
       } else if (Platform.isIOS) {
@@ -458,7 +462,7 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
         if (mounted) {
           CommonDialog.showSnackBar(
             context: context,
-            message: '$filePath에 저장되었습니다',
+            message: AppLocalizations.of(context).characterExportSuccessIos(filePath),
           );
         }
       }
@@ -466,7 +470,7 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '프롬프트 내보내기 실패: $e',
+          message: AppLocalizations.of(context).chatPromptExportFailed(e.toString()),
         );
       }
     }
@@ -503,14 +507,14 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '프롬프트가 가져오기 되었습니다',
+          message: AppLocalizations.of(context).chatPromptImportSuccess,
         );
       }
     } catch (e) {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '프롬프트 가져오기 실패: $e',
+          message: AppLocalizations.of(context).chatPromptImportFailed(e.toString()),
         );
       }
     }
@@ -518,28 +522,29 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final screenWidth = MediaQuery.of(context).size.width;
     final horizontalPadding = screenWidth * 0.05;
 
     return Scaffold(
       appBar: CommonAppBar(
-        title: '채팅 프롬프트',
+        title: l10n.settingsChatPrompt,
         actions: [
           CommonAppBarPopupMenuButton<String>(
-            tooltip: '더보기',
+            tooltip: l10n.commonMore,
             onSelected: (value) {
               if (value == 'import') {
                 _importPrompt();
               }
             },
             itemBuilder: (context) => [
-              const PopupMenuItem<String>(
+              PopupMenuItem<String>(
                 value: 'import',
                 child: Row(
                   children: [
-                    Icon(Icons.download_outlined, size: 20),
-                    SizedBox(width: 12),
-                    Text('가져오기'),
+                    const Icon(Icons.download_outlined, size: 20),
+                    const SizedBox(width: 12),
+                    Text(l10n.characterImport),
                   ],
                 ),
               ),
@@ -565,7 +570,7 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        '프롬프트가 없습니다',
+                        l10n.chatPromptListEmpty,
                         style: TextStyle(
                           fontSize: 16,
                           color: Theme.of(context)
@@ -577,7 +582,7 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '+ 버튼을 눌러 새 프롬프트를 추가해보세요',
+                        AppLocalizations.of(context).chatPromptEmptyHint,
                         style: TextStyle(
                           fontSize: 14,
                           color: Theme.of(context)
@@ -602,7 +607,7 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
                       padding: const EdgeInsets.only(bottom: 16.0),
                       child: SettingsPromptListItem(
                         title: prompt.name,
-                        description: prompt.description ?? '${prompt.items.length}개 항목',
+                        description: prompt.description ?? AppLocalizations.of(context).chatPromptItemCount(prompt.items.length),
                         isSelected: prompt.isSelected,
                         isDefault: prompt.isDefault,
                         onRadioTap: () => _selectPrompt(prompt.id!),
