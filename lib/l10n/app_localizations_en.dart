@@ -9,126 +9,126 @@ class AppLocalizationsEn extends AppLocalizations {
   AppLocalizationsEn([String locale = 'en']) : super(locale);
 
   @override
-  String get navCharacter => '캐릭터';
+  String get navCharacter => 'Characters';
 
   @override
-  String get navChat => '채팅';
+  String get navChat => 'Chats';
 
   @override
-  String get navSettings => '설정';
+  String get navSettings => 'Settings';
 
   @override
-  String get commonConfirm => '확인';
+  String get commonConfirm => 'OK';
 
   @override
-  String get commonCancel => '취소';
+  String get commonCancel => 'Cancel';
 
   @override
-  String get commonDelete => '삭제';
+  String get commonDelete => 'Delete';
 
   @override
-  String get commonEdit => '편집';
+  String get commonEdit => 'Edit';
 
   @override
-  String get commonMore => '더보기';
+  String get commonMore => 'More';
 
   @override
-  String get commonSave => '저장';
+  String get commonSave => 'Save';
 
   @override
-  String get commonRetry => '재시도';
+  String get commonRetry => 'Retry';
 
   @override
-  String get commonClose => '닫기';
+  String get commonClose => 'Close';
 
   @override
-  String get commonCopy => '복사';
+  String get commonCopy => 'Copy';
 
   @override
-  String get commonModify => '수정';
+  String get commonModify => 'Modify';
 
   @override
-  String get commonCopyItem => '복사하기';
+  String get commonCopyItem => 'Copy';
 
   @override
-  String get commonExport => '내보내기';
+  String get commonExport => 'Export';
 
   @override
-  String get commonReset => '초기화';
+  String get commonReset => 'Reset';
 
   @override
-  String get commonDefault => '기본';
+  String get commonDefault => 'Default';
 
   @override
-  String get commonLabelName => '이름';
+  String get commonLabelName => 'Name';
 
   @override
-  String get commonNumberHint => '숫자 입력';
+  String get commonNumberHint => 'Enter a number';
 
   @override
-  String get commonAddItem => '항목 추가';
+  String get commonAddItem => 'Add Item';
 
   @override
-  String get commonAddFolder => '폴더 추가';
+  String get commonAddFolder => 'Add Folder';
 
   @override
-  String get commonEmptyList => '항목이 없습니다';
+  String get commonEmptyList => 'No items';
 
   @override
-  String get commonDeleteConfirmTitle => '삭제 확인';
+  String get commonDeleteConfirmTitle => 'Confirm Delete';
 
   @override
   String commonDeleteConfirmContent(String itemName) {
-    return '$itemName을(를) 삭제하시겠습니까?';
+    return 'Delete $itemName?';
   }
 
   @override
-  String get settingsTitle => '설정';
+  String get settingsTitle => 'Settings';
 
   @override
-  String get settingsSectionGeneral => '일반';
+  String get settingsSectionGeneral => 'General';
 
   @override
-  String get settingsSectionChat => '채팅';
+  String get settingsSectionChat => 'Chat';
 
   @override
-  String get settingsSectionData => '데이터';
+  String get settingsSectionData => 'Data';
 
   @override
-  String get settingsSectionEtc => '기타';
+  String get settingsSectionEtc => 'Other';
 
   @override
-  String get settingsSectionInfo => '정보';
+  String get settingsSectionInfo => 'Info';
 
   @override
-  String get settingsTheme => '테마';
+  String get settingsTheme => 'Theme';
 
   @override
-  String get settingsThemeSystem => '시스템 설정';
+  String get settingsThemeSystem => 'System Default';
 
   @override
-  String get settingsThemeLight => '라이트 모드';
+  String get settingsThemeLight => 'Light Mode';
 
   @override
-  String get settingsThemeDark => '다크 모드';
+  String get settingsThemeDark => 'Dark Mode';
 
   @override
-  String get settingsThemeColor => '테마 색상';
+  String get settingsThemeColor => 'Theme Color';
 
   @override
-  String get settingsThemeColorDefault => '기본';
+  String get settingsThemeColorDefault => 'Default';
 
   @override
-  String get settingsLanguage => '앱 언어';
+  String get settingsLanguage => 'App Language';
 
   @override
-  String get settingsLanguageSystem => '시스템 설정';
+  String get settingsLanguageSystem => 'System Default';
 
   @override
-  String get settingsAiResponseLanguage => 'AI 응답 언어';
+  String get settingsAiResponseLanguage => 'AI Response Language';
 
   @override
-  String get settingsAiResponseLanguageAuto => '앱 언어와 동일';
+  String get settingsAiResponseLanguageAuto => 'Same as App Language';
 
   @override
   String get languageKorean => '한국어';
@@ -140,267 +140,267 @@ class AppLocalizationsEn extends AppLocalizations {
   String get languageJapanese => '日本語';
 
   @override
-  String get settingsApiKey => 'API 키 등록';
+  String get settingsApiKey => 'API Key';
 
   @override
-  String get settingsChatModel => '채팅 모델';
+  String get settingsChatModel => 'Chat Model';
 
   @override
-  String get settingsTokenizer => '토크나이저';
+  String get settingsTokenizer => 'Tokenizer';
 
   @override
-  String get settingsChatPrompt => '채팅 프롬프트';
+  String get settingsChatPrompt => 'Chat Prompt';
 
   @override
-  String get settingsAutoSummary => '자동 요약';
+  String get settingsAutoSummary => 'Auto Summary';
 
   @override
-  String get settingsAutoSummarySubtitle => '전역 자동 요약 설정';
+  String get settingsAutoSummarySubtitle => 'Global auto summary settings';
 
   @override
-  String get settingsBackup => '백업 및 복구';
+  String get settingsBackup => 'Backup & Restore';
 
   @override
-  String get settingsBackupSubtitle => '데이터 내보내기/가져오기';
+  String get settingsBackupSubtitle => 'Export / Import data';
 
   @override
-  String get settingsStatistics => '통계';
+  String get settingsStatistics => 'Statistics';
 
   @override
-  String get settingsStatisticsSubtitle => '날짜별 모델 사용량 및 비용';
+  String get settingsStatisticsSubtitle => 'Model usage and cost by date';
 
   @override
-  String get settingsLog => '로그';
+  String get settingsLog => 'Logs';
 
   @override
-  String get settingsLogSubtitle => 'API 요청/응답 로그 확인';
+  String get settingsLogSubtitle => 'View API request/response logs';
 
   @override
-  String get settingsTutorial => '초기 설정 다시 진행';
+  String get settingsTutorial => 'Run Initial Setup Again';
 
   @override
-  String get settingsTutorialSubtitle => 'API 키 등록 및 모델 설정 튜토리얼';
+  String get settingsTutorialSubtitle => 'API key and model setup tutorial';
 
   @override
-  String get settingsAppInfo => '앱 정보';
+  String get settingsAppInfo => 'App Info';
 
   @override
   String settingsAppInfoSubtitle(String version) {
-    return '버전 $version';
+    return 'Version $version';
   }
 
   @override
-  String get settingsTermsOfService => '이용약관';
+  String get settingsTermsOfService => 'Terms of Service';
 
   @override
-  String get settingsPrivacyPolicy => '개인정보 처리방침';
+  String get settingsPrivacyPolicy => 'Privacy Policy';
 
   @override
-  String get settingsAboutDescription => 'AI 캐릭터와 대화할 수 있는 앱입니다.';
+  String get settingsAboutDescription => 'An app for chatting with AI characters.';
 
   @override
-  String get characterTitle => '캐릭터';
+  String get characterTitle => 'Characters';
 
   @override
   String characterSelectedCount(int count) {
-    return '$count개 선택됨';
+    return '$count selected';
   }
 
   @override
-  String get characterEmptyTitle => '캐릭터가 없습니다';
+  String get characterEmptyTitle => 'No characters';
 
   @override
-  String get characterEmptySubtitle => '+ 버튼을 눌러 새 캐릭터를 추가해보세요';
+  String get characterEmptySubtitle => 'Tap + to add a new character';
 
   @override
-  String get characterDeleteSelectedTitle => '캐릭터 삭제';
+  String get characterDeleteSelectedTitle => 'Delete Characters';
 
   @override
   String characterDeleteSelectedContent(int count) {
-    return '선택한 $count개의 캐릭터를 삭제하시겠습니까? 관련된 모든 데이터가 삭제됩니다.';
+    return 'Delete $count selected character(s)? All related data will be removed.';
   }
 
   @override
-  String get characterDeleteOneContent => '이 캐릭터를 삭제하시겠습니까? 관련된 모든 데이터가 삭제됩니다.';
+  String get characterDeleteOneContent => 'Delete this character? All related data will be removed.';
 
   @override
-  String get characterDeletedSelected => '선택한 캐릭터가 삭제되었습니다';
+  String get characterDeletedSelected => 'Selected characters deleted';
 
   @override
-  String get characterDeleted => '캐릭터가 삭제되었습니다';
+  String get characterDeleted => 'Character deleted';
 
   @override
   String characterDeleteFailed(String error) {
-    return '캐릭터 삭제에 실패했습니다: $error';
+    return 'Failed to delete character: $error';
   }
 
   @override
-  String get characterCopied => '캐릭터가 복사되었습니다';
+  String get characterCopied => 'Character copied';
 
   @override
   String characterCopyFailed(String error) {
-    return '캐릭터 복사에 실패했습니다: $error';
+    return 'Failed to copy character: $error';
   }
 
   @override
   String characterLoadFailed(String error) {
-    return '캐릭터 목록을 불러오는데 실패했습니다: $error';
+    return 'Failed to load characters: $error';
   }
 
   @override
   String characterReorderFailed(String error) {
-    return '순서 변경에 실패했습니다: $error';
+    return 'Failed to reorder: $error';
   }
 
   @override
-  String get characterImportSuccess => '캐릭터를 성공적으로 가져왔습니다';
+  String get characterImportSuccess => 'Character imported successfully';
 
   @override
   String characterImportFailed(String error) {
-    return '캐릭터 가져오기 실패: $error';
+    return 'Import failed: $error';
   }
 
   @override
-  String get characterImport => '가져오기';
+  String get characterImport => 'Import';
 
   @override
-  String get characterViewMode => '보기 방식';
+  String get characterViewMode => 'View Mode';
 
   @override
-  String get characterViewGrid => '격자뷰';
+  String get characterViewGrid => 'Grid';
 
   @override
-  String get characterViewList => '리스트뷰';
+  String get characterViewList => 'List';
 
   @override
-  String get characterThemeSelect => '테마 선택';
+  String get characterThemeSelect => 'Select Theme';
 
   @override
   String get characterFlanAgentTooltip => 'Flan Agent';
 
   @override
-  String get characterAgentHighlightTooltip => '여기를 눌러 캐릭터를 만들어보세요!';
+  String get characterAgentHighlightTooltip => 'Tap here to create a character!';
 
   @override
   String characterSortLabel(String label) {
-    return '정렬방식: $label';
+    return 'Sort: $label';
   }
 
   @override
-  String get characterSortNameAsc => '캐릭터명 (오름차순)';
+  String get characterSortNameAsc => 'Name (A → Z)';
 
   @override
-  String get characterSortNameDesc => '캐릭터명 (내림차순)';
+  String get characterSortNameDesc => 'Name (Z → A)';
 
   @override
-  String get characterSortUpdatedAtAsc => '수정일시 (오름차순)';
+  String get characterSortUpdatedAtAsc => 'Last Modified (Oldest)';
 
   @override
-  String get characterSortUpdatedAtDesc => '수정일시 (내림차순)';
+  String get characterSortUpdatedAtDesc => 'Last Modified (Newest)';
 
   @override
-  String get characterSortCreatedAtAsc => '생성일시 (오름차순)';
+  String get characterSortCreatedAtAsc => 'Created (Oldest)';
 
   @override
-  String get characterSortCreatedAtDesc => '생성일시 (내림차순)';
+  String get characterSortCreatedAtDesc => 'Created (Newest)';
 
   @override
-  String get characterSortCustom => '사용자 지정';
+  String get characterSortCustom => 'Custom';
 
   @override
-  String get chatTitle => '채팅';
+  String get chatTitle => 'Chats';
 
   @override
   String chatSelectedCount(int count) {
-    return '$count개 선택됨';
+    return '$count selected';
   }
 
   @override
-  String get chatEmptyTitle => '채팅방이 없습니다';
+  String get chatEmptyTitle => 'No chats';
 
   @override
-  String get chatEmptySubtitle => '캐릭터를 선택하여 새 채팅을 시작해보세요';
+  String get chatEmptySubtitle => 'Select a character to start a new chat';
 
   @override
-  String get chatNoMessages => '메시지가 없습니다';
+  String get chatNoMessages => 'No messages';
 
   @override
-  String get chatSortMethod => '정렬방식';
+  String get chatSortMethod => 'Sort By';
 
   @override
-  String get chatSortRecent => '최근 업데이트순';
+  String get chatSortRecent => 'Recently Updated';
 
   @override
-  String get chatSortName => '이름순';
+  String get chatSortName => 'Name';
 
   @override
-  String get chatSortMessageCount => '메시지 수';
+  String get chatSortMessageCount => 'Message Count';
 
   @override
-  String get chatRoomDeleteTitle => '채팅방 삭제';
+  String get chatRoomDeleteTitle => 'Delete Chat';
 
   @override
   String chatRoomDeleteSelectedContent(int count) {
-    return '선택한 $count개의 채팅방을 삭제하시겠습니까?\n모든 메시지가 삭제됩니다.';
+    return 'Delete $count selected chat(s)?\nAll messages will be removed.';
   }
 
   @override
   String chatRoomDeleteOneContent(String name) {
-    return '\'$name\' 채팅방을 삭제하시겠습니까?\n모든 메시지가 삭제됩니다.';
+    return 'Delete \'$name\'?\nAll messages will be removed.';
   }
 
   @override
-  String get chatRoomDeletedSelected => '선택한 채팅방이 삭제되었습니다';
+  String get chatRoomDeletedSelected => 'Selected chats deleted';
 
   @override
-  String get chatRoomDeleted => '채팅방이 삭제되었습니다';
+  String get chatRoomDeleted => 'Chat deleted';
 
   @override
-  String get chatRoomDeleteFailed => '채팅방 삭제 중 오류가 발생했습니다';
+  String get chatRoomDeleteFailed => 'Failed to delete chat';
 
   @override
-  String get chatRoomRenameTitle => '채팅방 이름 수정';
+  String get chatRoomRenameTitle => 'Rename Chat';
 
   @override
-  String get chatRoomRenameHint => '채팅방 이름';
+  String get chatRoomRenameHint => 'Chat name';
 
   @override
-  String get chatRoomRenameFailed => '채팅방 이름 수정 중 오류가 발생했습니다';
+  String get chatRoomRenameFailed => 'Failed to rename chat';
 
   @override
-  String get chatDateToday => '오늘';
+  String get chatDateToday => 'Today';
 
   @override
-  String get chatDateYesterday => '어제';
+  String get chatDateYesterday => 'Yesterday';
 
   @override
   String chatDateDaysAgo(int days) {
-    return '$days일 전';
+    return '${days}d ago';
   }
 
   @override
   String chatDateWeeksAgo(int weeks) {
-    return '$weeks주 전';
+    return '${weeks}w ago';
   }
 
   @override
   String chatDateMonthsAgo(int months) {
-    return '$months개월 전';
+    return '${months}mo ago';
   }
 
   @override
   String chatDateYearsAgo(int years) {
-    return '$years년 전';
+    return '${years}y ago';
   }
 
   @override
-  String get tutorialPrevious => '이전';
+  String get tutorialPrevious => 'Back';
 
   @override
-  String get tutorialNext => '다음';
+  String get tutorialNext => 'Next';
 
   @override
-  String get tutorialStart => '시작하기';
+  String get tutorialStart => 'Get Started';
 
   @override
   String tutorialStep(int step) {
@@ -408,2223 +408,2223 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get tutorialWelcomeTitle => 'Flan에 오신 것을 환영합니다';
+  String get tutorialWelcomeTitle => 'Welcome to Flan';
 
   @override
-  String get tutorialWelcomeBody => 'AI 캐릭터와 대화하고, 나만의 세계를 만들어보세요.\n간단한 초기 설정을 진행하겠습니다.';
+  String get tutorialWelcomeBody => 'Chat with AI characters and build your own world.\nLet\'s get you set up quickly.';
 
   @override
-  String get tutorialApiKeyTitle => 'API 키 등록';
+  String get tutorialApiKeyTitle => 'API Key Setup';
 
   @override
-  String get tutorialApiKeyDesc => 'AI 모델을 사용하기 위해 API 키가 필요합니다.\n사용할 서비스를 선택하고 키를 등록해주세요.';
+  String get tutorialApiKeyDesc => 'An API key is required to use AI models.\nSelect a service and enter your key.';
 
   @override
-  String get tutorialApiKeyHint => 'API 키를 입력해주세요';
+  String get tutorialApiKeyHint => 'Enter your API key';
 
   @override
-  String get tutorialApiKeyEmpty => 'API 키를 입력해주세요';
+  String get tutorialApiKeyEmpty => 'Please enter an API key';
 
   @override
   String tutorialApiKeySaved(String provider) {
-    return '$provider API 키가 저장되었습니다';
+    return '$provider API key saved';
   }
 
   @override
-  String get tutorialVertexSaved => 'Vertex AI 서비스 계정이 등록되었습니다';
+  String get tutorialVertexSaved => 'Vertex AI service account registered';
 
   @override
   String tutorialApiKeySaveFailed(String error) {
-    return 'API 키 저장 실패: $error';
+    return 'Failed to save API key: $error';
   }
 
   @override
-  String get tutorialVertexImport => '서비스 계정 JSON 파일 가져오기';
+  String get tutorialVertexImport => 'Import Service Account JSON';
 
   @override
-  String get tutorialVertexValidationFailed => '서비스 계정 검증 실패';
+  String get tutorialVertexValidationFailed => 'Service account validation failed';
 
   @override
   String tutorialJsonReadFailed(String error) {
-    return 'JSON 파일 읽기 실패: $error';
+    return 'Failed to read JSON: $error';
   }
 
   @override
-  String get tutorialReRegister => '다시 등록';
+  String get tutorialReRegister => 'Re-register';
 
   @override
-  String get tutorialReInput => '다시 입력';
+  String get tutorialReInput => 'Re-enter';
 
   @override
-  String get tutorialModelTitle => '모델 설정';
+  String get tutorialModelTitle => 'Model Setup';
 
   @override
-  String get tutorialModelDesc => '채팅과 보조 기능에 사용할 AI 모델을 선택해주세요.';
+  String get tutorialModelDesc => 'Choose AI models for chat and assistant features.';
 
   @override
-  String get tutorialMainModel => '주 모델';
+  String get tutorialMainModel => 'Main Model';
 
   @override
-  String get tutorialSubModel => '보조 모델';
+  String get tutorialSubModel => 'Sub Model';
 
   @override
-  String get tutorialMainDescGemini => '채팅에 사용되는 모델입니다. Gemini 3.1 Pro 추천';
+  String get tutorialMainDescGemini => 'Used for chat. Gemini 3.1 Pro recommended.';
 
   @override
-  String get tutorialSubDescGemini => '요약, SNS, 뉴스 기능 등에 사용됩니다. Gemini 3 Flash 추천';
+  String get tutorialSubDescGemini => 'Used for summaries, SNS, news, etc. Gemini 3 Flash recommended.';
 
   @override
-  String get tutorialMainDescOpenai => '채팅에 사용되는 모델입니다. GPT-5.4 추천';
+  String get tutorialMainDescOpenai => 'Used for chat. GPT-5.4 recommended.';
 
   @override
-  String get tutorialSubDescOpenai => '요약, SNS, 뉴스 기능 등에 사용됩니다. GPT-5.4 Mini 추천';
+  String get tutorialSubDescOpenai => 'Used for summaries, SNS, news, etc. GPT-5.4 Mini recommended.';
 
   @override
-  String get tutorialMainDescAnthropic => '채팅에 사용되는 모델입니다. Claude Sonnet 4.6 추천';
+  String get tutorialMainDescAnthropic => 'Used for chat. Claude Sonnet 4.6 recommended.';
 
   @override
-  String get tutorialSubDescAnthropic => '요약, SNS, 뉴스 기능 등에 사용됩니다. Claude Haiku 4.5 추천';
+  String get tutorialSubDescAnthropic => 'Used for summaries, SNS, news, etc. Claude Haiku 4.5 recommended.';
 
   @override
-  String get tutorialModelRecommended => '추천';
+  String get tutorialModelRecommended => 'Recommended';
 
   @override
-  String get tutorialCompleteTitle => '설정이 완료되었습니다!';
+  String get tutorialCompleteTitle => 'You\'re all set!';
 
   @override
-  String get tutorialCompleteSubtitle => '이제 캐릭터를 만들어볼까요?';
+  String get tutorialCompleteSubtitle => 'Ready to create your first character?';
 
   @override
   String get tutorialAgentBoxTitle => 'Flan Agent';
 
   @override
-  String get tutorialAgentBoxSubtitle => '캐릭터 탭 상단의 빛나는 아이콘을 눌러보세요';
+  String get tutorialAgentBoxSubtitle => 'Tap the glowing icon at the top of the Characters tab';
 
   @override
-  String get tutorialAgentBoxBody => 'Agent에게 원하는 캐릭터를 만들어달라고 말해보세요!\n\"판타지 세계의 엘프 마법사를 만들어줘\" 같이 자유롭게 요청하면 됩니다.';
+  String get tutorialAgentBoxBody => 'Ask the Agent to create any character you want!\nTry something like \"Create an elven mage from a fantasy world\".';
 
   @override
-  String get tutorialHelpGoogleAi => 'Google AI Studio API 키 발급';
+  String get tutorialHelpGoogleAi => 'Get a Google AI Studio API key';
 
   @override
-  String get tutorialHelpVertex => 'Vertex AI 서비스 계정 설정';
+  String get tutorialHelpVertex => 'Set up a Vertex AI service account';
 
   @override
-  String get tutorialHelpOpenai => 'OpenAI API 키 발급';
+  String get tutorialHelpOpenai => 'Get an OpenAI API key';
 
   @override
-  String get tutorialHelpAnthropic => 'Anthropic API 키 발급';
+  String get tutorialHelpAnthropic => 'Get an Anthropic API key';
 
   @override
-  String get drawerTabInfo => '기본 정보';
+  String get drawerTabInfo => 'Info';
 
   @override
-  String get drawerTabPersona => '페르소나';
+  String get drawerTabPersona => 'Persona';
 
   @override
-  String get drawerTabCharacter => '캐릭터 정보';
+  String get drawerTabCharacter => 'Character';
 
   @override
-  String get drawerTabLorebook => '설정집';
+  String get drawerTabLorebook => 'Lorebook';
 
   @override
-  String get drawerTabSummary => '요약';
+  String get drawerTabSummary => 'Summary';
 
   @override
-  String get drawerChatMemo => '채팅 메모';
+  String get drawerChatMemo => 'Chat Memo';
 
   @override
-  String get drawerMemoHint => '메모를 입력하세요';
+  String get drawerMemoHint => 'Enter a memo';
 
   @override
-  String get drawerChatSettings => '채팅창 설정';
+  String get drawerChatSettings => 'Chat Settings';
 
   @override
-  String get drawerModelPreset => '모델설정';
+  String get drawerModelPreset => 'Model Settings';
 
   @override
-  String get drawerProvider => '제조사';
+  String get drawerProvider => 'Provider';
 
   @override
-  String get drawerChatModel => '채팅 모델';
+  String get drawerChatModel => 'Chat Model';
 
   @override
-  String get drawerChatPrompt => '채팅 프롬프트';
+  String get drawerChatPrompt => 'Chat Prompt';
 
   @override
-  String get drawerNone => '없음';
+  String get drawerNone => 'None';
 
   @override
-  String get drawerPromptPreset => '프롬프트 프리셋';
+  String get drawerPromptPreset => 'Prompt Preset';
 
   @override
-  String get drawerShowImages => '이미지 보기';
+  String get drawerShowImages => 'Show Images';
 
   @override
-  String get drawerNoName => '이름 없음';
+  String get drawerNoName => 'No Name';
 
   @override
-  String get drawerSelectItem => '항목을 선택하세요';
+  String get drawerSelectItem => 'Select an item';
 
   @override
-  String get drawerOther => '기타';
+  String get drawerOther => 'Other';
 
   @override
-  String get drawerEnterValue => '값을 입력하세요';
+  String get drawerEnterValue => 'Enter a value';
 
   @override
-  String get drawerSelectPersona => '페르소나 선택';
+  String get drawerSelectPersona => 'Select Persona';
 
   @override
-  String get drawerCreateNewPersona => '+ 새 페르소나 생성';
+  String get drawerCreateNewPersona => '+ Create New Persona';
 
   @override
-  String get drawerNewPersona => '새 페르소나';
+  String get drawerNewPersona => 'New Persona';
 
   @override
-  String get drawerPersonaName => '페르소나 이름';
+  String get drawerPersonaName => 'Persona Name';
 
   @override
-  String get drawerPersonaDescription => '페르소나 설명';
+  String get drawerPersonaDescription => 'Persona Description';
 
   @override
-  String get drawerPersonaDescriptionHint => '페르소나 설명을 입력하세요';
+  String get drawerPersonaDescriptionHint => 'Enter a persona description';
 
   @override
-  String get drawerCharacter => '캐릭터';
+  String get drawerCharacter => 'Character';
 
   @override
-  String get drawerCharacterDescriptionHint => '캐릭터 설정을 입력하세요';
+  String get drawerCharacterDescriptionHint => 'Enter character settings';
 
   @override
-  String get drawerLorebookEmpty => '설정집 항목이 없습니다';
+  String get drawerLorebookEmpty => 'No lorebook entries';
 
   @override
-  String get drawerBookNameHint => '설정 이름';
+  String get drawerBookNameHint => 'Entry name';
 
   @override
-  String get drawerBookActivationCondition => '활성화 조건';
+  String get drawerBookActivationCondition => 'Activation Condition';
 
   @override
-  String get drawerBookSecondaryKey => '두번째 키';
+  String get drawerBookSecondaryKey => 'Secondary Key';
 
   @override
-  String get drawerBookActivationKey => '활성화 키';
+  String get drawerBookActivationKey => 'Activation Key';
 
   @override
-  String get drawerBookKeysHint => '쉼표로 구분하여 입력';
+  String get drawerBookKeysHint => 'Separate with commas';
 
   @override
-  String get drawerBookSecondaryKeysHint => '쉼표로 구분하여 입력 (예: 마법, 전투)';
+  String get drawerBookSecondaryKeysHint => 'Separate with commas (e.g. magic, battle)';
 
   @override
-  String get drawerBookInsertionOrder => '배치 순서';
+  String get drawerBookInsertionOrder => 'Insertion Order';
 
   @override
-  String get drawerBookContent => '내용';
+  String get drawerBookContent => 'Content';
 
   @override
-  String get drawerBookContentHint => '설정 내용을 입력해주세요';
+  String get drawerBookContentHint => 'Enter entry content';
 
   @override
-  String get drawerAutoSummary => '자동 요약';
+  String get drawerAutoSummary => 'Auto Summary';
 
   @override
-  String get drawerAgentMode => '에이전트 모드';
+  String get drawerAgentMode => 'Agent Mode';
 
   @override
-  String get drawerSummaryMessageCount => '요약 메시지 수';
+  String get drawerSummaryMessageCount => 'Summary Message Count';
 
   @override
-  String get drawerMessageCountHint => '메시지 수';
+  String get drawerMessageCountHint => 'Message count';
 
   @override
-  String get drawerAutoSummaryList => '자동 요약 목록';
+  String get drawerAutoSummaryList => 'Auto Summary List';
 
   @override
   String drawerSummaryCount(int count) {
-    return '$count개';
+    return '$count';
   }
 
   @override
-  String get drawerNoSummaries => '자동 요약이 없습니다.\n설정에서 자동 요약을 활성화하세요.';
+  String get drawerNoSummaries => 'No auto summaries.\nEnable auto summary in settings.';
 
   @override
-  String get drawerSummaryContentHint => '요약 내용';
+  String get drawerSummaryContentHint => 'Summary content';
 
   @override
-  String get drawerGenerating => '생성 중...';
+  String get drawerGenerating => 'Generating...';
 
   @override
-  String get drawerRegenerate => '재생성';
+  String get drawerRegenerate => 'Regenerate';
 
   @override
-  String get drawerActive => '활성';
+  String get drawerActive => 'Active';
 
   @override
-  String get drawerInactive => '비활성';
+  String get drawerInactive => 'Inactive';
 
   @override
-  String get drawerNameLabel => '이름';
+  String get drawerNameLabel => 'Name';
 
   @override
-  String get drawerNameHint => '이름';
+  String get drawerNameHint => 'Name';
 
   @override
-  String get drawerAddSummaryButton => '현재 메시지 기준 요약 추가';
+  String get drawerAddSummaryButton => 'Add Summary at Current Message';
 
   @override
-  String get drawerNoMessages => '메시지가 없습니다';
+  String get drawerNoMessages => 'No messages';
 
   @override
-  String get drawerNoNewMessages => '요약할 새 메시지가 없습니다';
+  String get drawerNoNewMessages => 'No new messages to summarize';
 
   @override
-  String get drawerSummaryAdded => '요약이 추가되었습니다. 내용을 입력해주세요.';
+  String get drawerSummaryAdded => 'Summary added. Please enter the content.';
 
   @override
   String drawerSummaryAddFailed(String error) {
-    return '요약 추가 중 오류가 발생했습니다: $error';
+    return 'Failed to add summary: $error';
   }
 
   @override
-  String get drawerSummaryRegenerated => '요약이 재생성되었습니다';
+  String get drawerSummaryRegenerated => 'Summary regenerated';
 
   @override
   String drawerSummaryRegenerateFailed(String error) {
-    return '요약 재생성 중 오류가 발생했습니다: $error';
+    return 'Failed to regenerate summary: $error';
   }
 
   @override
-  String get drawerSummaryItemName => '이 요약';
+  String get drawerSummaryItemName => 'This Summary';
 
   @override
-  String get drawerSummaryDeleted => '요약이 삭제되었습니다';
+  String get drawerSummaryDeleted => 'Summary deleted';
 
   @override
   String drawerSummaryDeleteFailed(String error) {
-    return '요약 삭제 중 오류가 발생했습니다: $error';
+    return 'Failed to delete summary: $error';
   }
 
   @override
   String drawerAgentEntryEmpty(String type) {
-    return '$type 데이터가 없습니다.\n채팅을 진행하면 자동으로 생성됩니다.';
+    return 'No $type data.\nIt will be generated automatically as the chat progresses.';
   }
 
   @override
   String drawerAgentEntrySaved(String name) {
-    return '$name 저장됨';
+    return '$name saved';
   }
 
   @override
   String drawerAgentEntryDeleted(String name) {
-    return '$name 삭제됨';
+    return '$name deleted';
   }
 
   @override
-  String get agentFieldDateRange => '날짜/시간';
+  String get agentFieldDateRange => 'Date/Time';
 
   @override
-  String get agentFieldCharacters => '등장인물';
+  String get agentFieldCharacters => 'Characters';
 
   @override
-  String get agentFieldCharactersList => '등장인물 (쉼표 구분)';
+  String get agentFieldCharactersList => 'Characters (comma-separated)';
 
   @override
-  String get agentFieldLocations => '장소';
+  String get agentFieldLocations => 'Locations';
 
   @override
-  String get agentFieldLocationsList => '장소 (쉼표 구분)';
+  String get agentFieldLocationsList => 'Locations (comma-separated)';
 
   @override
-  String get agentFieldSummary => '요약';
+  String get agentFieldSummary => 'Summary';
 
   @override
-  String get agentFieldAppearance => '외형';
+  String get agentFieldAppearance => 'Appearance';
 
   @override
-  String get agentFieldPersonality => '성격';
+  String get agentFieldPersonality => 'Personality';
 
   @override
-  String get agentFieldPast => '과거';
+  String get agentFieldPast => 'Background';
 
   @override
-  String get agentFieldAbilities => '능력';
+  String get agentFieldAbilities => 'Abilities';
 
   @override
-  String get agentFieldStoryActions => '작중행적';
+  String get agentFieldStoryActions => 'Story Actions';
 
   @override
-  String get agentFieldDialogueStyle => '대사 스타일';
+  String get agentFieldDialogueStyle => 'Dialogue Style';
 
   @override
-  String get agentFieldPossessions => '소지품';
+  String get agentFieldPossessions => 'Possessions';
 
   @override
-  String get agentFieldPossessionsList => '소지품 (쉼표 구분)';
+  String get agentFieldPossessionsList => 'Possessions (comma-separated)';
 
   @override
-  String get agentFieldParentLocation => '위치';
+  String get agentFieldParentLocation => 'Location';
 
   @override
-  String get agentFieldFeatures => '특징';
+  String get agentFieldFeatures => 'Features';
 
   @override
-  String get agentFieldAsciiMap => '맵';
+  String get agentFieldAsciiMap => 'Map';
 
   @override
-  String get agentFieldRelatedEpisodes => '관련 에피소드';
+  String get agentFieldRelatedEpisodes => 'Related Episodes';
 
   @override
-  String get agentFieldRelatedEpisodesList => '관련 에피소드 (쉼표 구분)';
+  String get agentFieldRelatedEpisodesList => 'Related Episodes (comma-separated)';
 
   @override
-  String get agentFieldKeywords => '키워드';
+  String get agentFieldKeywords => 'Keywords';
 
   @override
-  String get agentFieldDatetime => '일시';
+  String get agentFieldDatetime => 'Date & Time';
 
   @override
-  String get agentFieldOverview => '개요';
+  String get agentFieldOverview => 'Overview';
 
   @override
-  String get agentFieldResult => '결과';
+  String get agentFieldResult => 'Result';
 
   @override
-  String get chatRoomNotFound => '채팅방을 찾을 수 없습니다';
+  String get chatRoomNotFound => 'Chat not found';
 
   @override
-  String get chatRoomCannotLoad => '채팅방을 불러올 수 없습니다';
+  String get chatRoomCannotLoad => 'Failed to load chat';
 
   @override
   String chatRoomMessageSendFailed(String error) {
-    return '메시지 전송 중 오류가 발생했습니다: $error';
+    return 'Failed to send message: $error';
   }
 
   @override
-  String get chatRoomMessageItemName => '이 메시지';
+  String get chatRoomMessageItemName => 'This Message';
 
   @override
-  String get chatRoomMessageDeleted => '메시지가 삭제되었습니다';
+  String get chatRoomMessageDeleted => 'Message deleted';
 
   @override
-  String get chatRoomMessageDeleteFailed => '메시지 삭제 중 오류가 발생했습니다';
+  String get chatRoomMessageDeleteFailed => 'Failed to delete message';
 
   @override
-  String get chatRoomMessageEdited => '메시지가 수정되었습니다';
+  String get chatRoomMessageEdited => 'Message edited';
 
   @override
-  String get chatRoomMessageEditFailed => '메시지 수정 중 오류가 발생했습니다';
+  String get chatRoomMessageEditFailed => 'Failed to edit message';
 
   @override
   String chatRoomMessageRetryFailed(String error) {
-    return '메시지 재전송 중 오류가 발생했습니다: $error';
+    return 'Failed to retry message: $error';
   }
 
   @override
   String chatRoomMessageRegenerateFailed(String error) {
-    return '메시지 재생성 중 오류가 발생했습니다: $error';
+    return 'Failed to regenerate message: $error';
   }
 
   @override
-  String get chatRoomTextSettings => '텍스트 설정';
+  String get chatRoomTextSettings => 'Text Settings';
 
   @override
-  String get chatRoomBranchTitle => '분기 생성';
+  String get chatRoomBranchTitle => 'Create Branch';
 
   @override
-  String get chatRoomBranchContent => '이 메시지까지의 내용으로 새 분기점을 생성하시겠습니까?';
+  String get chatRoomBranchContent => 'Create a new branch up to this message?';
 
   @override
-  String get chatRoomBranchConfirm => '생성';
+  String get chatRoomBranchConfirm => 'Create';
 
   @override
-  String get chatRoomBranchCreated => '분기가 생성되었습니다';
+  String get chatRoomBranchCreated => 'Branch created';
 
   @override
-  String get chatRoomBranchFailed => '분기 생성 중 오류가 발생했습니다';
+  String get chatRoomBranchFailed => 'Failed to create branch';
 
   @override
-  String get chatRoomWarningTitle => '주의';
+  String get chatRoomWarningTitle => 'Notice';
 
   @override
-  String get chatRoomWarningDesc => '모든 AI 응답은 자동 생성되며, 편향적이거나 부정확할 수 있습니다.';
+  String get chatRoomWarningDesc => 'All AI responses are auto-generated and may be biased or inaccurate.';
 
   @override
-  String get chatRoomStartSetting => '시작 설정';
+  String get chatRoomStartSetting => 'Start Setting';
 
   @override
-  String get chatRoomNoStats => '통계 정보가 없습니다';
+  String get chatRoomNoStats => 'No stats available';
 
   @override
-  String get chatRoomStatsTitle => '응답 통계';
+  String get chatRoomStatsTitle => 'Response Stats';
 
   @override
-  String get chatRoomStatModel => '모델';
+  String get chatRoomStatModel => 'Model';
 
   @override
-  String get chatRoomStatInputTokens => '입력 토큰';
+  String get chatRoomStatInputTokens => 'Input Tokens';
 
   @override
-  String get chatRoomStatCachedTokens => '캐시 토큰';
+  String get chatRoomStatCachedTokens => 'Cached Tokens';
 
   @override
-  String get chatRoomStatCacheRatio => '캐시 비율';
+  String get chatRoomStatCacheRatio => 'Cache Ratio';
 
   @override
-  String get chatRoomStatOutputTokens => '출력 토큰';
+  String get chatRoomStatOutputTokens => 'Output Tokens';
 
   @override
-  String get chatRoomStatThoughtTokens => '생각 토큰';
+  String get chatRoomStatThoughtTokens => 'Thinking Tokens';
 
   @override
-  String get chatRoomStatThoughtRatio => '생각 비율';
+  String get chatRoomStatThoughtRatio => 'Thinking Ratio';
 
   @override
-  String get chatRoomStatTotalTokens => '총 토큰';
+  String get chatRoomStatTotalTokens => 'Total Tokens';
 
   @override
-  String get chatRoomStatEstimatedCost => '예상 비용';
+  String get chatRoomStatEstimatedCost => 'Estimated Cost';
 
   @override
-  String get chatRoomMessageSearch => '메시지 검색...';
+  String get chatRoomMessageSearch => 'Search messages...';
 
   @override
-  String get chatRoomSearchTooltip => '검색';
+  String get chatRoomSearchTooltip => 'Search';
 
   @override
-  String get chatRoomNewMessages => '새로운 메시지';
+  String get chatRoomNewMessages => 'New messages';
 
   @override
-  String get chatRoomGenerating => '메시지 생성 중...';
+  String get chatRoomGenerating => 'Generating...';
 
   @override
   String chatRoomRetrying(int attempt) {
-    return '재전송 중($attempt)...';
+    return 'Retrying ($attempt)...';
   }
 
   @override
-  String get chatRoomWaiting => '응답 대기 중...';
+  String get chatRoomWaiting => 'Waiting for response...';
 
   @override
-  String get chatRoomSummarizing => '요약 중...';
+  String get chatRoomSummarizing => 'Summarizing...';
 
   @override
-  String get chatRoomMessageHint => '메시지를 입력하세요';
+  String get chatRoomMessageHint => 'Type a message';
 
   @override
-  String get chatRoomDayMon => '월';
+  String get chatRoomDayMon => 'Mon';
 
   @override
-  String get chatRoomDayTue => '화';
+  String get chatRoomDayTue => 'Tue';
 
   @override
-  String get chatRoomDayWed => '수';
+  String get chatRoomDayWed => 'Wed';
 
   @override
-  String get chatRoomDayThu => '목';
+  String get chatRoomDayThu => 'Thu';
 
   @override
-  String get chatRoomDayFri => '금';
+  String get chatRoomDayFri => 'Fri';
 
   @override
-  String get chatRoomDaySat => '토';
+  String get chatRoomDaySat => 'Sat';
 
   @override
-  String get chatRoomDaySun => '일';
+  String get chatRoomDaySun => 'Sun';
 
   @override
-  String get chatRoomDay => '낮';
+  String get chatRoomDay => 'Day';
 
   @override
-  String get chatRoomNight => '밤';
+  String get chatRoomNight => 'Night';
 
   @override
   String characterEditDataLoadFailed(String error) {
-    return '데이터 로드 실패: $error';
+    return 'Failed to load data: $error';
   }
 
   @override
-  String get characterEditDraftFoundTitle => '작성 중인 데이터 발견';
+  String get characterEditDraftFoundTitle => 'Unsaved Draft Found';
 
   @override
   String characterEditDraftFoundContent(String timestamp) {
-    return '저장되지 않은 작성 중인 데이터가 있습니다.\n마지막 작성 시간: $timestamp\n\n불러오시겠습니까?';
+    return 'There is unsaved draft data.\nLast edited: $timestamp\n\nWould you like to restore it?';
   }
 
   @override
-  String get characterEditDraftLoad => '불러오기';
+  String get characterEditDraftLoad => 'Restore';
 
   @override
-  String get characterEditJustNow => '방금 전';
+  String get characterEditJustNow => 'Just now';
 
   @override
   String characterEditMinutesAgo(int minutes) {
-    return '$minutes분 전';
+    return '${minutes}m ago';
   }
 
   @override
   String characterEditHoursAgo(int hours) {
-    return '$hours시간 전';
+    return '${hours}h ago';
   }
 
   @override
   String characterEditDaysAgo(int days) {
-    return '$days일 전';
+    return '${days}d ago';
   }
 
   @override
-  String get characterEditNameRequired => '캐릭터 이름을 입력해주세요';
+  String get characterEditNameRequired => 'Please enter a character name';
 
   @override
-  String get characterEditCreated => '캐릭터가 생성되었습니다';
+  String get characterEditCreated => 'Character created';
 
   @override
-  String get characterEditUpdated => '캐릭터가 수정되었습니다';
+  String get characterEditUpdated => 'Character updated';
 
   @override
   String characterEditSaveFailed(String error) {
-    return '저장 실패: $error';
+    return 'Save failed: $error';
   }
 
   @override
-  String get characterEditTitleNew => '캐릭터 만들기';
+  String get characterEditTitleNew => 'Create Character';
 
   @override
-  String get characterEditTitleEdit => '캐릭터 수정';
+  String get characterEditTitleEdit => 'Edit Character';
 
   @override
-  String get characterEditTabProfile => '프로필';
+  String get characterEditTabProfile => 'Profile';
 
   @override
-  String get characterEditTabCharacter => '캐릭터설정';
+  String get characterEditTabCharacter => 'Character';
 
   @override
-  String get characterEditTabLorebook => '설정집';
+  String get characterEditTabLorebook => 'Lorebook';
 
   @override
-  String get characterEditTabPersona => '페르소나';
+  String get characterEditTabPersona => 'Persona';
 
   @override
-  String get characterEditTabStartSetting => '시작설정';
+  String get characterEditTabStartSetting => 'Start Setting';
 
   @override
-  String get characterEditTabCoverImage => '표지이미지';
+  String get characterEditTabCoverImage => 'Cover Image';
 
   @override
-  String get characterEditTabAdditionalImage => '추가이미지';
+  String get characterEditTabAdditionalImage => 'Extra Images';
 
   @override
-  String get characterEditSnsHelp => '캐릭터의 SNS 게시판 설정을 구성합니다.';
+  String get characterEditSnsHelp => 'Configure the SNS board settings for this character.';
 
   @override
-  String get characterEditSnsBoardHint => '예: 자유게시판, 모험가 광장 등';
+  String get characterEditSnsBoardHint => 'e.g. Free Board, Adventurers\' Plaza';
 
   @override
-  String get characterEditSnsToneHint => '예: 유머러스하고 친근한 분위기';
+  String get characterEditSnsToneHint => 'e.g. Humorous and friendly';
 
   @override
-  String get characterEditSnsLanguageHint => '사용자 언어 (현재는 한국어만 지원)';
+  String get characterEditSnsLanguageHint => 'Language (currently Korean only)';
 
   @override
-  String get characterEditNameLabel => '이름';
+  String get characterEditNameLabel => 'Name';
 
   @override
-  String get characterEditNameHelpText => '캐릭터의 고유한 이름을 입력해주세요.';
+  String get characterEditNameHelpText => 'Enter the character\'s unique name.';
 
   @override
-  String get characterEditNameHintText => '캐릭터의 이름을 입력해주세요.';
+  String get characterEditNameHintText => 'Enter the character\'s name.';
 
   @override
-  String get characterEditNicknameLabel => '닉네임';
+  String get characterEditNicknameLabel => 'Nickname';
 
   @override
-  String get characterEditNicknameHelp => '프롬프트에서 char 변수 대신 사용할 호칭입니다. 비워두면 이름이 사용됩니다.';
+  String get characterEditNicknameHelp => 'Used instead of the char variable in prompts. If empty, the name is used.';
 
   @override
-  String get characterEditNicknameHint => '캐릭터의 닉네임을 입력해주세요.';
+  String get characterEditNicknameHint => 'Enter the character\'s nickname.';
 
   @override
-  String get characterEditTaglineLabel => '한 줄 소개';
+  String get characterEditTaglineLabel => 'Tagline';
 
   @override
-  String get characterEditTaglineHelp => '캐릭터를 간단히 설명하는 한 문장을 작성해주세요.';
+  String get characterEditTaglineHelp => 'Write a short sentence describing the character.';
 
   @override
-  String get characterEditTaglineHint => '어떤 캐릭터인지 설명할 수 있는 간단한 소개를 입력해주세요.';
+  String get characterEditTaglineHint => 'Enter a brief intro for this character.';
 
   @override
-  String get characterEditKeywordsLabel => '키워드';
+  String get characterEditKeywordsLabel => 'Keywords';
 
   @override
-  String get characterEditKeywordsHelp => '캐릭터를 나타내는 키워드를 쉼표(,)로 구분하여 입력해주세요.';
+  String get characterEditKeywordsHelp => 'Enter keywords separated by commas (,).';
 
   @override
-  String get characterEditKeywordsHint => '키워드 입력 예시: 판타지, 남자';
+  String get characterEditKeywordsHint => 'e.g. fantasy, male';
 
   @override
-  String get characterEditWorldSetting => '세계관 설정';
+  String get characterEditWorldSetting => 'World Setting';
 
   @override
-  String get characterEditWorldSettingHelp => '캐릭터가 속한 세계관이나 배경 설정을 자유롭게 작성해주세요.';
+  String get characterEditWorldSettingHelp => 'Describe the world or background this character belongs to.';
 
   @override
-  String get characterEditWorldSettingHint => '세계관 설정을 입력해주세요.';
+  String get characterEditWorldSettingHint => 'Enter world setting details.';
 
   @override
-  String get characterExportFormatTitle => '내보내기 형식 선택';
+  String get characterExportFormatTitle => 'Select Export Format';
 
   @override
-  String get characterExportFlanFormat => 'Flan 형식';
+  String get characterExportFlanFormat => 'Flan Format';
 
   @override
-  String get characterExportFlanSubtitle => '앱 전용 JSON (이미지 포함)';
+  String get characterExportFlanSubtitle => 'App-native JSON (includes images)';
 
   @override
-  String get characterExportV2Card => '캐릭터카드 v2';
+  String get characterExportV2Card => 'Character Card v2';
 
   @override
-  String get characterExportV2Subtitle => 'PNG — 일부 데이터 잘릴 수 있음';
+  String get characterExportV2Subtitle => 'PNG — some data may be truncated';
 
   @override
-  String get characterExportV3Card => '캐릭터카드 v3';
+  String get characterExportV3Card => 'Character Card v3';
 
   @override
   String characterExportSuccessAndroid(String fileName) {
-    return '내보내기 완료: /storage/emulated/0/Download/$fileName';
+    return 'Exported: /storage/emulated/0/Download/$fileName';
   }
 
   @override
   String characterExportSuccessIos(String path) {
-    return '내보내기 완료: $path';
+    return 'Exported: $path';
   }
 
   @override
-  String get characterExportSaveFailed => '파일 저장에 실패했습니다';
+  String get characterExportSaveFailed => 'Failed to save file';
 
   @override
-  String get characterCoverDefault => '표지 1';
+  String get characterCoverDefault => 'Cover 1';
 
   @override
   String characterCopyName(String name) {
-    return '$name (복사본)';
+    return '$name (Copy)';
   }
 
   @override
-  String get autoSummaryTitle => '자동 요약';
+  String get autoSummaryTitle => 'Auto Summary';
 
   @override
-  String get autoSummarySaveFailed => '저장에 실패했습니다';
+  String get autoSummarySaveFailed => 'Save failed';
 
   @override
   String autoSummaryExportFailed(String error) {
-    return '요약 프롬프트 내보내기 실패: $error';
+    return 'Export failed: $error';
   }
 
   @override
-  String get autoSummaryResetTitle => '초기화';
+  String get autoSummaryResetTitle => 'Reset';
 
   @override
-  String get autoSummaryResetContent => '요약 프롬프트를 최신 기본 프롬프트로 되돌리시겠습니까?';
+  String get autoSummaryResetContent => 'Reset the summary prompt to the latest default?';
 
   @override
-  String get autoSummaryResetConfirm => '초기화';
+  String get autoSummaryResetConfirm => 'Reset';
 
   @override
-  String get autoSummaryResetSuccess => '요약 프롬프트가 초기화되었습니다';
+  String get autoSummaryResetSuccess => 'Summary prompt reset';
 
   @override
   String autoSummaryResetFailed(String error) {
-    return '요약 프롬프트 초기화에 실패했습니다: $error';
+    return 'Failed to reset summary prompt: $error';
   }
 
   @override
-  String get autoSummaryInvalidFormat => '올바른 요약 프롬프트 형식이 아닙니다';
+  String get autoSummaryInvalidFormat => 'Invalid summary prompt format';
 
   @override
-  String get autoSummaryEmptyItems => '프롬프트 항목이 비어있습니다';
+  String get autoSummaryEmptyItems => 'Prompt items are empty';
 
   @override
-  String get autoSummaryImportSuccess => '요약 프롬프트를 가져왔습니다';
+  String get autoSummaryImportSuccess => 'Summary prompt imported';
 
   @override
   String autoSummaryImportFailed(String error) {
-    return '요약 프롬프트 가져오기 실패: $error';
+    return 'Import failed: $error';
   }
 
   @override
-  String get autoSummaryTabBasic => '기본정보';
+  String get autoSummaryTabBasic => 'Basic';
 
   @override
-  String get autoSummaryTabParameters => '파라미터';
+  String get autoSummaryTabParameters => 'Parameters';
 
   @override
-  String get autoSummaryTabPrompt => '프롬프트';
+  String get autoSummaryTabPrompt => 'Prompt';
 
   @override
-  String get autoSummarySection => '자동 요약 설정';
+  String get autoSummarySection => 'Auto Summary Settings';
 
   @override
-  String get autoSummaryEnableTitle => '자동 요약';
+  String get autoSummaryEnableTitle => 'Auto Summary';
 
   @override
-  String get autoSummaryEnableSubtitle => '토큰 수 초과 시 자동으로 요약을 생성합니다';
+  String get autoSummaryEnableSubtitle => 'Automatically summarizes when token limit is exceeded';
 
   @override
-  String get autoSummaryAgentTitle => '에이전트 모드';
+  String get autoSummaryAgentTitle => 'Agent Mode';
 
   @override
-  String get autoSummaryAgentSubtitle => '구조화된 세계관 데이터를 자동으로 관리합니다';
+  String get autoSummaryAgentSubtitle => 'Automatically manages structured world data';
 
   @override
-  String get autoSummaryModelSection => '요약 모델';
+  String get autoSummaryModelSection => 'Summary Model';
 
   @override
-  String get autoSummaryUseSubModel => '보조 모델 사용';
+  String get autoSummaryUseSubModel => 'Use Sub Model';
 
   @override
-  String get autoSummaryUseSubModelSubtitle => '채팅 모델 설정의 보조 모델을 사용합니다';
+  String get autoSummaryUseSubModelSubtitle => 'Uses the sub model from chat model settings';
 
   @override
-  String get autoSummaryStartCondition => '자동 요약 시작 조건';
+  String get autoSummaryStartCondition => 'Auto Summary Trigger';
 
   @override
-  String get autoSummaryTokenHint => '토큰 수를 입력하세요';
+  String get autoSummaryTokenHint => 'Enter token count';
 
   @override
-  String get autoSummaryPeriod => '요약 주기';
+  String get autoSummaryPeriod => 'Summary Interval';
 
   @override
-  String get autoSummaryMaxResponseSize => '최대 응답 크기';
+  String get autoSummaryMaxResponseSize => 'Max Response Size';
 
   @override
-  String get autoSummaryMaxResponseHelp => '생성할 수 있는 최대 토큰 수입니다.';
+  String get autoSummaryMaxResponseHelp => 'Maximum tokens the model can generate.';
 
   @override
-  String get autoSummaryTemperature => '온도';
+  String get autoSummaryTemperature => 'Temperature';
 
   @override
-  String get autoSummaryTemperatureHelp => '값이 높을수록 더 창의적이고 다양한 응답을 생성합니다.';
+  String get autoSummaryTemperatureHelp => 'Higher values produce more creative and varied responses.';
 
   @override
-  String get autoSummaryTopPHelp => '누적 확률 임계값입니다. 값이 낮을수록 더 집중된 응답을 생성합니다.';
+  String get autoSummaryTopPHelp => 'Cumulative probability threshold. Lower values produce more focused responses.';
 
   @override
-  String get autoSummaryTopKHelp => '고려할 상위 토큰의 수입니다.';
+  String get autoSummaryTopKHelp => 'Number of top tokens to consider.';
 
   @override
-  String get autoSummaryPresencePenalty => '프리센스 패널티';
+  String get autoSummaryPresencePenalty => 'Presence Penalty';
 
   @override
-  String get autoSummaryPresencePenaltyHelp => '양수 값은 새로운 주제를 장려하고, 음수 값은 기존 주제에 집중합니다.';
+  String get autoSummaryPresencePenaltyHelp => 'Positive values encourage new topics; negative values focus on existing ones.';
 
   @override
-  String get autoSummaryFrequencyPenalty => '빈도 패널티';
+  String get autoSummaryFrequencyPenalty => 'Frequency Penalty';
 
   @override
-  String get autoSummaryFrequencyPenaltyHelp => '양수 값은 반복을 줄이고, 음수 값은 반복을 증가시킵니다.';
+  String get autoSummaryFrequencyPenaltyHelp => 'Positive values reduce repetition; negative values increase it.';
 
   @override
-  String get autoSummaryPromptHelp => '요약 프롬프트 항목을 구성합니다. \"요약대상\" 역할 위치에 요약할 메시지가 자동으로 삽입됩니다.\n\n길게 눌러 순서를 변경할 수 있습니다.';
+  String get autoSummaryPromptHelp => 'Configure summary prompt items. Messages to summarize are inserted automatically at the \'Summary Target\' role position.\n\nLong-press to reorder.';
 
   @override
-  String get autoSummaryNoItems => '프롬프트 항목이 없습니다';
+  String get autoSummaryNoItems => 'No prompt items';
 
   @override
-  String get autoSummaryAddItem => '항목 추가';
+  String get autoSummaryAddItem => 'Add Item';
 
   @override
-  String get autoSummaryResetDefault => '기본 프롬프트로 초기화';
+  String get autoSummaryResetDefault => 'Reset to Default Prompt';
 
   @override
-  String get autoSummaryImport => '가져오기';
+  String get autoSummaryImport => 'Import';
 
   @override
-  String get autoSummaryExport => '내보내기';
+  String get autoSummaryExport => 'Export';
 
   @override
-  String get autoSummaryItemNameHint => '항목 이름 (예: 시스템 설정)';
+  String get autoSummaryItemNameHint => 'Item name (e.g. System Prompt)';
 
   @override
-  String get autoSummaryItemRole => '역할';
+  String get autoSummaryItemRole => 'Role';
 
   @override
-  String get autoSummaryTargetMessageInfo => '요약할 메시지가 이 위치에 자동으로 삽입됩니다';
+  String get autoSummaryTargetMessageInfo => 'Messages to summarize will be inserted here automatically';
 
   @override
-  String get autoSummaryItemPrompt => '프롬프트';
+  String get autoSummaryItemPrompt => 'Prompt';
 
   @override
-  String get autoSummaryItemPromptHint => '프롬프트 내용을 입력하세요';
+  String get autoSummaryItemPromptHint => 'Enter prompt content';
 
   @override
-  String get autoSummaryNoModel => '모델 없음';
+  String get autoSummaryNoModel => 'No model';
 
   @override
-  String get customModelTitle => '커스텀 모델';
+  String get customModelTitle => 'Custom Models';
 
   @override
-  String get customModelEmpty => '커스텀 제조사가 없습니다';
+  String get customModelEmpty => 'No custom providers';
 
   @override
-  String get customModelAddProvider => '제조사 추가';
+  String get customModelAddProvider => 'Add Provider';
 
   @override
-  String get customModelEditProvider => '제조사 수정';
+  String get customModelEditProvider => 'Edit Provider';
 
   @override
-  String get customModelDeleteProviderTitle => '제조사 삭제';
+  String get customModelDeleteProviderTitle => 'Delete Provider';
 
   @override
-  String get customModelDeleteModelTitle => '모델 삭제';
+  String get customModelDeleteModelTitle => 'Delete Model';
 
   @override
-  String get customModelNoExportable => '내보낼 커스텀 모델이 없습니다';
+  String get customModelNoExportable => 'No custom models to export';
 
   @override
-  String get customModelSaveFailed => '저장에 실패했습니다';
+  String get customModelSaveFailed => 'Save failed';
 
   @override
   String customModelExportFailed(String error) {
-    return '내보내기 실패: $error';
+    return 'Export failed: $error';
   }
 
   @override
   String customModelImportSuccess(int providerCount, int modelCount) {
-    return '제조사 $providerCount개, 모델 $modelCount개를 가져왔습니다';
+    return '$providerCount provider(s), $modelCount model(s) imported';
   }
 
   @override
   String customModelImportFailed(String error) {
-    return '가져오기 실패: $error';
+    return 'Import failed: $error';
   }
 
   @override
-  String get customModelAddModel => '모델 추가';
+  String get customModelAddModel => 'Add Model';
 
   @override
-  String get customModelEditModel => '모델 수정';
+  String get customModelEditModel => 'Edit Model';
 
   @override
-  String get customModelProviderUpdated => '제조사가 수정되었습니다';
+  String get customModelProviderUpdated => 'Provider updated';
 
   @override
-  String get customModelProviderAdded => '제조사가 추가되었습니다';
+  String get customModelProviderAdded => 'Provider added';
 
   @override
-  String get customModelProviderName => '제조사 이름';
+  String get customModelProviderName => 'Provider Name';
 
   @override
-  String get customModelProviderNameHint => '예: OpenRouter';
+  String get customModelProviderNameHint => 'e.g. OpenRouter';
 
   @override
-  String get customModelProviderNameRequired => '제조사 이름을 입력해주세요';
+  String get customModelProviderNameRequired => 'Please enter a provider name';
 
   @override
-  String get customModelEndpointHint => '예: https://openrouter.ai/api';
+  String get customModelEndpointHint => 'e.g. https://openrouter.ai/api';
 
   @override
-  String get customModelRetrySection => '실패 시 재전송';
+  String get customModelRetrySection => 'Retry on Failure';
 
   @override
-  String get customModelRetryCount => '재전송 횟수';
+  String get customModelRetryCount => 'Retry Count';
 
   @override
-  String get customModelEdit => '수정';
+  String get customModelEdit => 'Edit';
 
   @override
-  String get customModelAdd => '추가';
+  String get customModelAdd => 'Add';
 
   @override
-  String get customModelUpdated => '모델이 수정되었습니다';
+  String get customModelUpdated => 'Model updated';
 
   @override
-  String get customModelAdded => '모델이 추가되었습니다';
+  String get customModelAdded => 'Model added';
 
   @override
-  String get customModelName => '모델 이름';
+  String get customModelName => 'Model Name';
 
   @override
-  String get customModelNameHint => '예: GPT-4o';
+  String get customModelNameHint => 'e.g. GPT-4o';
 
   @override
-  String get customModelNameRequired => '모델 이름을 입력해주세요';
+  String get customModelNameRequired => 'Please enter a model name';
 
   @override
-  String get customModelId => '모델 ID';
+  String get customModelId => 'Model ID';
 
   @override
-  String get customModelIdHint => '예: openai/gpt-4o';
+  String get customModelIdHint => 'e.g. openai/gpt-4o';
 
   @override
-  String get customModelIdRequired => '모델 ID를 입력해주세요';
+  String get customModelIdRequired => 'Please enter a model ID';
 
   @override
-  String get customModelPriceSection => '가격 (선택)';
+  String get customModelPriceSection => 'Pricing (Optional)';
 
   @override
   String customModelDeleteProviderWithModels(String name, int count) {
-    return '\'$name\' 제조사와 하위 모델 $count개를 삭제하시겠습니까?';
+    return 'Delete provider \'$name\' and its $count model(s)?';
   }
 
   @override
   String customModelDeleteProvider(String name) {
-    return '\'$name\' 제조사를 삭제하시겠습니까?';
+    return 'Delete provider \'$name\'?';
   }
 
   @override
   String customModelDeleteModel(String name) {
-    return '\'$name\' 모델을 삭제하시겠습니까?';
+    return 'Delete model \'$name\'?';
   }
 
   @override
-  String get promptEditDefaultName => '기본';
+  String get promptEditDefaultName => 'Default';
 
   @override
-  String get promptEditNewFolderName => '새 폴더';
+  String get promptEditNewFolderName => 'New Folder';
 
   @override
-  String get promptEditDefaultRuleName => '정규식 규칙';
+  String get promptEditDefaultRuleName => 'Regex Rule';
 
   @override
-  String get promptEditDefaultPresetName => '프리셋';
+  String get promptEditDefaultPresetName => 'Preset';
 
   @override
-  String get promptEditDefaultConditionName => '조건';
+  String get promptEditDefaultConditionName => 'Condition';
 
   @override
-  String get promptEditUpdated => '프롬프트가 수정되었습니다';
+  String get promptEditUpdated => 'Prompt updated';
 
   @override
-  String get promptEditCreated => '프롬프트가 생성되었습니다';
+  String get promptEditCreated => 'Prompt created';
 
   @override
   String promptEditSaveFailed(String error) {
-    return '프롬프트 저장 실패: $error';
+    return 'Failed to save prompt: $error';
   }
 
   @override
-  String get promptEditTitleView => '프롬프트 보기';
+  String get promptEditTitleView => 'View Prompt';
 
   @override
-  String get promptEditTitleEdit => '프롬프트 수정';
+  String get promptEditTitleEdit => 'Edit Prompt';
 
   @override
-  String get promptEditTitleNew => '새 프롬프트';
+  String get promptEditTitleNew => 'New Prompt';
 
   @override
-  String get promptEditTabBasic => '기본정보';
+  String get promptEditTabBasic => 'Basic';
 
   @override
-  String get promptEditTabParameters => '파라미터';
+  String get promptEditTabParameters => 'Parameters';
 
   @override
-  String get promptEditTabPrompt => '프롬프트';
+  String get promptEditTabPrompt => 'Prompt';
 
   @override
-  String get promptEditTabRegex => '정규식';
+  String get promptEditTabRegex => 'Regex';
 
   @override
-  String get promptEditTabOther => '기타설정';
+  String get promptEditTabOther => 'Other';
 
   @override
-  String get promptEditNameLabel => '프롬프트 이름';
+  String get promptEditNameLabel => 'Prompt Name';
 
   @override
-  String get promptEditNameHint => '예: 친근한 도우미, 전문가 모드';
+  String get promptEditNameHint => 'e.g. Friendly Helper, Expert Mode';
 
   @override
-  String get promptEditNameRequired => '프롬프트 이름을 입력해주세요';
+  String get promptEditNameRequired => 'Please enter a prompt name';
 
   @override
-  String get promptEditDescriptionTitle => '설명';
+  String get promptEditDescriptionTitle => 'Description';
 
   @override
-  String get promptEditDescriptionHint => '이 프롬프트에 대한 설명을 입력하세요';
+  String get promptEditDescriptionHint => 'Enter a description for this prompt';
 
   @override
-  String get promptEditMaxInputSize => '최대 입력 크기';
+  String get promptEditMaxInputSize => 'Max Input Size';
 
   @override
-  String get promptEditMaxInputHelp => '입력할 수 있는 최대 토큰 수입니다.';
+  String get promptEditMaxInputHelp => 'Maximum number of input tokens.';
 
   @override
-  String get promptEditThinkingTokens => '사고토큰';
+  String get promptEditThinkingTokens => 'Thinking Tokens';
 
   @override
-  String get promptEditThinkingHelp => '사고에 사용할 토큰 수입니다.';
+  String get promptEditThinkingHelp => 'Tokens allocated for thinking.';
 
   @override
-  String get promptEditStopStrings => '정지 문자열';
+  String get promptEditStopStrings => 'Stop Strings';
 
   @override
-  String get promptEditStopStringsHint => '문자열 입력 후 추가';
+  String get promptEditStopStringsHint => 'Enter a string and add';
 
   @override
-  String get promptEditThinkingConfig => '사고기능 구성';
+  String get promptEditThinkingConfig => 'Thinking Config';
 
   @override
-  String get promptEditThinkingTokenCount => '생각토큰 수';
+  String get promptEditThinkingTokenCount => 'Thinking Token Count';
 
   @override
-  String get promptEditThinkingTokenHelp => '생각에 사용할 최대 토큰 수입니다.';
+  String get promptEditThinkingTokenHelp => 'Maximum tokens for thinking.';
 
   @override
-  String get promptEditThinkingLevel => '생각 수준';
+  String get promptEditThinkingLevel => 'Thinking Level';
 
   @override
-  String get chatModelTitle => '채팅 모델';
+  String get chatModelTitle => 'Chat Model';
 
   @override
-  String get chatModelTabMain => '주 모델';
+  String get chatModelTabMain => 'Main Model';
 
   @override
-  String get chatModelTabSub => '보조 모델';
+  String get chatModelTabSub => 'Sub Model';
 
   @override
-  String get chatModelSubInfo => '보조 모델은 SNS 요약 등에 사용됩니다.\n설정 시 해당 기능들의 기본 모델이 변경됩니다.';
+  String get chatModelSubInfo => 'The sub model is used for SNS summaries and similar features.\nChanging it updates the default model for those features.';
 
   @override
-  String get chatModelProviderSection => '제조사';
+  String get chatModelProviderSection => 'Provider';
 
   @override
-  String get chatModelUsedModelSection => '사용 모델';
+  String get chatModelUsedModelSection => 'Active Model';
 
   @override
-  String get chatModelInfoSection => '모델 정보';
+  String get chatModelInfoSection => 'Model Info';
 
   @override
-  String get chatModelManagement => '커스텀 모델 관리';
+  String get chatModelManagement => 'Manage Custom Models';
 
   @override
-  String get chatModelApiKeyDeleteContent => '이 API 키를 삭제하시겠습니까?';
+  String get chatModelApiKeyDeleteContent => 'Delete this API key?';
 
   @override
-  String get chatModelVertexValidationFailed => '서비스 계정 검증 실패';
+  String get chatModelVertexValidationFailed => 'Service account validation failed';
 
   @override
-  String get chatModelNewApiKey => '새 API 키';
+  String get chatModelNewApiKey => 'New API Key';
 
   @override
-  String get chatModelJsonAdd => 'JSON 추가';
+  String get chatModelJsonAdd => 'Add JSON';
 
   @override
-  String get chatModelKeyAdd => '키 추가';
+  String get chatModelKeyAdd => 'Add Key';
 
   @override
-  String get chatModelNoApiKey => '등록된 API 키가 없습니다';
+  String get chatModelNoApiKey => 'No API keys registered';
 
   @override
-  String get apiKeyMultiInfo => '각 제공사별로 여러 개의 API 키를 등록할 수 있습니다.';
+  String get apiKeyMultiInfo => 'You can register multiple API keys per provider.';
 
   @override
   String chatPromptListLoadFailed(String error) {
-    return '프롬프트 목록을 불러오는데 실패했습니다: $error';
+    return 'Failed to load prompts: $error';
   }
 
   @override
   String chatPromptSelectFailed(String error) {
-    return '프롬프트 선택에 실패했습니다: $error';
+    return 'Failed to select prompt: $error';
   }
 
   @override
-  String get chatPromptDeleted => '프롬프트가 삭제되었습니다';
+  String get chatPromptDeleted => 'Prompt deleted';
 
   @override
   String chatPromptDeleteFailed(String error) {
-    return '프롬프트 삭제에 실패했습니다: $error';
+    return 'Failed to delete prompt: $error';
   }
 
   @override
-  String get chatPromptDefaultSelect => '기본 프롬프트 선택';
+  String get chatPromptDefaultSelect => 'Select Default Prompt';
 
   @override
-  String get chatPromptEmpty => '빈 프롬프트';
+  String get chatPromptEmpty => 'Empty Prompt';
 
   @override
-  String get chatPromptCopied => '프롬프트가 복사되었습니다';
+  String get chatPromptCopied => 'Prompt copied';
 
   @override
   String chatPromptCopyFailed(String error) {
-    return '프롬프트 복사에 실패했습니다: $error';
+    return 'Failed to copy prompt: $error';
   }
 
   @override
-  String get chatPromptResetTitle => '초기화';
+  String get chatPromptResetTitle => 'Reset';
 
   @override
-  String get chatPromptResetContent => '모든 기본 프롬프트를 초기 상태로 되돌리시겠습니까?';
+  String get chatPromptResetContent => 'Reset all default prompts to their initial state?';
 
   @override
-  String get chatPromptResetSuccess => '기본 프롬프트가 초기화되었습니다';
+  String get chatPromptResetSuccess => 'Default prompts reset';
 
   @override
   String chatPromptResetFailed(String error) {
-    return '기본 프롬프트 초기화에 실패했습니다: $error';
+    return 'Failed to reset default prompts: $error';
   }
 
   @override
   String chatPromptExportFailed(String error) {
-    return '프롬프트 내보내기 실패: $error';
+    return 'Export failed: $error';
   }
 
   @override
-  String get chatPromptImportSuccess => '프롬프트가 가져오기 되었습니다';
+  String get chatPromptImportSuccess => 'Prompt imported';
 
   @override
   String chatPromptImportFailed(String error) {
-    return '프롬프트 가져오기 실패: $error';
+    return 'Import failed: $error';
   }
 
   @override
-  String get chatPromptListEmpty => '프롬프트가 없습니다';
+  String get chatPromptListEmpty => 'No prompts';
 
   @override
-  String get communityAnonymous => '익명';
+  String get communityAnonymous => 'Anonymous';
 
   @override
-  String get communityNeedDescription => '캐릭터 설명 또는 요약 내용을 먼저 작성해주세요.';
+  String get communityNeedDescription => 'Please write a character description or summary first.';
 
   @override
   String communityGenerateFailed(String error) {
-    return '생성 실패: $error';
+    return 'Generation failed: $error';
   }
 
   @override
   String communityRegisterFailed(String error) {
-    return '등록 실패: $error';
+    return 'Registration failed: $error';
   }
 
   @override
-  String get communityWritePost => '게시글 작성';
+  String get communityWritePost => 'Write Post';
 
   @override
-  String get communityNickname => '닉네임';
+  String get communityNickname => 'Nickname';
 
   @override
-  String get communityTitle => '제목';
+  String get communityTitle => 'Title';
 
   @override
-  String get communityContent => '내용';
+  String get communityContent => 'Content';
 
   @override
-  String get communityRegister => '등록';
+  String get communityRegister => 'Post';
 
   @override
-  String get communityWriteComment => '댓글 작성';
+  String get communityWriteComment => 'Write Comment';
 
   @override
-  String get communityCommentContent => '댓글 내용';
+  String get communityCommentContent => 'Comment';
 
   @override
-  String get communityCommentDeleteTitle => '댓글 삭제';
+  String get communityCommentDeleteTitle => 'Delete Comment';
 
   @override
-  String get communityCommentDeleteContent => '이 댓글을 삭제할까요?';
+  String get communityCommentDeleteContent => 'Delete this comment?';
 
   @override
-  String get communityPostDeleteTitle => '게시글 삭제';
+  String get communityPostDeleteTitle => 'Delete Post';
 
   @override
-  String get communityPostDeleteContent => '이 게시글을 삭제할까요?';
+  String get communityPostDeleteContent => 'Delete this post?';
 
   @override
-  String get communityDefaultName => '자유게시판';
+  String get communityDefaultName => 'General';
 
   @override
-  String get communitySettingsTooltip => '설정';
+  String get communitySettingsTooltip => 'Settings';
 
   @override
-  String get communityNoPostsTitle => '아직 게시글이 없습니다';
+  String get communityNoPostsTitle => 'No posts yet';
 
   @override
-  String get communityNoPostsSubtitle => '당겨서 게시글을 새로 불러오세요';
+  String get communityNoPostsSubtitle => 'Pull down to refresh';
 
   @override
-  String get communityCommentLabel => '댓글 달기';
+  String get communityCommentLabel => 'Add a comment';
 
   @override
-  String get communityUsedModelSection => '사용 모델';
+  String get communityUsedModelSection => 'Active Model';
 
   @override
-  String get communityModelPreset => '모델설정';
+  String get communityModelPreset => 'Model Settings';
 
   @override
-  String get communityProvider => '제조사';
+  String get communityProvider => 'Provider';
 
   @override
-  String get communityChatModel => '채팅 모델';
+  String get communityChatModel => 'Chat Model';
 
   @override
-  String get communitySettingsSection => '커뮤니티 설정';
+  String get communitySettingsSection => 'Community Settings';
 
   @override
-  String get communityNameLabel => '커뮤니티 이름';
+  String get communityNameLabel => 'Community Name';
 
   @override
-  String get communityToneLabel => '커뮤니티 분위기';
+  String get communityToneLabel => 'Community Tone';
 
   @override
-  String get communityLanguageLabel => '사용 언어';
+  String get communityLanguageLabel => 'Language';
 
   @override
-  String get characterViewTabInfo => '정보';
+  String get characterViewTabInfo => 'Info';
 
   @override
-  String get characterViewTabChat => '채팅';
+  String get characterViewTabChat => 'Chats';
 
   @override
-  String get characterViewTagline => '한 줄 소개';
+  String get characterViewTagline => 'Tagline';
 
   @override
-  String get characterViewKeywords => '키워드';
+  String get characterViewKeywords => 'Keywords';
 
   @override
-  String get characterViewPersona => '페르소나';
+  String get characterViewPersona => 'Persona';
 
   @override
-  String get characterViewStartSetting => '시작 설정';
+  String get characterViewStartSetting => 'Start Setting';
 
   @override
-  String get characterViewStartContext => '시작 상황';
+  String get characterViewStartContext => 'Start Context';
 
   @override
-  String get characterViewStartMessage => '시작 메시지';
+  String get characterViewStartMessage => 'Start Message';
 
   @override
-  String get characterViewNewChat => '새 채팅';
+  String get characterViewNewChat => 'New Chat';
 
   @override
-  String get characterViewChatCreateFailed => '채팅방 생성 중 오류가 발생했습니다';
+  String get characterViewChatCreateFailed => 'Failed to create chat';
 
   @override
-  String get characterViewNoChats => '채팅방이 없습니다';
+  String get characterViewNoChats => 'No chats';
 
   @override
-  String get characterViewStartNewChat => '새 채팅을 시작해보세요';
+  String get characterViewStartNewChat => 'Start a new chat';
 
   @override
   String agentChatErrorPrefix(String error) {
-    return '오류: $error';
+    return 'Error: $error';
   }
 
   @override
-  String get agentChatResetTitle => '대화 초기화';
+  String get agentChatResetTitle => 'Reset Conversation';
 
   @override
-  String get agentChatResetContent => '모든 대화 내용이 삭제됩니다. 계속하시겠습니까?';
+  String get agentChatResetContent => 'All conversation history will be cleared. Continue?';
 
   @override
-  String get agentChatResetTooltip => '대화 초기화';
+  String get agentChatResetTooltip => 'Reset conversation';
 
   @override
-  String get agentChatIntro => '캐릭터 생성, 수정, 편집을 도와드립니다';
+  String get agentChatIntro => 'I can help you create, edit, and refine characters';
 
   @override
-  String get agentChatUserLabel => '나';
+  String get agentChatUserLabel => 'Me';
 
   @override
-  String get agentChatUsedModel => '사용 모델';
+  String get agentChatUsedModel => 'Active Model';
 
   @override
-  String get agentChatModelPreset => '모델설정';
+  String get agentChatModelPreset => 'Model Settings';
 
   @override
-  String get agentChatProvider => '제조사';
+  String get agentChatProvider => 'Provider';
 
   @override
-  String get agentChatModel => '채팅 모델';
+  String get agentChatModel => 'Chat Model';
 
   @override
-  String get agentChatWaiting => '응답 대기 중...';
+  String get agentChatWaiting => 'Waiting for response...';
 
   @override
-  String get agentChatHint => '메시지를 입력하세요';
+  String get agentChatHint => 'Type a message';
 
   @override
   String diaryGenerateFailed(String error) {
-    return '일기 생성 실패: $error';
+    return 'Failed to generate diary: $error';
   }
 
   @override
-  String get diaryGenerateTitle => '일기 생성';
+  String get diaryGenerateTitle => 'Generate Diary';
 
   @override
   String diaryGenerateContent(String date) {
-    return '$date의 일기를 생성할까요?';
+    return 'Generate a diary entry for $date?';
   }
 
   @override
-  String get diaryDeleteTitle => '일기 삭제';
+  String get diaryDeleteTitle => 'Delete Diary';
 
   @override
-  String get diaryDeleteContent => '이 일기를 삭제할까요?';
+  String get diaryDeleteContent => 'Delete this diary entry?';
 
   @override
-  String get diaryRegenerateTitle => '일기 재생성';
+  String get diaryRegenerateTitle => 'Regenerate Diary';
 
   @override
   String diaryRegenerateContent(String date) {
-    return '$date의 일기를 모두 삭제하고 다시 생성할까요?';
+    return 'Delete and regenerate the diary for $date?';
   }
 
   @override
-  String get diarySettingsTooltip => '설정';
+  String get diarySettingsTooltip => 'Settings';
 
   @override
-  String get diaryDaySun => '일';
+  String get diaryDaySun => 'Sun';
 
   @override
-  String get diaryDayMon => '월';
+  String get diaryDayMon => 'Mon';
 
   @override
-  String get diaryDayTue => '화';
+  String get diaryDayTue => 'Tue';
 
   @override
-  String get diaryDayWed => '수';
+  String get diaryDayWed => 'Wed';
 
   @override
-  String get diaryDayThu => '목';
+  String get diaryDayThu => 'Thu';
 
   @override
-  String get diaryDayFri => '금';
+  String get diaryDayFri => 'Fri';
 
   @override
-  String get diaryDaySat => '토';
+  String get diaryDaySat => 'Sat';
 
   @override
-  String get diarySelectDate => '날짜를 선택하세요';
+  String get diarySelectDate => 'Select a date';
 
   @override
-  String get diaryGenerating => '일기를 생성하고 있습니다...';
+  String get diaryGenerating => 'Generating diary...';
 
   @override
-  String get diaryNoEntries => '아직 일기가 없습니다';
+  String get diaryNoEntries => 'No diary entries yet';
 
   @override
-  String get diaryRegenerateTooltip => '재생성';
+  String get diaryRegenerateTooltip => 'Regenerate';
 
   @override
-  String get diaryUsedModel => '사용 모델';
+  String get diaryUsedModel => 'Active Model';
 
   @override
-  String get diaryModelPreset => '모델설정';
+  String get diaryModelPreset => 'Model Settings';
 
   @override
-  String get diaryProvider => '제조사';
+  String get diaryProvider => 'Provider';
 
   @override
-  String get diaryChatModel => '채팅 모델';
+  String get diaryChatModel => 'Chat Model';
 
   @override
-  String get diarySettingsSection => '다이어리 설정';
+  String get diarySettingsSection => 'Diary Settings';
 
   @override
-  String get diaryAutoGenerate => '자동 생성';
+  String get diaryAutoGenerate => 'Auto Generate';
 
   @override
-  String get diaryAutoGenerateDesc => '채팅 내 날짜가 변경되면 자동으로 일기를 생성합니다.';
+  String get diaryAutoGenerateDesc => 'Automatically generates a diary entry when the in-chat date changes.';
 
   @override
-  String get characterBookInvalidFormat => '올바른 설정집 형식이 아닙니다';
+  String get characterBookInvalidFormat => 'Invalid lorebook format';
 
   @override
-  String get characterBookNoImport => '가져올 설정이 없습니다';
+  String get characterBookNoImport => 'Nothing to import';
 
   @override
   String characterBookImportFailed(String error) {
-    return '가져오기 실패: $error';
+    return 'Import failed: $error';
   }
 
   @override
-  String get characterBookNoExport => '내보낼 설정이 없습니다';
+  String get characterBookNoExport => 'Nothing to export';
 
   @override
-  String get characterBookSaveFailed => '저장에 실패했습니다';
+  String get characterBookSaveFailed => 'Save failed';
 
   @override
   String characterBookExportFailed(String error) {
-    return '내보내기 실패: $error';
+    return 'Export failed: $error';
   }
 
   @override
-  String get characterBookNewFolder => '새 폴더';
+  String get characterBookNewFolder => 'New Folder';
 
   @override
-  String get characterBookNewItem => '새 설정';
+  String get characterBookNewItem => 'New Entry';
 
   @override
-  String get characterBookFolderDeleteTitle => '폴더 삭제';
+  String get characterBookFolderDeleteTitle => 'Delete Folder';
 
   @override
-  String get characterBookSection => '설정집';
+  String get characterBookSection => 'Lorebook';
 
   @override
-  String get characterBookSectionHelp => '캐릭터의 세계관과 관련된 정보를 설정집에 추가할 수 있습니다.\n\n길게 눌러 순서를 변경할 수 있습니다.';
+  String get characterBookSectionHelp => 'Add world-building information related to this character.\n\nLong-press to reorder.';
 
   @override
-  String get characterBookAddItem => '설정 추가';
+  String get characterBookAddItem => 'Add Entry';
 
   @override
-  String get characterBookAddFolder => '폴더 추가';
+  String get characterBookAddFolder => 'Add Folder';
 
   @override
-  String get characterBookEmpty => '설정집 항목이 없습니다';
+  String get characterBookEmpty => 'No lorebook entries';
 
   @override
-  String get characterBookNameHint => '설정 이름';
+  String get characterBookNameHint => 'Entry name';
 
   @override
-  String get characterBookActivationCondition => '활성화 조건';
+  String get characterBookActivationCondition => 'Activation Condition';
 
   @override
-  String get characterBookActivationKey => '활성화 키';
+  String get characterBookActivationKey => 'Activation Key';
 
   @override
-  String get characterBookKeysHint => '쉼표로 구분하여 입력 (예: 마법, 전투)';
+  String get characterBookKeysHint => 'Separate with commas (e.g. magic, battle)';
 
   @override
-  String get characterBookSecondaryKey => '두번째 키';
+  String get characterBookSecondaryKey => 'Secondary Key';
 
   @override
-  String get characterBookInsertionOrder => '배치 순서';
+  String get characterBookInsertionOrder => 'Insertion Order';
 
   @override
-  String get characterBookContent => '내용';
+  String get characterBookContent => 'Content';
 
   @override
-  String get characterBookContentHint => '설정 내용을 입력해주세요';
+  String get characterBookContentHint => 'Enter entry content';
 
   @override
-  String get newsArticleDeleteTitle => '기사 삭제';
+  String get newsArticleDeleteTitle => 'Delete Article';
 
   @override
-  String get newsArticleDeleteContent => '이 기사를 삭제하시겠습니까?';
+  String get newsArticleDeleteContent => 'Delete this article?';
 
   @override
-  String get newsEmptyTitle => '아직 기사가 없습니다';
+  String get newsEmptyTitle => 'No articles yet';
 
   @override
-  String get newsEmptySubtitle => '당겨서 뉴스를 불러오세요';
+  String get newsEmptySubtitle => 'Pull down to load news';
 
   @override
-  String get promptItemsTitle => '프롬프트 항목';
+  String get promptItemsTitle => 'Prompt Items';
 
   @override
-  String get promptItemsTitleHelp => 'AI에게 전달될 프롬프트 항목들을 추가하세요. 순서대로 전달됩니다.\n\n길게 눌러 순서를 변경할 수 있습니다.';
+  String get promptItemsTitleHelp => 'Add prompt items to send to the AI. They are sent in order.\n\nLong-press to reorder.';
 
   @override
-  String get promptItemsAddItem => '항목 추가';
+  String get promptItemsAddItem => 'Add Item';
 
   @override
-  String get promptItemsAddFolder => '폴더 추가';
+  String get promptItemsAddFolder => 'Add Folder';
 
   @override
-  String get promptItemsEmpty => '프롬프트 항목이 없습니다';
+  String get promptItemsEmpty => 'No prompt items';
 
   @override
-  String get promptItemsNameHint => '항목 이름 (예: 시스템 설정, 캐릭터 성격)';
+  String get promptItemsNameHint => 'Item name (e.g. System Prompt, Character Personality)';
 
   @override
-  String get promptItemsLabelEnable => '활성화';
+  String get promptItemsLabelEnable => 'Enable';
 
   @override
-  String get promptItemsLabelRole => '역할';
+  String get promptItemsLabelRole => 'Role';
 
   @override
-  String get promptItemsLabelPrompt => '프롬프트';
+  String get promptItemsLabelPrompt => 'Prompt';
 
   @override
-  String get promptItemsPromptHint => 'AI의 역할과 응답 방식을 정의하세요';
+  String get promptItemsPromptHint => 'Define the AI\'s role and response style';
 
   @override
-  String get promptItemsConditionSelect => '조건 선택';
+  String get promptItemsConditionSelect => 'Select Condition';
 
   @override
-  String get promptItemsConditionSelectHint => '조건을 선택하세요';
+  String get promptItemsConditionSelectHint => 'Select a condition';
 
   @override
-  String get promptItemsConditionNoName => '이름 없음';
+  String get promptItemsConditionNoName => 'No Name';
 
   @override
-  String get promptItemsConditionValue => '조건 값';
+  String get promptItemsConditionValue => 'Condition Value';
 
   @override
-  String get promptItemsConditionEnabled => '활성화';
+  String get promptItemsConditionEnabled => 'Enabled';
 
   @override
-  String get promptItemsConditionDisabled => '비활성화';
+  String get promptItemsConditionDisabled => 'Disabled';
 
   @override
-  String get promptItemsSingleSelectItems => '선택 항목';
+  String get promptItemsSingleSelectItems => 'Options';
 
   @override
-  String get promptItemsSingleSelectHint => '항목을 선택하세요';
+  String get promptItemsSingleSelectHint => 'Select an option';
 
   @override
-  String get promptItemsChatSettings => '설정';
+  String get promptItemsChatSettings => 'Settings';
 
   @override
-  String get promptItemsRecentChatCount => '최근 채팅 포함 개수';
+  String get promptItemsRecentChatCount => 'Recent Chat Count';
 
   @override
-  String get promptItemsRecentChatCountHint => '개수';
+  String get promptItemsRecentChatCountHint => 'Count';
 
   @override
-  String get promptItemsChatStartPos => '이전 채팅 시작 위치';
+  String get promptItemsChatStartPos => 'Chat Start Position';
 
   @override
-  String get promptItemsChatStartPosHint => '시작 위치';
+  String get promptItemsChatStartPosHint => 'Start position';
 
   @override
-  String get promptItemsChatEndPos => '이전 채팅 마지막 위치';
+  String get promptItemsChatEndPos => 'Chat End Position';
 
   @override
-  String get promptItemsChatEndPosHint => '마지막 위치';
+  String get promptItemsChatEndPosHint => 'End position';
 
   @override
-  String get promptConditionsTitle => '프롬프트 조건';
+  String get promptConditionsTitle => 'Prompt Conditions';
 
   @override
-  String get promptConditionsTitleHelp => '프롬프트에 적용할 조건을 설정합니다.\n\n• 토글: ON/OFF 스위치\n• 하나만 선택: 여러 항목 중 하나를 선택\n• 변수 치환: 변수명을 선택한 항목으로 치환';
+  String get promptConditionsTitleHelp => 'Set conditions to apply to the prompt.\n\n• Toggle: ON/OFF switch\n• Single select: Choose one from multiple options\n• Variable substitution: Replaces a variable with the selected value';
 
   @override
-  String get promptConditionsAddButton => '조건 추가';
+  String get promptConditionsAddButton => 'Add Condition';
 
   @override
-  String get promptConditionsNewName => '새 조건';
+  String get promptConditionsNewName => 'New Condition';
 
   @override
-  String get promptConditionsNameHint => '조건 이름 (예: 말투, 분위기)';
+  String get promptConditionsNameHint => 'Condition name (e.g. Tone, Mood)';
 
   @override
-  String get promptConditionsLabelType => '형태';
+  String get promptConditionsLabelType => 'Type';
 
   @override
-  String get promptConditionsLabelVarName => '변수 이름';
+  String get promptConditionsLabelVarName => 'Variable Name';
 
   @override
-  String get promptConditionsVarNameHint => '변수 이름';
+  String get promptConditionsVarNameHint => 'Variable name';
 
   @override
-  String get promptConditionsLabelOptions => '항목 목록';
+  String get promptConditionsLabelOptions => 'Options';
 
   @override
-  String get promptConditionsOptionsEmpty => '항목이 없습니다';
+  String get promptConditionsOptionsEmpty => 'No options';
 
   @override
-  String get promptConditionsOptionAddHint => '항목 이름 입력';
+  String get promptConditionsOptionAddHint => 'Enter option name';
 
   @override
-  String get promptPresetsTitle => '프롬프트 조건 프리셋';
+  String get promptPresetsTitle => 'Prompt Condition Presets';
 
   @override
-  String get promptPresetsTitleHelp => '프롬프트 조건의 값을 미리 설정해둔 프리셋입니다.\n\n채팅 시 프리셋을 선택하면 조건 값이 일괄 적용됩니다.';
+  String get promptPresetsTitleHelp => 'Presets with pre-configured condition values.\n\nSelecting a preset during chat applies all conditions at once.';
 
   @override
-  String get promptPresetsAddButton => '프리셋 추가';
+  String get promptPresetsAddButton => 'Add Preset';
 
   @override
-  String get promptPresetsNewName => '새 프리셋';
+  String get promptPresetsNewName => 'New Preset';
 
   @override
-  String get promptPresetsLabelName => '이름';
+  String get promptPresetsLabelName => 'Name';
 
   @override
-  String get promptPresetsNameHint => '프리셋 이름';
+  String get promptPresetsNameHint => 'Preset name';
 
   @override
-  String get promptPresetsLabelConditions => '조건 목록';
+  String get promptPresetsLabelConditions => 'Conditions';
 
   @override
-  String get promptPresetsConditionNoName => '이름 없음';
+  String get promptPresetsConditionNoName => 'No Name';
 
   @override
-  String get promptPresetsSelectHint => '항목을 선택하세요';
+  String get promptPresetsSelectHint => 'Select an option';
 
   @override
-  String get promptPresetsCustomLabel => '기타';
+  String get promptPresetsCustomLabel => 'Other';
 
   @override
-  String get promptPresetsCustomInputLabel => '직접입력';
+  String get promptPresetsCustomInputLabel => 'Custom';
 
   @override
-  String get promptPresetsCustomInputHint => '값을 입력하세요';
+  String get promptPresetsCustomInputHint => 'Enter a value';
 
   @override
-  String get promptRegexTitle => '정규식 규칙';
+  String get promptRegexTitle => 'Regex Rules';
 
   @override
-  String get promptRegexTitleHelp => '정규식(RegExp)을 사용하여 텍스트를 변환합니다.\n\n속성에 따라 적용 시점이 달라집니다:\n• 입력문 수정: 사용자 입력 텍스트에 적용\n• 출력문 수정: AI 응답 텍스트에 적용\n• 전송데이터 수정: API 전송 데이터에 적용\n• 출력화면 수정: 화면 표시 시에만 적용';
+  String get promptRegexTitleHelp => 'Transform text using regular expressions (RegExp).\n\nApplication timing varies by property:\n• Modify Input: Applied to user input text\n• Modify Output: Applied to AI response text\n• Modify Send Data: Applied to API payload\n• Modify Display: Applied only when rendering on screen';
 
   @override
-  String get promptRegexEmpty => '정규식 규칙이 없습니다';
+  String get promptRegexEmpty => 'No regex rules';
 
   @override
   String promptRegexRuleDefaultName(int index) {
-    return '규칙 $index';
+    return 'Rule $index';
   }
 
   @override
-  String get promptRegexNameHint => '규칙 이름 (예: OOC 제거, 태그 변환)';
+  String get promptRegexNameHint => 'Rule name (e.g. Remove OOC, Tag Transform)';
 
   @override
-  String get promptRegexLabelTarget => '속성';
+  String get promptRegexLabelTarget => 'Target';
 
   @override
-  String get promptRegexLabelPattern => '정규식 패턴';
+  String get promptRegexLabelPattern => 'Regex Pattern';
 
   @override
-  String get promptRegexPatternHint => '예: \\(OOC:.*?\\)';
+  String get promptRegexPatternHint => 'e.g. \\(OOC:.*?\\)';
 
   @override
-  String get promptRegexLabelReplacement => '변환 형식';
+  String get promptRegexLabelReplacement => 'Replacement';
 
   @override
-  String get promptRegexReplacementHint => '정규식에 매칭된 텍스트가 이 형식으로 변환됩니다\n\n캡처 그룹: \$1, \$2, ...';
+  String get promptRegexReplacementHint => 'Matched text will be replaced with this format\n\nCapture groups: \$1, \$2, ...';
 
   @override
-  String get promptRegexAddButton => '규칙 추가';
+  String get promptRegexAddButton => 'Add Rule';
 
   @override
-  String get backupTitle => '백업 및 복구';
+  String get backupTitle => 'Backup & Restore';
 
   @override
-  String get backupSectionTitle => '백업 생성';
+  String get backupSectionTitle => 'Create Backup';
 
   @override
-  String get backupSectionDesc => '캐릭터(이미지 포함), 채팅 기록, 프롬프트, 커스텀 모델, 설정 등 모든 데이터를 하나의 백업 파일로 내보냅니다.';
+  String get backupSectionDesc => 'Export all data — characters (with images), chat history, prompts, custom models, and settings — into a single backup file.';
 
   @override
-  String get backupCreateButton => '백업 파일 생성';
+  String get backupCreateButton => 'Create Backup File';
 
   @override
-  String get backupRestoreTitle => '백업 복구';
+  String get backupRestoreTitle => 'Restore Backup';
 
   @override
-  String get backupRestoreDesc => '백업 .zip 파일을 선택하여 데이터를 복원합니다. (기존 .db 파일도 지원)';
+  String get backupRestoreDesc => 'Select a .zip backup file to restore your data. (Legacy .db files also supported)';
 
   @override
-  String get backupRestoreWarning => '주의: 기존 데이터가 모두 삭제됩니다. 복구 후 앱 재시작이 필요합니다.';
+  String get backupRestoreWarning => 'Warning: All existing data will be erased. The app must be restarted after restore.';
 
   @override
-  String get backupRestoreButton => '백업 파일 선택';
+  String get backupRestoreButton => 'Select Backup File';
 
   @override
-  String get backupProcessing => '처리 중...';
+  String get backupProcessing => 'Processing...';
 
   @override
   String backupSuccessDownloads(String fileName) {
-    return '백업 완료: Downloads/$fileName';
+    return 'Backup saved: Downloads/$fileName';
   }
 
   @override
   String backupSuccessIos(String fileName) {
-    return '백업 완료: $fileName';
+    return 'Backup saved: $fileName';
   }
 
   @override
-  String get backupSaveFailed => '파일 저장에 실패했습니다';
+  String get backupSaveFailed => 'Failed to save file';
 
   @override
   String backupFailed(String error) {
-    return '백업 실패: $error';
+    return 'Backup failed: $error';
   }
 
   @override
-  String get backupInvalidFile => '.zip 또는 .db 백업 파일을 선택해주세요';
+  String get backupInvalidFile => 'Please select a .zip or .db backup file';
 
   @override
-  String get backupZipNoDb => 'ZIP 파일에서 backup.db를 찾을 수 없습니다';
+  String get backupZipNoDb => 'backup.db not found in the ZIP file';
 
   @override
-  String get backupRestoreConfirmTitle => '백업 복구';
+  String get backupRestoreConfirmTitle => 'Restore Backup';
 
   @override
   String backupRestoreConfirmContent(String createdAt) {
-    return '백업 일시: $createdAt\n\n기존 데이터가 모두 삭제되고 백업 데이터로 대체됩니다.\n계속하시겠습니까?';
+    return 'Backup date: $createdAt\n\nAll existing data will be replaced with backup data.\nContinue?';
   }
 
   @override
-  String get backupRestoreConfirmButton => '복구';
+  String get backupRestoreConfirmButton => 'Restore';
 
   @override
-  String get backupRestoreSuccessTitle => '복구 완료';
+  String get backupRestoreSuccessTitle => 'Restore Complete';
 
   @override
-  String get backupRestoreSuccessContent => '백업 데이터가 복구되었습니다.\n변경사항을 완전히 적용하려면 앱을 재시작해주세요.';
+  String get backupRestoreSuccessContent => 'Backup data restored.\nPlease restart the app to apply changes.';
 
   @override
   String backupRestoreFailed(String error) {
-    return '복구 실패: $error';
+    return 'Restore failed: $error';
   }
 
   @override
-  String get backupCreatedAtUnknown => '알 수 없음';
+  String get backupCreatedAtUnknown => 'Unknown';
 
   @override
-  String get logTitle => 'API 로그';
+  String get logTitle => 'API Logs';
 
   @override
-  String get logDeleteAllTooltip => '전체 삭제';
+  String get logDeleteAllTooltip => 'Delete All';
 
   @override
-  String get logInfoMessage => 'API 요청/응답 로그를 확인할 수 있습니다.\n7일이 지난 로그는 자동으로 삭제됩니다.';
+  String get logInfoMessage => 'View API request and response logs.\nLogs older than 7 days are automatically deleted.';
 
   @override
-  String get logEmpty => '로그가 없습니다';
+  String get logEmpty => 'No logs';
 
   @override
-  String get logAutoSummaryLabel => '자동 요약';
+  String get logAutoSummaryLabel => 'Auto Summary';
 
   @override
-  String get logDeleteTitle => '로그 삭제';
+  String get logDeleteTitle => 'Delete Log';
 
   @override
-  String get logDeleteContent => '이 로그를 삭제하시겠습니까?';
+  String get logDeleteContent => 'Delete this log?';
 
   @override
-  String get logDeleteSuccess => '로그가 삭제되었습니다';
+  String get logDeleteSuccess => 'Log deleted';
 
   @override
   String logDeleteFailed(String error) {
-    return '로그 삭제 실패: $error';
+    return 'Failed to delete log: $error';
   }
 
   @override
-  String get logDeleteAllTitle => '전체 로그 삭제';
+  String get logDeleteAllTitle => 'Delete All Logs';
 
   @override
-  String get logDeleteAllContent => '모든 로그를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.';
+  String get logDeleteAllContent => 'Delete all logs? This cannot be undone.';
 
   @override
-  String get logDeleteAllSuccess => '모든 로그가 삭제되었습니다';
+  String get logDeleteAllSuccess => 'All logs deleted';
 
   @override
   String logLoadFailed(String error) {
-    return '로그 불러오기 실패: $error';
+    return 'Failed to load logs: $error';
   }
 
   @override
-  String get logDetailTitle => '로그 상세';
+  String get logDetailTitle => 'Log Detail';
 
   @override
-  String get logDetailInfoSection => '기본 정보';
+  String get logDetailInfoSection => 'Basic Info';
 
   @override
-  String get logDetailTime => '시간';
+  String get logDetailTime => 'Time';
 
   @override
-  String get logDetailType => '타입';
+  String get logDetailType => 'Type';
 
   @override
-  String get logDetailModel => '모델';
+  String get logDetailModel => 'Model';
 
   @override
-  String get logDetailChatRoomId => '채팅방 ID';
+  String get logDetailChatRoomId => 'Chat Room ID';
 
   @override
-  String get logDetailCharacterId => '캐릭터 ID';
+  String get logDetailCharacterId => 'Character ID';
 
   @override
-  String get logDetailCopied => '클립보드에 복사되었습니다';
+  String get logDetailCopied => 'Copied to clipboard';
 
   @override
-  String get logDetailFormatLabel => '포맷';
+  String get logDetailFormatLabel => 'Format';
 
   @override
-  String get statisticsTitle => '통계';
+  String get statisticsTitle => 'Statistics';
 
   @override
-  String get statisticsNoData => '데이터가 없습니다';
+  String get statisticsNoData => 'No data';
 
   @override
-  String get statisticsPeriod7Days => '7일';
+  String get statisticsPeriod7Days => '7 Days';
 
   @override
-  String get statisticsPeriod30Days => '30일';
+  String get statisticsPeriod30Days => '30 Days';
 
   @override
-  String get statisticsPeriodAll => '전체';
+  String get statisticsPeriodAll => 'All Time';
 
   @override
-  String get statisticsCost => '예상 비용';
+  String get statisticsCost => 'Estimated Cost';
 
   @override
-  String get statisticsTokens => '총 토큰';
+  String get statisticsTokens => 'Total Tokens';
 
   @override
-  String get statisticsMessages => '메시지';
+  String get statisticsMessages => 'Messages';
 
   @override
   String statisticsDailyTokens(String tokens) {
-    return '$tokens 토큰';
+    return '$tokens tokens';
   }
 
   @override
   String statisticsDailyMessages(int count) {
-    return '$count개 메시지';
+    return '$count messages';
   }
 
   @override
   String statisticsModelMessages(int count) {
-    return '$count개';
+    return '$count';
   }
 
   @override
   String statisticsDailyModels(int count) {
-    return '$count개 모델';
+    return '$count models';
   }
 
   @override
   String statisticsDateFormat(String year, String month, String day) {
-    return '$year년 $month월 $day일';
+    return '$year/$month/$day';
   }
 
   @override
-  String get statisticsTokenInput => '입력';
+  String get statisticsTokenInput => 'Input';
 
   @override
-  String get statisticsTokenOutput => '출력';
+  String get statisticsTokenOutput => 'Output';
 
   @override
-  String get statisticsTokenCached => '캐시';
+  String get statisticsTokenCached => 'Cached';
 
   @override
-  String get statisticsTokenThinking => '사고';
+  String get statisticsTokenThinking => 'Thinking';
 
   @override
-  String get tokenizerTitle => '토크나이저';
+  String get tokenizerTitle => 'Tokenizer';
 
   @override
-  String get tokenizerSectionTitle => '토크나이저 선택';
+  String get tokenizerSectionTitle => 'Select Tokenizer';
 
   @override
-  String get tokenizerLabel => '토크나이저';
+  String get tokenizerLabel => 'Tokenizer';
 
   @override
-  String get tokenizerDescription => '토크나이저는 텍스트를 토큰으로 변환하는 방식을 결정합니다. 모델에 따라 적합한 토크나이저가 다를 수 있습니다.';
+  String get tokenizerDescription => 'The tokenizer determines how text is converted to tokens. The best tokenizer may vary by model.';
 
   @override
-  String get profileTabLabelName => '이름';
+  String get profileTabLabelName => 'Name';
 
   @override
-  String get profileTabNameHelp => '캐릭터의 고유한 이름을 입력해주세요.';
+  String get profileTabNameHelp => 'Enter the character\'s unique name.';
 
   @override
-  String get profileTabNameHint => '캐릭터의 이름을 입력해주세요.';
+  String get profileTabNameHint => 'Enter the character\'s name.';
 
   @override
-  String get profileTabNameValidation => '캐릭터 이름을 입력해주세요';
+  String get profileTabNameValidation => 'Please enter a character name';
 
   @override
-  String get profileTabLabelNickname => '닉네임';
+  String get profileTabLabelNickname => 'Nickname';
 
   @override
-  String get profileTabNicknameHelp => '프롬프트에서 char 변수 대신 사용할 호칭입니다. 비워두면 이름이 사용됩니다.';
+  String get profileTabNicknameHelp => 'Used instead of the char variable in prompts. If empty, the name is used.';
 
   @override
-  String get profileTabNicknameHint => '캐릭터의 닉네임을 입력해주세요.';
+  String get profileTabNicknameHint => 'Enter the character\'s nickname.';
 
   @override
-  String get profileTabLabelCreatorNotes => '한 줄 소개';
+  String get profileTabLabelCreatorNotes => 'Tagline';
 
   @override
-  String get profileTabCreatorNotesHelp => '캐릭터를 간단히 설명하는 한 문장을 작성해주세요.';
+  String get profileTabCreatorNotesHelp => 'Write a short sentence describing the character.';
 
   @override
-  String get profileTabCreatorNotesHint => '어떤 캐릭터인지 설명할 수 있는 간단한 소개를 입력해주세요.';
+  String get profileTabCreatorNotesHint => 'Enter a brief intro for this character.';
 
   @override
-  String get profileTabLabelKeywords => '키워드';
+  String get profileTabLabelKeywords => 'Keywords';
 
   @override
-  String get profileTabKeywordsHelp => '캐릭터를 나타내는 키워드를 쉼표(,)로 구분하여 입력해주세요.';
+  String get profileTabKeywordsHelp => 'Enter keywords separated by commas (,).';
 
   @override
-  String get profileTabKeywordsHint => '키워드 입력 예시: 판타지, 남자';
+  String get profileTabKeywordsHint => 'e.g. fantasy, male';
 
   @override
-  String get startScenarioTitle => '시작설정';
+  String get startScenarioTitle => 'Start Setting';
 
   @override
-  String get startScenarioTitleHelp => '대화의 시작 설정 정보를 추가할 수 있습니다.';
+  String get startScenarioTitleHelp => 'Add start setting information for the conversation.';
 
   @override
-  String get startScenarioEmpty => '시작설정 항목이 없습니다';
+  String get startScenarioEmpty => 'No start settings';
 
   @override
-  String get startScenarioAddButton => '시작설정 추가';
+  String get startScenarioAddButton => 'Add Start Setting';
 
   @override
-  String get startScenarioNewName => '새 시작설정';
+  String get startScenarioNewName => 'New Start Setting';
 
   @override
-  String get startScenarioNameHint => '시작설정 이름';
+  String get startScenarioNameHint => 'Start setting name';
 
   @override
-  String get startScenarioStartSettingLabel => '시작 설정';
+  String get startScenarioStartSettingLabel => 'Start Setting';
 
   @override
-  String get startScenarioStartSettingInfo => '해당 내용은 요약 이전에 삽입되고 삭제되지 않습니다.';
+  String get startScenarioStartSettingInfo => 'This content is inserted before the summary and will not be deleted.';
 
   @override
-  String get startScenarioStartSettingHint => '시작 설정 내용을 입력해주세요';
+  String get startScenarioStartSettingHint => 'Enter the start setting content';
 
   @override
-  String get startScenarioStartMessageLabel => '시작 메시지';
+  String get startScenarioStartMessageLabel => 'Start Message';
 
   @override
-  String get startScenarioStartMessageHint => '시작 메시지를 입력해주세요';
+  String get startScenarioStartMessageHint => 'Enter the start message';
 
   @override
-  String get personaTitle => '페르소나';
+  String get personaTitle => 'Persona';
 
   @override
-  String get personaTitleHelp => '캐릭터의 페르소나 정보를 추가할 수 있습니다.';
+  String get personaTitleHelp => 'Add persona information for the character.';
 
   @override
-  String get personaEmpty => '페르소나 항목이 없습니다';
+  String get personaEmpty => 'No personas';
 
   @override
-  String get personaAddButton => '페르소나 추가';
+  String get personaAddButton => 'Add Persona';
 
   @override
-  String get personaNewName => '새 페르소나';
+  String get personaNewName => 'New Persona';
 
   @override
-  String get personaNameHint => '페르소나 이름';
+  String get personaNameHint => 'Persona name';
 
   @override
-  String get personaContentLabel => '내용';
+  String get personaContentLabel => 'Content';
 
   @override
-  String get personaContentHint => '페르소나 내용을 입력해주세요';
+  String get personaContentHint => 'Enter persona content';
 
   @override
-  String get coverImageTitle => '표지';
+  String get coverImageTitle => 'Cover';
 
   @override
-  String get coverImageTitleHelp => '캐릭터의 표지 이미지를 추가할 수 있습니다.';
+  String get coverImageTitleHelp => 'Add cover images for the character.';
 
   @override
-  String get coverImageEmpty => '표지 이미지가 없습니다';
+  String get coverImageEmpty => 'No cover images';
 
   @override
-  String get coverImageAddButton => '표지 이미지 추가';
+  String get coverImageAddButton => 'Add Cover Image';
 
   @override
   String coverImageDefaultName(int index) {
-    return '표지 $index';
+    return 'Cover $index';
   }
 
   @override
   String coverImageSaveError(String error) {
-    return '이미지 저장 중 오류가 발생했습니다: $error';
+    return 'Failed to save image: $error';
   }
 
   @override
-  String get additionalImageTitle => '추가 이미지';
+  String get additionalImageTitle => 'Extra Images';
 
   @override
-  String get additionalImageTitleHelp => '캐릭터에 관련된 참고 이미지를 추가할 수 있습니다.';
+  String get additionalImageTitleHelp => 'Add reference images related to the character.';
 
   @override
-  String get additionalImageEmpty => '추가 이미지가 없습니다';
+  String get additionalImageEmpty => 'No extra images';
 
   @override
-  String get additionalImageAddButton => '이미지 추가';
+  String get additionalImageAddButton => 'Add Image';
 
   @override
   String additionalImageDefaultName(int index) {
-    return '이미지 $index';
+    return 'Image $index';
   }
 
   @override
   String additionalImageSaveError(String error) {
-    return '이미지 저장 중 오류가 발생했습니다: $error';
+    return 'Failed to save image: $error';
   }
 
   @override
-  String get detailSettingsTitle => '세계관 설정';
+  String get detailSettingsTitle => 'World Setting';
 
   @override
-  String get detailSettingsTitleHelp => '캐릭터가 속한 세계관이나 배경 설정을 자유롭게 작성해주세요.';
+  String get detailSettingsTitleHelp => 'Describe the world or background this character belongs to.';
 
   @override
-  String get detailSettingsHint => '세계관 설정을 입력해주세요.';
+  String get detailSettingsHint => 'Enter world setting details.';
 
   @override
-  String get chatBottomPanelTitle => '뷰어';
+  String get chatBottomPanelTitle => 'Viewer';
 
   @override
-  String get chatBottomPanelFontSize => '글자 크기';
+  String get chatBottomPanelFontSize => 'Font Size';
 
   @override
-  String get chatBottomPanelLineHeight => '줄 간격';
+  String get chatBottomPanelLineHeight => 'Line Height';
 
   @override
-  String get chatBottomPanelParagraphSpacing => '문단 간격';
+  String get chatBottomPanelParagraphSpacing => 'Paragraph Spacing';
 
   @override
-  String get chatBottomPanelParagraphWidth => '문단 너비';
+  String get chatBottomPanelParagraphWidth => 'Paragraph Width';
 
   @override
-  String get chatBottomPanelParagraphAlign => '문단 정렬';
+  String get chatBottomPanelParagraphAlign => 'Text Align';
 
   @override
-  String get chatBottomPanelAlignLeft => '왼쪽';
+  String get chatBottomPanelAlignLeft => 'Left';
 
   @override
-  String get chatBottomPanelAlignJustify => '양쪽';
+  String get chatBottomPanelAlignJustify => 'Justify';
 
   @override
-  String get tutorialStepGoogleAiAccess => 'Google AI Studio 접속';
+  String get tutorialStepGoogleAiAccess => 'Go to Google AI Studio';
 
   @override
-  String get tutorialStepGoogleAiPayment => '결제 계정 생성 (유료 모델 사용 시 필요)';
+  String get tutorialStepGoogleAiPayment => 'Create a billing account (required for paid models)';
 
   @override
-  String get tutorialStepGetApiKey => 'Get API Key 클릭';
+  String get tutorialStepGetApiKey => 'Click Get API Key';
 
   @override
-  String get tutorialStepCreateApiKey => 'Create API Key 선택';
+  String get tutorialStepCreateApiKey => 'Select Create API Key';
 
   @override
-  String get tutorialStepCopyKey => '생성된 키를 복사하여 위에 붙여넣기';
+  String get tutorialStepCopyKey => 'Copy the generated key and paste it above';
 
   @override
-  String get tutorialStepVertexAccess => 'Google Cloud Console 접속';
+  String get tutorialStepVertexAccess => 'Go to Google Cloud Console';
 
   @override
-  String get tutorialStepVertexBilling => '결제 계정 생성 및 프로젝트에 연결';
+  String get tutorialStepVertexBilling => 'Create a billing account and link it to a project';
 
   @override
-  String get tutorialStepVertexServiceAccount => 'IAM → 서비스 계정 → 계정 생성';
+  String get tutorialStepVertexServiceAccount => 'IAM → Service Accounts → Create Account';
 
   @override
-  String get tutorialStepVertexRole => 'Vertex AI User 역할 부여';
+  String get tutorialStepVertexRole => 'Grant the Vertex AI User role';
 
   @override
-  String get tutorialStepVertexCreateKey => '키 만들기 → JSON → 다운로드';
+  String get tutorialStepVertexCreateKey => 'Create Key → JSON → Download';
 
   @override
-  String get tutorialStepOpenaiAccess => 'OpenAI Platform 접속';
+  String get tutorialStepOpenaiAccess => 'Go to OpenAI Platform';
 
   @override
-  String get tutorialStepApiKeysMenu => 'API Keys 메뉴 선택';
+  String get tutorialStepApiKeysMenu => 'Select API Keys menu';
 
   @override
-  String get tutorialStepCreateSecretKey => 'Create new secret key 클릭';
+  String get tutorialStepCreateSecretKey => 'Click Create new secret key';
 
   @override
-  String get tutorialStepAnthropicAccess => 'Anthropic Console 접속';
+  String get tutorialStepAnthropicAccess => 'Go to Anthropic Console';
 
   @override
-  String get tutorialStepAnthropicCreate => 'Create Key 클릭';
+  String get tutorialStepAnthropicCreate => 'Click Create Key';
 
   @override
   String tutorialModelPrice(String inputPrice, String outputPrice) {
-    return '입력 $inputPrice/1M · 출력 $outputPrice/1M';
+    return 'Input $inputPrice/1M · Output $outputPrice/1M';
   }
 
   @override
-  String get legalDocumentKorean => '한국어';
+  String get legalDocumentKorean => 'Korean';
 
   @override
-  String get newsTopicPolitics => '정치';
+  String get newsTopicPolitics => 'Politics';
 
   @override
-  String get newsTopicSociety => '사회';
+  String get newsTopicSociety => 'Society';
 
   @override
-  String get newsTopicEntertainment => '연예';
+  String get newsTopicEntertainment => 'Entertainment';
 
   @override
-  String get newsTopicEconomy => '경제';
+  String get newsTopicEconomy => 'Economy';
 
   @override
-  String get newsTopicCulture => '문화';
+  String get newsTopicCulture => 'Culture';
 
   @override
-  String get toolListCharacters => '캐릭터 목록 조회';
+  String get toolListCharacters => 'List Characters';
 
   @override
-  String get toolGetCharacter => '캐릭터 상세 조회';
+  String get toolGetCharacter => 'Get Character';
 
   @override
-  String get toolCreateCharacter => '캐릭터 생성';
+  String get toolCreateCharacter => 'Create Character';
 
   @override
-  String get toolUpdateCharacter => '캐릭터 수정';
+  String get toolUpdateCharacter => 'Update Character';
 
   @override
-  String get toolCreatePersona => '페르소나 생성';
+  String get toolCreatePersona => 'Create Persona';
 
   @override
-  String get toolUpdatePersona => '페르소나 수정';
+  String get toolUpdatePersona => 'Update Persona';
 
   @override
-  String get toolDeletePersona => '페르소나 삭제';
+  String get toolDeletePersona => 'Delete Persona';
 
   @override
-  String get toolCreateStartScenario => '시작 시나리오 생성';
+  String get toolCreateStartScenario => 'Create Start Scenario';
 
   @override
-  String get toolUpdateStartScenario => '시작 시나리오 수정';
+  String get toolUpdateStartScenario => 'Update Start Scenario';
 
   @override
-  String get toolDeleteStartScenario => '시작 시나리오 삭제';
+  String get toolDeleteStartScenario => 'Delete Start Scenario';
 
   @override
-  String get toolCreateCharacterBook => '캐릭터북 생성';
+  String get toolCreateCharacterBook => 'Create Lorebook Entry';
 
   @override
-  String get toolUpdateCharacterBook => '캐릭터북 수정';
+  String get toolUpdateCharacterBook => 'Update Lorebook Entry';
 
   @override
-  String get toolDeleteCharacterBook => '캐릭터북 삭제';
+  String get toolDeleteCharacterBook => 'Delete Lorebook Entry';
 
   @override
   String apiKeyLoadFailed(String error) {
-    return 'API 키 불러오기 실패: $error';
+    return 'Failed to load API key: $error';
   }
 
   @override
-  String get apiKeyServiceAccountLabel => '(서비스 계정 JSON)';
+  String get apiKeyServiceAccountLabel => '(Service Account JSON)';
 
   @override
-  String get apiKeyValidationFailed => 'API 키 검증 실패';
+  String get apiKeyValidationFailed => 'API key validation failed';
 
   @override
   String apiKeySaved(String apiKeyType) {
-    return '$apiKeyType API 키가 저장되었습니다';
+    return '$apiKeyType API key saved';
   }
 
   @override
-  String get chatPromptEmptyHint => '+ 버튼을 눌러 새 프롬프트를 추가해보세요';
+  String get chatPromptEmptyHint => 'Tap + to add a new prompt';
 
   @override
   String chatPromptItemCount(int count) {
-    return '$count개 항목';
+    return '$count items';
   }
 
   @override
   String customModelSubtitle(String format, int count) {
-    return '$format · $count개 모델';
+    return '$format · $count models';
   }
 
   @override
-  String get agentChatDescription => 'Flan Agent는 캐릭터를 생성하거나 편집할 수 있습니다. 원하는 캐릭터 제작 및 수정을 요청해 보세요.';
+  String get agentChatDescription => 'Flan Agent can create and edit characters. Ask it to build or modify any character you have in mind.';
 
   @override
   String diaryTitle(String author) {
-    return '$author의 일기';
+    return '$author\'s Diary';
   }
 
   @override
-  String get characterCardOutfitLabel => '의상 ';
+  String get characterCardOutfitLabel => 'Outfit ';
 
   @override
-  String get characterCardMemoLabel => '메모 ';
+  String get characterCardMemoLabel => 'Memo ';
 }
