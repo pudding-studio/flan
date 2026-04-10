@@ -44,15 +44,15 @@ class _NewsScreenState extends State<NewsScreen> {
 
   final Set<int> _newArticleIds = {};
 
-  static const _allTopics = ['정치', '사회', '연예', '경제', '문화'];
+  static const _allTopics = ['politics', 'society', 'entertainment', 'economy', 'culture'];
   static const _allTones = ['positive', 'negative', 'neutral'];
 
   static const _topicColors = {
-    '정치': Colors.red,
-    '사회': Colors.blue,
-    '연예': Colors.pink,
-    '경제': Colors.green,
-    '문화': Colors.purple,
+    'politics': Colors.red,
+    'society': Colors.blue,
+    'entertainment': Colors.pink,
+    'economy': Colors.green,
+    'culture': Colors.purple,
   };
 
   @override
@@ -445,11 +445,11 @@ class _NewsScreenState extends State<NewsScreen> {
 
   String _topicDisplayName(String topic, AppLocalizations l10n) {
     switch (topic) {
-      case '정치': return l10n.newsTopicPolitics;
-      case '사회': return l10n.newsTopicSociety;
-      case '연예': return l10n.newsTopicEntertainment;
-      case '경제': return l10n.newsTopicEconomy;
-      case '문화': return l10n.newsTopicCulture;
+      case 'politics': return l10n.newsTopicPolitics;
+      case 'society': return l10n.newsTopicSociety;
+      case 'entertainment': return l10n.newsTopicEntertainment;
+      case 'economy': return l10n.newsTopicEconomy;
+      case 'culture': return l10n.newsTopicCulture;
       default: return topic;
     }
   }

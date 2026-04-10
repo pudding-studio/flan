@@ -24,10 +24,10 @@ class NewsParser {
       latestTime = time;
       articles.add(NewsArticle(
         chatRoomId: chatRoomId,
-        topic: fields['Topic'] ?? '사회',
+        topic: fields['Topic'] ?? 'society',
         tone: fields['Tone'] ?? 'neutral',
-        author: fields['Author'] ?? fields['Auther'] ?? '기자',
-        title: fields['Title'] ?? '(제목 없음)',
+        author: fields['Author'] ?? fields['Auther'] ?? 'reporter',
+        title: fields['Title'] ?? '(No title)',
         time: time,
         content: fields['Content'] ?? '',
         agentEntryId: agentEntryId,
