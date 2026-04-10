@@ -174,11 +174,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           Consumer<LocalizationProvider>(
             builder: (context, l10nProvider, child) {
+              final currentLocale = l10nProvider.aiResponseLocale;
+              final knownValues = {'auto', 'ko', 'en', 'ja'};
+              final isCustom = currentLocale != null &&
+                  !knownValues.contains(currentLocale);
+              final dropdownValue =
+                  isCustom ? 'others' : (currentLocale ?? 'auto');
+
               return _buildListTile(
                 icon: Icons.translate,
                 title: l10n.settingsAiResponseLanguage,
                 trailing: DropdownButton<String>(
-                  value: l10nProvider.aiResponseLocale ?? 'auto',
+                  value: dropdownValue,
                   underline: const SizedBox(),
                   borderRadius: BorderRadius.circular(16),
                   items: [
@@ -191,11 +198,53 @@ class _SettingsScreenState extends State<SettingsScreen> {
                         value: 'en', child: Text(l10n.languageEnglish)),
                     DropdownMenuItem(
                         value: 'ja', child: Text(l10n.languageJapanese)),
+                    DropdownMenuItem(
+                        value: 'others',
+                        child: Text(isCustom
+                            ? currentLocale
+                            : l10n.settingsAiResponseLanguageOthers)),
                   ],
-                  onChanged: (value) {
+                  onChanged: (value) async {
                     if (value == null) return;
-                    l10nProvider
-                        .setAiResponseLocale(value == 'auto' ? null : value);
+                    if (value == 'others') {
+                      final controller = TextEditingController(
+                          text: isCustom ? currentLocale : '');
+                      final result = await showDialog<String>(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          title:
+                              Text(l10n.settingsAiResponseLanguageOthersTitle),
+                          content: TextField(
+                            controller: controller,
+                            decoration: InputDecoration(
+                              labelText:
+                                  l10n.settingsAiResponseLanguageOthersLabel,
+                              hintText:
+                                  l10n.settingsAiResponseLanguageOthersHint,
+                            ),
+                            autofocus: true,
+                            textCapitalization: TextCapitalization.words,
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              child: Text(l10n.commonCancel),
+                            ),
+                            TextButton(
+                              onPressed: () =>
+                                  Navigator.pop(ctx, controller.text.trim()),
+                              child: Text(l10n.commonConfirm),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (result != null && result.isNotEmpty) {
+                        l10nProvider.setAiResponseLocale(result);
+                      }
+                    } else {
+                      l10nProvider.setAiResponseLocale(
+                          value == 'auto' ? null : value);
+                    }
                   },
                 ),
               );

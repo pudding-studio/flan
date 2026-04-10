@@ -125,10 +125,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsLanguageSystem => 'System Default';
 
   @override
-  String get settingsAiResponseLanguage => 'AI Response Language';
+  String get settingsAiResponseLanguage => 'AI Response';
 
   @override
-  String get settingsAiResponseLanguageAuto => 'Same as App Language';
+  String get settingsAiResponseLanguageAuto => 'App Language';
 
   @override
   String get languageKorean => '한국어';
@@ -2651,4 +2651,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get agentEntryTypeEvent => 'Events';
+
+  @override
+  String get settingsAiResponseLanguageOthers => 'Others (custom)';
+
+  @override
+  String get settingsAiResponseLanguageOthersTitle => 'AI Response Language';
+
+  @override
+  String get settingsAiResponseLanguageOthersHint => 'Enter language name (e.g. French)';
+
+  @override
+  String get settingsAiResponseLanguageOthersLabel => 'Language name';
 }

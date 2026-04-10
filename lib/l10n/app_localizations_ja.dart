@@ -2651,4 +2651,16 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get agentEntryTypeEvent => '実績/出来事';
+
+  @override
+  String get settingsAiResponseLanguageOthers => 'その他 (カスタム)';
+
+  @override
+  String get settingsAiResponseLanguageOthersTitle => 'AI応答言語の入力';
+
+  @override
+  String get settingsAiResponseLanguageOthersHint => '言語名を入力 (例: French)';
+
+  @override
+  String get settingsAiResponseLanguageOthersLabel => '言語名';
 }

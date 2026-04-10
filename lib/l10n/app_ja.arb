@@ -1321,5 +1321,10 @@
   "agentEntryTypeCharacter": "登場人物",
   "agentEntryTypeLocation": "地域/場所",
   "agentEntryTypeItem": "アイテム",
-  "agentEntryTypeEvent": "実績/出来事"
+  "agentEntryTypeEvent": "実績/出来事",
+
+  "settingsAiResponseLanguageOthers": "その他 (カスタム)",
+  "settingsAiResponseLanguageOthersTitle": "AI応答言語の入力",
+  "settingsAiResponseLanguageOthersHint": "言語名を入力 (例: French)",
+  "settingsAiResponseLanguageOthersLabel": "言語名"
 }

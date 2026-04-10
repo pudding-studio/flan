@@ -2651,4 +2651,16 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get agentEntryTypeEvent => '업적/사건';
+
+  @override
+  String get settingsAiResponseLanguageOthers => '기타 (직접 입력)';
+
+  @override
+  String get settingsAiResponseLanguageOthersTitle => 'AI 응답 언어 입력';
+
+  @override
+  String get settingsAiResponseLanguageOthersHint => '언어 이름 입력 (예: French)';
+
+  @override
+  String get settingsAiResponseLanguageOthersLabel => '언어 이름';
 }

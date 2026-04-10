@@ -519,6 +519,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
 
     // Stage 1+2: Build frame and apply keyword substitution
+    final outputLanguageKeywords = {'output_language': _outputLanguageName(aiLanguageCode)};
     String rawSystemPrompt = PromptBuilder.buildSystemPrompt(
       chatPrompt: chatPrompt,
       character: _character!,
@@ -531,6 +532,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       conditions: conditions,
       conditionStates: conditionStates,
       agentContext: agentContext,
+      extraKeywords: outputLanguageKeywords,
     );
 
     // Auto-append agent context only when no prompt item consumes the
@@ -587,6 +589,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       conditions: conditions,
       conditionStates: conditionStates,
       agentContext: agentContext,
+      extraKeywords: outputLanguageKeywords,
     );
 
     // Stage 3: Apply sendDataModify to the fully assembled prompt data
@@ -604,6 +607,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     return (systemPrompt: systemPrompt, contents: contents, parameters: chatPrompt?.parameters, regexRules: regexRules);
   }
 
+  /// Maps effectiveAiLanguage code to a human-readable name for {{output_language}}.
+  String _outputLanguageName(String code) {
+    switch (code) {
+      case 'ko': return 'Korean';
+      case 'en': return 'English';
+      case 'ja': return 'Japanese';
+      default: return code; // custom value entered by user (e.g. "French")
+    }
+  }
+
   String _languageInstructionFor(String code) {
     switch (code) {
       case 'ko':
@@ -613,6 +626,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       case 'ja':
         return '[Language] Always respond in Japanese (日本語).';
       default:
+        if (code.isNotEmpty) return '[Language] Always respond in $code.';
         return '';
     }
   }

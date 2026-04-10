@@ -47,8 +47,8 @@ class LocalizationProvider extends ChangeNotifier {
     }
 
     final aiCode = prefs.getString(_aiResponseLocaleKey);
-    if (aiCode != null && _isSupportedCode(aiCode)) {
-      _aiResponseLocale = aiCode;
+    if (aiCode != null && aiCode.isNotEmpty) {
+      _aiResponseLocale = aiCode; // accepts any string, including custom languages
     }
 
     notifyListeners();

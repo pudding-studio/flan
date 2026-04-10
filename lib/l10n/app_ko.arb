@@ -1321,5 +1321,10 @@
   "agentEntryTypeCharacter": "등장인물",
   "agentEntryTypeLocation": "지역/장소",
   "agentEntryTypeItem": "물품",
-  "agentEntryTypeEvent": "업적/사건"
+  "agentEntryTypeEvent": "업적/사건",
+
+  "settingsAiResponseLanguageOthers": "기타 (직접 입력)",
+  "settingsAiResponseLanguageOthersTitle": "AI 응답 언어 입력",
+  "settingsAiResponseLanguageOthersHint": "언어 이름 입력 (예: French)",
+  "settingsAiResponseLanguageOthersLabel": "언어 이름"
 }
