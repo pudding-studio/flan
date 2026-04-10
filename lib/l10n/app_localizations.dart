@@ -169,6 +169,66 @@ abstract class AppLocalizations {
   /// **'복사'**
   String get commonCopy;
 
+  /// No description provided for @commonModify.
+  ///
+  /// In ko, this message translates to:
+  /// **'수정'**
+  String get commonModify;
+
+  /// No description provided for @commonCopyItem.
+  ///
+  /// In ko, this message translates to:
+  /// **'복사하기'**
+  String get commonCopyItem;
+
+  /// No description provided for @commonExport.
+  ///
+  /// In ko, this message translates to:
+  /// **'내보내기'**
+  String get commonExport;
+
+  /// No description provided for @commonReset.
+  ///
+  /// In ko, this message translates to:
+  /// **'초기화'**
+  String get commonReset;
+
+  /// No description provided for @commonDefault.
+  ///
+  /// In ko, this message translates to:
+  /// **'기본'**
+  String get commonDefault;
+
+  /// No description provided for @commonLabelName.
+  ///
+  /// In ko, this message translates to:
+  /// **'이름'**
+  String get commonLabelName;
+
+  /// No description provided for @commonNumberHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'숫자 입력'**
+  String get commonNumberHint;
+
+  /// No description provided for @commonAddItem.
+  ///
+  /// In ko, this message translates to:
+  /// **'항목 추가'**
+  String get commonAddItem;
+
+  /// No description provided for @commonAddFolder.
+  ///
+  /// In ko, this message translates to:
+  /// **'폴더 추가'**
+  String get commonAddFolder;
+
+  /// No description provided for @commonEmptyList.
+  ///
+  /// In ko, this message translates to:
+  /// **'항목이 없습니다'**
+  String get commonEmptyList;
+
   /// No description provided for @commonDeleteConfirmTitle.
   ///
   /// In ko, this message translates to:
@@ -4746,6 +4806,114 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'한국어'**
   String get legalDocumentKorean;
+
+  /// No description provided for @newsTopicPolitics.
+  ///
+  /// In ko, this message translates to:
+  /// **'정치'**
+  String get newsTopicPolitics;
+
+  /// No description provided for @newsTopicSociety.
+  ///
+  /// In ko, this message translates to:
+  /// **'사회'**
+  String get newsTopicSociety;
+
+  /// No description provided for @newsTopicEntertainment.
+  ///
+  /// In ko, this message translates to:
+  /// **'연예'**
+  String get newsTopicEntertainment;
+
+  /// No description provided for @newsTopicEconomy.
+  ///
+  /// In ko, this message translates to:
+  /// **'경제'**
+  String get newsTopicEconomy;
+
+  /// No description provided for @newsTopicCulture.
+  ///
+  /// In ko, this message translates to:
+  /// **'문화'**
+  String get newsTopicCulture;
+
+  /// No description provided for @toolListCharacters.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터 목록 조회'**
+  String get toolListCharacters;
+
+  /// No description provided for @toolGetCharacter.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터 상세 조회'**
+  String get toolGetCharacter;
+
+  /// No description provided for @toolCreateCharacter.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터 생성'**
+  String get toolCreateCharacter;
+
+  /// No description provided for @toolUpdateCharacter.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터 수정'**
+  String get toolUpdateCharacter;
+
+  /// No description provided for @toolCreatePersona.
+  ///
+  /// In ko, this message translates to:
+  /// **'페르소나 생성'**
+  String get toolCreatePersona;
+
+  /// No description provided for @toolUpdatePersona.
+  ///
+  /// In ko, this message translates to:
+  /// **'페르소나 수정'**
+  String get toolUpdatePersona;
+
+  /// No description provided for @toolDeletePersona.
+  ///
+  /// In ko, this message translates to:
+  /// **'페르소나 삭제'**
+  String get toolDeletePersona;
+
+  /// No description provided for @toolCreateStartScenario.
+  ///
+  /// In ko, this message translates to:
+  /// **'시작 시나리오 생성'**
+  String get toolCreateStartScenario;
+
+  /// No description provided for @toolUpdateStartScenario.
+  ///
+  /// In ko, this message translates to:
+  /// **'시작 시나리오 수정'**
+  String get toolUpdateStartScenario;
+
+  /// No description provided for @toolDeleteStartScenario.
+  ///
+  /// In ko, this message translates to:
+  /// **'시작 시나리오 삭제'**
+  String get toolDeleteStartScenario;
+
+  /// No description provided for @toolCreateCharacterBook.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터북 생성'**
+  String get toolCreateCharacterBook;
+
+  /// No description provided for @toolUpdateCharacterBook.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터북 수정'**
+  String get toolUpdateCharacterBook;
+
+  /// No description provided for @toolDeleteCharacterBook.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터북 삭제'**
+  String get toolDeleteCharacterBook;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

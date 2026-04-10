@@ -352,6 +352,7 @@ class _NewsScreenState extends State<NewsScreen> {
   }
 
   Widget _buildArticleCard(NewsArticle article) {
+    final l10n = AppLocalizations.of(context);
     final isNew = article.id != null && _newArticleIds.contains(article.id);
     final topicColor = _topicColors[article.topic] ?? Colors.grey;
 
@@ -384,7 +385,7 @@ class _NewsScreenState extends State<NewsScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                     child: Text(
-                      article.topic,
+                      _topicDisplayName(article.topic, l10n),
                       style: Theme.of(context).textTheme.labelSmall?.copyWith(
                             color: topicColor,
                             fontWeight: FontWeight.bold,
@@ -440,6 +441,17 @@ class _NewsScreenState extends State<NewsScreen> {
         ),
       ),
     );
+  }
+
+  String _topicDisplayName(String topic, AppLocalizations l10n) {
+    switch (topic) {
+      case '정치': return l10n.newsTopicPolitics;
+      case '사회': return l10n.newsTopicSociety;
+      case '연예': return l10n.newsTopicEntertainment;
+      case '경제': return l10n.newsTopicEconomy;
+      case '문화': return l10n.newsTopicCulture;
+      default: return topic;
+    }
   }
 
   String _formatDate(DateTime dt) {

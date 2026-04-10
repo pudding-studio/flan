@@ -15,6 +15,16 @@
   "commonRetry": "재시도",
   "commonClose": "닫기",
   "commonCopy": "복사",
+  "commonModify": "수정",
+  "commonCopyItem": "복사하기",
+  "commonExport": "내보내기",
+  "commonReset": "초기화",
+  "commonDefault": "기본",
+  "commonLabelName": "이름",
+  "commonNumberHint": "숫자 입력",
+  "commonAddItem": "항목 추가",
+  "commonAddFolder": "폴더 추가",
+  "commonEmptyList": "항목이 없습니다",
   "commonDeleteConfirmTitle": "삭제 확인",
   "commonDeleteConfirmContent": "{itemName}을(를) 삭제하시겠습니까?",
 
@@ -907,5 +917,25 @@
     }
   },
 
-  "legalDocumentKorean": "한국어"
+  "legalDocumentKorean": "한국어",
+
+  "newsTopicPolitics": "정치",
+  "newsTopicSociety": "사회",
+  "newsTopicEntertainment": "연예",
+  "newsTopicEconomy": "경제",
+  "newsTopicCulture": "문화",
+
+  "toolListCharacters": "캐릭터 목록 조회",
+  "toolGetCharacter": "캐릭터 상세 조회",
+  "toolCreateCharacter": "캐릭터 생성",
+  "toolUpdateCharacter": "캐릭터 수정",
+  "toolCreatePersona": "페르소나 생성",
+  "toolUpdatePersona": "페르소나 수정",
+  "toolDeletePersona": "페르소나 삭제",
+  "toolCreateStartScenario": "시작 시나리오 생성",
+  "toolUpdateStartScenario": "시작 시나리오 수정",
+  "toolDeleteStartScenario": "시작 시나리오 삭제",
+  "toolCreateCharacterBook": "캐릭터북 생성",
+  "toolUpdateCharacterBook": "캐릭터북 수정",
+  "toolDeleteCharacterBook": "캐릭터북 삭제"
 }

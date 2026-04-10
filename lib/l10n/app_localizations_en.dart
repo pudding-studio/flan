@@ -45,6 +45,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get commonCopy => '복사';
 
   @override
+  String get commonModify => '수정';
+
+  @override
+  String get commonCopyItem => '복사하기';
+
+  @override
+  String get commonExport => '내보내기';
+
+  @override
+  String get commonReset => '초기화';
+
+  @override
+  String get commonDefault => '기본';
+
+  @override
+  String get commonLabelName => '이름';
+
+  @override
+  String get commonNumberHint => '숫자 입력';
+
+  @override
+  String get commonAddItem => '항목 추가';
+
+  @override
+  String get commonAddFolder => '폴더 추가';
+
+  @override
+  String get commonEmptyList => '항목이 없습니다';
+
+  @override
   String get commonDeleteConfirmTitle => '삭제 확인';
 
   @override
@@ -2500,4 +2530,58 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get legalDocumentKorean => '한국어';
+
+  @override
+  String get newsTopicPolitics => '정치';
+
+  @override
+  String get newsTopicSociety => '사회';
+
+  @override
+  String get newsTopicEntertainment => '연예';
+
+  @override
+  String get newsTopicEconomy => '경제';
+
+  @override
+  String get newsTopicCulture => '문화';
+
+  @override
+  String get toolListCharacters => '캐릭터 목록 조회';
+
+  @override
+  String get toolGetCharacter => '캐릭터 상세 조회';
+
+  @override
+  String get toolCreateCharacter => '캐릭터 생성';
+
+  @override
+  String get toolUpdateCharacter => '캐릭터 수정';
+
+  @override
+  String get toolCreatePersona => '페르소나 생성';
+
+  @override
+  String get toolUpdatePersona => '페르소나 수정';
+
+  @override
+  String get toolDeletePersona => '페르소나 삭제';
+
+  @override
+  String get toolCreateStartScenario => '시작 시나리오 생성';
+
+  @override
+  String get toolUpdateStartScenario => '시작 시나리오 수정';
+
+  @override
+  String get toolDeleteStartScenario => '시작 시나리오 삭제';
+
+  @override
+  String get toolCreateCharacterBook => '캐릭터북 생성';
+
+  @override
+  String get toolUpdateCharacterBook => '캐릭터북 수정';
+
+  @override
+  String get toolDeleteCharacterBook => '캐릭터북 삭제';
 }

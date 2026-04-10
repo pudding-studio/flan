@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 
 /// 로그 상세 화면의 정보 행
 class CommonLogInfoRow extends StatelessWidget {
@@ -71,14 +72,14 @@ class CommonLogSectionHeader extends StatelessWidget {
         IconButton(
           icon: const Icon(Icons.copy, size: 20),
           onPressed: onCopy,
-          tooltip: '복사',
+          tooltip: AppLocalizations.of(context).commonCopy,
         ),
         if (showFormatToggle) ...[
           Switch(
             value: formatEnabled,
             onChanged: onFormatChanged,
           ),
-          Text('포맷', style: Theme.of(context).textTheme.bodySmall),
+          Text(AppLocalizations.of(context).logDetailFormatLabel, style: Theme.of(context).textTheme.bodySmall),
         ],
       ],
     );

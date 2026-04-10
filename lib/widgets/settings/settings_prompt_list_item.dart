@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 
 class SettingsPromptListItem extends StatelessWidget {
   final String title;
@@ -30,6 +31,7 @@ class SettingsPromptListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 5.0),
       child: Stack(
@@ -80,7 +82,7 @@ class SettingsPromptListItem extends StatelessWidget {
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
-                                  '기본',
+                                  l10n.commonDefault,
                                   style: Theme.of(context).textTheme.labelSmall?.copyWith(
                                     color: Theme.of(context).colorScheme.onPrimaryContainer,
                                     fontWeight: FontWeight.w600,
@@ -135,22 +137,22 @@ class SettingsPromptListItem extends StatelessWidget {
                   PopupMenuItem<String>(
                       value: 'edit',
                       onTap: onEdit,
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Icon(Icons.edit_outlined, size: 20),
-                          SizedBox(width: 12),
-                          Text('수정'),
+                          const Icon(Icons.edit_outlined, size: 20),
+                          const SizedBox(width: 12),
+                          Text(l10n.commonModify),
                         ],
                       ),
                     ),
                   PopupMenuItem<String>(
                     value: 'copy',
                     onTap: onCopy,
-                    child: const Row(
+                    child: Row(
                       children: [
-                        Icon(Icons.copy_outlined, size: 20),
-                        SizedBox(width: 12),
-                        Text('복사하기'),
+                        const Icon(Icons.copy_outlined, size: 20),
+                        const SizedBox(width: 12),
+                        Text(l10n.commonCopyItem),
                       ],
                     ),
                   ),
@@ -158,22 +160,22 @@ class SettingsPromptListItem extends StatelessWidget {
                     PopupMenuItem<String>(
                       value: 'reset',
                       onTap: onReset,
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Icon(Icons.restart_alt_outlined, size: 20),
-                          SizedBox(width: 12),
-                          Text('초기화'),
+                          const Icon(Icons.restart_alt_outlined, size: 20),
+                          const SizedBox(width: 12),
+                          Text(l10n.commonReset),
                         ],
                       ),
                     ),
                   PopupMenuItem<String>(
                       value: 'export',
                       onTap: onExport,
-                      child: const Row(
+                      child: Row(
                         children: [
-                          Icon(Icons.upload_outlined, size: 20),
-                          SizedBox(width: 12),
-                          Text('내보내기'),
+                          const Icon(Icons.upload_outlined, size: 20),
+                          const SizedBox(width: 12),
+                          Text(l10n.commonExport),
                         ],
                       ),
                     ),
@@ -185,7 +187,7 @@ class SettingsPromptListItem extends StatelessWidget {
                         children: [
                           Icon(Icons.delete_outline, size: 20, color: Theme.of(context).colorScheme.error),
                           const SizedBox(width: 12),
-                          Text('삭제', style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                          Text(l10n.commonDelete, style: TextStyle(color: Theme.of(context).colorScheme.error)),
                         ],
                       ),
                     ),
