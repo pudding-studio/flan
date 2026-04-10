@@ -30,6 +30,8 @@ import '../../models/chat/chat_message_metadata.dart';
 import '../../models/chat/chat_summary.dart';
 import '../../models/chat/chat_model.dart';
 import '../../models/chat/unified_model.dart';
+import '../../models/community/community_comment.dart';
+import '../../models/news/news_article.dart';
 import '../../utils/metadata_parser.dart';
 import '../../widgets/common/common_character_card.dart';
 import '../../widgets/common/common_appbar.dart';
@@ -1360,6 +1362,64 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         await _db.createAutoSummarySettings(autoSummarySettings.copyWith(
           id: null,
           chatRoomId: newChatRoomId,
+        ));
+      }
+
+      // 에이전트 엔트리 복사 (요약/등장인물/장소/물품/사건)
+      final agentIdMap = <int, int>{};
+      final agentEntries = await _db.getAgentEntries(_chatRoom!.id!);
+      for (final entry in agentEntries) {
+        final newId = await _db.createAgentEntry(entry.copyWith(
+          id: null,
+          chatRoomId: newChatRoomId,
+        ));
+        if (entry.id != null) {
+          agentIdMap[entry.id!] = newId;
+        }
+      }
+
+      // SNS(커뮤니티) 게시글 및 댓글 복사
+      final communityPosts = await _db.readCommunityPosts(_chatRoom!.id!);
+      for (final post in communityPosts) {
+        final newPostId = await _db.createCommunityPost(post.copyWith(
+          id: null,
+          chatRoomId: newChatRoomId,
+        ));
+        for (final comment in post.comments) {
+          await _db.createCommunityComment(CommunityComment(
+            postId: newPostId,
+            author: comment.author,
+            time: comment.time,
+            content: comment.content,
+          ));
+        }
+      }
+
+      // 다이어리 복사
+      final diaryEntries = await _db.readDiaryEntries(_chatRoom!.id!);
+      for (final diary in diaryEntries) {
+        await _db.createDiaryEntry(diary.copyWith(
+          id: null,
+          chatRoomId: newChatRoomId,
+        ));
+      }
+
+      // 뉴스 기사 복사 (에이전트 엔트리 ID 매핑 적용)
+      final newsArticles = await _db.readNewsArticles(_chatRoom!.id!);
+      for (final article in newsArticles) {
+        final newAgentEntryId = article.agentEntryId != null
+            ? agentIdMap[article.agentEntryId!]
+            : null;
+        await _db.createNewsArticle(NewsArticle(
+          chatRoomId: newChatRoomId,
+          topic: article.topic,
+          tone: article.tone,
+          author: article.author,
+          title: article.title,
+          time: article.time,
+          content: article.content,
+          createdAt: article.createdAt,
+          agentEntryId: newAgentEntryId,
         ));
       }
 
