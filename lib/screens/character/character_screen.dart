@@ -8,6 +8,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:archive/archive.dart';
+import '../../l10n/app_localizations.dart';
 import '../../widgets/common/common_fab.dart';
 import '../../providers/theme_provider.dart';
 import '../../database/database_helper.dart';
@@ -131,7 +132,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '캐릭터 목록을 불러오는데 실패했습니다: $e',
+          message: AppLocalizations.of(context).characterLoadFailed(e.toString()),
         );
       }
     } finally {
@@ -211,7 +212,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '순서 변경에 실패했습니다: $e',
+          message: AppLocalizations.of(context).characterReorderFailed(e.toString()),
         );
       }
       await _loadCharacters();
@@ -221,11 +222,13 @@ class _CharacterScreenState extends State<CharacterScreen> {
   Future<void> _deleteSelectedCharacters() async {
     if (_selectedCharacterIds.isEmpty) return;
 
+    final l10n = AppLocalizations.of(context);
     final confirm = await CommonDialog.showConfirmation(
       context: context,
-      title: '캐릭터 삭제',
-      content: '선택한 ${_selectedCharacterIds.length}개의 캐릭터를 삭제하시겠습니까? 관련된 모든 데이터가 삭제됩니다.',
-      confirmText: '삭제',
+      title: l10n.characterDeleteSelectedTitle,
+      content:
+          l10n.characterDeleteSelectedContent(_selectedCharacterIds.length),
+      confirmText: l10n.commonDelete,
       isDestructive: true,
     );
 
@@ -242,14 +245,14 @@ class _CharacterScreenState extends State<CharacterScreen> {
         if (mounted) {
           CommonDialog.showSnackBar(
             context: context,
-            message: '선택한 캐릭터가 삭제되었습니다',
+            message: l10n.characterDeletedSelected,
           );
         }
       } catch (e) {
         if (mounted) {
           CommonDialog.showSnackBar(
             context: context,
-            message: '캐릭터 삭제에 실패했습니다: $e',
+            message: l10n.characterDeleteFailed(e.toString()),
           );
         }
       }
@@ -257,9 +260,10 @@ class _CharacterScreenState extends State<CharacterScreen> {
   }
 
   Future<void> _duplicateCharacter(int characterId) async {
+    final l10n = AppLocalizations.of(context);
     try {
       final character = await _db.readCharacter(characterId);
-      if (character == null) throw Exception('캐릭터를 찾을 수 없습니다');
+      if (character == null) throw Exception('Character not found');
 
       final personas = await _db.readPersonas(characterId);
       final startScenarios = await _db.readStartScenarios(characterId);
@@ -313,25 +317,26 @@ class _CharacterScreenState extends State<CharacterScreen> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '캐릭터가 복사되었습니다',
+          message: l10n.characterCopied,
         );
       }
     } catch (e) {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '캐릭터 복사에 실패했습니다: $e',
+          message: l10n.characterCopyFailed(e.toString()),
         );
       }
     }
   }
 
   Future<void> _deleteCharacter(int id) async {
+    final l10n = AppLocalizations.of(context);
     final confirm = await CommonDialog.showConfirmation(
       context: context,
-      title: '캐릭터 삭제',
-      content: '이 캐릭터를 삭제하시겠습니까? 관련된 모든 데이터가 삭제됩니다.',
-      confirmText: '삭제',
+      title: l10n.characterDeleteSelectedTitle,
+      content: l10n.characterDeleteOneContent,
+      confirmText: l10n.commonDelete,
       isDestructive: true,
     );
 
@@ -342,14 +347,14 @@ class _CharacterScreenState extends State<CharacterScreen> {
         if (mounted) {
           CommonDialog.showSnackBar(
             context: context,
-            message: '캐릭터가 삭제되었습니다',
+            message: l10n.characterDeleted,
           );
         }
       } catch (e) {
         if (mounted) {
           CommonDialog.showSnackBar(
             context: context,
-            message: '캐릭터 삭제에 실패했습니다: $e',
+            message: l10n.characterDeleteFailed(e.toString()),
           );
         }
       }
@@ -376,7 +381,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
       await _runExport(characterId, format);
     } catch (e) {
       if (mounted) {
-        CommonDialog.showSnackBar(context: context, message: '내보내기 실패: $e');
+        CommonDialog.showSnackBar(context: context, message: 'Export failed: $e');
       }
     } finally {
       if (mounted) Navigator.pop(context);
@@ -1122,7 +1127,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
         Navigator.pop(context); // dismiss loading
         CommonDialog.showSnackBar(
           context: context,
-          message: '캐릭터를 성공적으로 가져왔습니다',
+          message: AppLocalizations.of(context).characterImportSuccess,
         );
       }
     } catch (e) {
@@ -1130,38 +1135,42 @@ class _CharacterScreenState extends State<CharacterScreen> {
         Navigator.pop(context); // dismiss loading
         CommonDialog.showSnackBar(
           context: context,
-          message: '캐릭터 가져오기 실패: $e',
+          message:
+              AppLocalizations.of(context).characterImportFailed(e.toString()),
         );
       }
     }
   }
 
-  String _getSortMethodLabel() {
+  String _getSortMethodLabel(AppLocalizations l10n) {
+    String body;
     switch (_sortMethod) {
       case SortMethod.nameAsc:
-        return '정렬방식: 캐릭터명 (오름차순)';
+        body = l10n.characterSortNameAsc;
       case SortMethod.nameDesc:
-        return '정렬방식: 캐릭터명 (내림차순)';
+        body = l10n.characterSortNameDesc;
       case SortMethod.updatedAtAsc:
-        return '정렬방식: 수정일시 (오름차순)';
+        body = l10n.characterSortUpdatedAtAsc;
       case SortMethod.updatedAtDesc:
-        return '정렬방식: 수정일시 (내림차순)';
+        body = l10n.characterSortUpdatedAtDesc;
       case SortMethod.createdAtAsc:
-        return '정렬방식: 생성일시 (오름차순)';
+        body = l10n.characterSortCreatedAtAsc;
       case SortMethod.createdAtDesc:
-        return '정렬방식: 생성일시 (내림차순)';
+        body = l10n.characterSortCreatedAtDesc;
       case SortMethod.custom:
-        return '정렬방식: 사용자 지정';
+        body = l10n.characterSortCustom;
     }
+    return l10n.characterSortLabel(body);
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: CommonAppBar(
         title: _isEditMode
-          ? '${_selectedCharacterIds.length}개 선택됨'
-          : '캐릭터',
+          ? l10n.characterSelectedCount(_selectedCharacterIds.length)
+          : l10n.characterTitle,
         showBackButton: false,
         showCloseButton: _isEditMode,
         onClosePressed: _toggleEditMode,
@@ -1192,23 +1201,23 @@ class _CharacterScreenState extends State<CharacterScreen> {
                       );
                       _loadCharacters();
                     },
-                    tooltip: 'Flan Agent',
+                    tooltip: l10n.characterFlanAgentTooltip,
                   ),
           if (!_isEditMode)
             CommonAppBarIconButton(
               icon: Icons.edit_outlined,
               onPressed: _toggleEditMode,
-              tooltip: '편집',
+              tooltip: l10n.commonEdit,
             ),
           if (_isEditMode)
             CommonAppBarIconButton(
               icon: Icons.delete_outline,
               onPressed: _selectedCharacterIds.isEmpty ? null : _deleteSelectedCharacters,
-              tooltip: '삭제',
+              tooltip: l10n.commonDelete,
             ),
           if (!_isEditMode)
             CommonAppBarPopupMenuButton<String>(
-              tooltip: '더보기',
+              tooltip: l10n.commonMore,
               onSelected: (value) {
                 if (value == 'import') {
                   _importCharacter();
@@ -1216,13 +1225,13 @@ class _CharacterScreenState extends State<CharacterScreen> {
               },
               itemBuilder: (BuildContext context) {
               return [
-                const PopupMenuItem<String>(
+                PopupMenuItem<String>(
                   value: 'import',
                   child: Row(
                     children: [
-                      Icon(Icons.download_outlined, size: 20),
-                      SizedBox(width: 12),
-                      Text('가져오기'),
+                      const Icon(Icons.download_outlined, size: 20),
+                      const SizedBox(width: 12),
+                      Text(l10n.characterImport),
                     ],
                   ),
                 ),
@@ -1230,7 +1239,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
                 PopupMenuItem<String>(
                   enabled: false,
                   child: Text(
-                    '보기 방식',
+                    l10n.characterViewMode,
                     style: TextStyle(
                       fontSize: 12,
                       color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
@@ -1253,7 +1262,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
                       else
                         const SizedBox(width: 20),
                       const SizedBox(width: 12),
-                      const Text('격자뷰'),
+                      Text(l10n.characterViewGrid),
                     ],
                   ),
                 ),
@@ -1272,7 +1281,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
                       else
                         const SizedBox(width: 20),
                       const SizedBox(width: 12),
-                      const Text('리스트뷰'),
+                      Text(l10n.characterViewList),
                     ],
                   ),
                 ),
@@ -1280,7 +1289,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
                 PopupMenuItem<String>(
                   enabled: false,
                   child: Text(
-                    '테마 선택',
+                    l10n.characterThemeSelect,
                     style: TextStyle(
                       fontSize: 12,
                       color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
@@ -1306,7 +1315,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
                               else
                                 const SizedBox(width: 20),
                               const SizedBox(width: 12),
-                              const Text('라이트 모드'),
+                              Text(l10n.settingsThemeLight),
                             ],
                           ),
                         ),
@@ -1332,7 +1341,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
                               else
                                 const SizedBox(width: 20),
                               const SizedBox(width: 12),
-                              const Text('다크 모드'),
+                              Text(l10n.settingsThemeDark),
                             ],
                           ),
                         ),
@@ -1358,7 +1367,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
                               else
                                 const SizedBox(width: 20),
                               const SizedBox(width: 12),
-                              const Text('시스템 설정'),
+                              Text(l10n.settingsThemeSystem),
                             ],
                           ),
                         ),
@@ -1403,7 +1412,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
                             else
                               const SizedBox(width: 20),
                             const SizedBox(width: 12),
-                            const Text('캐릭터명 (오름차순)'),
+                            Text(l10n.characterSortNameAsc),
                           ],
                         ),
                       ),
@@ -1416,7 +1425,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
                             else
                               const SizedBox(width: 20),
                             const SizedBox(width: 12),
-                            const Text('캐릭터명 (내림차순)'),
+                            Text(l10n.characterSortNameDesc),
                           ],
                         ),
                       ),
@@ -1429,7 +1438,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
                             else
                               const SizedBox(width: 20),
                             const SizedBox(width: 12),
-                            const Text('수정일시 (오름차순)'),
+                            Text(l10n.characterSortUpdatedAtAsc),
                           ],
                         ),
                       ),
@@ -1442,7 +1451,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
                             else
                               const SizedBox(width: 20),
                             const SizedBox(width: 12),
-                            const Text('수정일시 (내림차순)'),
+                            Text(l10n.characterSortUpdatedAtDesc),
                           ],
                         ),
                       ),
@@ -1455,7 +1464,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
                             else
                               const SizedBox(width: 20),
                             const SizedBox(width: 12),
-                            const Text('생성일시 (오름차순)'),
+                            Text(l10n.characterSortCreatedAtAsc),
                           ],
                         ),
                       ),
@@ -1468,7 +1477,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
                             else
                               const SizedBox(width: 20),
                             const SizedBox(width: 12),
-                            const Text('생성일시 (내림차순)'),
+                            Text(l10n.characterSortCreatedAtDesc),
                           ],
                         ),
                       ),
@@ -1481,7 +1490,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
                             else
                               const SizedBox(width: 20),
                             const SizedBox(width: 12),
-                            const Text('사용자 지정'),
+                            Text(l10n.characterSortCustom),
                           ],
                         ),
                       ),
@@ -1495,7 +1504,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
                     child: Row(
                       children: [
                         Text(
-                          _getSortMethodLabel(),
+                          _getSortMethodLabel(l10n),
                           style: TextStyle(
                             fontSize: 12,
                             color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.6),
@@ -1552,7 +1561,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              '캐릭터가 없습니다',
+              AppLocalizations.of(context).characterEmptyTitle,
               style: TextStyle(
                 fontSize: 16,
                 color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.5),
@@ -1560,7 +1569,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              '+ 버튼을 눌러 새 캐릭터를 추가해보세요',
+              AppLocalizations.of(context).characterEmptySubtitle,
               style: TextStyle(
                 fontSize: 14,
                 color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.4),
@@ -1660,7 +1669,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              '캐릭터가 없습니다',
+              AppLocalizations.of(context).characterEmptyTitle,
               style: TextStyle(
                 fontSize: 16,
                 color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.5),
@@ -1668,7 +1677,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              '+ 버튼을 눌러 새 캐릭터를 추가해보세요',
+              AppLocalizations.of(context).characterEmptySubtitle,
               style: TextStyle(
                 fontSize: 14,
                 color: Theme.of(context).textTheme.bodySmall?.color?.withValues(alpha: 0.4),
@@ -1859,7 +1868,7 @@ class _AgentHighlightButtonState extends State<_AgentHighlightButton>
           ),
           // Tooltip + button
           Tooltip(
-            message: '여기를 눌러 캐릭터를 만들어보세요!',
+            message: AppLocalizations.of(context).characterAgentHighlightTooltip,
             triggerMode: TooltipTriggerMode.manual,
             showDuration: const Duration(seconds: 5),
             child: IconButton(

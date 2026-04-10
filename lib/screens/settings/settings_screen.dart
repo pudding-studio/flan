@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import '../../l10n/app_localizations.dart';
+import '../../providers/localization_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../tutorial/tutorial_screen.dart';
@@ -38,14 +40,15 @@ class _SettingsScreenState extends State<SettingsScreen> {
   }
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: const CommonAppBar(
-        title: '설정',
+      appBar: CommonAppBar(
+        title: l10n.settingsTitle,
         showBackButton: false,
       ),
       body: ListView(
         children: [
-          _buildSectionHeader('일반'),
+          _buildSectionHeader(l10n.settingsSectionGeneral),
           Consumer<ThemeProvider>(
             builder: (context, themeProvider, child) {
               String themeModeValue;
@@ -63,15 +66,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
 
               return _buildListTile(
                 icon: Icons.brightness_6,
-                title: '테마',
+                title: l10n.settingsTheme,
                 trailing: DropdownButton<String>(
                   value: themeModeValue,
                   underline: const SizedBox(),
                   borderRadius: BorderRadius.circular(16),
-                  items: const [
-                    DropdownMenuItem(value: 'system', child: Text('시스템 설정')),
-                    DropdownMenuItem(value: 'light', child: Text('라이트 모드')),
-                    DropdownMenuItem(value: 'dark', child: Text('다크 모드')),
+                  items: [
+                    DropdownMenuItem(
+                        value: 'system', child: Text(l10n.settingsThemeSystem)),
+                    DropdownMenuItem(
+                        value: 'light', child: Text(l10n.settingsThemeLight)),
+                    DropdownMenuItem(
+                        value: 'dark', child: Text(l10n.settingsThemeDark)),
                   ],
                   onChanged: (value) {
                     if (value != null) {
@@ -99,7 +105,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
             builder: (context, themeProvider, child) {
               return _buildListTile(
                 icon: Icons.palette,
-                title: '테마 색상',
+                title: l10n.settingsThemeColor,
                 trailing: DropdownButton<ThemeColor>(
                   value: themeProvider.themeColor,
                   underline: const SizedBox(),
@@ -123,7 +129,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          Text(color.displayName),
+                          Text(_localizedColorName(color, l10n)),
                         ],
                       ),
                     );
@@ -137,11 +143,69 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
             },
           ),
+          Consumer<LocalizationProvider>(
+            builder: (context, l10nProvider, child) {
+              return _buildListTile(
+                icon: Icons.language,
+                title: l10n.settingsLanguage,
+                trailing: DropdownButton<String>(
+                  value: l10nProvider.appLocale?.languageCode ?? 'system',
+                  underline: const SizedBox(),
+                  borderRadius: BorderRadius.circular(16),
+                  items: [
+                    DropdownMenuItem(
+                        value: 'system',
+                        child: Text(l10n.settingsLanguageSystem)),
+                    DropdownMenuItem(
+                        value: 'ko', child: Text(l10n.languageKorean)),
+                    DropdownMenuItem(
+                        value: 'en', child: Text(l10n.languageEnglish)),
+                    DropdownMenuItem(
+                        value: 'ja', child: Text(l10n.languageJapanese)),
+                  ],
+                  onChanged: (value) {
+                    if (value == null) return;
+                    l10nProvider.setAppLocale(
+                        value == 'system' ? null : Locale(value));
+                  },
+                ),
+              );
+            },
+          ),
+          Consumer<LocalizationProvider>(
+            builder: (context, l10nProvider, child) {
+              return _buildListTile(
+                icon: Icons.translate,
+                title: l10n.settingsAiResponseLanguage,
+                trailing: DropdownButton<String>(
+                  value: l10nProvider.aiResponseLocale ?? 'auto',
+                  underline: const SizedBox(),
+                  borderRadius: BorderRadius.circular(16),
+                  items: [
+                    DropdownMenuItem(
+                        value: 'auto',
+                        child: Text(l10n.settingsAiResponseLanguageAuto)),
+                    DropdownMenuItem(
+                        value: 'ko', child: Text(l10n.languageKorean)),
+                    DropdownMenuItem(
+                        value: 'en', child: Text(l10n.languageEnglish)),
+                    DropdownMenuItem(
+                        value: 'ja', child: Text(l10n.languageJapanese)),
+                  ],
+                  onChanged: (value) {
+                    if (value == null) return;
+                    l10nProvider
+                        .setAiResponseLocale(value == 'auto' ? null : value);
+                  },
+                ),
+              );
+            },
+          ),
           const Divider(),
-          _buildSectionHeader('채팅'),
+          _buildSectionHeader(l10n.settingsSectionChat),
           _buildListTile(
             icon: Icons.key,
-            title: 'API 키 등록',
+            title: l10n.settingsApiKey,
             onTap: () {
               Navigator.push(
                 context,
@@ -151,7 +215,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           _buildListTile(
             icon: Icons.psychology,
-            title: '채팅 모델',
+            title: l10n.settingsChatModel,
             onTap: () {
               Navigator.push(
                 context,
@@ -161,7 +225,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           _buildListTile(
             icon: Icons.token,
-            title: '토크나이저',
+            title: l10n.settingsTokenizer,
             onTap: () {
               Navigator.push(
                 context,
@@ -171,7 +235,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           _buildListTile(
             icon: Icons.chat_bubble_outline,
-            title: '채팅 프롬프트',
+            title: l10n.settingsChatPrompt,
             onTap: () {
               Navigator.push(
                 context,
@@ -181,8 +245,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           _buildListTile(
             icon: Icons.auto_awesome,
-            title: '자동 요약',
-            subtitle: '전역 자동 요약 설정',
+            title: l10n.settingsAutoSummary,
+            subtitle: l10n.settingsAutoSummarySubtitle,
             onTap: () {
               Navigator.push(
                 context,
@@ -195,11 +259,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           const Divider(),
-          _buildSectionHeader('데이터'),
+          _buildSectionHeader(l10n.settingsSectionData),
           _buildListTile(
             icon: Icons.backup,
-            title: '백업 및 복구',
-            subtitle: '데이터 내보내기/가져오기',
+            title: l10n.settingsBackup,
+            subtitle: l10n.settingsBackupSubtitle,
             onTap: () {
               Navigator.push(
                 context,
@@ -209,8 +273,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           _buildListTile(
             icon: Icons.bar_chart,
-            title: '통계',
-            subtitle: '날짜별 모델 사용량 및 비용',
+            title: l10n.settingsStatistics,
+            subtitle: l10n.settingsStatisticsSubtitle,
             onTap: () {
               Navigator.push(
                 context,
@@ -221,8 +285,8 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           _buildListTile(
             icon: Icons.article_outlined,
-            title: '로그',
-            subtitle: 'API 요청/응답 로그 확인',
+            title: l10n.settingsLog,
+            subtitle: l10n.settingsLogSubtitle,
             onTap: () {
               Navigator.push(
                 context,
@@ -231,11 +295,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           const Divider(),
-          _buildSectionHeader('기타'),
+          _buildSectionHeader(l10n.settingsSectionEtc),
           _buildListTile(
             icon: Icons.school_outlined,
-            title: '초기 설정 다시 진행',
-            subtitle: 'API 키 등록 및 모델 설정 튜토리얼',
+            title: l10n.settingsTutorial,
+            subtitle: l10n.settingsTutorialSubtitle,
             onTap: () {
               Navigator.push(
                 context,
@@ -248,24 +312,24 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           const Divider(),
-          _buildSectionHeader('정보'),
+          _buildSectionHeader(l10n.settingsSectionInfo),
           _buildListTile(
             icon: Icons.info,
-            title: '앱 정보',
-            subtitle: '버전 $_version',
+            title: l10n.settingsAppInfo,
+            subtitle: l10n.settingsAppInfoSubtitle(_version),
             onTap: () {
-              _showAboutDialog();
+              _showAboutDialog(l10n);
             },
           ),
           _buildListTile(
             icon: Icons.description,
-            title: '이용약관',
+            title: l10n.settingsTermsOfService,
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const LegalDocumentScreen(
-                    title: '이용약관',
+                  builder: (context) => LegalDocumentScreen(
+                    title: l10n.settingsTermsOfService,
                     koreanUrl: 'https://github.com/pudding-studio/Flan_official/wiki/이용약관',
                     englishUrl: 'https://github.com/pudding-studio/Flan_official/wiki/Terms-of-Service',
                   ),
@@ -275,13 +339,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
           ),
           _buildListTile(
             icon: Icons.privacy_tip,
-            title: '개인정보 처리방침',
+            title: l10n.settingsPrivacyPolicy,
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const LegalDocumentScreen(
-                    title: '개인정보 처리방침',
+                  builder: (context) => LegalDocumentScreen(
+                    title: l10n.settingsPrivacyPolicy,
                     koreanUrl: 'https://github.com/pudding-studio/Flan_official/wiki/개인정보처리방침',
                     englishUrl: 'https://github.com/pudding-studio/Flan_official/wiki/Privacy-Policy',
                   ),
@@ -293,6 +357,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
         ],
       ),
     );
+  }
+
+  String _localizedColorName(ThemeColor color, AppLocalizations l10n) {
+    if (color == ThemeColor.orange) return l10n.settingsThemeColorDefault;
+    return color.displayName;
   }
 
   Widget _buildSectionHeader(String title) {
@@ -325,14 +394,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
     );
   }
 
-  void _showAboutDialog() {
+  void _showAboutDialog(AppLocalizations l10n) {
     showAboutDialog(
       context: context,
       applicationName: 'Flan',
       applicationVersion: _version,
       applicationIcon: const Icon(Icons.chat_bubble, size: 48),
       children: [
-        const Text('AI 캐릭터와 대화할 수 있는 앱입니다.'),
+        Text(l10n.settingsAboutDescription),
         const SizedBox(height: 16),
         const Text('© 2026 Flan Team'),
       ],

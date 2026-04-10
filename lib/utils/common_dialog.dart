@@ -1,14 +1,18 @@
 import 'package:flutter/material.dart';
+import '../l10n/app_localizations.dart';
 
 class CommonDialog {
   static Future<bool?> showConfirmation({
     required BuildContext context,
     required String title,
     required String content,
-    String confirmText = '확인',
-    String cancelText = '취소',
+    String? confirmText,
+    String? cancelText,
     bool isDestructive = false,
   }) {
+    final l10n = AppLocalizations.of(context);
+    final resolvedConfirm = confirmText ?? l10n.commonConfirm;
+    final resolvedCancel = cancelText ?? l10n.commonCancel;
     return showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -17,7 +21,7 @@ class CommonDialog {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text(cancelText),
+            child: Text(resolvedCancel),
           ),
           if (isDestructive)
             TextButton(
@@ -25,12 +29,12 @@ class CommonDialog {
               style: TextButton.styleFrom(
                 foregroundColor: Theme.of(context).colorScheme.error,
               ),
-              child: Text(confirmText),
+              child: Text(resolvedConfirm),
             )
           else
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: Text(confirmText),
+              child: Text(resolvedConfirm),
             ),
         ],
       ),
@@ -41,8 +45,10 @@ class CommonDialog {
     required BuildContext context,
     String? title,
     required String content,
-    String confirmText = '확인',
+    String? confirmText,
   }) {
+    final resolvedConfirm =
+        confirmText ?? AppLocalizations.of(context).commonConfirm;
     return showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -52,7 +58,7 @@ class CommonDialog {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: Text(confirmText),
+            child: Text(resolvedConfirm),
           ),
         ],
       ),
@@ -78,12 +84,13 @@ class CommonDialog {
     required BuildContext context,
     required String itemName,
   }) async {
+    final l10n = AppLocalizations.of(context);
     final result = await showConfirmation(
       context: context,
-      title: '삭제 확인',
-      content: '$itemName을(를) 삭제하시겠습니까?',
-      confirmText: '삭제',
-      cancelText: '취소',
+      title: l10n.commonDeleteConfirmTitle,
+      content: l10n.commonDeleteConfirmContent(itemName),
+      confirmText: l10n.commonDelete,
+      cancelText: l10n.commonCancel,
       isDestructive: true,
     );
     return result ?? false;

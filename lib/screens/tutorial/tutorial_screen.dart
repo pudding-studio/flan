@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/chat/chat_model.dart';
 import '../../models/chat/unified_model.dart';
 import '../../providers/chat_model_provider.dart';
@@ -56,8 +57,6 @@ class _ProviderModels {
   final List<ChatModel> subCandidates;
   final ChatModel defaultMain;
   final ChatModel defaultSub;
-  final String mainDescription;
-  final String subDescription;
 
   const _ProviderModels({
     required this.provider,
@@ -65,8 +64,6 @@ class _ProviderModels {
     required this.subCandidates,
     required this.defaultMain,
     required this.defaultSub,
-    required this.mainDescription,
-    required this.subDescription,
   });
 }
 
@@ -85,8 +82,6 @@ final Map<ApiKeyType, _ProviderModels> _providerModelMap = {
     ],
     defaultMain: ChatModel.geminiPro31Preview,
     defaultSub: ChatModel.geminiFlash3Preview,
-    mainDescription: '채팅에 사용되는 모델입니다. Gemini 3.1 Pro 추천',
-    subDescription: '요약, SNS, 뉴스 기능 등에 사용됩니다. Gemini 3 Flash 추천',
   ),
   ApiKeyType.vertexAi: _ProviderModels(
     provider: ChatModelProvider.vertexAi,
@@ -103,8 +98,6 @@ final Map<ApiKeyType, _ProviderModels> _providerModelMap = {
     ],
     defaultMain: ChatModel.vertexGeminiPro31Preview,
     defaultSub: ChatModel.vertexGeminiFlash3Preview,
-    mainDescription: '채팅에 사용되는 모델입니다. Gemini 3.1 Pro 추천',
-    subDescription: '요약, SNS, 뉴스 기능 등에 사용됩니다. Gemini 3 Flash 추천',
   ),
   ApiKeyType.openai: _ProviderModels(
     provider: ChatModelProvider.openai,
@@ -121,8 +114,6 @@ final Map<ApiKeyType, _ProviderModels> _providerModelMap = {
     ],
     defaultMain: ChatModel.gpt54,
     defaultSub: ChatModel.gpt54Mini,
-    mainDescription: '채팅에 사용되는 모델입니다. GPT-5.4 추천',
-    subDescription: '요약, SNS, 뉴스 기능 등에 사용됩니다. GPT-5.4 Mini 추천',
   ),
   ApiKeyType.anthropic: _ProviderModels(
     provider: ChatModelProvider.anthropic,
@@ -140,10 +131,26 @@ final Map<ApiKeyType, _ProviderModels> _providerModelMap = {
     ],
     defaultMain: ChatModel.claudeSonnet46,
     defaultSub: ChatModel.claudeHaiku45,
-    mainDescription: '채팅에 사용되는 모델입니다. Claude Sonnet 4.6 추천',
-    subDescription: '요약, SNS, 뉴스 기능 등에 사용됩니다. Claude Haiku 4.5 추천',
   ),
 };
+
+({String main, String sub}) _providerDescriptions(
+  ApiKeyType type,
+  AppLocalizations l10n,
+) {
+  switch (type) {
+    case ApiKeyType.googleAiStudio:
+    case ApiKeyType.vertexAi:
+      return (main: l10n.tutorialMainDescGemini, sub: l10n.tutorialSubDescGemini);
+    case ApiKeyType.openai:
+      return (main: l10n.tutorialMainDescOpenai, sub: l10n.tutorialSubDescOpenai);
+    case ApiKeyType.anthropic:
+      return (
+        main: l10n.tutorialMainDescAnthropic,
+        sub: l10n.tutorialSubDescAnthropic
+      );
+  }
+}
 
 class TutorialScreen extends StatefulWidget {
   final VoidCallback onComplete;
@@ -224,13 +231,17 @@ class _TutorialScreenState extends State<TutorialScreen> {
   Future<void> _saveApiKey() async {
     final key = _apiKeyController.text.trim();
     if (key.isEmpty) {
-      CommonDialog.showSnackBar(context: context, message: 'API 키를 입력해주세요');
+      CommonDialog.showSnackBar(
+        context: context,
+        message: AppLocalizations.of(context).tutorialApiKeyEmpty,
+      );
       return;
     }
     await _persistKey(key);
   }
 
   Future<void> _pickVertexAiJsonFile() async {
+    final l10n = AppLocalizations.of(context);
     final result = await FilePicker.platform.pickFiles(type: FileType.any);
     if (result == null || result.files.single.path == null) return;
 
@@ -245,7 +256,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
         if (mounted) {
           await CommonDialog.showInfo(
             context: context,
-            title: '서비스 계정 검증 실패',
+            title: l10n.tutorialVertexValidationFailed,
             content: validationError,
           );
         }
@@ -257,7 +268,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: 'JSON 파일 읽기 실패: $e',
+          message: l10n.tutorialJsonReadFailed(e.toString()),
         );
       }
     } finally {
@@ -266,6 +277,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
   }
 
   Future<void> _persistKey(String key) async {
+    final l10n = AppLocalizations.of(context);
     setState(() => _isApiKeySaving = true);
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -286,8 +298,8 @@ class _TutorialScreenState extends State<TutorialScreen> {
           _isApiKeySaving = false;
         });
         final label = _isVertexAi
-            ? 'Vertex AI 서비스 계정이 등록되었습니다'
-            : '${type.displayName} API 키가 저장되었습니다';
+            ? l10n.tutorialVertexSaved
+            : l10n.tutorialApiKeySaved(type.displayName);
         CommonDialog.showSnackBar(context: context, message: label);
       }
     } catch (e) {
@@ -295,7 +307,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
         setState(() => _isApiKeySaving = false);
         CommonDialog.showSnackBar(
           context: context,
-          message: 'API 키 저장 실패: $e',
+          message: l10n.tutorialApiKeySaveFailed(e.toString()),
         );
       }
     }
@@ -317,6 +329,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final l10n = AppLocalizations.of(context);
 
     return Scaffold(
       body: SafeArea(
@@ -354,10 +367,10 @@ class _TutorialScreenState extends State<TutorialScreen> {
                   setState(() => _currentPage = page);
                 },
                 children: [
-                  _buildWelcomePage(theme, colorScheme),
-                  _buildApiKeyPage(theme, colorScheme),
-                  _buildModelSelectionPage(theme, colorScheme),
-                  _buildCompletePage(theme, colorScheme),
+                  _buildWelcomePage(theme, colorScheme, l10n),
+                  _buildApiKeyPage(theme, colorScheme, l10n),
+                  _buildModelSelectionPage(theme, colorScheme, l10n),
+                  _buildCompletePage(theme, colorScheme, l10n),
                 ],
               ),
             ),
@@ -370,18 +383,18 @@ class _TutorialScreenState extends State<TutorialScreen> {
                   if (_currentPage > 0)
                     TextButton(
                       onPressed: _previousPage,
-                      child: const Text('이전'),
+                      child: Text(l10n.tutorialPrevious),
                     ),
                   const Spacer(),
                   if (_currentPage < _totalPages - 1)
                     FilledButton(
                       onPressed: _canProceed() ? _nextPage : null,
-                      child: const Text('다음'),
+                      child: Text(l10n.tutorialNext),
                     ),
                   if (_currentPage == _totalPages - 1)
                     FilledButton(
                       onPressed: _saveModelsAndFinish,
-                      child: const Text('시작하기'),
+                      child: Text(l10n.tutorialStart),
                     ),
                 ],
               ),
@@ -400,7 +413,8 @@ class _TutorialScreenState extends State<TutorialScreen> {
   }
 
   // Page 0: Welcome
-  Widget _buildWelcomePage(ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildWelcomePage(
+      ThemeData theme, ColorScheme colorScheme, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
@@ -413,7 +427,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
           ),
           const SizedBox(height: 32),
           Text(
-            'Flan에 오신 것을 환영합니다',
+            l10n.tutorialWelcomeTitle,
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -421,7 +435,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'AI 캐릭터와 대화하고, 나만의 세계를 만들어보세요.\n간단한 초기 설정을 진행하겠습니다.',
+            l10n.tutorialWelcomeBody,
             style: theme.textTheme.bodyLarge?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
@@ -433,7 +447,8 @@ class _TutorialScreenState extends State<TutorialScreen> {
   }
 
   // Page 1: API Key
-  Widget _buildApiKeyPage(ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildApiKeyPage(
+      ThemeData theme, ColorScheme colorScheme, AppLocalizations l10n) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
       child: Column(
@@ -443,8 +458,9 @@ class _TutorialScreenState extends State<TutorialScreen> {
             theme: theme,
             colorScheme: colorScheme,
             step: 1,
-            title: 'API 키 등록',
-            description: 'AI 모델을 사용하기 위해 API 키가 필요합니다.\n사용할 서비스를 선택하고 키를 등록해주세요.',
+            title: l10n.tutorialApiKeyTitle,
+            description: l10n.tutorialApiKeyDesc,
+            l10n: l10n,
           ),
           const SizedBox(height: 20),
 
@@ -481,7 +497,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
                         });
                       },
                       icon: const Icon(Icons.refresh),
-                      label: const Text('다시 등록'),
+                      label: Text(l10n.tutorialReRegister),
                     )
                   : FilledButton.icon(
                       onPressed: _isApiKeySaving ? null : _pickVertexAiJsonFile,
@@ -493,7 +509,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
                                   CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.upload_file),
-                      label: const Text('서비스 계정 JSON 파일 가져오기'),
+                      label: Text(l10n.tutorialVertexImport),
                     ),
             ),
           ] else ...[
@@ -503,7 +519,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
               obscureText: true,
               enabled: !_apiKeySaved,
               decoration: InputDecoration(
-                hintText: 'API 키를 입력해주세요',
+                hintText: l10n.tutorialApiKeyHint,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -524,7 +540,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
                         });
                       },
                       icon: const Icon(Icons.refresh),
-                      label: const Text('다시 입력'),
+                      label: Text(l10n.tutorialReInput),
                     )
                   : FilledButton.icon(
                       onPressed: _isApiKeySaving ? null : _saveApiKey,
@@ -536,13 +552,13 @@ class _TutorialScreenState extends State<TutorialScreen> {
                                   CircularProgressIndicator(strokeWidth: 2),
                             )
                           : const Icon(Icons.save),
-                      label: const Text('저장'),
+                      label: Text(l10n.commonSave),
                     ),
             ),
           ],
 
           const SizedBox(height: 24),
-          _buildApiKeyHelpCard(theme, colorScheme),
+          _buildApiKeyHelpCard(theme, colorScheme, l10n),
         ],
       ),
     );
@@ -555,13 +571,14 @@ class _TutorialScreenState extends State<TutorialScreen> {
     }
   }
 
-  Widget _buildApiKeyHelpCard(ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildApiKeyHelpCard(
+      ThemeData theme, ColorScheme colorScheme, AppLocalizations l10n) {
     final String helpTitle;
     final List<_HelpStep> steps;
 
     switch (_selectedApiKeyType) {
       case ApiKeyType.googleAiStudio:
-        helpTitle = 'Google AI Studio API 키 발급';
+        helpTitle = l10n.tutorialHelpGoogleAi;
         steps = [
           _HelpStep('Google AI Studio 접속', 'https://aistudio.google.com'),
           const _HelpStep('결제 계정 생성 (유료 모델 사용 시 필요)'),
@@ -570,7 +587,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
           const _HelpStep('생성된 키를 복사하여 위에 붙여넣기'),
         ];
       case ApiKeyType.vertexAi:
-        helpTitle = 'Vertex AI 서비스 계정 설정';
+        helpTitle = l10n.tutorialHelpVertex;
         steps = [
           _HelpStep('Google Cloud Console 접속', 'https://console.cloud.google.com'),
           _HelpStep('결제 계정 생성 및 프로젝트에 연결', 'https://console.cloud.google.com/billing'),
@@ -579,7 +596,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
           const _HelpStep('키 만들기 → JSON → 다운로드'),
         ];
       case ApiKeyType.openai:
-        helpTitle = 'OpenAI API 키 발급';
+        helpTitle = l10n.tutorialHelpOpenai;
         steps = [
           _HelpStep('OpenAI Platform 접속', 'https://platform.openai.com'),
           const _HelpStep('API Keys 메뉴 선택'),
@@ -587,7 +604,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
           const _HelpStep('생성된 키를 복사하여 위에 붙여넣기'),
         ];
       case ApiKeyType.anthropic:
-        helpTitle = 'Anthropic API 키 발급';
+        helpTitle = l10n.tutorialHelpAnthropic;
         steps = [
           _HelpStep('Anthropic Console 접속', 'https://console.anthropic.com'),
           const _HelpStep('API Keys 메뉴 선택'),
@@ -676,8 +693,10 @@ class _TutorialScreenState extends State<TutorialScreen> {
   }
 
   // Page 2: Model selection (main + sub)
-  Widget _buildModelSelectionPage(ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildModelSelectionPage(
+      ThemeData theme, ColorScheme colorScheme, AppLocalizations l10n) {
     final pm = _currentProviderModels;
+    final descriptions = _providerDescriptions(_selectedApiKeyType, l10n);
 
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
@@ -688,8 +707,9 @@ class _TutorialScreenState extends State<TutorialScreen> {
             theme: theme,
             colorScheme: colorScheme,
             step: 2,
-            title: '모델 설정',
-            description: '채팅과 보조 기능에 사용할 AI 모델을 선택해주세요.',
+            title: l10n.tutorialModelTitle,
+            description: l10n.tutorialModelDesc,
+            l10n: l10n,
           ),
           const SizedBox(height: 20),
 
@@ -719,12 +739,12 @@ class _TutorialScreenState extends State<TutorialScreen> {
             children: [
               Icon(Icons.star, size: 20, color: colorScheme.primary),
               const SizedBox(width: 8),
-              Text('주 모델', style: theme.textTheme.titleSmall),
+              Text(l10n.tutorialMainModel, style: theme.textTheme.titleSmall),
             ],
           ),
           const SizedBox(height: 4),
           Text(
-            pm.mainDescription,
+            descriptions.main,
             style: theme.textTheme.bodySmall?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
@@ -737,6 +757,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
                 isSelected: _selectedMainModel == model,
                 recommended: model == pm.defaultMain,
                 onTap: () => setState(() => _selectedMainModel = model),
+                l10n: l10n,
               ))),
 
           const SizedBox(height: 28),
@@ -746,12 +767,12 @@ class _TutorialScreenState extends State<TutorialScreen> {
             children: [
               Icon(Icons.flash_on, size: 20, color: colorScheme.secondary),
               const SizedBox(width: 8),
-              Text('보조 모델', style: theme.textTheme.titleSmall),
+              Text(l10n.tutorialSubModel, style: theme.textTheme.titleSmall),
             ],
           ),
           const SizedBox(height: 4),
           Text(
-            pm.subDescription,
+            descriptions.sub,
             style: theme.textTheme.bodySmall?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
@@ -764,6 +785,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
                 isSelected: _selectedSubModel == model,
                 recommended: model == pm.defaultSub,
                 onTap: () => setState(() => _selectedSubModel = model),
+                l10n: l10n,
               ))),
         ],
       ),
@@ -771,7 +793,8 @@ class _TutorialScreenState extends State<TutorialScreen> {
   }
 
   // Page 3: Complete
-  Widget _buildCompletePage(ThemeData theme, ColorScheme colorScheme) {
+  Widget _buildCompletePage(
+      ThemeData theme, ColorScheme colorScheme, AppLocalizations l10n) {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 32),
       child: Column(
@@ -784,7 +807,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
           ),
           const SizedBox(height: 32),
           Text(
-            '설정이 완료되었습니다!',
+            l10n.tutorialCompleteTitle,
             style: theme.textTheme.headlineSmall?.copyWith(
               fontWeight: FontWeight.bold,
             ),
@@ -792,7 +815,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            '이제 캐릭터를 만들어볼까요?',
+            l10n.tutorialCompleteSubtitle,
             style: theme.textTheme.bodyLarge?.copyWith(
               color: colorScheme.onSurfaceVariant,
             ),
@@ -827,14 +850,14 @@ class _TutorialScreenState extends State<TutorialScreen> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Flan Agent',
+                            l10n.tutorialAgentBoxTitle,
                             style: theme.textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.bold,
                             ),
                           ),
                           const SizedBox(height: 2),
                           Text(
-                            '캐릭터 탭 상단의 빛나는 아이콘을 눌러보세요',
+                            l10n.tutorialAgentBoxSubtitle,
                             style: theme.textTheme.bodySmall?.copyWith(
                               color: colorScheme.onSurfaceVariant,
                             ),
@@ -846,8 +869,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
                 ),
                 const SizedBox(height: 12),
                 Text(
-                  'Agent에게 원하는 캐릭터를 만들어달라고 말해보세요!\n'
-                  '"판타지 세계의 엘프 마법사를 만들어줘" 같이 자유롭게 요청하면 됩니다.',
+                  l10n.tutorialAgentBoxBody,
                   style: theme.textTheme.bodySmall?.copyWith(
                     color: colorScheme.onSurfaceVariant,
                   ),
@@ -866,6 +888,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
     required int step,
     required String title,
     required String description,
+    required AppLocalizations l10n,
   }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -877,7 +900,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
             borderRadius: BorderRadius.circular(12),
           ),
           child: Text(
-            'STEP $step',
+            l10n.tutorialStep(step),
             style: theme.textTheme.labelSmall?.copyWith(
               color: colorScheme.onPrimary,
               fontWeight: FontWeight.bold,
@@ -909,6 +932,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
     required bool isSelected,
     required bool recommended,
     required VoidCallback onTap,
+    required AppLocalizations l10n,
   }) {
     return Padding(
       padding: const EdgeInsets.only(bottom: 8),
@@ -961,7 +985,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
                                 borderRadius: BorderRadius.circular(4),
                               ),
                               child: Text(
-                                '추천',
+                                l10n.tutorialModelRecommended,
                                 style: theme.textTheme.labelSmall?.copyWith(
                                   color: colorScheme.tertiary,
                                   fontSize: 10,

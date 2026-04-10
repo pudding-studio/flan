@@ -3,15 +3,18 @@ import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'firebase_options.dart';
+import 'l10n/app_localizations.dart';
 import 'theme/app_theme.dart';
 import 'screens/character/character_screen.dart';
 import 'screens/chat/chat_screen.dart';
 import 'screens/settings/settings_screen.dart';
 import 'providers/theme_provider.dart';
 import 'providers/chat_model_provider.dart';
+import 'providers/localization_provider.dart';
 import 'providers/tokenizer_provider.dart';
 import 'providers/viewer_settings_provider.dart';
 import 'providers/community_model_provider.dart';
@@ -41,6 +44,7 @@ void main() async {
       MultiProvider(
         providers: [
           ChangeNotifierProvider(create: (_) => ThemeProvider()),
+          ChangeNotifierProvider(create: (_) => LocalizationProvider()),
           ChangeNotifierProvider(create: (_) => ChatModelSettingsProvider()),
           ChangeNotifierProvider(create: (_) => TokenizerProvider()),
           ChangeNotifierProvider(create: (_) => ViewerSettingsProvider()),
@@ -60,8 +64,8 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<ThemeProvider>(
-      builder: (context, themeProvider, child) {
+    return Consumer2<ThemeProvider, LocalizationProvider>(
+      builder: (context, themeProvider, l10nProvider, child) {
         return MaterialApp(
           title: 'Flan',
           debugShowCheckedModeBanner: false,
@@ -74,6 +78,14 @@ class MyApp extends StatelessWidget {
             brightness: Brightness.dark,
           ),
           themeMode: themeProvider.themeMode,
+          locale: l10nProvider.effectiveLocale,
+          supportedLocales: LocalizationProvider.supportedLocales,
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
           home: const MainScreen(),
         );
       },
@@ -129,6 +141,7 @@ class _MainScreenState extends State<MainScreen> {
     if (_tutorialCompleted == false) {
       return TutorialScreen(onComplete: _onTutorialComplete);
     }
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       body: _screens[_currentIndex],
       bottomNavigationBar: Container(
@@ -153,7 +166,7 @@ class _MainScreenState extends State<MainScreen> {
                 offset: const Offset(0, AppTheme.navBarIconOffset),
                 child: const Icon(Icons.person),
               ),
-              label: '캐릭터',
+              label: l10n.navCharacter,
             ),
             NavigationDestination(
               icon: Transform.translate(
@@ -164,7 +177,7 @@ class _MainScreenState extends State<MainScreen> {
                 offset: const Offset(0, AppTheme.navBarIconOffset),
                 child: const Icon(Icons.chat_bubble),
               ),
-              label: '채팅',
+              label: l10n.navChat,
             ),
             NavigationDestination(
               icon: Transform.translate(
@@ -175,7 +188,7 @@ class _MainScreenState extends State<MainScreen> {
                 offset: const Offset(0, AppTheme.navBarIconOffset),
                 child: const Icon(Icons.settings),
               ),
-              label: '설정',
+              label: l10n.navSettings,
             ),
           ],
         ),

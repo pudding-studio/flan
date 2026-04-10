@@ -38,6 +38,7 @@ import '../../widgets/common/common_appbar.dart';
 import '../../widgets/common/common_settings.dart';
 import '../../widgets/common/common_edit_text.dart';
 import '../../providers/chat_model_provider.dart';
+import '../../providers/localization_provider.dart';
 import '../../providers/viewer_settings_provider.dart';
 import 'widgets/chat_bottom_panel.dart';
 import 'widgets/chat_room_drawer.dart';
@@ -351,6 +352,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       return (systemPrompt: '', contents: <Map<String, dynamic>>[], parameters: null, regexRules: <PromptRegexRule>[]);
     }
 
+    // Capture AI response language before any async gaps
+    final aiLanguageCode =
+        context.read<LocalizationProvider>().effectiveAiLanguage;
+
     // Stage 1: Load prompt frame
     ChatPrompt? chatPrompt;
     if (_chatRoom!.selectedChatPromptId != null) {
@@ -584,10 +589,31 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     );
 
     // Stage 3: Apply sendDataModify to the fully assembled prompt data
-    final systemPrompt = RegexProcessor.apply(rawSystemPrompt, regexRules, RegexTarget.sendDataModify);
+    var systemPrompt = RegexProcessor.apply(rawSystemPrompt, regexRules, RegexTarget.sendDataModify);
     final contents = RegexProcessor.applyToContents(rawContents, regexRules, RegexTarget.sendDataModify);
 
+    // Append AI response language instruction (user-selected or app locale)
+    final langInstruction = _languageInstructionFor(aiLanguageCode);
+    if (langInstruction.isNotEmpty) {
+      systemPrompt = systemPrompt.isEmpty
+          ? langInstruction
+          : '$systemPrompt\n\n$langInstruction';
+    }
+
     return (systemPrompt: systemPrompt, contents: contents, parameters: chatPrompt?.parameters, regexRules: regexRules);
+  }
+
+  String _languageInstructionFor(String code) {
+    switch (code) {
+      case 'ko':
+        return '[Language] Always respond in Korean (한국어).';
+      case 'en':
+        return '[Language] Always respond in English.';
+      case 'ja':
+        return '[Language] Always respond in Japanese (日本語).';
+      default:
+        return '';
+    }
   }
 
   Future<Map<PromptItem, List<ChatMessage>>> _buildChatHistoryMap({
