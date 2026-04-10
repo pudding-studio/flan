@@ -52,9 +52,10 @@ class AgentService {
     required String userText,
     required List<ChatMessage> chatHistory,
     required UnifiedModel model,
+    String? languageInstruction,
   }) async {
     final contents = _buildContents(chatHistory, userText);
-    return _executeLoop(contents, model);
+    return _executeLoop(contents, model, languageInstruction: languageInstruction);
   }
 
   List<Map<String, dynamic>> _buildContents(
@@ -81,11 +82,15 @@ class AgentService {
 
   Future<AgentMessage> _executeLoop(
     List<Map<String, dynamic>> contents,
-    UnifiedModel model,
-  ) async {
+    UnifiedModel model, {
+    String? languageInstruction,
+  }) async {
     final allToolResults = <AgentToolResult>[];
     UsageMetadata? lastUsage;
-    final systemPrompt = await buildSystemPrompt();
+    final basePrompt = await buildSystemPrompt();
+    final systemPrompt = (languageInstruction?.isNotEmpty == true)
+        ? '$basePrompt\n\n$languageInstruction'
+        : basePrompt;
 
     for (int i = 0; i < maxToolIterations; i++) {
       final response = await _aiService.sendMessage(

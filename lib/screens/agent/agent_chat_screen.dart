@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../database/database_helper.dart';
+import '../../providers/localization_provider.dart';
 import '../../models/chat/chat_message.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/chat/chat_model.dart';
@@ -125,6 +126,7 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
     if (text.isEmpty && !isRetry) return;
 
     final chatModelProvider = context.read<ChatModelSettingsProvider>();
+    final aiLang = context.read<LocalizationProvider>().effectiveAiLanguage;
     await chatModelProvider.initialized;
     final model = _resolveModel();
 
@@ -160,10 +162,18 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
         await _reloadMessages();
       }
 
+      // aiLang captured before first await
+      final langInstruction = switch (aiLang) {
+        'ko' => '[Language] Always respond in Korean (한국어).',
+        'en' => '[Language] Always respond in English.',
+        'ja' => '[Language] Always respond in Japanese (日本語).',
+        _ => '',
+      };
       final agentMessage = await _agentService.sendMessage(
         userText: userText,
         chatHistory: _messages.take(_messages.length - 1).toList(),
         model: model,
+        languageInstruction: langInstruction.isNotEmpty ? langInstruction : null,
       );
 
       // Save assistant response (strip tool_call blocks for display)
