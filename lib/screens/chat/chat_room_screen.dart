@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
+import '../../l10n/app_localizations.dart';
 import '../../widgets/common/markdown_text.dart';
 import '../../models/chat/chat_room.dart';
 import '../../models/chat/chat_message.dart';
@@ -257,7 +258,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     try {
       final chatRoom = await _db.readChatRoom(widget.chatRoomId);
       if (chatRoom == null) {
-        throw Exception('채팅방을 찾을 수 없습니다');
+        throw Exception('Chat room not found');
       }
 
       final character = await _db.readCharacter(chatRoom.characterId);
@@ -830,7 +831,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       debugPrint('Error sending message: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('메시지 전송 중 오류가 발생했습니다: $e')),
+        SnackBar(content: Text(AppLocalizations.of(context).chatRoomMessageSendFailed(e.toString()))),
       );
     } finally {
       await _finishSending();
@@ -838,9 +839,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   Future<void> _deleteMessage(int messageId) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await CommonDialog.showDeleteConfirmation(
       context: context,
-      itemName: '이 메시지',
+      itemName: l10n.chatRoomMessageItemName,
     );
 
     if (!confirmed) return;
@@ -848,20 +850,20 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     try {
       await _db.deleteChatMessageMetadataByMessage(messageId);
       await _db.deleteChatMessage(messageId);
-      // 채팅방 토큰 합산 업데이트
+      // Update chat room total token count
       await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
       await _loadChatData(showLoading: false);
       if (!mounted) return;
       CommonDialog.showSnackBar(
         context: context,
-        message: '메시지가 삭제되었습니다',
+        message: l10n.chatRoomMessageDeleted,
       );
     } catch (e) {
       debugPrint('Error deleting message: $e');
       if (!mounted) return;
       CommonDialog.showSnackBar(
         context: context,
-        message: '메시지 삭제 중 오류가 발생했습니다',
+        message: l10n.chatRoomMessageDeleteFailed,
       );
     }
   }
@@ -964,14 +966,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       if (!mounted) return;
       CommonDialog.showSnackBar(
         context: context,
-        message: '메시지가 수정되었습니다',
+        message: AppLocalizations.of(context).chatRoomMessageEdited,
       );
     } catch (e) {
       debugPrint('Error editing message: $e');
       if (!mounted) return;
       CommonDialog.showSnackBar(
         context: context,
-        message: '메시지 수정 중 오류가 발생했습니다',
+        message: AppLocalizations.of(context).chatRoomMessageEditFailed,
       );
     }
   }
@@ -1091,7 +1093,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               _buildMenuAppIcon(
                 context,
                 icon: Icons.text_fields,
-                label: '텍스트 설정',
+                label: AppLocalizations.of(context).chatRoomTextSettings,
                 onTap: () {
                   setState(() => _showMorePanel = false);
                   _showViewerSettings();
@@ -1339,7 +1341,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       debugPrint('Error resending message: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('메시지 재전송 중 오류가 발생했습니다: $e')),
+        SnackBar(content: Text(AppLocalizations.of(context).chatRoomMessageRetryFailed(e.toString()))),
       );
     } finally {
       await _finishSending();
@@ -1375,11 +1377,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   Future<void> _createBranch(int messageIndex) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await CommonDialog.showConfirmation(
       context: context,
-      title: '분기 생성',
-      content: '이 메시지까지의 내용으로 새 분기점을 생성하시겠습니까?',
-      confirmText: '생성',
+      title: l10n.chatRoomBranchTitle,
+      content: l10n.chatRoomBranchContent,
+      confirmText: l10n.chatRoomBranchConfirm,
     );
 
     if (confirmed != true) return;
@@ -1538,10 +1541,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       CommonDialog.showSnackBar(
         context: context,
-        message: '분기가 생성되었습니다',
+        message: l10n.chatRoomBranchCreated,
       );
 
-      // 새 채팅방으로 이동
+      // Navigate to new chat room
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -1553,7 +1556,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       if (!mounted) return;
       CommonDialog.showSnackBar(
         context: context,
-        message: '분기 생성 중 오류가 발생했습니다',
+        message: l10n.chatRoomBranchFailed,
       );
     }
   }
@@ -1643,7 +1646,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       debugPrint('Error regenerating message: $e');
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('메시지 재생성 중 오류가 발생했습니다: $e')),
+        SnackBar(content: Text(AppLocalizations.of(context).chatRoomMessageRegenerateFailed(e.toString()))),
       );
     } finally {
       await _finishSending();
@@ -1701,11 +1704,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   Widget _buildWarningCard() {
+    final l10n = AppLocalizations.of(context);
     return CommonSettingsInfoCard(
       icon: Icons.warning_amber_rounded,
       iconColor: Theme.of(context).colorScheme.error,
-      title: '주의',
-      description: '모든 AI 응답은 자동 생성되며, 편향적이거나 부정확할 수 있습니다.',
+      title: l10n.chatRoomWarningTitle,
+      description: l10n.chatRoomWarningDesc,
     );
   }
 
@@ -1727,7 +1731,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   Widget _buildStartSettingCard() {
     return CommonSettingsInfoCard(
       icon: Icons.settings_outlined,
-      title: '시작 설정',
+      title: AppLocalizations.of(context).chatRoomStartSetting,
       description: _replaceStartTextKeywords(_startScenario!.startSetting!),
     );
   }
@@ -1748,11 +1752,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   void _showUsageMetadataDialog(ChatMessage message) {
+    final l10n = AppLocalizations.of(context);
     final metadata = message.usageMetadata;
     if (metadata == null) {
       CommonDialog.showSnackBar(
         context: context,
-        message: '통계 정보가 없습니다',
+        message: l10n.chatRoomNoStats,
       );
       return;
     }
@@ -1772,37 +1777,37 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('응답 통계'),
+        title: Text(l10n.chatRoomStatsTitle),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             if (model != null)
-              _buildStatRow('모델', model.displayName),
+              _buildStatRow(l10n.chatRoomStatModel, model.displayName),
             if (model != null) const Divider(),
-            _buildStatRow('입력 토큰', '${metadata.promptTokenCount}'),
+            _buildStatRow(l10n.chatRoomStatInputTokens, '${metadata.promptTokenCount}'),
             if (metadata.cachedContentTokenCount != null) ...[
-              _buildStatRow('캐시 토큰', '${metadata.cachedContentTokenCount}'),
-              _buildStatRow('캐시 비율', '${(metadata.cacheRatio * 100).toStringAsFixed(1)}%'),
+              _buildStatRow(l10n.chatRoomStatCachedTokens, '${metadata.cachedContentTokenCount}'),
+              _buildStatRow(l10n.chatRoomStatCacheRatio, '${(metadata.cacheRatio * 100).toStringAsFixed(1)}%'),
             ],
             const Divider(),
-            _buildStatRow('출력 토큰', '${metadata.candidatesTokenCount}'),
+            _buildStatRow(l10n.chatRoomStatOutputTokens, '${metadata.candidatesTokenCount}'),
             if (metadata.thoughtsTokenCount != null) ...[
-              _buildStatRow('생각 토큰', '${metadata.thoughtsTokenCount}'),
-              _buildStatRow('생각 비율', '${(metadata.thoughtsRatio * 100).toStringAsFixed(1)}%'),
+              _buildStatRow(l10n.chatRoomStatThoughtTokens, '${metadata.thoughtsTokenCount}'),
+              _buildStatRow(l10n.chatRoomStatThoughtRatio, '${(metadata.thoughtsRatio * 100).toStringAsFixed(1)}%'),
             ],
             const Divider(),
-            _buildStatRow('총 토큰', '${metadata.totalTokenCount}'),
+            _buildStatRow(l10n.chatRoomStatTotalTokens, '${metadata.totalTokenCount}'),
             if (cost != null) ...[
               const Divider(),
-              _buildStatRow('예상 비용', '\$${cost.toStringAsFixed(6)}'),
+              _buildStatRow(l10n.chatRoomStatEstimatedCost, '\$${cost.toStringAsFixed(6)}'),
             ],
           ],
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('닫기'),
+            child: Text(l10n.commonClose),
           ),
         ],
       ),
@@ -1824,9 +1829,19 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     );
   }
 
-  static const _dayNames = ['월', '화', '수', '목', '금', '토', '일'];
+  List<String> _localizedDayNames(AppLocalizations l10n) => [
+        l10n.chatRoomDayMon,
+        l10n.chatRoomDayTue,
+        l10n.chatRoomDayWed,
+        l10n.chatRoomDayThu,
+        l10n.chatRoomDayFri,
+        l10n.chatRoomDaySat,
+        l10n.chatRoomDaySun,
+      ];
 
   String _formatMetadataDateTime(String? date, String? time) {
+    final l10n = AppLocalizations.of(context);
+    final dayNames = _localizedDayNames(l10n);
     final parts = <String>[];
     if (date != null) {
       final segments = date.split('.');
@@ -1836,7 +1851,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         final day = int.tryParse(segments[2]);
         if (year != null && month != null && day != null) {
           final dt = DateTime(year, month, day);
-          final dayName = _dayNames[dt.weekday - 1];
+          final dayName = dayNames[dt.weekday - 1];
           parts.add('$date($dayName)');
         } else {
           parts.add(date);
@@ -1850,7 +1865,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       if (timeParts.length == 2) {
         final hour = int.tryParse(timeParts[0]);
         if (hour != null) {
-          final period = (hour >= 6 && hour < 18) ? '낮' : '밤';
+          final period = (hour >= 6 && hour < 18) ? l10n.chatRoomDay : l10n.chatRoomNight;
           parts.add('$time($period)');
         } else {
           parts.add(time);
@@ -2107,6 +2122,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(),
@@ -2119,8 +2135,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     if (_chatRoom == null || _character == null) {
       return Scaffold(
         appBar: AppBar(),
-        body: const Center(
-          child: Text('채팅방을 불러올 수 없습니다'),
+        body: Center(
+          child: Text(l10n.chatRoomCannotLoad),
         ),
       );
     }
@@ -2169,8 +2185,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     child: TextField(
                       controller: _searchController,
                       focusNode: _searchFocusNode,
-                      decoration: const InputDecoration(
-                        hintText: '메시지 검색...',
+                      decoration: InputDecoration(
+                        hintText: l10n.chatRoomMessageSearch,
                         border: InputBorder.none,
                       ),
                       onChanged: _performSearch,
@@ -2227,7 +2243,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 CommonAppBarIconButton(
                   icon: Icons.search,
                   onPressed: _toggleSearch,
-                  tooltip: '검색',
+                  tooltip: l10n.chatRoomSearchTooltip,
                   offsetX: 20.0,
                 ),
               ],
@@ -2288,7 +2304,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 Text(
-                                  '새로운 메시지',
+                                  l10n.chatRoomNewMessages,
                                   style: TextStyle(
                                     color: Theme.of(context).colorScheme.onPrimary,
                                     fontSize: 14,
@@ -2380,14 +2396,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                         focusNode: _messageFocusNode,
                         enabled: !_isSending,
                         hintText: _sendingPhase == SendingPhase.preparing
-                            ? '메시지 생성 중...'
+                            ? l10n.chatRoomGenerating
                             : _sendingPhase == SendingPhase.waiting
                                 ? _retryAttempt > 0
-                                    ? '재전송 중($_retryAttempt)...'
-                                    : '응답 대기 중...'
+                                    ? l10n.chatRoomRetrying(_retryAttempt)
+                                    : l10n.chatRoomWaiting
                                 : _sendingPhase == SendingPhase.summarizing
-                                    ? '요약 중...'
-                                    : '메시지를 입력하세요',
+                                    ? l10n.chatRoomSummarizing
+                                    : l10n.chatRoomMessageHint,
                         minLines: 1,
                         maxLines: 5,
                         textInputAction: TextInputAction.newline,

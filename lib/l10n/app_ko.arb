@@ -254,5 +254,295 @@
   "tutorialHelpGoogleAi": "Google AI Studio API 키 발급",
   "tutorialHelpVertex": "Vertex AI 서비스 계정 설정",
   "tutorialHelpOpenai": "OpenAI API 키 발급",
-  "tutorialHelpAnthropic": "Anthropic API 키 발급"
+  "tutorialHelpAnthropic": "Anthropic API 키 발급",
+
+  "drawerTabInfo": "기본 정보",
+  "drawerTabPersona": "페르소나",
+  "drawerTabCharacter": "캐릭터 정보",
+  "drawerTabLorebook": "설정집",
+  "drawerTabSummary": "요약",
+  "drawerChatMemo": "채팅 메모",
+  "drawerMemoHint": "메모를 입력하세요",
+  "drawerChatSettings": "채팅창 설정",
+  "drawerModelPreset": "모델설정",
+  "drawerProvider": "제조사",
+  "drawerChatModel": "채팅 모델",
+  "drawerChatPrompt": "채팅 프롬프트",
+  "drawerNone": "없음",
+  "drawerPromptPreset": "프롬프트 프리셋",
+  "drawerShowImages": "이미지 보기",
+  "drawerNoName": "이름 없음",
+  "drawerSelectItem": "항목을 선택하세요",
+  "drawerOther": "기타",
+  "drawerEnterValue": "값을 입력하세요",
+  "drawerSelectPersona": "페르소나 선택",
+  "drawerCreateNewPersona": "+ 새 페르소나 생성",
+  "drawerNewPersona": "새 페르소나",
+  "drawerPersonaName": "페르소나 이름",
+  "drawerPersonaDescription": "페르소나 설명",
+  "drawerPersonaDescriptionHint": "페르소나 설명을 입력하세요",
+  "drawerCharacter": "캐릭터",
+  "drawerCharacterDescriptionHint": "캐릭터 설정을 입력하세요",
+  "drawerLorebookEmpty": "설정집 항목이 없습니다",
+  "drawerBookNameHint": "설정 이름",
+  "drawerBookActivationCondition": "활성화 조건",
+  "drawerBookSecondaryKey": "두번째 키",
+  "drawerBookActivationKey": "활성화 키",
+  "drawerBookKeysHint": "쉼표로 구분하여 입력",
+  "drawerBookSecondaryKeysHint": "쉼표로 구분하여 입력 (예: 마법, 전투)",
+  "drawerBookInsertionOrder": "배치 순서",
+  "drawerBookContent": "내용",
+  "drawerBookContentHint": "설정 내용을 입력해주세요",
+  "drawerAutoSummary": "자동 요약",
+  "drawerAgentMode": "에이전트 모드",
+  "drawerSummaryMessageCount": "요약 메시지 수",
+  "drawerMessageCountHint": "메시지 수",
+  "drawerAutoSummaryList": "자동 요약 목록",
+  "drawerSummaryCount": "{count}개",
+  "@drawerSummaryCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "drawerNoSummaries": "자동 요약이 없습니다.\n설정에서 자동 요약을 활성화하세요.",
+  "drawerSummaryContentHint": "요약 내용",
+  "drawerGenerating": "생성 중...",
+  "drawerRegenerate": "재생성",
+  "drawerActive": "활성",
+  "drawerInactive": "비활성",
+  "drawerNameLabel": "이름",
+  "drawerNameHint": "이름",
+  "drawerAddSummaryButton": "현재 메시지 기준 요약 추가",
+  "drawerNoMessages": "메시지가 없습니다",
+  "drawerNoNewMessages": "요약할 새 메시지가 없습니다",
+  "drawerSummaryAdded": "요약이 추가되었습니다. 내용을 입력해주세요.",
+  "drawerSummaryAddFailed": "요약 추가 중 오류가 발생했습니다: {error}",
+  "@drawerSummaryAddFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "drawerSummaryRegenerated": "요약이 재생성되었습니다",
+  "drawerSummaryRegenerateFailed": "요약 재생성 중 오류가 발생했습니다: {error}",
+  "@drawerSummaryRegenerateFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "drawerSummaryItemName": "이 요약",
+  "drawerSummaryDeleted": "요약이 삭제되었습니다",
+  "drawerSummaryDeleteFailed": "요약 삭제 중 오류가 발생했습니다: {error}",
+  "@drawerSummaryDeleteFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "drawerAgentEntryEmpty": "{type} 데이터가 없습니다.\n채팅을 진행하면 자동으로 생성됩니다.",
+  "@drawerAgentEntryEmpty": {
+    "placeholders": {
+      "type": { "type": "String" }
+    }
+  },
+  "drawerAgentEntrySaved": "{name} 저장됨",
+  "@drawerAgentEntrySaved": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+  "drawerAgentEntryDeleted": "{name} 삭제됨",
+  "@drawerAgentEntryDeleted": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  },
+
+  "agentFieldDateRange": "날짜/시간",
+  "agentFieldCharacters": "등장인물",
+  "agentFieldCharactersList": "등장인물 (쉼표 구분)",
+  "agentFieldLocations": "장소",
+  "agentFieldLocationsList": "장소 (쉼표 구분)",
+  "agentFieldSummary": "요약",
+  "agentFieldAppearance": "외형",
+  "agentFieldPersonality": "성격",
+  "agentFieldPast": "과거",
+  "agentFieldAbilities": "능력",
+  "agentFieldStoryActions": "작중행적",
+  "agentFieldDialogueStyle": "대사 스타일",
+  "agentFieldPossessions": "소지품",
+  "agentFieldPossessionsList": "소지품 (쉼표 구분)",
+  "agentFieldParentLocation": "위치",
+  "agentFieldFeatures": "특징",
+  "agentFieldAsciiMap": "맵",
+  "agentFieldRelatedEpisodes": "관련 에피소드",
+  "agentFieldRelatedEpisodesList": "관련 에피소드 (쉼표 구분)",
+  "agentFieldKeywords": "키워드",
+  "agentFieldDatetime": "일시",
+  "agentFieldOverview": "개요",
+  "agentFieldResult": "결과",
+
+  "chatRoomNotFound": "채팅방을 찾을 수 없습니다",
+  "chatRoomCannotLoad": "채팅방을 불러올 수 없습니다",
+  "chatRoomMessageSendFailed": "메시지 전송 중 오류가 발생했습니다: {error}",
+  "@chatRoomMessageSendFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "chatRoomMessageItemName": "이 메시지",
+  "chatRoomMessageDeleted": "메시지가 삭제되었습니다",
+  "chatRoomMessageDeleteFailed": "메시지 삭제 중 오류가 발생했습니다",
+  "chatRoomMessageEdited": "메시지가 수정되었습니다",
+  "chatRoomMessageEditFailed": "메시지 수정 중 오류가 발생했습니다",
+  "chatRoomMessageRetryFailed": "메시지 재전송 중 오류가 발생했습니다: {error}",
+  "@chatRoomMessageRetryFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "chatRoomMessageRegenerateFailed": "메시지 재생성 중 오류가 발생했습니다: {error}",
+  "@chatRoomMessageRegenerateFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "chatRoomTextSettings": "텍스트 설정",
+  "chatRoomBranchTitle": "분기 생성",
+  "chatRoomBranchContent": "이 메시지까지의 내용으로 새 분기점을 생성하시겠습니까?",
+  "chatRoomBranchConfirm": "생성",
+  "chatRoomBranchCreated": "분기가 생성되었습니다",
+  "chatRoomBranchFailed": "분기 생성 중 오류가 발생했습니다",
+  "chatRoomWarningTitle": "주의",
+  "chatRoomWarningDesc": "모든 AI 응답은 자동 생성되며, 편향적이거나 부정확할 수 있습니다.",
+  "chatRoomStartSetting": "시작 설정",
+  "chatRoomNoStats": "통계 정보가 없습니다",
+  "chatRoomStatsTitle": "응답 통계",
+  "chatRoomStatModel": "모델",
+  "chatRoomStatInputTokens": "입력 토큰",
+  "chatRoomStatCachedTokens": "캐시 토큰",
+  "chatRoomStatCacheRatio": "캐시 비율",
+  "chatRoomStatOutputTokens": "출력 토큰",
+  "chatRoomStatThoughtTokens": "생각 토큰",
+  "chatRoomStatThoughtRatio": "생각 비율",
+  "chatRoomStatTotalTokens": "총 토큰",
+  "chatRoomStatEstimatedCost": "예상 비용",
+  "chatRoomMessageSearch": "메시지 검색...",
+  "chatRoomSearchTooltip": "검색",
+  "chatRoomNewMessages": "새로운 메시지",
+  "chatRoomGenerating": "메시지 생성 중...",
+  "chatRoomRetrying": "재전송 중({attempt})...",
+  "@chatRoomRetrying": {
+    "placeholders": {
+      "attempt": { "type": "int" }
+    }
+  },
+  "chatRoomWaiting": "응답 대기 중...",
+  "chatRoomSummarizing": "요약 중...",
+  "chatRoomMessageHint": "메시지를 입력하세요",
+  "chatRoomDayMon": "월",
+  "chatRoomDayTue": "화",
+  "chatRoomDayWed": "수",
+  "chatRoomDayThu": "목",
+  "chatRoomDayFri": "금",
+  "chatRoomDaySat": "토",
+  "chatRoomDaySun": "일",
+  "chatRoomDay": "낮",
+  "chatRoomNight": "밤",
+
+  "characterEditDataLoadFailed": "데이터 로드 실패: {error}",
+  "@characterEditDataLoadFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "characterEditDraftFoundTitle": "작성 중인 데이터 발견",
+  "characterEditDraftFoundContent": "저장되지 않은 작성 중인 데이터가 있습니다.\n마지막 작성 시간: {timestamp}\n\n불러오시겠습니까?",
+  "@characterEditDraftFoundContent": {
+    "placeholders": {
+      "timestamp": { "type": "String" }
+    }
+  },
+  "characterEditDraftLoad": "불러오기",
+  "characterEditJustNow": "방금 전",
+  "characterEditMinutesAgo": "{minutes}분 전",
+  "@characterEditMinutesAgo": {
+    "placeholders": {
+      "minutes": { "type": "int" }
+    }
+  },
+  "characterEditHoursAgo": "{hours}시간 전",
+  "@characterEditHoursAgo": {
+    "placeholders": {
+      "hours": { "type": "int" }
+    }
+  },
+  "characterEditDaysAgo": "{days}일 전",
+  "@characterEditDaysAgo": {
+    "placeholders": {
+      "days": { "type": "int" }
+    }
+  },
+  "characterEditNameRequired": "캐릭터 이름을 입력해주세요",
+  "characterEditCreated": "캐릭터가 생성되었습니다",
+  "characterEditUpdated": "캐릭터가 수정되었습니다",
+  "characterEditSaveFailed": "저장 실패: {error}",
+  "@characterEditSaveFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "characterEditTitleNew": "캐릭터 만들기",
+  "characterEditTitleEdit": "캐릭터 수정",
+  "characterEditTabProfile": "프로필",
+  "characterEditTabCharacter": "캐릭터설정",
+  "characterEditTabLorebook": "설정집",
+  "characterEditTabPersona": "페르소나",
+  "characterEditTabStartSetting": "시작설정",
+  "characterEditTabCoverImage": "표지이미지",
+  "characterEditTabAdditionalImage": "추가이미지",
+  "characterEditSnsHelp": "캐릭터의 SNS 게시판 설정을 구성합니다.",
+  "characterEditSnsBoardHint": "예: 자유게시판, 모험가 광장 등",
+  "characterEditSnsToneHint": "예: 유머러스하고 친근한 분위기",
+  "characterEditSnsLanguageHint": "사용자 언어 (현재는 한국어만 지원)",
+  "characterEditNameLabel": "이름",
+  "characterEditNameHelpText": "캐릭터의 고유한 이름을 입력해주세요.",
+  "characterEditNameHintText": "캐릭터의 이름을 입력해주세요.",
+  "characterEditNicknameLabel": "닉네임",
+  "characterEditNicknameHelp": "프롬프트에서 char 변수 대신 사용할 호칭입니다. 비워두면 이름이 사용됩니다.",
+  "characterEditNicknameHint": "캐릭터의 닉네임을 입력해주세요.",
+  "characterEditTaglineLabel": "한 줄 소개",
+  "characterEditTaglineHelp": "캐릭터를 간단히 설명하는 한 문장을 작성해주세요.",
+  "characterEditTaglineHint": "어떤 캐릭터인지 설명할 수 있는 간단한 소개를 입력해주세요.",
+  "characterEditKeywordsLabel": "키워드",
+  "characterEditKeywordsHelp": "캐릭터를 나타내는 키워드를 쉼표(,)로 구분하여 입력해주세요.",
+  "characterEditKeywordsHint": "키워드 입력 예시: 판타지, 남자",
+  "characterEditWorldSetting": "세계관 설정",
+  "characterEditWorldSettingHelp": "캐릭터가 속한 세계관이나 배경 설정을 자유롭게 작성해주세요.",
+  "characterEditWorldSettingHint": "세계관 설정을 입력해주세요.",
+
+  "characterExportFormatTitle": "내보내기 형식 선택",
+  "characterExportFlanFormat": "Flan 형식",
+  "characterExportFlanSubtitle": "앱 전용 JSON (이미지 포함)",
+  "characterExportV2Card": "캐릭터카드 v2",
+  "characterExportV2Subtitle": "PNG — 일부 데이터 잘릴 수 있음",
+  "characterExportV3Card": "캐릭터카드 v3",
+  "characterExportSuccessAndroid": "내보내기 완료: /storage/emulated/0/Download/{fileName}",
+  "@characterExportSuccessAndroid": {
+    "placeholders": {
+      "fileName": { "type": "String" }
+    }
+  },
+  "characterExportSuccessIos": "내보내기 완료: {path}",
+  "@characterExportSuccessIos": {
+    "placeholders": {
+      "path": { "type": "String" }
+    }
+  },
+  "characterExportSaveFailed": "파일 저장에 실패했습니다",
+  "characterCoverDefault": "표지 1",
+  "characterCopyName": "{name} (복사본)",
+  "@characterCopyName": {
+    "placeholders": {
+      "name": { "type": "String" }
+    }
+  }
 }

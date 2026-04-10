@@ -960,6 +960,1116 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'Anthropic API 키 발급'**
   String get tutorialHelpAnthropic;
+
+  /// No description provided for @drawerTabInfo.
+  ///
+  /// In ko, this message translates to:
+  /// **'기본 정보'**
+  String get drawerTabInfo;
+
+  /// No description provided for @drawerTabPersona.
+  ///
+  /// In ko, this message translates to:
+  /// **'페르소나'**
+  String get drawerTabPersona;
+
+  /// No description provided for @drawerTabCharacter.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터 정보'**
+  String get drawerTabCharacter;
+
+  /// No description provided for @drawerTabLorebook.
+  ///
+  /// In ko, this message translates to:
+  /// **'설정집'**
+  String get drawerTabLorebook;
+
+  /// No description provided for @drawerTabSummary.
+  ///
+  /// In ko, this message translates to:
+  /// **'요약'**
+  String get drawerTabSummary;
+
+  /// No description provided for @drawerChatMemo.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅 메모'**
+  String get drawerChatMemo;
+
+  /// No description provided for @drawerMemoHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'메모를 입력하세요'**
+  String get drawerMemoHint;
+
+  /// No description provided for @drawerChatSettings.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅창 설정'**
+  String get drawerChatSettings;
+
+  /// No description provided for @drawerModelPreset.
+  ///
+  /// In ko, this message translates to:
+  /// **'모델설정'**
+  String get drawerModelPreset;
+
+  /// No description provided for @drawerProvider.
+  ///
+  /// In ko, this message translates to:
+  /// **'제조사'**
+  String get drawerProvider;
+
+  /// No description provided for @drawerChatModel.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅 모델'**
+  String get drawerChatModel;
+
+  /// No description provided for @drawerChatPrompt.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅 프롬프트'**
+  String get drawerChatPrompt;
+
+  /// No description provided for @drawerNone.
+  ///
+  /// In ko, this message translates to:
+  /// **'없음'**
+  String get drawerNone;
+
+  /// No description provided for @drawerPromptPreset.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트 프리셋'**
+  String get drawerPromptPreset;
+
+  /// No description provided for @drawerShowImages.
+  ///
+  /// In ko, this message translates to:
+  /// **'이미지 보기'**
+  String get drawerShowImages;
+
+  /// No description provided for @drawerNoName.
+  ///
+  /// In ko, this message translates to:
+  /// **'이름 없음'**
+  String get drawerNoName;
+
+  /// No description provided for @drawerSelectItem.
+  ///
+  /// In ko, this message translates to:
+  /// **'항목을 선택하세요'**
+  String get drawerSelectItem;
+
+  /// No description provided for @drawerOther.
+  ///
+  /// In ko, this message translates to:
+  /// **'기타'**
+  String get drawerOther;
+
+  /// No description provided for @drawerEnterValue.
+  ///
+  /// In ko, this message translates to:
+  /// **'값을 입력하세요'**
+  String get drawerEnterValue;
+
+  /// No description provided for @drawerSelectPersona.
+  ///
+  /// In ko, this message translates to:
+  /// **'페르소나 선택'**
+  String get drawerSelectPersona;
+
+  /// No description provided for @drawerCreateNewPersona.
+  ///
+  /// In ko, this message translates to:
+  /// **'+ 새 페르소나 생성'**
+  String get drawerCreateNewPersona;
+
+  /// No description provided for @drawerNewPersona.
+  ///
+  /// In ko, this message translates to:
+  /// **'새 페르소나'**
+  String get drawerNewPersona;
+
+  /// No description provided for @drawerPersonaName.
+  ///
+  /// In ko, this message translates to:
+  /// **'페르소나 이름'**
+  String get drawerPersonaName;
+
+  /// No description provided for @drawerPersonaDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'페르소나 설명'**
+  String get drawerPersonaDescription;
+
+  /// No description provided for @drawerPersonaDescriptionHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'페르소나 설명을 입력하세요'**
+  String get drawerPersonaDescriptionHint;
+
+  /// No description provided for @drawerCharacter.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터'**
+  String get drawerCharacter;
+
+  /// No description provided for @drawerCharacterDescriptionHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터 설정을 입력하세요'**
+  String get drawerCharacterDescriptionHint;
+
+  /// No description provided for @drawerLorebookEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'설정집 항목이 없습니다'**
+  String get drawerLorebookEmpty;
+
+  /// No description provided for @drawerBookNameHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'설정 이름'**
+  String get drawerBookNameHint;
+
+  /// No description provided for @drawerBookActivationCondition.
+  ///
+  /// In ko, this message translates to:
+  /// **'활성화 조건'**
+  String get drawerBookActivationCondition;
+
+  /// No description provided for @drawerBookSecondaryKey.
+  ///
+  /// In ko, this message translates to:
+  /// **'두번째 키'**
+  String get drawerBookSecondaryKey;
+
+  /// No description provided for @drawerBookActivationKey.
+  ///
+  /// In ko, this message translates to:
+  /// **'활성화 키'**
+  String get drawerBookActivationKey;
+
+  /// No description provided for @drawerBookKeysHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'쉼표로 구분하여 입력'**
+  String get drawerBookKeysHint;
+
+  /// No description provided for @drawerBookSecondaryKeysHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'쉼표로 구분하여 입력 (예: 마법, 전투)'**
+  String get drawerBookSecondaryKeysHint;
+
+  /// No description provided for @drawerBookInsertionOrder.
+  ///
+  /// In ko, this message translates to:
+  /// **'배치 순서'**
+  String get drawerBookInsertionOrder;
+
+  /// No description provided for @drawerBookContent.
+  ///
+  /// In ko, this message translates to:
+  /// **'내용'**
+  String get drawerBookContent;
+
+  /// No description provided for @drawerBookContentHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'설정 내용을 입력해주세요'**
+  String get drawerBookContentHint;
+
+  /// No description provided for @drawerAutoSummary.
+  ///
+  /// In ko, this message translates to:
+  /// **'자동 요약'**
+  String get drawerAutoSummary;
+
+  /// No description provided for @drawerAgentMode.
+  ///
+  /// In ko, this message translates to:
+  /// **'에이전트 모드'**
+  String get drawerAgentMode;
+
+  /// No description provided for @drawerSummaryMessageCount.
+  ///
+  /// In ko, this message translates to:
+  /// **'요약 메시지 수'**
+  String get drawerSummaryMessageCount;
+
+  /// No description provided for @drawerMessageCountHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'메시지 수'**
+  String get drawerMessageCountHint;
+
+  /// No description provided for @drawerAutoSummaryList.
+  ///
+  /// In ko, this message translates to:
+  /// **'자동 요약 목록'**
+  String get drawerAutoSummaryList;
+
+  /// No description provided for @drawerSummaryCount.
+  ///
+  /// In ko, this message translates to:
+  /// **'{count}개'**
+  String drawerSummaryCount(int count);
+
+  /// No description provided for @drawerNoSummaries.
+  ///
+  /// In ko, this message translates to:
+  /// **'자동 요약이 없습니다.\n설정에서 자동 요약을 활성화하세요.'**
+  String get drawerNoSummaries;
+
+  /// No description provided for @drawerSummaryContentHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'요약 내용'**
+  String get drawerSummaryContentHint;
+
+  /// No description provided for @drawerGenerating.
+  ///
+  /// In ko, this message translates to:
+  /// **'생성 중...'**
+  String get drawerGenerating;
+
+  /// No description provided for @drawerRegenerate.
+  ///
+  /// In ko, this message translates to:
+  /// **'재생성'**
+  String get drawerRegenerate;
+
+  /// No description provided for @drawerActive.
+  ///
+  /// In ko, this message translates to:
+  /// **'활성'**
+  String get drawerActive;
+
+  /// No description provided for @drawerInactive.
+  ///
+  /// In ko, this message translates to:
+  /// **'비활성'**
+  String get drawerInactive;
+
+  /// No description provided for @drawerNameLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'이름'**
+  String get drawerNameLabel;
+
+  /// No description provided for @drawerNameHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'이름'**
+  String get drawerNameHint;
+
+  /// No description provided for @drawerAddSummaryButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'현재 메시지 기준 요약 추가'**
+  String get drawerAddSummaryButton;
+
+  /// No description provided for @drawerNoMessages.
+  ///
+  /// In ko, this message translates to:
+  /// **'메시지가 없습니다'**
+  String get drawerNoMessages;
+
+  /// No description provided for @drawerNoNewMessages.
+  ///
+  /// In ko, this message translates to:
+  /// **'요약할 새 메시지가 없습니다'**
+  String get drawerNoNewMessages;
+
+  /// No description provided for @drawerSummaryAdded.
+  ///
+  /// In ko, this message translates to:
+  /// **'요약이 추가되었습니다. 내용을 입력해주세요.'**
+  String get drawerSummaryAdded;
+
+  /// No description provided for @drawerSummaryAddFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'요약 추가 중 오류가 발생했습니다: {error}'**
+  String drawerSummaryAddFailed(String error);
+
+  /// No description provided for @drawerSummaryRegenerated.
+  ///
+  /// In ko, this message translates to:
+  /// **'요약이 재생성되었습니다'**
+  String get drawerSummaryRegenerated;
+
+  /// No description provided for @drawerSummaryRegenerateFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'요약 재생성 중 오류가 발생했습니다: {error}'**
+  String drawerSummaryRegenerateFailed(String error);
+
+  /// No description provided for @drawerSummaryItemName.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 요약'**
+  String get drawerSummaryItemName;
+
+  /// No description provided for @drawerSummaryDeleted.
+  ///
+  /// In ko, this message translates to:
+  /// **'요약이 삭제되었습니다'**
+  String get drawerSummaryDeleted;
+
+  /// No description provided for @drawerSummaryDeleteFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'요약 삭제 중 오류가 발생했습니다: {error}'**
+  String drawerSummaryDeleteFailed(String error);
+
+  /// No description provided for @drawerAgentEntryEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'{type} 데이터가 없습니다.\n채팅을 진행하면 자동으로 생성됩니다.'**
+  String drawerAgentEntryEmpty(String type);
+
+  /// No description provided for @drawerAgentEntrySaved.
+  ///
+  /// In ko, this message translates to:
+  /// **'{name} 저장됨'**
+  String drawerAgentEntrySaved(String name);
+
+  /// No description provided for @drawerAgentEntryDeleted.
+  ///
+  /// In ko, this message translates to:
+  /// **'{name} 삭제됨'**
+  String drawerAgentEntryDeleted(String name);
+
+  /// No description provided for @agentFieldDateRange.
+  ///
+  /// In ko, this message translates to:
+  /// **'날짜/시간'**
+  String get agentFieldDateRange;
+
+  /// No description provided for @agentFieldCharacters.
+  ///
+  /// In ko, this message translates to:
+  /// **'등장인물'**
+  String get agentFieldCharacters;
+
+  /// No description provided for @agentFieldCharactersList.
+  ///
+  /// In ko, this message translates to:
+  /// **'등장인물 (쉼표 구분)'**
+  String get agentFieldCharactersList;
+
+  /// No description provided for @agentFieldLocations.
+  ///
+  /// In ko, this message translates to:
+  /// **'장소'**
+  String get agentFieldLocations;
+
+  /// No description provided for @agentFieldLocationsList.
+  ///
+  /// In ko, this message translates to:
+  /// **'장소 (쉼표 구분)'**
+  String get agentFieldLocationsList;
+
+  /// No description provided for @agentFieldSummary.
+  ///
+  /// In ko, this message translates to:
+  /// **'요약'**
+  String get agentFieldSummary;
+
+  /// No description provided for @agentFieldAppearance.
+  ///
+  /// In ko, this message translates to:
+  /// **'외형'**
+  String get agentFieldAppearance;
+
+  /// No description provided for @agentFieldPersonality.
+  ///
+  /// In ko, this message translates to:
+  /// **'성격'**
+  String get agentFieldPersonality;
+
+  /// No description provided for @agentFieldPast.
+  ///
+  /// In ko, this message translates to:
+  /// **'과거'**
+  String get agentFieldPast;
+
+  /// No description provided for @agentFieldAbilities.
+  ///
+  /// In ko, this message translates to:
+  /// **'능력'**
+  String get agentFieldAbilities;
+
+  /// No description provided for @agentFieldStoryActions.
+  ///
+  /// In ko, this message translates to:
+  /// **'작중행적'**
+  String get agentFieldStoryActions;
+
+  /// No description provided for @agentFieldDialogueStyle.
+  ///
+  /// In ko, this message translates to:
+  /// **'대사 스타일'**
+  String get agentFieldDialogueStyle;
+
+  /// No description provided for @agentFieldPossessions.
+  ///
+  /// In ko, this message translates to:
+  /// **'소지품'**
+  String get agentFieldPossessions;
+
+  /// No description provided for @agentFieldPossessionsList.
+  ///
+  /// In ko, this message translates to:
+  /// **'소지품 (쉼표 구분)'**
+  String get agentFieldPossessionsList;
+
+  /// No description provided for @agentFieldParentLocation.
+  ///
+  /// In ko, this message translates to:
+  /// **'위치'**
+  String get agentFieldParentLocation;
+
+  /// No description provided for @agentFieldFeatures.
+  ///
+  /// In ko, this message translates to:
+  /// **'특징'**
+  String get agentFieldFeatures;
+
+  /// No description provided for @agentFieldAsciiMap.
+  ///
+  /// In ko, this message translates to:
+  /// **'맵'**
+  String get agentFieldAsciiMap;
+
+  /// No description provided for @agentFieldRelatedEpisodes.
+  ///
+  /// In ko, this message translates to:
+  /// **'관련 에피소드'**
+  String get agentFieldRelatedEpisodes;
+
+  /// No description provided for @agentFieldRelatedEpisodesList.
+  ///
+  /// In ko, this message translates to:
+  /// **'관련 에피소드 (쉼표 구분)'**
+  String get agentFieldRelatedEpisodesList;
+
+  /// No description provided for @agentFieldKeywords.
+  ///
+  /// In ko, this message translates to:
+  /// **'키워드'**
+  String get agentFieldKeywords;
+
+  /// No description provided for @agentFieldDatetime.
+  ///
+  /// In ko, this message translates to:
+  /// **'일시'**
+  String get agentFieldDatetime;
+
+  /// No description provided for @agentFieldOverview.
+  ///
+  /// In ko, this message translates to:
+  /// **'개요'**
+  String get agentFieldOverview;
+
+  /// No description provided for @agentFieldResult.
+  ///
+  /// In ko, this message translates to:
+  /// **'결과'**
+  String get agentFieldResult;
+
+  /// No description provided for @chatRoomNotFound.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅방을 찾을 수 없습니다'**
+  String get chatRoomNotFound;
+
+  /// No description provided for @chatRoomCannotLoad.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅방을 불러올 수 없습니다'**
+  String get chatRoomCannotLoad;
+
+  /// No description provided for @chatRoomMessageSendFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'메시지 전송 중 오류가 발생했습니다: {error}'**
+  String chatRoomMessageSendFailed(String error);
+
+  /// No description provided for @chatRoomMessageItemName.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 메시지'**
+  String get chatRoomMessageItemName;
+
+  /// No description provided for @chatRoomMessageDeleted.
+  ///
+  /// In ko, this message translates to:
+  /// **'메시지가 삭제되었습니다'**
+  String get chatRoomMessageDeleted;
+
+  /// No description provided for @chatRoomMessageDeleteFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'메시지 삭제 중 오류가 발생했습니다'**
+  String get chatRoomMessageDeleteFailed;
+
+  /// No description provided for @chatRoomMessageEdited.
+  ///
+  /// In ko, this message translates to:
+  /// **'메시지가 수정되었습니다'**
+  String get chatRoomMessageEdited;
+
+  /// No description provided for @chatRoomMessageEditFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'메시지 수정 중 오류가 발생했습니다'**
+  String get chatRoomMessageEditFailed;
+
+  /// No description provided for @chatRoomMessageRetryFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'메시지 재전송 중 오류가 발생했습니다: {error}'**
+  String chatRoomMessageRetryFailed(String error);
+
+  /// No description provided for @chatRoomMessageRegenerateFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'메시지 재생성 중 오류가 발생했습니다: {error}'**
+  String chatRoomMessageRegenerateFailed(String error);
+
+  /// No description provided for @chatRoomTextSettings.
+  ///
+  /// In ko, this message translates to:
+  /// **'텍스트 설정'**
+  String get chatRoomTextSettings;
+
+  /// No description provided for @chatRoomBranchTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'분기 생성'**
+  String get chatRoomBranchTitle;
+
+  /// No description provided for @chatRoomBranchContent.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 메시지까지의 내용으로 새 분기점을 생성하시겠습니까?'**
+  String get chatRoomBranchContent;
+
+  /// No description provided for @chatRoomBranchConfirm.
+  ///
+  /// In ko, this message translates to:
+  /// **'생성'**
+  String get chatRoomBranchConfirm;
+
+  /// No description provided for @chatRoomBranchCreated.
+  ///
+  /// In ko, this message translates to:
+  /// **'분기가 생성되었습니다'**
+  String get chatRoomBranchCreated;
+
+  /// No description provided for @chatRoomBranchFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'분기 생성 중 오류가 발생했습니다'**
+  String get chatRoomBranchFailed;
+
+  /// No description provided for @chatRoomWarningTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'주의'**
+  String get chatRoomWarningTitle;
+
+  /// No description provided for @chatRoomWarningDesc.
+  ///
+  /// In ko, this message translates to:
+  /// **'모든 AI 응답은 자동 생성되며, 편향적이거나 부정확할 수 있습니다.'**
+  String get chatRoomWarningDesc;
+
+  /// No description provided for @chatRoomStartSetting.
+  ///
+  /// In ko, this message translates to:
+  /// **'시작 설정'**
+  String get chatRoomStartSetting;
+
+  /// No description provided for @chatRoomNoStats.
+  ///
+  /// In ko, this message translates to:
+  /// **'통계 정보가 없습니다'**
+  String get chatRoomNoStats;
+
+  /// No description provided for @chatRoomStatsTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'응답 통계'**
+  String get chatRoomStatsTitle;
+
+  /// No description provided for @chatRoomStatModel.
+  ///
+  /// In ko, this message translates to:
+  /// **'모델'**
+  String get chatRoomStatModel;
+
+  /// No description provided for @chatRoomStatInputTokens.
+  ///
+  /// In ko, this message translates to:
+  /// **'입력 토큰'**
+  String get chatRoomStatInputTokens;
+
+  /// No description provided for @chatRoomStatCachedTokens.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐시 토큰'**
+  String get chatRoomStatCachedTokens;
+
+  /// No description provided for @chatRoomStatCacheRatio.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐시 비율'**
+  String get chatRoomStatCacheRatio;
+
+  /// No description provided for @chatRoomStatOutputTokens.
+  ///
+  /// In ko, this message translates to:
+  /// **'출력 토큰'**
+  String get chatRoomStatOutputTokens;
+
+  /// No description provided for @chatRoomStatThoughtTokens.
+  ///
+  /// In ko, this message translates to:
+  /// **'생각 토큰'**
+  String get chatRoomStatThoughtTokens;
+
+  /// No description provided for @chatRoomStatThoughtRatio.
+  ///
+  /// In ko, this message translates to:
+  /// **'생각 비율'**
+  String get chatRoomStatThoughtRatio;
+
+  /// No description provided for @chatRoomStatTotalTokens.
+  ///
+  /// In ko, this message translates to:
+  /// **'총 토큰'**
+  String get chatRoomStatTotalTokens;
+
+  /// No description provided for @chatRoomStatEstimatedCost.
+  ///
+  /// In ko, this message translates to:
+  /// **'예상 비용'**
+  String get chatRoomStatEstimatedCost;
+
+  /// No description provided for @chatRoomMessageSearch.
+  ///
+  /// In ko, this message translates to:
+  /// **'메시지 검색...'**
+  String get chatRoomMessageSearch;
+
+  /// No description provided for @chatRoomSearchTooltip.
+  ///
+  /// In ko, this message translates to:
+  /// **'검색'**
+  String get chatRoomSearchTooltip;
+
+  /// No description provided for @chatRoomNewMessages.
+  ///
+  /// In ko, this message translates to:
+  /// **'새로운 메시지'**
+  String get chatRoomNewMessages;
+
+  /// No description provided for @chatRoomGenerating.
+  ///
+  /// In ko, this message translates to:
+  /// **'메시지 생성 중...'**
+  String get chatRoomGenerating;
+
+  /// No description provided for @chatRoomRetrying.
+  ///
+  /// In ko, this message translates to:
+  /// **'재전송 중({attempt})...'**
+  String chatRoomRetrying(int attempt);
+
+  /// No description provided for @chatRoomWaiting.
+  ///
+  /// In ko, this message translates to:
+  /// **'응답 대기 중...'**
+  String get chatRoomWaiting;
+
+  /// No description provided for @chatRoomSummarizing.
+  ///
+  /// In ko, this message translates to:
+  /// **'요약 중...'**
+  String get chatRoomSummarizing;
+
+  /// No description provided for @chatRoomMessageHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'메시지를 입력하세요'**
+  String get chatRoomMessageHint;
+
+  /// No description provided for @chatRoomDayMon.
+  ///
+  /// In ko, this message translates to:
+  /// **'월'**
+  String get chatRoomDayMon;
+
+  /// No description provided for @chatRoomDayTue.
+  ///
+  /// In ko, this message translates to:
+  /// **'화'**
+  String get chatRoomDayTue;
+
+  /// No description provided for @chatRoomDayWed.
+  ///
+  /// In ko, this message translates to:
+  /// **'수'**
+  String get chatRoomDayWed;
+
+  /// No description provided for @chatRoomDayThu.
+  ///
+  /// In ko, this message translates to:
+  /// **'목'**
+  String get chatRoomDayThu;
+
+  /// No description provided for @chatRoomDayFri.
+  ///
+  /// In ko, this message translates to:
+  /// **'금'**
+  String get chatRoomDayFri;
+
+  /// No description provided for @chatRoomDaySat.
+  ///
+  /// In ko, this message translates to:
+  /// **'토'**
+  String get chatRoomDaySat;
+
+  /// No description provided for @chatRoomDaySun.
+  ///
+  /// In ko, this message translates to:
+  /// **'일'**
+  String get chatRoomDaySun;
+
+  /// No description provided for @chatRoomDay.
+  ///
+  /// In ko, this message translates to:
+  /// **'낮'**
+  String get chatRoomDay;
+
+  /// No description provided for @chatRoomNight.
+  ///
+  /// In ko, this message translates to:
+  /// **'밤'**
+  String get chatRoomNight;
+
+  /// No description provided for @characterEditDataLoadFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'데이터 로드 실패: {error}'**
+  String characterEditDataLoadFailed(String error);
+
+  /// No description provided for @characterEditDraftFoundTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'작성 중인 데이터 발견'**
+  String get characterEditDraftFoundTitle;
+
+  /// No description provided for @characterEditDraftFoundContent.
+  ///
+  /// In ko, this message translates to:
+  /// **'저장되지 않은 작성 중인 데이터가 있습니다.\n마지막 작성 시간: {timestamp}\n\n불러오시겠습니까?'**
+  String characterEditDraftFoundContent(String timestamp);
+
+  /// No description provided for @characterEditDraftLoad.
+  ///
+  /// In ko, this message translates to:
+  /// **'불러오기'**
+  String get characterEditDraftLoad;
+
+  /// No description provided for @characterEditJustNow.
+  ///
+  /// In ko, this message translates to:
+  /// **'방금 전'**
+  String get characterEditJustNow;
+
+  /// No description provided for @characterEditMinutesAgo.
+  ///
+  /// In ko, this message translates to:
+  /// **'{minutes}분 전'**
+  String characterEditMinutesAgo(int minutes);
+
+  /// No description provided for @characterEditHoursAgo.
+  ///
+  /// In ko, this message translates to:
+  /// **'{hours}시간 전'**
+  String characterEditHoursAgo(int hours);
+
+  /// No description provided for @characterEditDaysAgo.
+  ///
+  /// In ko, this message translates to:
+  /// **'{days}일 전'**
+  String characterEditDaysAgo(int days);
+
+  /// No description provided for @characterEditNameRequired.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터 이름을 입력해주세요'**
+  String get characterEditNameRequired;
+
+  /// No description provided for @characterEditCreated.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터가 생성되었습니다'**
+  String get characterEditCreated;
+
+  /// No description provided for @characterEditUpdated.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터가 수정되었습니다'**
+  String get characterEditUpdated;
+
+  /// No description provided for @characterEditSaveFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'저장 실패: {error}'**
+  String characterEditSaveFailed(String error);
+
+  /// No description provided for @characterEditTitleNew.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터 만들기'**
+  String get characterEditTitleNew;
+
+  /// No description provided for @characterEditTitleEdit.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터 수정'**
+  String get characterEditTitleEdit;
+
+  /// No description provided for @characterEditTabProfile.
+  ///
+  /// In ko, this message translates to:
+  /// **'프로필'**
+  String get characterEditTabProfile;
+
+  /// No description provided for @characterEditTabCharacter.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터설정'**
+  String get characterEditTabCharacter;
+
+  /// No description provided for @characterEditTabLorebook.
+  ///
+  /// In ko, this message translates to:
+  /// **'설정집'**
+  String get characterEditTabLorebook;
+
+  /// No description provided for @characterEditTabPersona.
+  ///
+  /// In ko, this message translates to:
+  /// **'페르소나'**
+  String get characterEditTabPersona;
+
+  /// No description provided for @characterEditTabStartSetting.
+  ///
+  /// In ko, this message translates to:
+  /// **'시작설정'**
+  String get characterEditTabStartSetting;
+
+  /// No description provided for @characterEditTabCoverImage.
+  ///
+  /// In ko, this message translates to:
+  /// **'표지이미지'**
+  String get characterEditTabCoverImage;
+
+  /// No description provided for @characterEditTabAdditionalImage.
+  ///
+  /// In ko, this message translates to:
+  /// **'추가이미지'**
+  String get characterEditTabAdditionalImage;
+
+  /// No description provided for @characterEditSnsHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터의 SNS 게시판 설정을 구성합니다.'**
+  String get characterEditSnsHelp;
+
+  /// No description provided for @characterEditSnsBoardHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'예: 자유게시판, 모험가 광장 등'**
+  String get characterEditSnsBoardHint;
+
+  /// No description provided for @characterEditSnsToneHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'예: 유머러스하고 친근한 분위기'**
+  String get characterEditSnsToneHint;
+
+  /// No description provided for @characterEditSnsLanguageHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'사용자 언어 (현재는 한국어만 지원)'**
+  String get characterEditSnsLanguageHint;
+
+  /// No description provided for @characterEditNameLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'이름'**
+  String get characterEditNameLabel;
+
+  /// No description provided for @characterEditNameHelpText.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터의 고유한 이름을 입력해주세요.'**
+  String get characterEditNameHelpText;
+
+  /// No description provided for @characterEditNameHintText.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터의 이름을 입력해주세요.'**
+  String get characterEditNameHintText;
+
+  /// No description provided for @characterEditNicknameLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'닉네임'**
+  String get characterEditNicknameLabel;
+
+  /// No description provided for @characterEditNicknameHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트에서 char 변수 대신 사용할 호칭입니다. 비워두면 이름이 사용됩니다.'**
+  String get characterEditNicknameHelp;
+
+  /// No description provided for @characterEditNicknameHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터의 닉네임을 입력해주세요.'**
+  String get characterEditNicknameHint;
+
+  /// No description provided for @characterEditTaglineLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'한 줄 소개'**
+  String get characterEditTaglineLabel;
+
+  /// No description provided for @characterEditTaglineHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터를 간단히 설명하는 한 문장을 작성해주세요.'**
+  String get characterEditTaglineHelp;
+
+  /// No description provided for @characterEditTaglineHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'어떤 캐릭터인지 설명할 수 있는 간단한 소개를 입력해주세요.'**
+  String get characterEditTaglineHint;
+
+  /// No description provided for @characterEditKeywordsLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'키워드'**
+  String get characterEditKeywordsLabel;
+
+  /// No description provided for @characterEditKeywordsHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터를 나타내는 키워드를 쉼표(,)로 구분하여 입력해주세요.'**
+  String get characterEditKeywordsHelp;
+
+  /// No description provided for @characterEditKeywordsHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'키워드 입력 예시: 판타지, 남자'**
+  String get characterEditKeywordsHint;
+
+  /// No description provided for @characterEditWorldSetting.
+  ///
+  /// In ko, this message translates to:
+  /// **'세계관 설정'**
+  String get characterEditWorldSetting;
+
+  /// No description provided for @characterEditWorldSettingHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터가 속한 세계관이나 배경 설정을 자유롭게 작성해주세요.'**
+  String get characterEditWorldSettingHelp;
+
+  /// No description provided for @characterEditWorldSettingHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'세계관 설정을 입력해주세요.'**
+  String get characterEditWorldSettingHint;
+
+  /// No description provided for @characterExportFormatTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'내보내기 형식 선택'**
+  String get characterExportFormatTitle;
+
+  /// No description provided for @characterExportFlanFormat.
+  ///
+  /// In ko, this message translates to:
+  /// **'Flan 형식'**
+  String get characterExportFlanFormat;
+
+  /// No description provided for @characterExportFlanSubtitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'앱 전용 JSON (이미지 포함)'**
+  String get characterExportFlanSubtitle;
+
+  /// No description provided for @characterExportV2Card.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터카드 v2'**
+  String get characterExportV2Card;
+
+  /// No description provided for @characterExportV2Subtitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'PNG — 일부 데이터 잘릴 수 있음'**
+  String get characterExportV2Subtitle;
+
+  /// No description provided for @characterExportV3Card.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터카드 v3'**
+  String get characterExportV3Card;
+
+  /// No description provided for @characterExportSuccessAndroid.
+  ///
+  /// In ko, this message translates to:
+  /// **'내보내기 완료: /storage/emulated/0/Download/{fileName}'**
+  String characterExportSuccessAndroid(String fileName);
+
+  /// No description provided for @characterExportSuccessIos.
+  ///
+  /// In ko, this message translates to:
+  /// **'내보내기 완료: {path}'**
+  String characterExportSuccessIos(String path);
+
+  /// No description provided for @characterExportSaveFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'파일 저장에 실패했습니다'**
+  String get characterExportSaveFailed;
+
+  /// No description provided for @characterCoverDefault.
+  ///
+  /// In ko, this message translates to:
+  /// **'표지 1'**
+  String get characterCoverDefault;
+
+  /// No description provided for @characterCopyName.
+  ///
+  /// In ko, this message translates to:
+  /// **'{name} (복사본)'**
+  String characterCopyName(String name);
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

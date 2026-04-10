@@ -481,4 +481,599 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get tutorialHelpAnthropic => 'Anthropic API 키 발급';
+
+  @override
+  String get drawerTabInfo => '기본 정보';
+
+  @override
+  String get drawerTabPersona => '페르소나';
+
+  @override
+  String get drawerTabCharacter => '캐릭터 정보';
+
+  @override
+  String get drawerTabLorebook => '설정집';
+
+  @override
+  String get drawerTabSummary => '요약';
+
+  @override
+  String get drawerChatMemo => '채팅 메모';
+
+  @override
+  String get drawerMemoHint => '메모를 입력하세요';
+
+  @override
+  String get drawerChatSettings => '채팅창 설정';
+
+  @override
+  String get drawerModelPreset => '모델설정';
+
+  @override
+  String get drawerProvider => '제조사';
+
+  @override
+  String get drawerChatModel => '채팅 모델';
+
+  @override
+  String get drawerChatPrompt => '채팅 프롬프트';
+
+  @override
+  String get drawerNone => '없음';
+
+  @override
+  String get drawerPromptPreset => '프롬프트 프리셋';
+
+  @override
+  String get drawerShowImages => '이미지 보기';
+
+  @override
+  String get drawerNoName => '이름 없음';
+
+  @override
+  String get drawerSelectItem => '항목을 선택하세요';
+
+  @override
+  String get drawerOther => '기타';
+
+  @override
+  String get drawerEnterValue => '값을 입력하세요';
+
+  @override
+  String get drawerSelectPersona => '페르소나 선택';
+
+  @override
+  String get drawerCreateNewPersona => '+ 새 페르소나 생성';
+
+  @override
+  String get drawerNewPersona => '새 페르소나';
+
+  @override
+  String get drawerPersonaName => '페르소나 이름';
+
+  @override
+  String get drawerPersonaDescription => '페르소나 설명';
+
+  @override
+  String get drawerPersonaDescriptionHint => '페르소나 설명을 입력하세요';
+
+  @override
+  String get drawerCharacter => '캐릭터';
+
+  @override
+  String get drawerCharacterDescriptionHint => '캐릭터 설정을 입력하세요';
+
+  @override
+  String get drawerLorebookEmpty => '설정집 항목이 없습니다';
+
+  @override
+  String get drawerBookNameHint => '설정 이름';
+
+  @override
+  String get drawerBookActivationCondition => '활성화 조건';
+
+  @override
+  String get drawerBookSecondaryKey => '두번째 키';
+
+  @override
+  String get drawerBookActivationKey => '활성화 키';
+
+  @override
+  String get drawerBookKeysHint => '쉼표로 구분하여 입력';
+
+  @override
+  String get drawerBookSecondaryKeysHint => '쉼표로 구분하여 입력 (예: 마법, 전투)';
+
+  @override
+  String get drawerBookInsertionOrder => '배치 순서';
+
+  @override
+  String get drawerBookContent => '내용';
+
+  @override
+  String get drawerBookContentHint => '설정 내용을 입력해주세요';
+
+  @override
+  String get drawerAutoSummary => '자동 요약';
+
+  @override
+  String get drawerAgentMode => '에이전트 모드';
+
+  @override
+  String get drawerSummaryMessageCount => '요약 메시지 수';
+
+  @override
+  String get drawerMessageCountHint => '메시지 수';
+
+  @override
+  String get drawerAutoSummaryList => '자동 요약 목록';
+
+  @override
+  String drawerSummaryCount(int count) {
+    return '$count개';
+  }
+
+  @override
+  String get drawerNoSummaries => '자동 요약이 없습니다.\n설정에서 자동 요약을 활성화하세요.';
+
+  @override
+  String get drawerSummaryContentHint => '요약 내용';
+
+  @override
+  String get drawerGenerating => '생성 중...';
+
+  @override
+  String get drawerRegenerate => '재생성';
+
+  @override
+  String get drawerActive => '활성';
+
+  @override
+  String get drawerInactive => '비활성';
+
+  @override
+  String get drawerNameLabel => '이름';
+
+  @override
+  String get drawerNameHint => '이름';
+
+  @override
+  String get drawerAddSummaryButton => '현재 메시지 기준 요약 추가';
+
+  @override
+  String get drawerNoMessages => '메시지가 없습니다';
+
+  @override
+  String get drawerNoNewMessages => '요약할 새 메시지가 없습니다';
+
+  @override
+  String get drawerSummaryAdded => '요약이 추가되었습니다. 내용을 입력해주세요.';
+
+  @override
+  String drawerSummaryAddFailed(String error) {
+    return '요약 추가 중 오류가 발생했습니다: $error';
+  }
+
+  @override
+  String get drawerSummaryRegenerated => '요약이 재생성되었습니다';
+
+  @override
+  String drawerSummaryRegenerateFailed(String error) {
+    return '요약 재생성 중 오류가 발생했습니다: $error';
+  }
+
+  @override
+  String get drawerSummaryItemName => '이 요약';
+
+  @override
+  String get drawerSummaryDeleted => '요약이 삭제되었습니다';
+
+  @override
+  String drawerSummaryDeleteFailed(String error) {
+    return '요약 삭제 중 오류가 발생했습니다: $error';
+  }
+
+  @override
+  String drawerAgentEntryEmpty(String type) {
+    return '$type 데이터가 없습니다.\n채팅을 진행하면 자동으로 생성됩니다.';
+  }
+
+  @override
+  String drawerAgentEntrySaved(String name) {
+    return '$name 저장됨';
+  }
+
+  @override
+  String drawerAgentEntryDeleted(String name) {
+    return '$name 삭제됨';
+  }
+
+  @override
+  String get agentFieldDateRange => '날짜/시간';
+
+  @override
+  String get agentFieldCharacters => '등장인물';
+
+  @override
+  String get agentFieldCharactersList => '등장인물 (쉼표 구분)';
+
+  @override
+  String get agentFieldLocations => '장소';
+
+  @override
+  String get agentFieldLocationsList => '장소 (쉼표 구분)';
+
+  @override
+  String get agentFieldSummary => '요약';
+
+  @override
+  String get agentFieldAppearance => '외형';
+
+  @override
+  String get agentFieldPersonality => '성격';
+
+  @override
+  String get agentFieldPast => '과거';
+
+  @override
+  String get agentFieldAbilities => '능력';
+
+  @override
+  String get agentFieldStoryActions => '작중행적';
+
+  @override
+  String get agentFieldDialogueStyle => '대사 스타일';
+
+  @override
+  String get agentFieldPossessions => '소지품';
+
+  @override
+  String get agentFieldPossessionsList => '소지품 (쉼표 구분)';
+
+  @override
+  String get agentFieldParentLocation => '위치';
+
+  @override
+  String get agentFieldFeatures => '특징';
+
+  @override
+  String get agentFieldAsciiMap => '맵';
+
+  @override
+  String get agentFieldRelatedEpisodes => '관련 에피소드';
+
+  @override
+  String get agentFieldRelatedEpisodesList => '관련 에피소드 (쉼표 구분)';
+
+  @override
+  String get agentFieldKeywords => '키워드';
+
+  @override
+  String get agentFieldDatetime => '일시';
+
+  @override
+  String get agentFieldOverview => '개요';
+
+  @override
+  String get agentFieldResult => '결과';
+
+  @override
+  String get chatRoomNotFound => '채팅방을 찾을 수 없습니다';
+
+  @override
+  String get chatRoomCannotLoad => '채팅방을 불러올 수 없습니다';
+
+  @override
+  String chatRoomMessageSendFailed(String error) {
+    return '메시지 전송 중 오류가 발생했습니다: $error';
+  }
+
+  @override
+  String get chatRoomMessageItemName => '이 메시지';
+
+  @override
+  String get chatRoomMessageDeleted => '메시지가 삭제되었습니다';
+
+  @override
+  String get chatRoomMessageDeleteFailed => '메시지 삭제 중 오류가 발생했습니다';
+
+  @override
+  String get chatRoomMessageEdited => '메시지가 수정되었습니다';
+
+  @override
+  String get chatRoomMessageEditFailed => '메시지 수정 중 오류가 발생했습니다';
+
+  @override
+  String chatRoomMessageRetryFailed(String error) {
+    return '메시지 재전송 중 오류가 발생했습니다: $error';
+  }
+
+  @override
+  String chatRoomMessageRegenerateFailed(String error) {
+    return '메시지 재생성 중 오류가 발생했습니다: $error';
+  }
+
+  @override
+  String get chatRoomTextSettings => '텍스트 설정';
+
+  @override
+  String get chatRoomBranchTitle => '분기 생성';
+
+  @override
+  String get chatRoomBranchContent => '이 메시지까지의 내용으로 새 분기점을 생성하시겠습니까?';
+
+  @override
+  String get chatRoomBranchConfirm => '생성';
+
+  @override
+  String get chatRoomBranchCreated => '분기가 생성되었습니다';
+
+  @override
+  String get chatRoomBranchFailed => '분기 생성 중 오류가 발생했습니다';
+
+  @override
+  String get chatRoomWarningTitle => '주의';
+
+  @override
+  String get chatRoomWarningDesc => '모든 AI 응답은 자동 생성되며, 편향적이거나 부정확할 수 있습니다.';
+
+  @override
+  String get chatRoomStartSetting => '시작 설정';
+
+  @override
+  String get chatRoomNoStats => '통계 정보가 없습니다';
+
+  @override
+  String get chatRoomStatsTitle => '응답 통계';
+
+  @override
+  String get chatRoomStatModel => '모델';
+
+  @override
+  String get chatRoomStatInputTokens => '입력 토큰';
+
+  @override
+  String get chatRoomStatCachedTokens => '캐시 토큰';
+
+  @override
+  String get chatRoomStatCacheRatio => '캐시 비율';
+
+  @override
+  String get chatRoomStatOutputTokens => '출력 토큰';
+
+  @override
+  String get chatRoomStatThoughtTokens => '생각 토큰';
+
+  @override
+  String get chatRoomStatThoughtRatio => '생각 비율';
+
+  @override
+  String get chatRoomStatTotalTokens => '총 토큰';
+
+  @override
+  String get chatRoomStatEstimatedCost => '예상 비용';
+
+  @override
+  String get chatRoomMessageSearch => '메시지 검색...';
+
+  @override
+  String get chatRoomSearchTooltip => '검색';
+
+  @override
+  String get chatRoomNewMessages => '새로운 메시지';
+
+  @override
+  String get chatRoomGenerating => '메시지 생성 중...';
+
+  @override
+  String chatRoomRetrying(int attempt) {
+    return '재전송 중($attempt)...';
+  }
+
+  @override
+  String get chatRoomWaiting => '응답 대기 중...';
+
+  @override
+  String get chatRoomSummarizing => '요약 중...';
+
+  @override
+  String get chatRoomMessageHint => '메시지를 입력하세요';
+
+  @override
+  String get chatRoomDayMon => '월';
+
+  @override
+  String get chatRoomDayTue => '화';
+
+  @override
+  String get chatRoomDayWed => '수';
+
+  @override
+  String get chatRoomDayThu => '목';
+
+  @override
+  String get chatRoomDayFri => '금';
+
+  @override
+  String get chatRoomDaySat => '토';
+
+  @override
+  String get chatRoomDaySun => '일';
+
+  @override
+  String get chatRoomDay => '낮';
+
+  @override
+  String get chatRoomNight => '밤';
+
+  @override
+  String characterEditDataLoadFailed(String error) {
+    return '데이터 로드 실패: $error';
+  }
+
+  @override
+  String get characterEditDraftFoundTitle => '작성 중인 데이터 발견';
+
+  @override
+  String characterEditDraftFoundContent(String timestamp) {
+    return '저장되지 않은 작성 중인 데이터가 있습니다.\n마지막 작성 시간: $timestamp\n\n불러오시겠습니까?';
+  }
+
+  @override
+  String get characterEditDraftLoad => '불러오기';
+
+  @override
+  String get characterEditJustNow => '방금 전';
+
+  @override
+  String characterEditMinutesAgo(int minutes) {
+    return '$minutes분 전';
+  }
+
+  @override
+  String characterEditHoursAgo(int hours) {
+    return '$hours시간 전';
+  }
+
+  @override
+  String characterEditDaysAgo(int days) {
+    return '$days일 전';
+  }
+
+  @override
+  String get characterEditNameRequired => '캐릭터 이름을 입력해주세요';
+
+  @override
+  String get characterEditCreated => '캐릭터가 생성되었습니다';
+
+  @override
+  String get characterEditUpdated => '캐릭터가 수정되었습니다';
+
+  @override
+  String characterEditSaveFailed(String error) {
+    return '저장 실패: $error';
+  }
+
+  @override
+  String get characterEditTitleNew => '캐릭터 만들기';
+
+  @override
+  String get characterEditTitleEdit => '캐릭터 수정';
+
+  @override
+  String get characterEditTabProfile => '프로필';
+
+  @override
+  String get characterEditTabCharacter => '캐릭터설정';
+
+  @override
+  String get characterEditTabLorebook => '설정집';
+
+  @override
+  String get characterEditTabPersona => '페르소나';
+
+  @override
+  String get characterEditTabStartSetting => '시작설정';
+
+  @override
+  String get characterEditTabCoverImage => '표지이미지';
+
+  @override
+  String get characterEditTabAdditionalImage => '추가이미지';
+
+  @override
+  String get characterEditSnsHelp => '캐릭터의 SNS 게시판 설정을 구성합니다.';
+
+  @override
+  String get characterEditSnsBoardHint => '예: 자유게시판, 모험가 광장 등';
+
+  @override
+  String get characterEditSnsToneHint => '예: 유머러스하고 친근한 분위기';
+
+  @override
+  String get characterEditSnsLanguageHint => '사용자 언어 (현재는 한국어만 지원)';
+
+  @override
+  String get characterEditNameLabel => '이름';
+
+  @override
+  String get characterEditNameHelpText => '캐릭터의 고유한 이름을 입력해주세요.';
+
+  @override
+  String get characterEditNameHintText => '캐릭터의 이름을 입력해주세요.';
+
+  @override
+  String get characterEditNicknameLabel => '닉네임';
+
+  @override
+  String get characterEditNicknameHelp => '프롬프트에서 char 변수 대신 사용할 호칭입니다. 비워두면 이름이 사용됩니다.';
+
+  @override
+  String get characterEditNicknameHint => '캐릭터의 닉네임을 입력해주세요.';
+
+  @override
+  String get characterEditTaglineLabel => '한 줄 소개';
+
+  @override
+  String get characterEditTaglineHelp => '캐릭터를 간단히 설명하는 한 문장을 작성해주세요.';
+
+  @override
+  String get characterEditTaglineHint => '어떤 캐릭터인지 설명할 수 있는 간단한 소개를 입력해주세요.';
+
+  @override
+  String get characterEditKeywordsLabel => '키워드';
+
+  @override
+  String get characterEditKeywordsHelp => '캐릭터를 나타내는 키워드를 쉼표(,)로 구분하여 입력해주세요.';
+
+  @override
+  String get characterEditKeywordsHint => '키워드 입력 예시: 판타지, 남자';
+
+  @override
+  String get characterEditWorldSetting => '세계관 설정';
+
+  @override
+  String get characterEditWorldSettingHelp => '캐릭터가 속한 세계관이나 배경 설정을 자유롭게 작성해주세요.';
+
+  @override
+  String get characterEditWorldSettingHint => '세계관 설정을 입력해주세요.';
+
+  @override
+  String get characterExportFormatTitle => '내보내기 형식 선택';
+
+  @override
+  String get characterExportFlanFormat => 'Flan 형식';
+
+  @override
+  String get characterExportFlanSubtitle => '앱 전용 JSON (이미지 포함)';
+
+  @override
+  String get characterExportV2Card => '캐릭터카드 v2';
+
+  @override
+  String get characterExportV2Subtitle => 'PNG — 일부 데이터 잘릴 수 있음';
+
+  @override
+  String get characterExportV3Card => '캐릭터카드 v3';
+
+  @override
+  String characterExportSuccessAndroid(String fileName) {
+    return '내보내기 완료: /storage/emulated/0/Download/$fileName';
+  }
+
+  @override
+  String characterExportSuccessIos(String path) {
+    return '내보내기 완료: $path';
+  }
+
+  @override
+  String get characterExportSaveFailed => '파일 저장에 실패했습니다';
+
+  @override
+  String get characterCoverDefault => '표지 1';
+
+  @override
+  String characterCopyName(String name) {
+    return '$name (복사본)';
+  }
 }

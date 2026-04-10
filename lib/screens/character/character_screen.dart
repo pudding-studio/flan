@@ -277,7 +277,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
 
       final newCharacterId = await _db.createCharacter(
         Character(
-          name: '${character.name} (복사본)',
+          name: l10n.characterCopyName(character.name),
           nickname: character.nickname,
           creatorNotes: character.creatorNotes,
           tags: List<String>.from(character.tags),
@@ -391,30 +391,31 @@ class _CharacterScreenState extends State<CharacterScreen> {
   /// Returns a format string or null if cancelled.
   /// Formats: 'flan' | 'v2_png' | 'v3_charx' | 'v3_charx_jpeg' | 'v3_png' | 'v3_json'
   Future<String?> _showExportFormatDialog() async {
+    final l10n = AppLocalizations.of(context);
     return showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('내보내기 형식 선택'),
+        title: Text(l10n.characterExportFormatTitle),
         contentPadding: const EdgeInsets.symmetric(vertical: 8),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             ListTile(
-              title: const Text('Flan 형식'),
-              subtitle: const Text('앱 전용 JSON (이미지 포함)'),
+              title: Text(l10n.characterExportFlanFormat),
+              subtitle: Text(l10n.characterExportFlanSubtitle),
               onTap: () => Navigator.pop(ctx, 'flan'),
             ),
             ListTile(
-              title: const Text('캐릭터카드 v2'),
-              subtitle: const Text('PNG — 일부 데이터 잘릴 수 있음'),
+              title: Text(l10n.characterExportV2Card),
+              subtitle: Text(l10n.characterExportV2Subtitle),
               onTap: () => Navigator.pop(ctx, 'v2_png'),
             ),
             const Divider(height: 1),
-            const Padding(
-              padding: EdgeInsets.fromLTRB(16, 8, 16, 4),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 4),
               child: Align(
                 alignment: Alignment.centerLeft,
-                child: Text('캐릭터카드 v3', style: TextStyle(fontWeight: FontWeight.bold)),
+                child: Text(l10n.characterExportV3Card, style: const TextStyle(fontWeight: FontWeight.bold)),
               ),
             ),
             ListTile(
@@ -442,7 +443,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(ctx),
-            child: const Text('취소'),
+            child: Text(l10n.commonCancel),
           ),
         ],
       ),
@@ -453,7 +454,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
 
   Future<_CharacterExportData> _loadExportData(int characterId) async {
     final character = await _db.readCharacter(characterId);
-    if (character == null) throw Exception('캐릭터를 찾을 수 없습니다');
+    if (character == null) throw Exception('Character not found');
 
     final personas = await _db.readPersonas(characterId);
     final startScenarios = await _db.readStartScenarios(characterId);
@@ -496,11 +497,12 @@ class _CharacterScreenState extends State<CharacterScreen> {
         'content': content,
       });
       if (mounted) {
+        final l10n = AppLocalizations.of(context);
         CommonDialog.showSnackBar(
           context: context,
           message: ok == true
-              ? '내보내기 완료: /storage/emulated/0/Download/$fileName'
-              : '파일 저장에 실패했습니다',
+              ? l10n.characterExportSuccessAndroid(fileName)
+              : l10n.characterExportSaveFailed,
         );
       }
     } else if (Platform.isIOS) {
@@ -508,7 +510,10 @@ class _CharacterScreenState extends State<CharacterScreen> {
       final path = '${dir.path}/$fileName';
       await File(path).writeAsString(content);
       if (mounted) {
-        CommonDialog.showSnackBar(context: context, message: '내보내기 완료: $path');
+        CommonDialog.showSnackBar(
+          context: context,
+          message: AppLocalizations.of(context).characterExportSuccessIos(path),
+        );
       }
     }
   }
@@ -525,11 +530,12 @@ class _CharacterScreenState extends State<CharacterScreen> {
           'fileName': fileName,
         });
         if (mounted) {
+          final l10n = AppLocalizations.of(context);
           CommonDialog.showSnackBar(
             context: context,
             message: ok == true
-                ? '내보내기 완료: /storage/emulated/0/Download/$fileName'
-                : '파일 저장에 실패했습니다',
+                ? l10n.characterExportSuccessAndroid(fileName)
+                : l10n.characterExportSaveFailed,
           );
         }
       } else if (Platform.isIOS) {
@@ -537,7 +543,10 @@ class _CharacterScreenState extends State<CharacterScreen> {
         final path = '${dir.path}/$fileName';
         await tempFile.copy(path);
         if (mounted) {
-          CommonDialog.showSnackBar(context: context, message: '내보내기 완료: $path');
+          CommonDialog.showSnackBar(
+            context: context,
+            message: AppLocalizations.of(context).characterExportSuccessIos(path),
+          );
         }
       }
     } finally {
@@ -631,7 +640,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
 
     final coverBytes = await _resolveCoverPng(data);
     final pngBytes = CharacterCardParser.embedMetadataInPng(coverBytes, cardJson);
-    if (pngBytes == null) throw Exception('PNG 메타데이터 삽입 실패');
+    if (pngBytes == null) throw Exception('PNG metadata embedding failed');
 
     await _saveBinaryFile('${data.character.name}.png', pngBytes);
   }
@@ -670,7 +679,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
 
     final coverBytes = await _resolveCoverPng(data);
     final pngBytes = CharacterCardParser.embedMetadataInPng(coverBytes, cardJson);
-    if (pngBytes == null) throw Exception('PNG 메타데이터 삽입 실패');
+    if (pngBytes == null) throw Exception('PNG metadata embedding failed');
 
     await _saveBinaryFile('${data.character.name}.png', pngBytes);
   }
@@ -888,7 +897,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
           startScenarios = CharacterCardParser.parseStartScenarios(jsonData, 0);
           standaloneCharacterBooks = CharacterCardParser.parseCharacterBooks(jsonData, 0);
         } else {
-          throw FormatException('지원하지 않는 형식입니다: ${format ?? spec}');
+          throw FormatException('Unsupported format: ${format ?? spec}');
         }
       } else if (extension == 'png') {
         // PNG 파일에서 메타데이터 추출
@@ -927,7 +936,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
             coverImages = [
               CoverImage(
                 characterId: 0,
-                name: '표지 1',
+                name: AppLocalizations.of(context).characterCoverDefault,
                 order: 0,
                 path: filePath,
               ),
@@ -1059,7 +1068,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
           }
         }
       } else {
-        throw FormatException('지원하지 않는 파일 형식입니다');
+        throw const FormatException('Unsupported file format');
       }
 
       // DB에 저장

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'package:provider/provider.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../database/database_helper.dart';
 import '../../../models/chat/chat_room.dart';
 import '../../../models/chat/chat_summary.dart';
@@ -361,11 +362,12 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   }
 
   Future<void> _createNewPersona() async {
+    final newPersonaName = AppLocalizations.of(context).drawerNewPersona;
     final characterId = widget.character.id!;
     final personas = await _db.readPersonas(characterId);
     final newPersona = Persona(
       characterId: characterId,
-      name: '새 페르소나',
+      name: newPersonaName,
       order: personas.length,
       content: '',
     );
@@ -486,6 +488,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   }
 
   Widget _buildTabBar() {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: SingleChildScrollView(
@@ -494,31 +497,31 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
           children: [
             _buildChip(
               icon: Icons.chat_outlined,
-              label: '기본 정보',
+              label: l10n.drawerTabInfo,
               tab: DrawerTab.info,
             ),
             const SizedBox(width: 8),
             _buildChip(
               icon: Icons.face_outlined,
-              label: '페르소나',
+              label: l10n.drawerTabPersona,
               tab: DrawerTab.persona,
             ),
             const SizedBox(width: 8),
             _buildChip(
               icon: Icons.person_outlined,
-              label: '캐릭터 정보',
+              label: l10n.drawerTabCharacter,
               tab: DrawerTab.character,
             ),
             const SizedBox(width: 8),
             _buildChip(
               icon: Icons.description_outlined,
-              label: '설정집',
+              label: l10n.drawerTabLorebook,
               tab: DrawerTab.lorebook,
             ),
             const SizedBox(width: 8),
             _buildChip(
               icon: Icons.history,
-              label: '요약',
+              label: l10n.drawerTabSummary,
               tab: DrawerTab.summary,
             ),
           ],
@@ -564,6 +567,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   // ==================== 기본 정보 탭 ====================
 
   Widget _buildInfoTab() {
+    final l10n = AppLocalizations.of(context);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Column(
       children: [
@@ -586,7 +590,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
                 child: Row(
                   children: [
                     Text(
-                      '채팅 메모',
+                      l10n.drawerChatMemo,
                       style: _sectionHeaderStyle,
                     ),
                     const Spacer(),
@@ -601,7 +605,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
                 const SizedBox(height: 8),
                 CommonEditText(
                   controller: _memoController,
-                  hintText: '메모를 입력하세요',
+                  hintText: l10n.drawerMemoHint,
                   maxLines: null,
                   minLines: 5,
                   size: CommonEditTextSize.small,
@@ -615,6 +619,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   }
 
   Widget _buildChatSettings() {
+    final l10n = AppLocalizations.of(context);
     final modelProvider = context.watch<ChatModelSettingsProvider>();
     final currentPreset = ModelPreset.fromString(widget.chatRoom.modelPreset);
     final providerOptions = ProviderOption.buildOptions(modelProvider.customProviders);
@@ -639,12 +644,12 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '채팅창 설정',
+          l10n.drawerChatSettings,
           style: _sectionHeaderStyle,
         ),
         const SizedBox(height: 12),
         _buildVerticalSettingRow(
-          label: '모델설정',
+          label: l10n.drawerModelPreset,
           child: CommonDropdownButton<ModelPreset>(
             value: currentPreset,
             items: ModelPreset.values,
@@ -671,7 +676,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
         if (currentPreset == ModelPreset.custom) ...[
           const SizedBox(height: 8),
           _buildVerticalSettingRow(
-            label: '제조사',
+            label: l10n.drawerProvider,
             child: CommonDropdownButton<ProviderOption>(
               value: currentProviderOption,
               items: providerOptions,
@@ -692,7 +697,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
           ),
           const SizedBox(height: 8),
           _buildVerticalSettingRow(
-            label: '채팅 모델',
+            label: l10n.drawerChatModel,
             child: CommonDropdownButton<UnifiedModel>(
               value: modelProvider.selectedModel,
               items: modelProvider.availableModels,
@@ -706,13 +711,13 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
         ],
         const SizedBox(height: 8),
         _buildVerticalSettingRow(
-          label: '채팅 프롬프트',
+          label: l10n.drawerChatPrompt,
           child: CommonDropdownButton<int?>(
             value: widget.chatRoom.selectedChatPromptId,
             items: [null, ...widget.chatPrompts.map((p) => p.id)],
             onChanged: (id) => widget.onPromptChanged(id),
             labelBuilder: (id) {
-              if (id == null) return '없음';
+              if (id == null) return l10n.drawerNone;
               return widget.chatPrompts.firstWhere((p) => p.id == id).name;
             },
             size: CommonDropdownButtonSize.xsmall,
@@ -727,12 +732,13 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   }
 
   Widget _buildPresetSection() {
+    final l10n = AppLocalizations.of(context);
     final selectedPreset = _selectedPreset;
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('프롬프트 프리셋', style: _fieldLabelStyle),
+        Text(l10n.drawerPromptPreset, style: _fieldLabelStyle),
         const SizedBox(height: 4),
         CommonDropdownButton<int?>(
           value: selectedPreset?.id,
@@ -747,11 +753,11 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
             setState(() {});
           },
           labelBuilder: (id) {
-            if (id == null) return '없음';
+            if (id == null) return l10n.drawerNone;
             try {
               return _presets.firstWhere((p) => p.id == id).name;
             } catch (_) {
-              return '없음';
+              return l10n.drawerNone;
             }
           },
           size: CommonDropdownButtonSize.xsmall,
@@ -771,7 +777,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
         const SizedBox(height: 8),
         Row(
           children: [
-            Text('이미지 보기', style: _fieldLabelStyle),
+            Text(l10n.drawerShowImages, style: _fieldLabelStyle),
             const Spacer(),
             SizedBox(
               height: 28,
@@ -803,6 +809,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   }
 
   Widget _buildPresetToggleRow(PromptConditionPreset preset, PromptCondition condition) {
+    final l10n = AppLocalizations.of(context);
     final presetValue = _getValueForCondition(preset, condition.id);
     final isOn = presetValue?.value == 'true';
 
@@ -813,7 +820,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
           Expanded(
             flex: 3,
             child: Text(
-              condition.name.isEmpty ? '이름 없음' : condition.name,
+              condition.name.isEmpty ? l10n.drawerNoName : condition.name,
               style: _subLabelStyle,
             ),
           ),
@@ -841,6 +848,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   }
 
   Widget _buildPresetSingleSelectRow(PromptConditionPreset preset, PromptCondition condition) {
+    final l10n = AppLocalizations.of(context);
     final presetValue = _getValueForCondition(preset, condition.id);
     final selectedOption = condition.options.cast<PromptConditionOption?>().firstWhere(
       (o) => o!.name == presetValue?.value,
@@ -854,7 +862,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
           Expanded(
             flex: 1,
             child: Text(
-              condition.name.isEmpty ? '이름 없음' : condition.name,
+              condition.name.isEmpty ? l10n.drawerNoName : condition.name,
               style: _subLabelStyle,
             ),
           ),
@@ -864,7 +872,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
               value: selectedOption,
               items: condition.options,
               size: CommonDropdownButtonSize.xsmall,
-              hintText: '항목을 선택하세요',
+              hintText: l10n.drawerSelectItem,
               onChanged: (value) {
                 if (value != null) {
                   _setValueForCondition(preset, condition, value.name);
@@ -879,12 +887,13 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   }
 
   Widget _buildPresetVariableRow(PromptConditionPreset preset, PromptCondition condition) {
+    final l10n = AppLocalizations.of(context);
     final presetValue = _getValueForCondition(preset, condition.id);
     final isCustom = presetValue?.value == PromptConditionPresetValue.customOptionKey;
 
     final optionsWithCustom = [
       ...condition.options,
-      PromptConditionOption(id: -9999, name: '기타', order: condition.options.length),
+      PromptConditionOption(id: -9999, name: l10n.drawerOther, order: condition.options.length),
     ];
 
     PromptConditionOption? selectedOption;
@@ -912,7 +921,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
               Expanded(
                 flex: 1,
                 child: Text(
-                  condition.name.isEmpty ? '이름 없음' : condition.name,
+                  condition.name.isEmpty ? l10n.drawerNoName : condition.name,
                   style: _subLabelStyle,
                 ),
               ),
@@ -922,7 +931,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
                   value: selectedOption,
                   items: optionsWithCustom,
                   size: CommonDropdownButtonSize.xsmall,
-                  hintText: '항목을 선택하세요',
+                  hintText: l10n.drawerSelectItem,
                   onChanged: (value) {
                     if (value != null) {
                       if (value.id == -9999) {
@@ -948,7 +957,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
             CommonEditText(
               controller: customController,
               size: CommonEditTextSize.small,
-              hintText: '값을 입력하세요',
+              hintText: l10n.drawerEnterValue,
               onFocusLost: (value) {
                 _setValueForCondition(
                   preset,
@@ -1004,6 +1013,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   // ==================== 페르소나 탭 ====================
 
   Widget _buildPersonaTab() {
+    final l10n = AppLocalizations.of(context);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Column(
       children: [
@@ -1012,7 +1022,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
             padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomInset),
             children: [
               CommonFieldSection(
-                label: '페르소나 선택',
+                label: l10n.drawerSelectPersona,
                 labelStyle: _sectionHeaderStyle,
                 labelSpacing: 8,
                 child: CommonDropdownButton<int?>(
@@ -1020,8 +1030,8 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
                   items: [null, ...widget.personas.map((p) => p.id), _createNewPersonaId],
                   onChanged: _onPersonaDropdownChanged,
                   labelBuilder: (id) {
-                    if (id == null) return '없음';
-                    if (id == _createNewPersonaId) return '+ 새 페르소나 생성';
+                    if (id == null) return l10n.drawerNone;
+                    if (id == _createNewPersonaId) return l10n.drawerCreateNewPersona;
                     return widget.personas.firstWhere((p) => p.id == id).name;
                   },
                   size: CommonDropdownButtonSize.xsmall,
@@ -1029,23 +1039,23 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
               ),
               if (_persona != null) ...[
                 CommonFieldSection(
-                  label: '페르소나 이름',
+                  label: l10n.drawerPersonaName,
                   labelStyle: _sectionHeaderStyle,
                   labelSpacing: 8,
                   child: CommonEditText(
                     controller: _personaNameController,
-                    hintText: '페르소나 이름',
+                    hintText: l10n.drawerPersonaName,
                     size: CommonEditTextSize.small,
                   ),
                 ),
                 CommonFieldSection(
-                  label: '페르소나 설명',
+                  label: l10n.drawerPersonaDescription,
                   labelStyle: _sectionHeaderStyle,
                   labelSpacing: 8,
                   bottomSpacing: 0,
                   child: CommonEditText(
                     controller: _personaContentController,
-                    hintText: '페르소나 설명을 입력하세요',
+                    hintText: l10n.drawerPersonaDescriptionHint,
                     maxLines: null,
                     minLines: 10,
                     size: CommonEditTextSize.small,
@@ -1062,6 +1072,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   // ==================== 캐릭터 정보 탭 ====================
 
   Widget _buildCharacterTab() {
+    final l10n = AppLocalizations.of(context);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Column(
       children: [
@@ -1070,13 +1081,13 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
             padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomInset),
             children: [
               Text(
-                '캐릭터',
+                l10n.drawerCharacter,
                 style: _sectionHeaderStyle,
               ),
               const SizedBox(height: 8),
               CommonEditText(
                 controller: _descriptionController,
-                hintText: '캐릭터 설정을 입력하세요',
+                hintText: l10n.drawerCharacterDescriptionHint,
                 maxLines: null,
                 minLines: 10,
                 size: CommonEditTextSize.small,
@@ -1111,7 +1122,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
           child: allItems.isEmpty
               ? Center(
                   child: Text(
-                    '설정집 항목이 없습니다',
+                    AppLocalizations.of(context).drawerLorebookEmpty,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -1146,6 +1157,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   }
 
   Widget _buildBookCard(CharacterBook book, CharacterBookFolder? folder) {
+    final l10n = AppLocalizations.of(context);
     return CommonEditableExpandableItem(
       key: ValueKey('book_${book.id}'),
       icon: Icon(
@@ -1159,13 +1171,13 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
         setState(() => book.isExpanded = !book.isExpanded);
       },
       onDelete: () => _deleteBook(book, folder),
-      nameHint: '설정 이름',
+      nameHint: l10n.drawerBookNameHint,
       onNameChanged: (value) => book.name = value,
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CommonFieldSection(
-            label: '활성화 조건',
+            label: l10n.drawerBookActivationCondition,
             child: CommonSegmentedButton<CharacterBookActivationCondition>(
               values: CharacterBookActivationCondition.values,
               selected: book.enabled,
@@ -1178,7 +1190,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
           if (book.enabled == CharacterBookActivationCondition.keyBased) ...[
             _buildBookKeysField(book),
             CommonFieldSection(
-              label: '두번째 키',
+              label: l10n.drawerBookSecondaryKey,
               child: CommonSegmentedButton<CharacterBookSecondaryKeyUsage>(
                 values: CharacterBookSecondaryKeyUsage.values,
                 selected: book.secondaryKeyUsage,
@@ -1199,13 +1211,14 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   }
 
   Widget _buildBookKeysField(CharacterBook book) {
+    final l10n = AppLocalizations.of(context);
     final key = 'book_${book.id}_keys';
     final controller = _getBookFieldController(key, book.keys.join(', '));
     return CommonFieldSection(
-      label: '활성화 키',
+      label: l10n.drawerBookActivationKey,
       child: CommonEditText(
         controller: controller,
-        hintText: '쉼표로 구분하여 입력',
+        hintText: l10n.drawerBookKeysHint,
         size: CommonEditTextSize.small,
         onFocusLost: (value) {
           book.keys = value.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
@@ -1215,13 +1228,14 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   }
 
   Widget _buildBookSecondaryKeysField(CharacterBook book) {
+    final l10n = AppLocalizations.of(context);
     final key = 'book_${book.id}_secondaryKeys';
     final controller = _getBookFieldController(key, book.secondaryKeys.join(', '));
     return CommonFieldSection(
-      label: '두번째 키',
+      label: l10n.drawerBookSecondaryKey,
       child: CommonEditText(
         controller: controller,
-        hintText: '쉼표로 구분하여 입력 (예: 마법, 전투)',
+        hintText: l10n.drawerBookSecondaryKeysHint,
         size: CommonEditTextSize.small,
         onFocusLost: (value) {
           book.secondaryKeys = value.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
@@ -1234,7 +1248,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
     final key = 'book_${book.id}_insertionOrder';
     final controller = _getBookFieldController(key, book.insertionOrder.toString());
     return CommonFieldSection(
-      label: '배치 순서',
+      label: AppLocalizations.of(context).drawerBookInsertionOrder,
       child: CommonEditText(
         controller: controller,
         hintText: '0',
@@ -1249,14 +1263,15 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   }
 
   Widget _buildBookContentField(CharacterBook book) {
+    final l10n = AppLocalizations.of(context);
     final key = 'book_${book.id}_content';
     final controller = _getBookFieldController(key, book.content ?? '');
     return CommonFieldSection(
-      label: '내용',
+      label: l10n.drawerBookContent,
       bottomSpacing: 0,
       child: CommonEditText(
         controller: controller,
-        hintText: '설정 내용을 입력해주세요',
+        hintText: l10n.drawerBookContentHint,
         size: CommonEditTextSize.small,
         maxLines: null,
         minLines: 5,
@@ -1288,12 +1303,13 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   // ==================== 요약 탭 ====================
 
   Widget _buildSummaryTab() {
+    final l10n = AppLocalizations.of(context);
     return Column(
       children: [
         // Toggles
         SwitchListTile(
           secondary: const Icon(Icons.auto_awesome, size: 20),
-          title: const Text('자동 요약'),
+          title: Text(l10n.drawerAutoSummary),
           dense: true,
           value: _autoSummaryEnabled,
           onChanged: (value) async {
@@ -1309,7 +1325,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
         if (_autoSummaryEnabled)
           SwitchListTile(
             secondary: const Icon(Icons.smart_toy_outlined, size: 20),
-            title: const Text('에이전트 모드'),
+            title: Text(l10n.drawerAgentMode),
             dense: true,
             value: _agentEnabled,
             onChanged: (value) async {
@@ -1326,12 +1342,12 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
             child: _buildVerticalSettingRow(
-              label: '요약 메시지 수',
+              label: l10n.drawerSummaryMessageCount,
               child: SizedBox(
                 width: double.infinity,
                 child: CommonEditText(
                   controller: _pinMessageCountController,
-                  hintText: '메시지 수',
+                  hintText: l10n.drawerMessageCountHint,
                   size: CommonEditTextSize.small,
                   keyboardType: TextInputType.number,
                   onChanged: (value) {
@@ -1354,6 +1370,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   }
 
   Widget _buildClassicSummaryView() {
+    final l10n = AppLocalizations.of(context);
     final bottomInset = MediaQuery.of(context).viewInsets.bottom;
     return Column(
       children: [
@@ -1365,11 +1382,11 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '자동 요약 목록',
+                    l10n.drawerAutoSummaryList,
                     style: _sectionHeaderStyle,
                   ),
                   Text(
-                    '${_summaries.length}개',
+                    l10n.drawerSummaryCount(_summaries.length),
                     style: Theme.of(context).textTheme.bodySmall,
                   ),
                 ],
@@ -1380,7 +1397,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
                   child: Padding(
                     padding: const EdgeInsets.all(32),
                     child: Text(
-                      '자동 요약이 없습니다.\n설정에서 자동 요약을 활성화하세요.',
+                      l10n.drawerNoSummaries,
                       textAlign: TextAlign.center,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -1419,7 +1436,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
                       children: [
                         CommonEditText(
                           controller: controller,
-                          hintText: '요약 내용',
+                          hintText: l10n.drawerSummaryContentHint,
                           maxLines: null,
                           minLines: 4,
                           size: CommonEditTextSize.small,
@@ -1441,8 +1458,8 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
                                   : const Icon(Icons.refresh, size: 16),
                               label: Text(
                                 _regeneratingSummaryIds.contains(summary.id)
-                                    ? '생성 중...'
-                                    : '재생성',
+                                    ? l10n.drawerGenerating
+                                    : l10n.drawerRegenerate,
                               ),
                             ),
                           ],
@@ -1508,6 +1525,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   }
 
   Widget _buildAgentEntryList(AgentEntryType type, double bottomInset) {
+    final l10n = AppLocalizations.of(context);
     final entries = _agentEntries.where((e) => e.entryType == type).toList();
 
     if (entries.isEmpty) {
@@ -1515,7 +1533,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Text(
-            '${type.displayName} 데이터가 없습니다.\n채팅을 진행하면 자동으로 생성됩니다.',
+            l10n.drawerAgentEntryEmpty(type.displayName),
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -1582,7 +1600,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
                     Row(
                       children: [
                         Text(
-                          entry.isActive ? '활성' : '비활성',
+                          entry.isActive ? l10n.drawerActive : l10n.drawerInactive,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                             color: entry.isActive
                                 ? Colors.green
@@ -1607,16 +1625,17 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   }
 
   Widget _buildAgentEntryEditContent(AgentEntry entry) {
+    final l10n = AppLocalizations.of(context);
     final id = entry.id!;
     final nameCtrl = _agentNameEditControllers[id]!;
     final controllers = _agentEditControllers[id]!;
-    final fieldDefs = _agentFieldDefs(entry.entryType);
+    final fieldDefs = _agentFieldDefs(entry.entryType, l10n);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '이름',
+          l10n.drawerNameLabel,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
             color: Theme.of(context).colorScheme.primary,
             fontWeight: FontWeight.bold,
@@ -1625,7 +1644,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
         const SizedBox(height: 4),
         CommonEditText(
           controller: nameCtrl,
-          hintText: '이름',
+          hintText: l10n.drawerNameHint,
           size: CommonEditTextSize.small,
         ),
         ...fieldDefs.map((def) {
@@ -1660,12 +1679,12 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
           children: [
             TextButton(
               onPressed: () => _cancelEditAgentEntry(id),
-              child: const Text('취소'),
+              child: Text(l10n.commonCancel),
             ),
             const SizedBox(width: 8),
             FilledButton(
               onPressed: () => _saveAgentEntry(entry),
-              child: const Text('저장'),
+              child: Text(l10n.commonSave),
             ),
           ],
         ),
@@ -1674,6 +1693,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   }
 
   List<Widget> _buildAgentEntryFields(AgentEntry entry) {
+    final l10n = AppLocalizations.of(context);
     final fields = <Widget>[];
     final data = entry.data;
 
@@ -1705,32 +1725,32 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
 
     switch (entry.entryType) {
       case AgentEntryType.episode:
-        addField('날짜/시간', data['date_range']);
-        addField('등장인물', data['characters']);
-        addField('장소', data['locations']);
-        addField('요약', data['summary_text']);
+        addField(l10n.agentFieldDateRange, data['date_range']);
+        addField(l10n.agentFieldCharacters, data['characters']);
+        addField(l10n.agentFieldLocations, data['locations']);
+        addField(l10n.agentFieldSummary, data['summary_text']);
       case AgentEntryType.character:
-        addField('외형', data['appearance']);
-        addField('성격', data['personality']);
-        addField('과거', data['past']);
-        addField('능력', data['abilities']);
-        addField('작중행적', data['story_actions']);
-        addField('대사 스타일', data['dialogue_style']);
-        addField('소지품', data['possessions']);
+        addField(l10n.agentFieldAppearance, data['appearance']);
+        addField(l10n.agentFieldPersonality, data['personality']);
+        addField(l10n.agentFieldPast, data['past']);
+        addField(l10n.agentFieldAbilities, data['abilities']);
+        addField(l10n.agentFieldStoryActions, data['story_actions']);
+        addField(l10n.agentFieldDialogueStyle, data['dialogue_style']);
+        addField(l10n.agentFieldPossessions, data['possessions']);
       case AgentEntryType.location:
-        addField('위치', data['parent_location']);
-        addField('특징', data['features']);
-        if (data['ascii_map'] != null) addField('맵', data['ascii_map']);
-        addField('관련 에피소드', data['related_episodes']);
+        addField(l10n.agentFieldParentLocation, data['parent_location']);
+        addField(l10n.agentFieldFeatures, data['features']);
+        if (data['ascii_map'] != null) addField(l10n.agentFieldAsciiMap, data['ascii_map']);
+        addField(l10n.agentFieldRelatedEpisodes, data['related_episodes']);
       case AgentEntryType.item:
-        addField('키워드', data['keywords']);
-        addField('특징', data['features']);
-        addField('관련 에피소드', data['related_episodes']);
+        addField(l10n.agentFieldKeywords, data['keywords']);
+        addField(l10n.agentFieldFeatures, data['features']);
+        addField(l10n.agentFieldRelatedEpisodes, data['related_episodes']);
       case AgentEntryType.event:
-        addField('일시', data['datetime']);
-        addField('개요', data['overview']);
-        addField('결과', data['result']);
-        addField('관련 에피소드', data['related_episodes']);
+        addField(l10n.agentFieldDatetime, data['datetime']);
+        addField(l10n.agentFieldOverview, data['overview']);
+        addField(l10n.agentFieldResult, data['result']);
+        addField(l10n.agentFieldRelatedEpisodes, data['related_episodes']);
     }
 
     // Related names (cross-references)
@@ -1762,44 +1782,45 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
     await _loadData();
   }
 
-  List<(String, String, bool)> _agentFieldDefs(AgentEntryType type) {
+  List<(String, String, bool)> _agentFieldDefs(
+      AgentEntryType type, AppLocalizations l10n) {
     switch (type) {
       case AgentEntryType.episode:
         return [
-          ('date_range', '날짜/시간', false),
-          ('characters', '등장인물 (쉼표 구분)', true),
-          ('locations', '장소 (쉼표 구분)', true),
-          ('summary_text', '요약', false),
+          ('date_range', l10n.agentFieldDateRange, false),
+          ('characters', l10n.agentFieldCharactersList, true),
+          ('locations', l10n.agentFieldLocationsList, true),
+          ('summary_text', l10n.agentFieldSummary, false),
         ];
       case AgentEntryType.character:
         return [
-          ('appearance', '외형', false),
-          ('personality', '성격', false),
-          ('past', '과거', false),
-          ('abilities', '능력', false),
-          ('story_actions', '작중행적', false),
-          ('dialogue_style', '대사 스타일', false),
-          ('possessions', '소지품 (쉼표 구분)', true),
+          ('appearance', l10n.agentFieldAppearance, false),
+          ('personality', l10n.agentFieldPersonality, false),
+          ('past', l10n.agentFieldPast, false),
+          ('abilities', l10n.agentFieldAbilities, false),
+          ('story_actions', l10n.agentFieldStoryActions, false),
+          ('dialogue_style', l10n.agentFieldDialogueStyle, false),
+          ('possessions', l10n.agentFieldPossessionsList, true),
         ];
       case AgentEntryType.location:
         return [
-          ('parent_location', '위치', false),
-          ('features', '특징', false),
-          ('ascii_map', '맵', false),
-          ('related_episodes', '관련 에피소드 (쉼표 구분)', true),
+          ('parent_location', l10n.agentFieldParentLocation, false),
+          ('features', l10n.agentFieldFeatures, false),
+          ('ascii_map', l10n.agentFieldAsciiMap, false),
+          ('related_episodes', l10n.agentFieldRelatedEpisodesList, true),
         ];
       case AgentEntryType.item:
         return [
-          ('keywords', '키워드', false),
-          ('features', '특징', false),
-          ('related_episodes', '관련 에피소드 (쉼표 구분)', true),
+          ('keywords', l10n.agentFieldKeywords, false),
+          ('features', l10n.agentFieldFeatures, false),
+          ('related_episodes', l10n.agentFieldRelatedEpisodesList, true),
         ];
       case AgentEntryType.event:
         return [
-          ('datetime', '일시', false),
-          ('overview', '개요', false),
-          ('result', '결과', false),
-          ('related_episodes', '관련 에피소드 (쉼표 구분)', true),
+          ('datetime', l10n.agentFieldDatetime, false),
+          ('overview', l10n.agentFieldOverview, false),
+          ('result', l10n.agentFieldResult, false),
+          ('related_episodes', l10n.agentFieldRelatedEpisodesList, true),
         ];
     }
   }
@@ -1807,7 +1828,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   void _initAgentEditControllers(AgentEntry entry) {
     final id = entry.id!;
     final data = entry.data;
-    final fieldDefs = _agentFieldDefs(entry.entryType);
+    final fieldDefs = _agentFieldDefs(entry.entryType, AppLocalizations.of(context));
 
     _agentNameEditControllers[id] = TextEditingController(text: entry.name);
     _agentEditControllers[id] = {
@@ -1852,12 +1873,13 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   }
 
   Future<void> _saveAgentEntry(AgentEntry entry) async {
+    final l10n = AppLocalizations.of(context);
     final id = entry.id!;
     final nameCtrl = _agentNameEditControllers[id];
     final controllers = _agentEditControllers[id];
     if (nameCtrl == null || controllers == null) return;
 
-    final fieldDefs = _agentFieldDefs(entry.entryType);
+    final fieldDefs = _agentFieldDefs(entry.entryType, l10n);
     final updatedData = Map<String, dynamic>.from(entry.data);
 
     for (final (key, _, isList) in fieldDefs) {
@@ -1882,14 +1904,18 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
     await _loadData();
 
     if (!mounted) return;
-    CommonDialog.showSnackBar(context: context, message: '${updatedEntry.name} 저장됨');
+    CommonDialog.showSnackBar(
+      context: context,
+      message: l10n.drawerAgentEntrySaved(updatedEntry.name),
+    );
   }
 
   Future<void> _deleteAgentEntry(AgentEntry entry) async {
     if (entry.id == null) return;
+    final entryName = entry.name;
     final confirmed = await CommonDialog.showDeleteConfirmation(
       context: context,
-      itemName: entry.name,
+      itemName: entryName,
     );
     if (!confirmed) return;
 
@@ -1899,7 +1925,10 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
     await _loadData();
 
     if (!mounted) return;
-    CommonDialog.showSnackBar(context: context, message: '${entry.name} 삭제됨');
+    CommonDialog.showSnackBar(
+      context: context,
+      message: AppLocalizations.of(context).drawerAgentEntryDeleted(entryName),
+    );
   }
 
   Widget _buildAddSummaryButton() {
@@ -1912,7 +1941,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
             : CommonButton.filled(
                 onPressed: _addManualSummary,
                 icon: Icons.add,
-                label: '현재 메시지 기준 요약 추가',
+                label: AppLocalizations.of(context).drawerAddSummaryButton,
                 size: CommonButtonSize.small,
               ),
       ),
@@ -1920,6 +1949,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   }
 
   Future<void> _addManualSummary() async {
+    final l10n = AppLocalizations.of(context);
     setState(() => _isAddingSummary = true);
 
     try {
@@ -1927,7 +1957,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
       final allMessages = await _db.readChatMessagesByChatRoom(chatRoomId);
       if (allMessages.isEmpty) {
         if (!mounted) return;
-        CommonDialog.showSnackBar(context: context, message: '메시지가 없습니다');
+        CommonDialog.showSnackBar(context: context, message: l10n.drawerNoMessages);
         return;
       }
 
@@ -1941,7 +1971,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
 
       if (startPinMessageId == endPinMessageId) {
         if (!mounted) return;
-        CommonDialog.showSnackBar(context: context, message: '요약할 새 메시지가 없습니다');
+        CommonDialog.showSnackBar(context: context, message: l10n.drawerNoNewMessages);
         return;
       }
 
@@ -1959,12 +1989,12 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
       await _loadData();
 
       if (!mounted) return;
-      CommonDialog.showSnackBar(context: context, message: '요약이 추가되었습니다. 내용을 입력해주세요.');
+      CommonDialog.showSnackBar(context: context, message: l10n.drawerSummaryAdded);
     } catch (e) {
       if (!mounted) return;
       CommonDialog.showSnackBar(
         context: context,
-        message: '요약 추가 중 오류가 발생했습니다: $e',
+        message: l10n.drawerSummaryAddFailed(e.toString()),
       );
     } finally {
       if (mounted) {
@@ -1974,6 +2004,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   }
 
   Future<void> _regenerateSummary(ChatSummary summary) async {
+    final l10n = AppLocalizations.of(context);
     final summaryId = summary.id!;
     setState(() => _regeneratingSummaryIds.add(summaryId));
 
@@ -1985,12 +2016,12 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
       await _loadData();
 
       if (!mounted) return;
-      CommonDialog.showSnackBar(context: context, message: '요약이 재생성되었습니다');
+      CommonDialog.showSnackBar(context: context, message: l10n.drawerSummaryRegenerated);
     } catch (e) {
       if (!mounted) return;
       CommonDialog.showSnackBar(
         context: context,
-        message: '요약 재생성 중 오류가 발생했습니다: $e',
+        message: l10n.drawerSummaryRegenerateFailed(e.toString()),
       );
     } finally {
       if (mounted) {
@@ -2000,9 +2031,10 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   }
 
   Future<void> _deleteSummary(int summaryId) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await CommonDialog.showDeleteConfirmation(
       context: context,
-      itemName: '이 요약',
+      itemName: l10n.drawerSummaryItemName,
     );
 
     if (!confirmed) return;
@@ -2016,12 +2048,12 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
       await _loadData();
 
       if (!mounted) return;
-      CommonDialog.showSnackBar(context: context, message: '요약이 삭제되었습니다');
+      CommonDialog.showSnackBar(context: context, message: l10n.drawerSummaryDeleted);
     } catch (e) {
       if (!mounted) return;
       CommonDialog.showSnackBar(
         context: context,
-        message: '요약 삭제 중 오류가 발생했습니다: $e',
+        message: l10n.drawerSummaryDeleteFailed(e.toString()),
       );
     }
   }
