@@ -731,36 +731,11 @@ class _PromptEditScreenState extends State<PromptEditScreen>
             overlayColor: WidgetStateProperty.all(Colors.transparent),
             splashFactory: NoSplash.splashFactory,
             tabs: [
-              Tab(
-                child: SizedBox(
-                  width: 65,
-                  child: Center(child: Text(l10n.promptEditTabBasic)),
-                ),
-              ),
-              Tab(
-                child: SizedBox(
-                  width: 65,
-                  child: Center(child: Text(l10n.promptEditTabParameters)),
-                ),
-              ),
-              Tab(
-                child: SizedBox(
-                  width: 65,
-                  child: Center(child: Text(l10n.promptEditTabPrompt)),
-                ),
-              ),
-              Tab(
-                child: SizedBox(
-                  width: 65,
-                  child: Center(child: Text(l10n.promptEditTabRegex)),
-                ),
-              ),
-              Tab(
-                child: SizedBox(
-                  width: 65,
-                  child: Center(child: Text(l10n.promptEditTabOther)),
-                ),
-              ),
+              Tab(text: l10n.promptEditTabBasic),
+              Tab(text: l10n.promptEditTabParameters),
+              Tab(text: l10n.promptEditTabPrompt),
+              Tab(text: l10n.promptEditTabRegex),
+              Tab(text: l10n.promptEditTabOther),
             ],
           ),
         ),
