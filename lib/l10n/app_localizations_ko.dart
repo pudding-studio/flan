@@ -1545,4 +1545,332 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get chatPromptListEmpty => '프롬프트가 없습니다';
+
+  @override
+  String get communityAnonymous => '익명';
+
+  @override
+  String get communityNeedDescription => '캐릭터 설명 또는 요약 내용을 먼저 작성해주세요.';
+
+  @override
+  String communityGenerateFailed(String error) {
+    return '생성 실패: $error';
+  }
+
+  @override
+  String communityRegisterFailed(String error) {
+    return '등록 실패: $error';
+  }
+
+  @override
+  String get communityWritePost => '게시글 작성';
+
+  @override
+  String get communityNickname => '닉네임';
+
+  @override
+  String get communityTitle => '제목';
+
+  @override
+  String get communityContent => '내용';
+
+  @override
+  String get communityRegister => '등록';
+
+  @override
+  String get communityWriteComment => '댓글 작성';
+
+  @override
+  String get communityCommentContent => '댓글 내용';
+
+  @override
+  String get communityCommentDeleteTitle => '댓글 삭제';
+
+  @override
+  String get communityCommentDeleteContent => '이 댓글을 삭제할까요?';
+
+  @override
+  String get communityPostDeleteTitle => '게시글 삭제';
+
+  @override
+  String get communityPostDeleteContent => '이 게시글을 삭제할까요?';
+
+  @override
+  String get communityDefaultName => '자유게시판';
+
+  @override
+  String get communitySettingsTooltip => '설정';
+
+  @override
+  String get communityNoPostsTitle => '아직 게시글이 없습니다';
+
+  @override
+  String get communityNoPostsSubtitle => '당겨서 게시글을 새로 불러오세요';
+
+  @override
+  String get communityCommentLabel => '댓글 달기';
+
+  @override
+  String get communityUsedModelSection => '사용 모델';
+
+  @override
+  String get communityModelPreset => '모델설정';
+
+  @override
+  String get communityProvider => '제조사';
+
+  @override
+  String get communityChatModel => '채팅 모델';
+
+  @override
+  String get communitySettingsSection => '커뮤니티 설정';
+
+  @override
+  String get communityNameLabel => '커뮤니티 이름';
+
+  @override
+  String get communityToneLabel => '커뮤니티 분위기';
+
+  @override
+  String get communityLanguageLabel => '사용 언어';
+
+  @override
+  String get characterViewTabInfo => '정보';
+
+  @override
+  String get characterViewTabChat => '채팅';
+
+  @override
+  String get characterViewTagline => '한 줄 소개';
+
+  @override
+  String get characterViewKeywords => '키워드';
+
+  @override
+  String get characterViewPersona => '페르소나';
+
+  @override
+  String get characterViewStartSetting => '시작 설정';
+
+  @override
+  String get characterViewStartContext => '시작 상황';
+
+  @override
+  String get characterViewStartMessage => '시작 메시지';
+
+  @override
+  String get characterViewNewChat => '새 채팅';
+
+  @override
+  String get characterViewChatCreateFailed => '채팅방 생성 중 오류가 발생했습니다';
+
+  @override
+  String get characterViewNoChats => '채팅방이 없습니다';
+
+  @override
+  String get characterViewStartNewChat => '새 채팅을 시작해보세요';
+
+  @override
+  String agentChatErrorPrefix(String error) {
+    return '오류: $error';
+  }
+
+  @override
+  String get agentChatResetTitle => '대화 초기화';
+
+  @override
+  String get agentChatResetContent => '모든 대화 내용이 삭제됩니다. 계속하시겠습니까?';
+
+  @override
+  String get agentChatResetTooltip => '대화 초기화';
+
+  @override
+  String get agentChatIntro => '캐릭터 생성, 수정, 편집을 도와드립니다';
+
+  @override
+  String get agentChatUserLabel => '나';
+
+  @override
+  String get agentChatUsedModel => '사용 모델';
+
+  @override
+  String get agentChatModelPreset => '모델설정';
+
+  @override
+  String get agentChatProvider => '제조사';
+
+  @override
+  String get agentChatModel => '채팅 모델';
+
+  @override
+  String get agentChatWaiting => '응답 대기 중...';
+
+  @override
+  String get agentChatHint => '메시지를 입력하세요';
+
+  @override
+  String diaryGenerateFailed(String error) {
+    return '일기 생성 실패: $error';
+  }
+
+  @override
+  String get diaryGenerateTitle => '일기 생성';
+
+  @override
+  String diaryGenerateContent(String date) {
+    return '$date의 일기를 생성할까요?';
+  }
+
+  @override
+  String get diaryDeleteTitle => '일기 삭제';
+
+  @override
+  String get diaryDeleteContent => '이 일기를 삭제할까요?';
+
+  @override
+  String get diaryRegenerateTitle => '일기 재생성';
+
+  @override
+  String diaryRegenerateContent(String date) {
+    return '$date의 일기를 모두 삭제하고 다시 생성할까요?';
+  }
+
+  @override
+  String get diarySettingsTooltip => '설정';
+
+  @override
+  String get diaryDaySun => '일';
+
+  @override
+  String get diaryDayMon => '월';
+
+  @override
+  String get diaryDayTue => '화';
+
+  @override
+  String get diaryDayWed => '수';
+
+  @override
+  String get diaryDayThu => '목';
+
+  @override
+  String get diaryDayFri => '금';
+
+  @override
+  String get diaryDaySat => '토';
+
+  @override
+  String get diarySelectDate => '날짜를 선택하세요';
+
+  @override
+  String get diaryGenerating => '일기를 생성하고 있습니다...';
+
+  @override
+  String get diaryNoEntries => '아직 일기가 없습니다';
+
+  @override
+  String get diaryRegenerateTooltip => '재생성';
+
+  @override
+  String get diaryUsedModel => '사용 모델';
+
+  @override
+  String get diaryModelPreset => '모델설정';
+
+  @override
+  String get diaryProvider => '제조사';
+
+  @override
+  String get diaryChatModel => '채팅 모델';
+
+  @override
+  String get diarySettingsSection => '다이어리 설정';
+
+  @override
+  String get diaryAutoGenerate => '자동 생성';
+
+  @override
+  String get diaryAutoGenerateDesc => '채팅 내 날짜가 변경되면 자동으로 일기를 생성합니다.';
+
+  @override
+  String get characterBookInvalidFormat => '올바른 설정집 형식이 아닙니다';
+
+  @override
+  String get characterBookNoImport => '가져올 설정이 없습니다';
+
+  @override
+  String characterBookImportFailed(String error) {
+    return '가져오기 실패: $error';
+  }
+
+  @override
+  String get characterBookNoExport => '내보낼 설정이 없습니다';
+
+  @override
+  String get characterBookSaveFailed => '저장에 실패했습니다';
+
+  @override
+  String characterBookExportFailed(String error) {
+    return '내보내기 실패: $error';
+  }
+
+  @override
+  String get characterBookNewFolder => '새 폴더';
+
+  @override
+  String get characterBookNewItem => '새 설정';
+
+  @override
+  String get characterBookFolderDeleteTitle => '폴더 삭제';
+
+  @override
+  String get characterBookSection => '설정집';
+
+  @override
+  String get characterBookSectionHelp => '캐릭터의 세계관과 관련된 정보를 설정집에 추가할 수 있습니다.\n\n길게 눌러 순서를 변경할 수 있습니다.';
+
+  @override
+  String get characterBookAddItem => '설정 추가';
+
+  @override
+  String get characterBookAddFolder => '폴더 추가';
+
+  @override
+  String get characterBookEmpty => '설정집 항목이 없습니다';
+
+  @override
+  String get characterBookNameHint => '설정 이름';
+
+  @override
+  String get characterBookActivationCondition => '활성화 조건';
+
+  @override
+  String get characterBookActivationKey => '활성화 키';
+
+  @override
+  String get characterBookKeysHint => '쉼표로 구분하여 입력 (예: 마법, 전투)';
+
+  @override
+  String get characterBookSecondaryKey => '두번째 키';
+
+  @override
+  String get characterBookInsertionOrder => '배치 순서';
+
+  @override
+  String get characterBookContent => '내용';
+
+  @override
+  String get characterBookContentHint => '설정 내용을 입력해주세요';
+
+  @override
+  String get newsArticleDeleteTitle => '기사 삭제';
+
+  @override
+  String get newsArticleDeleteContent => '이 기사를 삭제하시겠습니까?';
+
+  @override
+  String get newsEmptyTitle => '아직 기사가 없습니다';
+
+  @override
+  String get newsEmptySubtitle => '당겨서 뉴스를 불러오세요';
 }

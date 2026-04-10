@@ -5,6 +5,7 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../../../l10n/app_localizations.dart';
 import '../../../constants/ui_constants.dart';
 import '../../../models/character/character_book_folder.dart';
 import '../../../utils/common_dialog.dart';
@@ -88,7 +89,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
         if (mounted) {
           CommonDialog.showSnackBar(
             context: context,
-            message: '올바른 설정집 형식이 아닙니다',
+            message: AppLocalizations.of(context).characterBookInvalidFormat,
           );
         }
         return;
@@ -103,7 +104,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
         if (mounted) {
           CommonDialog.showSnackBar(
             context: context,
-            message: '올바른 설정집 형식이 아닙니다',
+            message: AppLocalizations.of(context).characterBookInvalidFormat,
           );
         }
         return;
@@ -113,7 +114,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
         if (mounted) {
           CommonDialog.showSnackBar(
             context: context,
-            message: '가져올 설정이 없습니다',
+            message: AppLocalizations.of(context).characterBookNoImport,
           );
         }
         return;
@@ -127,14 +128,14 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '${parsed.length}개 설정을 가져왔습니다',
+          message: '${parsed.length} items imported',
         );
       }
     } catch (e) {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '가져오기 실패: $e',
+          message: AppLocalizations.of(context).characterBookImportFailed(e.toString()),
         );
       }
     }
@@ -172,7 +173,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
         characterId: -1,
         name: item['name'] as String? ??
             item['comment'] as String? ??
-            '설정 ${widget.standaloneCharacterBooks.length + result.length + 1}',
+            'Item ${widget.standaloneCharacterBooks.length + result.length + 1}',
         order: _getNextMixedOrder() + result.length,
         enabled: condition,
         keys: keys,
@@ -225,7 +226,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
         id: _getNextTempId(),
         characterId: -1,
         name: item['comment'] as String? ??
-            '설정 ${widget.standaloneCharacterBooks.length + result.length + 1}',
+            'Item ${widget.standaloneCharacterBooks.length + result.length + 1}',
         order: _getNextMixedOrder() + result.length,
         enabled: condition,
         keys: keys,
@@ -261,7 +262,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
         if (mounted) {
           CommonDialog.showSnackBar(
             context: context,
-            message: '내보낼 설정이 없습니다',
+            message: AppLocalizations.of(context).characterBookNoExport,
           );
         }
         return;
@@ -296,11 +297,12 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
         });
 
         if (mounted) {
+          final l10n = AppLocalizations.of(context);
           CommonDialog.showSnackBar(
             context: context,
             message: result == true
-                ? 'Download/character_book.json에 저장되었습니다'
-                : '저장에 실패했습니다',
+                ? l10n.characterExportSuccessAndroid('character_book.json')
+                : l10n.characterBookSaveFailed,
           );
         }
       }
@@ -308,18 +310,19 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '내보내기 실패: $e',
+          message: AppLocalizations.of(context).characterBookExportFailed(e.toString()),
         );
       }
     }
   }
 
   void _addFolder() {
+    final newFolderName = AppLocalizations.of(context).characterBookNewFolder;
     setState(() {
       final newFolder = CharacterBookFolder(
         id: _getNextTempId(),
         characterId: -1,
-        name: '새 폴더',
+        name: newFolderName,
         order: _getNextMixedOrder(),
       );
       widget.folders.add(newFolder);
@@ -328,12 +331,13 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
   }
 
   void _addCharacterBook(CharacterBookFolder? folder) {
+    final newName = AppLocalizations.of(context).characterBookNewItem;
     setState(() {
       final newCharacterBook = CharacterBook(
         id: _getNextTempId(),
         characterId: -1,
         folderId: folder?.id,
-        name: '새 설정',
+        name: newName,
         order: folder != null ? folder.characterBooks.length : _getNextMixedOrder(),
         isExpanded: true,
       );
@@ -348,11 +352,12 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
   }
 
   Future<void> _deleteFolder(CharacterBookFolder folder) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await CommonDialog.showConfirmation(
       context: context,
-      title: '폴더 삭제',
-      content: '${folder.name} 폴더를 삭제하시겠습니까?\n폴더 내 모든 설정도 함께 삭제됩니다.',
-      confirmText: '삭제',
+      title: l10n.characterBookFolderDeleteTitle,
+      content: folder.name,
+      confirmText: l10n.commonDelete,
       isDestructive: true,
     );
 
@@ -460,17 +465,17 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.all(UIConstants.spacing20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 5),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5),
             child: CommonTitleMedium(
-              text: '설정집',
-              helpMessage: '캐릭터의 세계관과 관련된 정보를 설정집에 추가할 수 있습니다.\n\n'
-                  '길게 눌러 순서를 변경할 수 있습니다.',
+              text: l10n.characterBookSection,
+              helpMessage: l10n.characterBookSectionHelp,
             ),
           ),
           const SizedBox(height: 8),
@@ -515,10 +520,10 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
                 ),
               ],
               itemTypeKey: 'characterBook',
-              addItemLabel: '설정 추가',
-              addFolderLabel: '폴더 추가',
-              emptyWidget: const CommonEmptyState(
-                message: '설정집 항목이 없습니다',
+              addItemLabel: l10n.characterBookAddItem,
+              addFolderLabel: l10n.characterBookAddFolder,
+              emptyWidget: CommonEmptyState(
+                message: l10n.characterBookEmpty,
               ),
             ),
           ),
@@ -566,7 +571,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
         });
       },
       onDelete: () => _deleteCharacterBook(characterBook, folder),
-      nameHint: '설정 이름',
+      nameHint: AppLocalizations.of(context).characterBookNameHint,
       onNameChanged: (value) {
         characterBook.name = value;
         _notifyUpdate();
@@ -590,7 +595,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
 
   Widget _buildActivationConditionField(CharacterBook characterBook) {
     return CommonFieldSection(
-      label: '활성화 조건',
+      label: AppLocalizations.of(context).characterBookActivationCondition,
       child: CommonSegmentedButton<CharacterBookActivationCondition>(
         values: CharacterBookActivationCondition.values,
         selected: characterBook.enabled,
@@ -606,14 +611,15 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
   }
 
   Widget _buildActivationKeysField(CharacterBook characterBook) {
+    final l10n = AppLocalizations.of(context);
     final key = 'characterBook_${characterBook.id}_keys';
     final controller = _getFieldController(key, characterBook.keys.join(', '));
 
     return CommonFieldSection(
-      label: '활성화 키',
+      label: l10n.characterBookActivationKey,
       child: CommonEditText(
         controller: controller,
-        hintText: '쉼표로 구분하여 입력 (예: 마법, 전투)',
+        hintText: l10n.characterBookKeysHint,
         size: CommonEditTextSize.small,
         onFocusLost: (value) {
           characterBook.keys = value
@@ -629,7 +635,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
 
   Widget _buildSecondaryKeyUsageField(CharacterBook characterBook) {
     return CommonFieldSection(
-      label: '두번째 키',
+      label: AppLocalizations.of(context).characterBookSecondaryKey,
       child: CommonSegmentedButton<CharacterBookSecondaryKeyUsage>(
         values: CharacterBookSecondaryKeyUsage.values,
         selected: characterBook.secondaryKeyUsage,
@@ -645,14 +651,15 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
   }
 
   Widget _buildSecondaryKeysField(CharacterBook characterBook) {
+    final l10n = AppLocalizations.of(context);
     final key = 'characterBook_${characterBook.id}_secondaryKeys';
     final controller = _getFieldController(key, characterBook.secondaryKeys.join(', '));
 
     return CommonFieldSection(
-      label: '두번째 키',
+      label: l10n.characterBookSecondaryKey,
       child: CommonEditText(
         controller: controller,
-        hintText: '쉼표로 구분하여 입력 (예: 마법, 전투)',
+        hintText: l10n.characterBookKeysHint,
         size: CommonEditTextSize.small,
         onFocusLost: (value) {
           characterBook.secondaryKeys = value
@@ -671,7 +678,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
     final controller = _getFieldController(key, characterBook.insertionOrder.toString());
 
     return CommonFieldSection(
-      label: '배치 순서',
+      label: AppLocalizations.of(context).characterBookInsertionOrder,
       child: CommonEditText(
         controller: controller,
         hintText: '0',
@@ -689,15 +696,16 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
   }
 
   Widget _buildContentField(CharacterBook characterBook) {
+    final l10n = AppLocalizations.of(context);
     final key = 'characterBook_${characterBook.id}_content';
     final controller = _getFieldController(key, characterBook.content ?? '');
 
     return CommonFieldSection(
-      label: '내용',
+      label: l10n.characterBookContent,
       bottomSpacing: 0,
       child: CommonEditText(
         controller: controller,
-        hintText: '설정 내용을 입력해주세요',
+        hintText: l10n.characterBookContentHint,
         size: CommonEditTextSize.small,
         maxLines: null,
         minLines: 5,

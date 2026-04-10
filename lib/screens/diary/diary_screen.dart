@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/app_localizations.dart';
 import '../../database/database_helper.dart';
 import '../../models/character/character.dart';
 import '../../models/character/start_scenario.dart';
@@ -252,7 +253,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('일기 생성 실패: $e')),
+        SnackBar(content: Text(AppLocalizations.of(context).diaryGenerateFailed(e.toString()))),
       );
     } finally {
       if (mounted) setState(() => _isGenerating = false);
@@ -262,17 +263,18 @@ class _DiaryScreenState extends State<DiaryScreen> {
   Future<void> _onDayTapped(String date) async {
     final entries = await _db.readDiaryEntriesByDate(widget.chatRoomId, date);
     if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
 
     if (entries.isEmpty) {
       // Ask if user wants to generate
       final confirmed = await showDialog<bool>(
         context: context,
         builder: (ctx) => AlertDialog(
-          title: const Text('일기 생성'),
-          content: Text('$date의 일기를 생성할까요?'),
+          title: Text(l10n.diaryGenerateTitle),
+          content: Text(l10n.diaryGenerateContent(date)),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('취소')),
-            TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('확인')),
+            TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.commonCancel)),
+            TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.commonConfirm)),
           ],
         ),
       );
@@ -298,14 +300,15 @@ class _DiaryScreenState extends State<DiaryScreen> {
   }
 
   Future<void> _deleteDiaryEntry(DiaryEntry entry) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('일기 삭제'),
-        content: const Text('이 일기를 삭제할까요?'),
+        title: Text(l10n.diaryDeleteTitle),
+        content: Text(l10n.diaryDeleteContent),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('취소')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('삭제')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.commonCancel)),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.commonDelete)),
         ],
       ),
     );
@@ -323,14 +326,15 @@ class _DiaryScreenState extends State<DiaryScreen> {
 
   Future<void> _regenerateDiary() async {
     if (_selectedDate == null || _isGenerating) return;
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('일기 재생성'),
-        content: Text('$_selectedDate의 일기를 모두 삭제하고 다시 생성할까요?'),
+        title: Text(l10n.diaryRegenerateTitle),
+        content: Text(l10n.diaryRegenerateContent(_selectedDate!)),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('취소')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('확인')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.commonCancel)),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.commonConfirm)),
         ],
       ),
     );
@@ -373,7 +377,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
         actions: [
           IconButton(
             icon: Icon(Icons.menu, color: onSecondary),
-            tooltip: '설정',
+            tooltip: AppLocalizations.of(context).diarySettingsTooltip,
             onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
           ),
         ],
@@ -428,7 +432,15 @@ class _DiaryScreenState extends State<DiaryScreen> {
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 8),
           child: Row(
-            children: ['일', '월', '화', '수', '목', '금', '토']
+            children: [
+              AppLocalizations.of(context).diaryDaySun,
+              AppLocalizations.of(context).diaryDayMon,
+              AppLocalizations.of(context).diaryDayTue,
+              AppLocalizations.of(context).diaryDayWed,
+              AppLocalizations.of(context).diaryDayThu,
+              AppLocalizations.of(context).diaryDayFri,
+              AppLocalizations.of(context).diaryDaySat,
+            ]
                 .map((d) => Expanded(
                       child: Center(
                         child: Text(d,
@@ -537,6 +549,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
   }
 
   Widget _buildEntryList() {
+    final l10n = AppLocalizations.of(context);
     if (_selectedDate == null) {
       return Center(
         child: Column(
@@ -545,7 +558,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
             Icon(Icons.auto_stories,
                 size: 64, color: Theme.of(context).colorScheme.outlineVariant),
             const SizedBox(height: 16),
-            Text('날짜를 선택하세요',
+            Text(l10n.diarySelectDate,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Theme.of(context).colorScheme.outline,
                     )),
@@ -557,12 +570,12 @@ class _DiaryScreenState extends State<DiaryScreen> {
     if (_selectedDayEntries.isEmpty) {
       return Center(
         child: _isGenerating
-            ? const Column(
+            ? Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('일기를 생성하고 있습니다...'),
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(l10n.diaryGenerating),
                 ],
               )
             : Column(
@@ -571,7 +584,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                   Icon(Icons.edit_note,
                       size: 64, color: Theme.of(context).colorScheme.outlineVariant),
                   const SizedBox(height: 16),
-                  Text('아직 일기가 없습니다',
+                  Text(l10n.diaryNoEntries,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: Theme.of(context).colorScheme.outline,
                           )),
@@ -598,7 +611,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                 const Spacer(),
                 IconButton(
                   icon: const Icon(Icons.refresh, size: 20),
-                  tooltip: '재생성',
+                  tooltip: l10n.diaryRegenerateTooltip,
                   onPressed: _isGenerating ? null : _regenerateDiary,
                 ),
               ],
@@ -686,6 +699,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
           padding: const EdgeInsets.all(16),
           child: Consumer<DiaryModelProvider>(
             builder: (context, provider, _) {
+              final l10n = AppLocalizations.of(context);
               final providerOptions = ProviderOption.buildOptions(provider.customProviders);
 
               ProviderOption? currentProviderOption;
@@ -700,12 +714,12 @@ class _DiaryScreenState extends State<DiaryScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '사용 모델',
+                    l10n.diaryUsedModel,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(fontSize: 16),
                   ),
                   const SizedBox(height: 16),
                   _buildSettingRow(
-                    label: '모델설정',
+                    label: l10n.diaryModelPreset,
                     child: CommonDropdownButton<ModelPreset>(
                       value: provider.modelPreset,
                       items: ModelPreset.values,
@@ -731,7 +745,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                   if (provider.modelPreset == ModelPreset.custom) ...[
                     const SizedBox(height: 8),
                     _buildSettingRow(
-                      label: '제조사',
+                      label: l10n.diaryProvider,
                       child: CommonDropdownButton<ProviderOption>(
                         value: currentProviderOption,
                         items: providerOptions,
@@ -749,7 +763,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                     ),
                     const SizedBox(height: 8),
                     _buildSettingRow(
-                      label: '채팅 모델',
+                      label: l10n.diaryChatModel,
                       child: CommonDropdownButton<UnifiedModel>(
                         value: provider.selectedModel,
                         items: provider.availableModels,
@@ -763,14 +777,14 @@ class _DiaryScreenState extends State<DiaryScreen> {
                   const Divider(),
                   const SizedBox(height: 16),
                   Text(
-                    '다이어리 설정',
+                    l10n.diarySettingsSection,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(fontSize: 16),
                   ),
                   const SizedBox(height: 16),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text('자동 생성',
+                      Text(l10n.diaryAutoGenerate,
                           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                 fontWeight: FontWeight.w600,
                                 fontSize: 14,
@@ -785,7 +799,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                     Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: Text(
-                        '채팅 내 날짜가 변경되면 자동으로 일기를 생성합니다.',
+                        l10n.diaryAutoGenerateDesc,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
                               color: Theme.of(context).colorScheme.outline,
                             ),

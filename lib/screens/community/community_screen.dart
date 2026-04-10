@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/app_localizations.dart';
 import '../../database/database_helper.dart';
 import '../../models/character/character.dart';
 import '../../models/character/start_scenario.dart';
@@ -56,7 +57,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   final Set<int> _newCommentIds = {};
 
   // Draft state for retry on failure
-  String _draftPostAuthor = '익명';
+  String _draftPostAuthor = '';
   String _draftPostTitle = '';
   String _draftPostContent = '';
   final Map<int, String> _draftCommentAuthor = {};
@@ -168,7 +169,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     if (worldview.isEmpty) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('캐릭터 설명 또는 요약 내용을 먼저 작성해주세요.')),
+        SnackBar(content: Text(AppLocalizations.of(context).communityNeedDescription)),
       );
       return;
     }
@@ -242,7 +243,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('생성 실패: $e')),
+        SnackBar(content: Text(AppLocalizations.of(context).communityGenerateFailed(e.toString()))),
       );
     } finally {
       if (mounted) setState(() => _isGenerating = false);
@@ -250,7 +251,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   void _showWritePost() {
-    final authorCtrl = TextEditingController(text: _draftPostAuthor);
+    final l10n = AppLocalizations.of(context);
+    final authorCtrl = TextEditingController(
+        text: _draftPostAuthor.isEmpty ? l10n.communityAnonymous : _draftPostAuthor);
     final titleCtrl = TextEditingController(text: _draftPostTitle);
     final contentCtrl = TextEditingController(text: _draftPostContent);
 
@@ -269,23 +272,23 @@ class _CommunityScreenState extends State<CommunityScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('게시글 작성',
+            Text(l10n.communityWritePost,
                 style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 16),
             TextField(
               controller: authorCtrl,
-              decoration: const InputDecoration(
-                hintText: '닉네임',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                hintText: l10n.communityNickname,
+                border: const OutlineInputBorder(),
                 isDense: true,
               ),
             ),
             const SizedBox(height: 10),
             TextField(
               controller: titleCtrl,
-              decoration: const InputDecoration(
-                hintText: '제목',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                hintText: l10n.communityTitle,
+                border: const OutlineInputBorder(),
                 isDense: true,
               ),
             ),
@@ -293,9 +296,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
             TextField(
               controller: contentCtrl,
               maxLines: 4,
-              decoration: const InputDecoration(
-                hintText: '내용',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                hintText: l10n.communityContent,
+                border: const OutlineInputBorder(),
                 isDense: true,
               ),
             ),
@@ -314,7 +317,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   Navigator.pop(ctx);
                   await _submitPost(author: author, title: title, content: content);
                 },
-                child: const Text('등록'),
+                child: Text(l10n.communityRegister),
               ),
             ),
           ],
@@ -350,21 +353,25 @@ class _CommunityScreenState extends State<CommunityScreen> {
         _newCommentIds.add(commentId);
       }
 
-      _draftPostAuthor = '익명';
+      _draftPostAuthor = '';
       _draftPostTitle = '';
       _draftPostContent = '';
       await _load(showLoading: false);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('등록 실패: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context).communityRegisterFailed(e.toString()))),
+      );
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
   }
 
   void _showWriteComment(CommunityPost post) {
+    final l10n = AppLocalizations.of(context);
     final postId = post.id!;
-    final nicknameCtrl = TextEditingController(text: _draftCommentAuthor[postId] ?? '익명');
+    final nicknameCtrl = TextEditingController(
+        text: _draftCommentAuthor[postId] ?? l10n.communityAnonymous);
     final contentCtrl = TextEditingController(text: _draftCommentContent[postId] ?? '');
 
     showModalBottomSheet(
@@ -382,7 +389,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('댓글 작성',
+            Text(l10n.communityWriteComment,
                 style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
             const SizedBox(height: 6),
             Text(
@@ -396,9 +403,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
             const SizedBox(height: 12),
             TextField(
               controller: nicknameCtrl,
-              decoration: const InputDecoration(
-                hintText: '닉네임',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                hintText: l10n.communityNickname,
+                border: const OutlineInputBorder(),
                 isDense: true,
               ),
             ),
@@ -407,9 +414,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
               controller: contentCtrl,
               maxLines: 3,
               autofocus: true,
-              decoration: const InputDecoration(
-                hintText: '댓글 내용',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                hintText: l10n.communityCommentContent,
+                border: const OutlineInputBorder(),
                 isDense: true,
               ),
             ),
@@ -426,7 +433,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   Navigator.pop(ctx);
                   await _submitComment(post: post, author: nickname, content: content);
                 },
-                child: const Text('등록'),
+                child: Text(l10n.communityRegister),
               ),
             ),
           ],
@@ -477,7 +484,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
       await _load(showLoading: false);
     } catch (e) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('등록 실패: $e')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context).communityRegisterFailed(e.toString()))),
+      );
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
     }
@@ -559,14 +568,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Future<void> _deleteComment(CommunityComment comment) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('댓글 삭제'),
-        content: const Text('이 댓글을 삭제할까요?'),
+        title: Text(l10n.communityCommentDeleteTitle),
+        content: Text(l10n.communityCommentDeleteContent),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('취소')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('삭제')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.commonCancel)),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.commonDelete)),
         ],
       ),
     );
@@ -576,14 +586,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Future<void> _deletePost(CommunityPost post) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('게시글 삭제'),
-        content: const Text('이 게시글을 삭제할까요?'),
+        title: Text(l10n.communityPostDeleteTitle),
+        content: Text(l10n.communityPostDeleteContent),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('취소')),
-          TextButton(onPressed: () => Navigator.pop(ctx, true), child: const Text('삭제')),
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: Text(l10n.commonCancel)),
+          TextButton(onPressed: () => Navigator.pop(ctx, true), child: Text(l10n.commonDelete)),
         ],
       ),
     );
@@ -604,6 +615,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final secondary = Theme.of(context).colorScheme.secondary;
     final onSecondary = Theme.of(context).colorScheme.onSecondary;
 
@@ -617,7 +629,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         title: Text(
           _character?.communityName?.isNotEmpty == true
               ? _character!.communityName!
-              : '자유게시판',
+              : l10n.communityDefaultName,
           style: TextStyle(color: onSecondary),
         ),
         actions: [
@@ -647,7 +659,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
                 child: Text(
-                  '게시글 작성',
+                  l10n.communityWritePost,
                   style: TextStyle(
                     color: _isGenerating ? onSecondary.withValues(alpha: 0.4) : onSecondary,
                     fontWeight: FontWeight.bold,
@@ -657,7 +669,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
             ),
           IconButton(
             icon: Icon(Icons.menu, color: onSecondary),
-            tooltip: '설정',
+            tooltip: l10n.communitySettingsTooltip,
             onPressed: () => _scaffoldKey.currentState?.openEndDrawer(),
           ),
         ],
@@ -688,6 +700,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
 
   Widget _buildEmptyState() {
+    final l10n = AppLocalizations.of(context);
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       children: [
@@ -699,12 +712,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
               Icon(Icons.forum_outlined,
                   size: 64, color: Theme.of(context).colorScheme.outlineVariant),
               const SizedBox(height: 16),
-              Text('아직 게시글이 없습니다',
+              Text(l10n.communityNoPostsTitle,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Theme.of(context).colorScheme.outline,
                       )),
               const SizedBox(height: 8),
-              Text('당겨서 게시글을 새로 불러오세요',
+              Text(l10n.communityNoPostsSubtitle,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
                         color: Theme.of(context).colorScheme.outline,
                       )),
@@ -820,7 +833,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       size: 14,
                       color: Theme.of(context).colorScheme.secondary),
                   label: Text(
-                    '댓글 달기',
+                    AppLocalizations.of(context).communityCommentLabel,
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: Theme.of(context).colorScheme.secondary,
                         ),
@@ -903,6 +916,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Widget _buildModelDrawer() {
+    final l10n = AppLocalizations.of(context);
     return Drawer(
       child: SafeArea(
         child: Padding(
@@ -923,12 +937,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '사용 모델',
+                    l10n.communityUsedModelSection,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(fontSize: 16),
                   ),
                   const SizedBox(height: 16),
                   _buildSettingRow(
-                    label: '모델설정',
+                    label: l10n.communityModelPreset,
                     child: CommonDropdownButton<ModelPreset>(
                       value: provider.modelPreset,
                       items: ModelPreset.values,
@@ -954,7 +968,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   if (provider.modelPreset == ModelPreset.custom) ...[
                     const SizedBox(height: 8),
                     _buildSettingRow(
-                      label: '제조사',
+                      label: l10n.communityProvider,
                       child: CommonDropdownButton<ProviderOption>(
                         value: currentProviderOption,
                         items: providerOptions,
@@ -974,7 +988,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     ),
                     const SizedBox(height: 8),
                     _buildSettingRow(
-                      label: '채팅 모델',
+                      label: l10n.communityChatModel,
                       child: CommonDropdownButton<UnifiedModel>(
                         value: provider.selectedModel,
                         items: provider.availableModels,
@@ -989,23 +1003,23 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   const Divider(),
                   const SizedBox(height: 16),
                   Text(
-                    '커뮤니티 설정',
+                    l10n.communitySettingsSection,
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(fontSize: 16),
                   ),
                   const SizedBox(height: 16),
                   _buildSettingRow(
-                    label: '커뮤니티 이름',
+                    label: l10n.communityNameLabel,
                     child: Text(
                       _character!.communityName?.isNotEmpty == true
                           ? _character!.communityName!
-                          : '자유게시판',
+                          : l10n.communityDefaultName,
                       style: Theme.of(context).textTheme.bodyMedium,
                     ),
                   ),
                   if (_character!.communityMood?.isNotEmpty == true) ...[
                     const SizedBox(height: 8),
                     _buildSettingRow(
-                      label: '커뮤니티 분위기',
+                      label: l10n.communityToneLabel,
                       child: Text(
                         _character!.communityMood!,
                         style: Theme.of(context).textTheme.bodyMedium,
@@ -1015,7 +1029,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   if (_character!.communityLanguage?.isNotEmpty == true) ...[
                     const SizedBox(height: 8),
                     _buildSettingRow(
-                      label: '사용 언어',
+                      label: l10n.communityLanguageLabel,
                       child: Text(
                         _character!.communityLanguage!,
                         style: Theme.of(context).textTheme.bodyMedium,
