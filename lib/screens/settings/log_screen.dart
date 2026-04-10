@@ -436,7 +436,7 @@ class _LogDetailSheetState extends State<_LogDetailSheet> {
                 IconButton(
                   icon: const Icon(Icons.copy, size: 20),
                   onPressed: () => _copyToClipboard(widget.log.response),
-                  tooltip: '복사',
+                  tooltip: AppLocalizations.of(context).commonCopy,
                 ),
                 Switch(
                   value: _showFormattedResponse,
@@ -444,7 +444,7 @@ class _LogDetailSheetState extends State<_LogDetailSheet> {
                     setState(() => _showFormattedResponse = value);
                   },
                 ),
-                Text('포맷', style: Theme.of(context).textTheme.bodySmall),
+                Text(AppLocalizations.of(context).logDetailFormatLabel, style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
             const SizedBox(height: 12),

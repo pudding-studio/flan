@@ -360,7 +360,7 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
           if (mounted) {
             await CommonDialog.showInfo(
               context: context,
-              title: 'API 키 검증 실패',
+              title: AppLocalizations.of(context).apiKeyValidationFailed,
               content: validationError,
             );
           }
@@ -383,7 +383,7 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '${widget.apiKeyType.displayName} API 키가 저장되었습니다',
+          message: AppLocalizations.of(context).apiKeySaved(widget.apiKeyType.displayName),
         );
         setState(() {});
       }

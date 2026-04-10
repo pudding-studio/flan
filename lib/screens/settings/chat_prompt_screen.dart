@@ -582,7 +582,7 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        '+ 버튼을 눌러 새 프롬프트를 추가해보세요',
+                        AppLocalizations.of(context).chatPromptEmptyHint,
                         style: TextStyle(
                           fontSize: 14,
                           color: Theme.of(context)
@@ -607,7 +607,7 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
                       padding: const EdgeInsets.only(bottom: 16.0),
                       child: SettingsPromptListItem(
                         title: prompt.name,
-                        description: prompt.description ?? '${prompt.items.length}개 항목',
+                        description: prompt.description ?? AppLocalizations.of(context).chatPromptItemCount(prompt.items.length),
                         isSelected: prompt.isSelected,
                         isDefault: prompt.isDefault,
                         onRadioTap: () => _selectPrompt(prompt.id!),

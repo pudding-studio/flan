@@ -4914,6 +4914,72 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'캐릭터북 삭제'**
   String get toolDeleteCharacterBook;
+
+  /// No description provided for @apiKeyLoadFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'API 키 불러오기 실패: {error}'**
+  String apiKeyLoadFailed(String error);
+
+  /// No description provided for @apiKeyServiceAccountLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'(서비스 계정 JSON)'**
+  String get apiKeyServiceAccountLabel;
+
+  /// No description provided for @apiKeyValidationFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'API 키 검증 실패'**
+  String get apiKeyValidationFailed;
+
+  /// No description provided for @apiKeySaved.
+  ///
+  /// In ko, this message translates to:
+  /// **'{apiKeyType} API 키가 저장되었습니다'**
+  String apiKeySaved(String apiKeyType);
+
+  /// No description provided for @chatPromptEmptyHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'+ 버튼을 눌러 새 프롬프트를 추가해보세요'**
+  String get chatPromptEmptyHint;
+
+  /// No description provided for @chatPromptItemCount.
+  ///
+  /// In ko, this message translates to:
+  /// **'{count}개 항목'**
+  String chatPromptItemCount(int count);
+
+  /// No description provided for @customModelSubtitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'{format} · {count}개 모델'**
+  String customModelSubtitle(String format, int count);
+
+  /// No description provided for @agentChatDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'Flan Agent는 캐릭터를 생성하거나 편집할 수 있습니다. 원하는 캐릭터 제작 및 수정을 요청해 보세요.'**
+  String get agentChatDescription;
+
+  /// No description provided for @diaryTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'{author}의 일기'**
+  String diaryTitle(String author);
+
+  /// No description provided for @characterCardOutfitLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'의상 '**
+  String get characterCardOutfitLabel;
+
+  /// No description provided for @characterCardMemoLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'메모 '**
+  String get characterCardMemoLabel;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

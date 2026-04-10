@@ -341,7 +341,7 @@ class _ProviderCard extends StatelessWidget {
             leading: Icon(Icons.dns_outlined, color: colorScheme.primary),
             title: Text(provider.name),
             subtitle: Text(
-              '${provider.apiFormat.displayName} · ${models.length}개 모델',
+              AppLocalizations.of(context).customModelSubtitle(provider.apiFormat.displayName, models.length),
               style: textTheme.bodySmall?.copyWith(
                 color: colorScheme.onSurfaceVariant,
               ),

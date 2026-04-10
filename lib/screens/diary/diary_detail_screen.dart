@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../l10n/app_localizations.dart';
 import '../../models/diary/diary_entry.dart';
 
 class DiaryDetailScreen extends StatelessWidget {
@@ -18,7 +19,7 @@ class DiaryDetailScreen extends StatelessWidget {
         backgroundColor: secondary,
         foregroundColor: onSecondary,
         iconTheme: IconThemeData(color: onSecondary),
-        title: Text('${entry.author}의 일기', style: TextStyle(color: onSecondary)),
+        title: Text(AppLocalizations.of(context).diaryTitle(entry.author), style: TextStyle(color: onSecondary)),
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

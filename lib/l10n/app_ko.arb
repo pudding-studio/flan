@@ -1268,5 +1268,48 @@
   "toolDeleteStartScenario": "시작 시나리오 삭제",
   "toolCreateCharacterBook": "캐릭터북 생성",
   "toolUpdateCharacterBook": "캐릭터북 수정",
-  "toolDeleteCharacterBook": "캐릭터북 삭제"
+  "toolDeleteCharacterBook": "캐릭터북 삭제",
+
+  "apiKeyLoadFailed": "API 키 불러오기 실패: {error}",
+  "@apiKeyLoadFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "apiKeyServiceAccountLabel": "(서비스 계정 JSON)",
+  "apiKeyValidationFailed": "API 키 검증 실패",
+  "apiKeySaved": "{apiKeyType} API 키가 저장되었습니다",
+  "@apiKeySaved": {
+    "placeholders": {
+      "apiKeyType": { "type": "String" }
+    }
+  },
+
+  "chatPromptEmptyHint": "+ 버튼을 눌러 새 프롬프트를 추가해보세요",
+  "chatPromptItemCount": "{count}개 항목",
+  "@chatPromptItemCount": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+
+  "customModelSubtitle": "{format} · {count}개 모델",
+  "@customModelSubtitle": {
+    "placeholders": {
+      "format": { "type": "String" },
+      "count": { "type": "int" }
+    }
+  },
+
+  "agentChatDescription": "Flan Agent는 캐릭터를 생성하거나 편집할 수 있습니다. 원하는 캐릭터 제작 및 수정을 요청해 보세요.",
+
+  "diaryTitle": "{author}의 일기",
+  "@diaryTitle": {
+    "placeholders": {
+      "author": { "type": "String" }
+    }
+  },
+
+  "characterCardOutfitLabel": "의상 ",
+  "characterCardMemoLabel": "메모 "
 }

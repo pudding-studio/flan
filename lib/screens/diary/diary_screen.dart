@@ -662,7 +662,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '${entry.author}의 일기',
+                        AppLocalizations.of(context).diaryTitle(entry.author),
                         style: Theme.of(context).textTheme.labelSmall?.copyWith(
                               color: colorScheme.outline,
                             ),

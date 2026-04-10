@@ -2584,4 +2584,47 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get toolDeleteCharacterBook => '캐릭터북 삭제';
+
+  @override
+  String apiKeyLoadFailed(String error) {
+    return 'API 키 불러오기 실패: $error';
+  }
+
+  @override
+  String get apiKeyServiceAccountLabel => '(서비스 계정 JSON)';
+
+  @override
+  String get apiKeyValidationFailed => 'API 키 검증 실패';
+
+  @override
+  String apiKeySaved(String apiKeyType) {
+    return '$apiKeyType API 키가 저장되었습니다';
+  }
+
+  @override
+  String get chatPromptEmptyHint => '+ 버튼을 눌러 새 프롬프트를 추가해보세요';
+
+  @override
+  String chatPromptItemCount(int count) {
+    return '$count개 항목';
+  }
+
+  @override
+  String customModelSubtitle(String format, int count) {
+    return '$format · $count개 모델';
+  }
+
+  @override
+  String get agentChatDescription => 'Flan Agent는 캐릭터를 생성하거나 편집할 수 있습니다. 원하는 캐릭터 제작 및 수정을 요청해 보세요.';
+
+  @override
+  String diaryTitle(String author) {
+    return '$author의 일기';
+  }
+
+  @override
+  String get characterCardOutfitLabel => '의상 ';
+
+  @override
+  String get characterCardMemoLabel => '메모 ';
 }

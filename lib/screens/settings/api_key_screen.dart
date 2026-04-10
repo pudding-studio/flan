@@ -90,7 +90,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: 'API 키 불러오기 실패: $e',
+          message: AppLocalizations.of(context).apiKeyLoadFailed(e.toString()),
         );
       }
     } finally {
@@ -358,7 +358,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
     if (projectId != null && email != null) {
       return '$projectId\n$email';
     }
-    return '(서비스 계정 JSON)';
+    return AppLocalizations.of(context).apiKeyServiceAccountLabel;
   }
 
   String _obscureKey(String key) {
