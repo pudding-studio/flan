@@ -1311,5 +1311,9 @@
   },
 
   "characterCardOutfitLabel": "Outfit ",
-  "characterCardMemoLabel": "Memo "
+  "characterCardMemoLabel": "Memo ",
+
+  "modelPresetPrimary": "Primary Model",
+  "modelPresetSecondary": "Secondary Model",
+  "modelPresetCustom": "Custom"
 }

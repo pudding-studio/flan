@@ -2627,4 +2627,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get characterCardMemoLabel => 'Memo ';
+
+  @override
+  String get modelPresetPrimary => 'Primary Model';
+
+  @override
+  String get modelPresetSecondary => 'Secondary Model';
+
+  @override
+  String get modelPresetCustom => 'Custom';
 }

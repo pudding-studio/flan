@@ -1311,5 +1311,9 @@
   },
 
   "characterCardOutfitLabel": "의상 ",
-  "characterCardMemoLabel": "메모 "
+  "characterCardMemoLabel": "메모 ",
+
+  "modelPresetPrimary": "주 모델",
+  "modelPresetSecondary": "보조 모델",
+  "modelPresetCustom": "기타"
 }

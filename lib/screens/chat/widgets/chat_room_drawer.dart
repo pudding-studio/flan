@@ -658,7 +658,11 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
                 widget.onModelPresetChanged(preset.name);
               }
             },
-            labelBuilder: (preset) => preset.displayName,
+            labelBuilder: (preset) => switch (preset) {
+              ModelPreset.primary => l10n.modelPresetPrimary,
+              ModelPreset.secondary => l10n.modelPresetSecondary,
+              ModelPreset.custom => l10n.modelPresetCustom,
+            },
             size: CommonDropdownButtonSize.xsmall,
           ),
         ),

@@ -454,7 +454,11 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
                       value: _modelPreset,
                       items: ModelPreset.values,
                       onChanged: (p) { if (p != null) _setPreset(p); },
-                      labelBuilder: (p) => p.displayName,
+                      labelBuilder: (p) => switch (p) {
+                        ModelPreset.primary => l10n.modelPresetPrimary,
+                        ModelPreset.secondary => l10n.modelPresetSecondary,
+                        ModelPreset.custom => l10n.modelPresetCustom,
+                      },
                       size: CommonDropdownButtonSize.xsmall,
                     ),
                   ),

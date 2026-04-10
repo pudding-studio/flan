@@ -4980,6 +4980,24 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'메모 '**
   String get characterCardMemoLabel;
+
+  /// No description provided for @modelPresetPrimary.
+  ///
+  /// In ko, this message translates to:
+  /// **'주 모델'**
+  String get modelPresetPrimary;
+
+  /// No description provided for @modelPresetSecondary.
+  ///
+  /// In ko, this message translates to:
+  /// **'보조 모델'**
+  String get modelPresetSecondary;
+
+  /// No description provided for @modelPresetCustom.
+  ///
+  /// In ko, this message translates to:
+  /// **'기타'**
+  String get modelPresetCustom;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

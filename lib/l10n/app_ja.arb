@@ -1311,5 +1311,9 @@
   },
 
   "characterCardOutfitLabel": "衣装 ",
-  "characterCardMemoLabel": "メモ "
+  "characterCardMemoLabel": "メモ ",
+
+  "modelPresetPrimary": "メインモデル",
+  "modelPresetSecondary": "サブモデル",
+  "modelPresetCustom": "カスタム"
 }

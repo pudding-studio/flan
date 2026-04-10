@@ -2627,4 +2627,13 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get characterCardMemoLabel => '메모 ';
+
+  @override
+  String get modelPresetPrimary => '주 모델';
+
+  @override
+  String get modelPresetSecondary => '보조 모델';
+
+  @override
+  String get modelPresetCustom => '기타';
 }
