@@ -100,6 +100,60 @@ flutter build apk --debug
 - **Code comments**: English only
 - **Reports/explanations**: Korean
 
+## Internationalization (i18n)
+
+지원 언어: 한국어(`ko`) / 영어(`en`) / 일본어(`ja`)
+
+### 핵심 규칙
+
+- **모든 UI 노출 문자열은 반드시 `AppLocalizations`를 통해 제공**한다. 하드코딩 금지.
+  - `Text('확인')` → `Text(l10n.commonConfirm)`
+  - `tooltip: '복사'` → `tooltip: l10n.commonCopy`
+- **예외 — 다국어화 불필요한 문자열:**
+  - 모델·서비스·파서 레이어 (no `BuildContext`): `lib/models/`, `lib/services/`, `lib/utils/`, `lib/database/`
+  - AI에게 전달되는 데이터 키 (예: `'정치'`, `'positive'` 등 내부 식별자)
+  - `debugPrint` / 로그 문자열
+
+### ARB 파일
+
+| 파일 | 역할 |
+|------|------|
+| `lib/l10n/app_ko.arb` | 한국어 원본 (template) |
+| `lib/l10n/app_en.arb` | 영어 (미번역 항목은 한국어 값 유지, `@@x_todo` 마커) |
+| `lib/l10n/app_ja.arb` | 일본어 (동일) |
+
+- 키 추가 시 세 파일 모두 동시에 업데이트, `flutter gen-l10n` 실행
+- 키 네이밍: `screenName_widget_purpose` (예: `settings_section_general`, `common_button_confirm`)
+- 파라미터 있는 키는 `@key` 메타데이터에 `placeholders` 명시
+
+### 사용 패턴
+
+```dart
+// build() 안에서
+final l10n = AppLocalizations.of(context);
+
+// 파라미터 없는 키
+Text(l10n.commonConfirm)
+
+// 파라미터 있는 키
+Text(l10n.diaryTitle(entry.author))
+Text(l10n.chatPromptItemCount(items.length))
+```
+
+- async 메서드에서 `context`를 사용할 경우, `await` **전에** `l10n`을 캡처한다:
+  ```dart
+  final l10n = AppLocalizations.of(context);
+  final result = await someAsyncOp();
+  // l10n 사용 가능
+  ```
+- 위젯의 default 파라미터가 한국어 하드코딩인 경우, `String? param`으로 nullable화하고 `build()` 안에서 `param ?? l10n.fallbackKey`로 resolve
+
+### 새 기능 작성 시
+
+1. UI 문자열을 먼저 `app_ko.arb`에 추가한 뒤 `app_en.arb`, `app_ja.arb`에도 동일 키 추가
+2. `flutter gen-l10n` 실행 후 `AppLocalizations`를 import해서 사용
+3. `flutter analyze`로 새 경고 없음 확인
+
 ## Coding Principles
 
 1. **Clean Code**: Prioritize self-explanatory code over comments
