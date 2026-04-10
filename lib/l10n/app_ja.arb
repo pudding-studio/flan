@@ -1315,5 +1315,11 @@
 
   "modelPresetPrimary": "メインモデル",
   "modelPresetSecondary": "サブモデル",
-  "modelPresetCustom": "カスタム"
+  "modelPresetCustom": "カスタム",
+
+  "agentEntryTypeEpisode": "要約",
+  "agentEntryTypeCharacter": "登場人物",
+  "agentEntryTypeLocation": "地域/場所",
+  "agentEntryTypeItem": "アイテム",
+  "agentEntryTypeEvent": "実績/出来事"
 }

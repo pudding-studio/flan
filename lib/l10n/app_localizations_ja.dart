@@ -2636,4 +2636,19 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get modelPresetCustom => 'カスタム';
+
+  @override
+  String get agentEntryTypeEpisode => '要約';
+
+  @override
+  String get agentEntryTypeCharacter => '登場人物';
+
+  @override
+  String get agentEntryTypeLocation => '地域/場所';
+
+  @override
+  String get agentEntryTypeItem => 'アイテム';
+
+  @override
+  String get agentEntryTypeEvent => '実績/出来事';
 }

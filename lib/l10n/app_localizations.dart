@@ -4998,6 +4998,36 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'기타'**
   String get modelPresetCustom;
+
+  /// No description provided for @agentEntryTypeEpisode.
+  ///
+  /// In ko, this message translates to:
+  /// **'요약'**
+  String get agentEntryTypeEpisode;
+
+  /// No description provided for @agentEntryTypeCharacter.
+  ///
+  /// In ko, this message translates to:
+  /// **'등장인물'**
+  String get agentEntryTypeCharacter;
+
+  /// No description provided for @agentEntryTypeLocation.
+  ///
+  /// In ko, this message translates to:
+  /// **'지역/장소'**
+  String get agentEntryTypeLocation;
+
+  /// No description provided for @agentEntryTypeItem.
+  ///
+  /// In ko, this message translates to:
+  /// **'물품'**
+  String get agentEntryTypeItem;
+
+  /// No description provided for @agentEntryTypeEvent.
+  ///
+  /// In ko, this message translates to:
+  /// **'업적/사건'**
+  String get agentEntryTypeEvent;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

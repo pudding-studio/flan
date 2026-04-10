@@ -2636,4 +2636,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get modelPresetCustom => 'Custom';
+
+  @override
+  String get agentEntryTypeEpisode => 'Summary';
+
+  @override
+  String get agentEntryTypeCharacter => 'Characters';
+
+  @override
+  String get agentEntryTypeLocation => 'Locations';
+
+  @override
+  String get agentEntryTypeItem => 'Items';
+
+  @override
+  String get agentEntryTypeEvent => 'Events';
 }

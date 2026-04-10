@@ -2636,4 +2636,19 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get modelPresetCustom => '기타';
+
+  @override
+  String get agentEntryTypeEpisode => '요약';
+
+  @override
+  String get agentEntryTypeCharacter => '등장인물';
+
+  @override
+  String get agentEntryTypeLocation => '지역/장소';
+
+  @override
+  String get agentEntryTypeItem => '물품';
+
+  @override
+  String get agentEntryTypeEvent => '업적/사건';
 }

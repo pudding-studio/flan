@@ -1315,5 +1315,11 @@
 
   "modelPresetPrimary": "Primary Model",
   "modelPresetSecondary": "Secondary Model",
-  "modelPresetCustom": "Custom"
+  "modelPresetCustom": "Custom",
+
+  "agentEntryTypeEpisode": "Summary",
+  "agentEntryTypeCharacter": "Characters",
+  "agentEntryTypeLocation": "Locations",
+  "agentEntryTypeItem": "Items",
+  "agentEntryTypeEvent": "Events"
 }

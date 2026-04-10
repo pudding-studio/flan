@@ -1507,7 +1507,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
                 padding: const EdgeInsets.only(right: 6),
                 child: FilterChip(
                   avatar: Icon(_agentTabIcons[i], size: 16),
-                  label: Text('${type.displayName} ($count)'),
+                  label: Text('${_agentEntryTypeName(type, AppLocalizations.of(context))} ($count)'),
                   selected: _agentSubTabIndex == i,
                   onSelected: (_) => setState(() => _agentSubTabIndex = i),
                   visualDensity: VisualDensity.compact,
@@ -1537,7 +1537,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
         child: Padding(
           padding: const EdgeInsets.all(32),
           child: Text(
-            l10n.drawerAgentEntryEmpty(type.displayName),
+            l10n.drawerAgentEntryEmpty(_agentEntryTypeName(type, l10n)),
             textAlign: TextAlign.center,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).colorScheme.onSurfaceVariant,
@@ -1784,6 +1784,16 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
     if (entry.id == null) return;
     await _db.setAgentEntryActive(entry.id!, isActive);
     await _loadData();
+  }
+
+  String _agentEntryTypeName(AgentEntryType type, AppLocalizations l10n) {
+    switch (type) {
+      case AgentEntryType.episode: return l10n.agentEntryTypeEpisode;
+      case AgentEntryType.character: return l10n.agentEntryTypeCharacter;
+      case AgentEntryType.location: return l10n.agentEntryTypeLocation;
+      case AgentEntryType.item: return l10n.agentEntryTypeItem;
+      case AgentEntryType.event: return l10n.agentEntryTypeEvent;
+    }
   }
 
   List<(String, String, bool)> _agentFieldDefs(
