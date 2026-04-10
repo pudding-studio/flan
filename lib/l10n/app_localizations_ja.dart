@@ -1076,4 +1076,473 @@ class AppLocalizationsJa extends AppLocalizations {
   String characterCopyName(String name) {
     return '$name (복사본)';
   }
+
+  @override
+  String get autoSummaryTitle => '자동 요약';
+
+  @override
+  String get autoSummarySaveFailed => '저장에 실패했습니다';
+
+  @override
+  String autoSummaryExportFailed(String error) {
+    return '요약 프롬프트 내보내기 실패: $error';
+  }
+
+  @override
+  String get autoSummaryResetTitle => '초기화';
+
+  @override
+  String get autoSummaryResetContent => '요약 프롬프트를 최신 기본 프롬프트로 되돌리시겠습니까?';
+
+  @override
+  String get autoSummaryResetConfirm => '초기화';
+
+  @override
+  String get autoSummaryResetSuccess => '요약 프롬프트가 초기화되었습니다';
+
+  @override
+  String autoSummaryResetFailed(String error) {
+    return '요약 프롬프트 초기화에 실패했습니다: $error';
+  }
+
+  @override
+  String get autoSummaryInvalidFormat => '올바른 요약 프롬프트 형식이 아닙니다';
+
+  @override
+  String get autoSummaryEmptyItems => '프롬프트 항목이 비어있습니다';
+
+  @override
+  String get autoSummaryImportSuccess => '요약 프롬프트를 가져왔습니다';
+
+  @override
+  String autoSummaryImportFailed(String error) {
+    return '요약 프롬프트 가져오기 실패: $error';
+  }
+
+  @override
+  String get autoSummaryTabBasic => '기본정보';
+
+  @override
+  String get autoSummaryTabParameters => '파라미터';
+
+  @override
+  String get autoSummaryTabPrompt => '프롬프트';
+
+  @override
+  String get autoSummarySection => '자동 요약 설정';
+
+  @override
+  String get autoSummaryEnableTitle => '자동 요약';
+
+  @override
+  String get autoSummaryEnableSubtitle => '토큰 수 초과 시 자동으로 요약을 생성합니다';
+
+  @override
+  String get autoSummaryAgentTitle => '에이전트 모드';
+
+  @override
+  String get autoSummaryAgentSubtitle => '구조화된 세계관 데이터를 자동으로 관리합니다';
+
+  @override
+  String get autoSummaryModelSection => '요약 모델';
+
+  @override
+  String get autoSummaryUseSubModel => '보조 모델 사용';
+
+  @override
+  String get autoSummaryUseSubModelSubtitle => '채팅 모델 설정의 보조 모델을 사용합니다';
+
+  @override
+  String get autoSummaryStartCondition => '자동 요약 시작 조건';
+
+  @override
+  String get autoSummaryTokenHint => '토큰 수를 입력하세요';
+
+  @override
+  String get autoSummaryPeriod => '요약 주기';
+
+  @override
+  String get autoSummaryMaxResponseSize => '최대 응답 크기';
+
+  @override
+  String get autoSummaryMaxResponseHelp => '생성할 수 있는 최대 토큰 수입니다.';
+
+  @override
+  String get autoSummaryTemperature => '온도';
+
+  @override
+  String get autoSummaryTemperatureHelp => '값이 높을수록 더 창의적이고 다양한 응답을 생성합니다.';
+
+  @override
+  String get autoSummaryTopPHelp => '누적 확률 임계값입니다. 값이 낮을수록 더 집중된 응답을 생성합니다.';
+
+  @override
+  String get autoSummaryTopKHelp => '고려할 상위 토큰의 수입니다.';
+
+  @override
+  String get autoSummaryPresencePenalty => '프리센스 패널티';
+
+  @override
+  String get autoSummaryPresencePenaltyHelp => '양수 값은 새로운 주제를 장려하고, 음수 값은 기존 주제에 집중합니다.';
+
+  @override
+  String get autoSummaryFrequencyPenalty => '빈도 패널티';
+
+  @override
+  String get autoSummaryFrequencyPenaltyHelp => '양수 값은 반복을 줄이고, 음수 값은 반복을 증가시킵니다.';
+
+  @override
+  String get autoSummaryPromptHelp => '요약 프롬프트 항목을 구성합니다. \"요약대상\" 역할 위치에 요약할 메시지가 자동으로 삽입됩니다.\n\n길게 눌러 순서를 변경할 수 있습니다.';
+
+  @override
+  String get autoSummaryNoItems => '프롬프트 항목이 없습니다';
+
+  @override
+  String get autoSummaryAddItem => '항목 추가';
+
+  @override
+  String get autoSummaryResetDefault => '기본 프롬프트로 초기화';
+
+  @override
+  String get autoSummaryImport => '가져오기';
+
+  @override
+  String get autoSummaryExport => '내보내기';
+
+  @override
+  String get autoSummaryItemNameHint => '항목 이름 (예: 시스템 설정)';
+
+  @override
+  String get autoSummaryItemRole => '역할';
+
+  @override
+  String get autoSummaryTargetMessageInfo => '요약할 메시지가 이 위치에 자동으로 삽입됩니다';
+
+  @override
+  String get autoSummaryItemPrompt => '프롬프트';
+
+  @override
+  String get autoSummaryItemPromptHint => '프롬프트 내용을 입력하세요';
+
+  @override
+  String get autoSummaryNoModel => '모델 없음';
+
+  @override
+  String get customModelTitle => '커스텀 모델';
+
+  @override
+  String get customModelEmpty => '커스텀 제조사가 없습니다';
+
+  @override
+  String get customModelAddProvider => '제조사 추가';
+
+  @override
+  String get customModelEditProvider => '제조사 수정';
+
+  @override
+  String get customModelDeleteProviderTitle => '제조사 삭제';
+
+  @override
+  String get customModelDeleteModelTitle => '모델 삭제';
+
+  @override
+  String get customModelNoExportable => '내보낼 커스텀 모델이 없습니다';
+
+  @override
+  String get customModelSaveFailed => '저장에 실패했습니다';
+
+  @override
+  String customModelExportFailed(String error) {
+    return '내보내기 실패: $error';
+  }
+
+  @override
+  String customModelImportSuccess(int providerCount, int modelCount) {
+    return '제조사 $providerCount개, 모델 $modelCount개를 가져왔습니다';
+  }
+
+  @override
+  String customModelImportFailed(String error) {
+    return '가져오기 실패: $error';
+  }
+
+  @override
+  String get customModelAddModel => '모델 추가';
+
+  @override
+  String get customModelEditModel => '모델 수정';
+
+  @override
+  String get customModelProviderUpdated => '제조사가 수정되었습니다';
+
+  @override
+  String get customModelProviderAdded => '제조사가 추가되었습니다';
+
+  @override
+  String get customModelProviderName => '제조사 이름';
+
+  @override
+  String get customModelProviderNameHint => '예: OpenRouter';
+
+  @override
+  String get customModelProviderNameRequired => '제조사 이름을 입력해주세요';
+
+  @override
+  String get customModelEndpointHint => '예: https://openrouter.ai/api';
+
+  @override
+  String get customModelRetrySection => '실패 시 재전송';
+
+  @override
+  String get customModelRetryCount => '재전송 횟수';
+
+  @override
+  String get customModelEdit => '수정';
+
+  @override
+  String get customModelAdd => '추가';
+
+  @override
+  String get customModelUpdated => '모델이 수정되었습니다';
+
+  @override
+  String get customModelAdded => '모델이 추가되었습니다';
+
+  @override
+  String get customModelName => '모델 이름';
+
+  @override
+  String get customModelNameHint => '예: GPT-4o';
+
+  @override
+  String get customModelNameRequired => '모델 이름을 입력해주세요';
+
+  @override
+  String get customModelId => '모델 ID';
+
+  @override
+  String get customModelIdHint => '예: openai/gpt-4o';
+
+  @override
+  String get customModelIdRequired => '모델 ID를 입력해주세요';
+
+  @override
+  String get customModelPriceSection => '가격 (선택)';
+
+  @override
+  String customModelDeleteProviderWithModels(String name, int count) {
+    return '\'$name\' 제조사와 하위 모델 $count개를 삭제하시겠습니까?';
+  }
+
+  @override
+  String customModelDeleteProvider(String name) {
+    return '\'$name\' 제조사를 삭제하시겠습니까?';
+  }
+
+  @override
+  String customModelDeleteModel(String name) {
+    return '\'$name\' 모델을 삭제하시겠습니까?';
+  }
+
+  @override
+  String get promptEditDefaultName => '기본';
+
+  @override
+  String get promptEditNewFolderName => '새 폴더';
+
+  @override
+  String get promptEditDefaultRuleName => '정규식 규칙';
+
+  @override
+  String get promptEditDefaultPresetName => '프리셋';
+
+  @override
+  String get promptEditDefaultConditionName => '조건';
+
+  @override
+  String get promptEditUpdated => '프롬프트가 수정되었습니다';
+
+  @override
+  String get promptEditCreated => '프롬프트가 생성되었습니다';
+
+  @override
+  String promptEditSaveFailed(String error) {
+    return '프롬프트 저장 실패: $error';
+  }
+
+  @override
+  String get promptEditTitleView => '프롬프트 보기';
+
+  @override
+  String get promptEditTitleEdit => '프롬프트 수정';
+
+  @override
+  String get promptEditTitleNew => '새 프롬프트';
+
+  @override
+  String get promptEditTabBasic => '기본정보';
+
+  @override
+  String get promptEditTabParameters => '파라미터';
+
+  @override
+  String get promptEditTabPrompt => '프롬프트';
+
+  @override
+  String get promptEditTabRegex => '정규식';
+
+  @override
+  String get promptEditTabOther => '기타설정';
+
+  @override
+  String get promptEditNameLabel => '프롬프트 이름';
+
+  @override
+  String get promptEditNameHint => '예: 친근한 도우미, 전문가 모드';
+
+  @override
+  String get promptEditNameRequired => '프롬프트 이름을 입력해주세요';
+
+  @override
+  String get promptEditDescriptionTitle => '설명';
+
+  @override
+  String get promptEditDescriptionHint => '이 프롬프트에 대한 설명을 입력하세요';
+
+  @override
+  String get promptEditMaxInputSize => '최대 입력 크기';
+
+  @override
+  String get promptEditMaxInputHelp => '입력할 수 있는 최대 토큰 수입니다.';
+
+  @override
+  String get promptEditThinkingTokens => '사고토큰';
+
+  @override
+  String get promptEditThinkingHelp => '사고에 사용할 토큰 수입니다.';
+
+  @override
+  String get promptEditStopStrings => '정지 문자열';
+
+  @override
+  String get promptEditStopStringsHint => '문자열 입력 후 추가';
+
+  @override
+  String get promptEditThinkingConfig => '사고기능 구성';
+
+  @override
+  String get promptEditThinkingTokenCount => '생각토큰 수';
+
+  @override
+  String get promptEditThinkingTokenHelp => '생각에 사용할 최대 토큰 수입니다.';
+
+  @override
+  String get promptEditThinkingLevel => '생각 수준';
+
+  @override
+  String get chatModelTitle => '채팅 모델';
+
+  @override
+  String get chatModelTabMain => '주 모델';
+
+  @override
+  String get chatModelTabSub => '보조 모델';
+
+  @override
+  String get chatModelSubInfo => '보조 모델은 SNS 요약 등에 사용됩니다.\n설정 시 해당 기능들의 기본 모델이 변경됩니다.';
+
+  @override
+  String get chatModelProviderSection => '제조사';
+
+  @override
+  String get chatModelUsedModelSection => '사용 모델';
+
+  @override
+  String get chatModelInfoSection => '모델 정보';
+
+  @override
+  String get chatModelManagement => '커스텀 모델 관리';
+
+  @override
+  String get chatModelApiKeyDeleteContent => '이 API 키를 삭제하시겠습니까?';
+
+  @override
+  String get chatModelVertexValidationFailed => '서비스 계정 검증 실패';
+
+  @override
+  String get chatModelNewApiKey => '새 API 키';
+
+  @override
+  String get chatModelJsonAdd => 'JSON 추가';
+
+  @override
+  String get chatModelKeyAdd => '키 추가';
+
+  @override
+  String get chatModelNoApiKey => '등록된 API 키가 없습니다';
+
+  @override
+  String get apiKeyMultiInfo => '각 제공사별로 여러 개의 API 키를 등록할 수 있습니다.';
+
+  @override
+  String chatPromptListLoadFailed(String error) {
+    return '프롬프트 목록을 불러오는데 실패했습니다: $error';
+  }
+
+  @override
+  String chatPromptSelectFailed(String error) {
+    return '프롬프트 선택에 실패했습니다: $error';
+  }
+
+  @override
+  String get chatPromptDeleted => '프롬프트가 삭제되었습니다';
+
+  @override
+  String chatPromptDeleteFailed(String error) {
+    return '프롬프트 삭제에 실패했습니다: $error';
+  }
+
+  @override
+  String get chatPromptDefaultSelect => '기본 프롬프트 선택';
+
+  @override
+  String get chatPromptEmpty => '빈 프롬프트';
+
+  @override
+  String get chatPromptCopied => '프롬프트가 복사되었습니다';
+
+  @override
+  String chatPromptCopyFailed(String error) {
+    return '프롬프트 복사에 실패했습니다: $error';
+  }
+
+  @override
+  String get chatPromptResetTitle => '초기화';
+
+  @override
+  String get chatPromptResetContent => '모든 기본 프롬프트를 초기 상태로 되돌리시겠습니까?';
+
+  @override
+  String get chatPromptResetSuccess => '기본 프롬프트가 초기화되었습니다';
+
+  @override
+  String chatPromptResetFailed(String error) {
+    return '기본 프롬프트 초기화에 실패했습니다: $error';
+  }
+
+  @override
+  String chatPromptExportFailed(String error) {
+    return '프롬프트 내보내기 실패: $error';
+  }
+
+  @override
+  String get chatPromptImportSuccess => '프롬프트가 가져오기 되었습니다';
+
+  @override
+  String chatPromptImportFailed(String error) {
+    return '프롬프트 가져오기 실패: $error';
+  }
+
+  @override
+  String get chatPromptListEmpty => '프롬프트가 없습니다';
 }

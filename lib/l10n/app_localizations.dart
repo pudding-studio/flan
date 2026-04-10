@@ -2070,6 +2070,876 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'{name} (복사본)'**
   String characterCopyName(String name);
+
+  /// No description provided for @autoSummaryTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'자동 요약'**
+  String get autoSummaryTitle;
+
+  /// No description provided for @autoSummarySaveFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'저장에 실패했습니다'**
+  String get autoSummarySaveFailed;
+
+  /// No description provided for @autoSummaryExportFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'요약 프롬프트 내보내기 실패: {error}'**
+  String autoSummaryExportFailed(String error);
+
+  /// No description provided for @autoSummaryResetTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'초기화'**
+  String get autoSummaryResetTitle;
+
+  /// No description provided for @autoSummaryResetContent.
+  ///
+  /// In ko, this message translates to:
+  /// **'요약 프롬프트를 최신 기본 프롬프트로 되돌리시겠습니까?'**
+  String get autoSummaryResetContent;
+
+  /// No description provided for @autoSummaryResetConfirm.
+  ///
+  /// In ko, this message translates to:
+  /// **'초기화'**
+  String get autoSummaryResetConfirm;
+
+  /// No description provided for @autoSummaryResetSuccess.
+  ///
+  /// In ko, this message translates to:
+  /// **'요약 프롬프트가 초기화되었습니다'**
+  String get autoSummaryResetSuccess;
+
+  /// No description provided for @autoSummaryResetFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'요약 프롬프트 초기화에 실패했습니다: {error}'**
+  String autoSummaryResetFailed(String error);
+
+  /// No description provided for @autoSummaryInvalidFormat.
+  ///
+  /// In ko, this message translates to:
+  /// **'올바른 요약 프롬프트 형식이 아닙니다'**
+  String get autoSummaryInvalidFormat;
+
+  /// No description provided for @autoSummaryEmptyItems.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트 항목이 비어있습니다'**
+  String get autoSummaryEmptyItems;
+
+  /// No description provided for @autoSummaryImportSuccess.
+  ///
+  /// In ko, this message translates to:
+  /// **'요약 프롬프트를 가져왔습니다'**
+  String get autoSummaryImportSuccess;
+
+  /// No description provided for @autoSummaryImportFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'요약 프롬프트 가져오기 실패: {error}'**
+  String autoSummaryImportFailed(String error);
+
+  /// No description provided for @autoSummaryTabBasic.
+  ///
+  /// In ko, this message translates to:
+  /// **'기본정보'**
+  String get autoSummaryTabBasic;
+
+  /// No description provided for @autoSummaryTabParameters.
+  ///
+  /// In ko, this message translates to:
+  /// **'파라미터'**
+  String get autoSummaryTabParameters;
+
+  /// No description provided for @autoSummaryTabPrompt.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트'**
+  String get autoSummaryTabPrompt;
+
+  /// No description provided for @autoSummarySection.
+  ///
+  /// In ko, this message translates to:
+  /// **'자동 요약 설정'**
+  String get autoSummarySection;
+
+  /// No description provided for @autoSummaryEnableTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'자동 요약'**
+  String get autoSummaryEnableTitle;
+
+  /// No description provided for @autoSummaryEnableSubtitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'토큰 수 초과 시 자동으로 요약을 생성합니다'**
+  String get autoSummaryEnableSubtitle;
+
+  /// No description provided for @autoSummaryAgentTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'에이전트 모드'**
+  String get autoSummaryAgentTitle;
+
+  /// No description provided for @autoSummaryAgentSubtitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'구조화된 세계관 데이터를 자동으로 관리합니다'**
+  String get autoSummaryAgentSubtitle;
+
+  /// No description provided for @autoSummaryModelSection.
+  ///
+  /// In ko, this message translates to:
+  /// **'요약 모델'**
+  String get autoSummaryModelSection;
+
+  /// No description provided for @autoSummaryUseSubModel.
+  ///
+  /// In ko, this message translates to:
+  /// **'보조 모델 사용'**
+  String get autoSummaryUseSubModel;
+
+  /// No description provided for @autoSummaryUseSubModelSubtitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅 모델 설정의 보조 모델을 사용합니다'**
+  String get autoSummaryUseSubModelSubtitle;
+
+  /// No description provided for @autoSummaryStartCondition.
+  ///
+  /// In ko, this message translates to:
+  /// **'자동 요약 시작 조건'**
+  String get autoSummaryStartCondition;
+
+  /// No description provided for @autoSummaryTokenHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'토큰 수를 입력하세요'**
+  String get autoSummaryTokenHint;
+
+  /// No description provided for @autoSummaryPeriod.
+  ///
+  /// In ko, this message translates to:
+  /// **'요약 주기'**
+  String get autoSummaryPeriod;
+
+  /// No description provided for @autoSummaryMaxResponseSize.
+  ///
+  /// In ko, this message translates to:
+  /// **'최대 응답 크기'**
+  String get autoSummaryMaxResponseSize;
+
+  /// No description provided for @autoSummaryMaxResponseHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'생성할 수 있는 최대 토큰 수입니다.'**
+  String get autoSummaryMaxResponseHelp;
+
+  /// No description provided for @autoSummaryTemperature.
+  ///
+  /// In ko, this message translates to:
+  /// **'온도'**
+  String get autoSummaryTemperature;
+
+  /// No description provided for @autoSummaryTemperatureHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'값이 높을수록 더 창의적이고 다양한 응답을 생성합니다.'**
+  String get autoSummaryTemperatureHelp;
+
+  /// No description provided for @autoSummaryTopPHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'누적 확률 임계값입니다. 값이 낮을수록 더 집중된 응답을 생성합니다.'**
+  String get autoSummaryTopPHelp;
+
+  /// No description provided for @autoSummaryTopKHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'고려할 상위 토큰의 수입니다.'**
+  String get autoSummaryTopKHelp;
+
+  /// No description provided for @autoSummaryPresencePenalty.
+  ///
+  /// In ko, this message translates to:
+  /// **'프리센스 패널티'**
+  String get autoSummaryPresencePenalty;
+
+  /// No description provided for @autoSummaryPresencePenaltyHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'양수 값은 새로운 주제를 장려하고, 음수 값은 기존 주제에 집중합니다.'**
+  String get autoSummaryPresencePenaltyHelp;
+
+  /// No description provided for @autoSummaryFrequencyPenalty.
+  ///
+  /// In ko, this message translates to:
+  /// **'빈도 패널티'**
+  String get autoSummaryFrequencyPenalty;
+
+  /// No description provided for @autoSummaryFrequencyPenaltyHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'양수 값은 반복을 줄이고, 음수 값은 반복을 증가시킵니다.'**
+  String get autoSummaryFrequencyPenaltyHelp;
+
+  /// No description provided for @autoSummaryPromptHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'요약 프롬프트 항목을 구성합니다. \"요약대상\" 역할 위치에 요약할 메시지가 자동으로 삽입됩니다.\n\n길게 눌러 순서를 변경할 수 있습니다.'**
+  String get autoSummaryPromptHelp;
+
+  /// No description provided for @autoSummaryNoItems.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트 항목이 없습니다'**
+  String get autoSummaryNoItems;
+
+  /// No description provided for @autoSummaryAddItem.
+  ///
+  /// In ko, this message translates to:
+  /// **'항목 추가'**
+  String get autoSummaryAddItem;
+
+  /// No description provided for @autoSummaryResetDefault.
+  ///
+  /// In ko, this message translates to:
+  /// **'기본 프롬프트로 초기화'**
+  String get autoSummaryResetDefault;
+
+  /// No description provided for @autoSummaryImport.
+  ///
+  /// In ko, this message translates to:
+  /// **'가져오기'**
+  String get autoSummaryImport;
+
+  /// No description provided for @autoSummaryExport.
+  ///
+  /// In ko, this message translates to:
+  /// **'내보내기'**
+  String get autoSummaryExport;
+
+  /// No description provided for @autoSummaryItemNameHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'항목 이름 (예: 시스템 설정)'**
+  String get autoSummaryItemNameHint;
+
+  /// No description provided for @autoSummaryItemRole.
+  ///
+  /// In ko, this message translates to:
+  /// **'역할'**
+  String get autoSummaryItemRole;
+
+  /// No description provided for @autoSummaryTargetMessageInfo.
+  ///
+  /// In ko, this message translates to:
+  /// **'요약할 메시지가 이 위치에 자동으로 삽입됩니다'**
+  String get autoSummaryTargetMessageInfo;
+
+  /// No description provided for @autoSummaryItemPrompt.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트'**
+  String get autoSummaryItemPrompt;
+
+  /// No description provided for @autoSummaryItemPromptHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트 내용을 입력하세요'**
+  String get autoSummaryItemPromptHint;
+
+  /// No description provided for @autoSummaryNoModel.
+  ///
+  /// In ko, this message translates to:
+  /// **'모델 없음'**
+  String get autoSummaryNoModel;
+
+  /// No description provided for @customModelTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'커스텀 모델'**
+  String get customModelTitle;
+
+  /// No description provided for @customModelEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'커스텀 제조사가 없습니다'**
+  String get customModelEmpty;
+
+  /// No description provided for @customModelAddProvider.
+  ///
+  /// In ko, this message translates to:
+  /// **'제조사 추가'**
+  String get customModelAddProvider;
+
+  /// No description provided for @customModelEditProvider.
+  ///
+  /// In ko, this message translates to:
+  /// **'제조사 수정'**
+  String get customModelEditProvider;
+
+  /// No description provided for @customModelDeleteProviderTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'제조사 삭제'**
+  String get customModelDeleteProviderTitle;
+
+  /// No description provided for @customModelDeleteModelTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'모델 삭제'**
+  String get customModelDeleteModelTitle;
+
+  /// No description provided for @customModelNoExportable.
+  ///
+  /// In ko, this message translates to:
+  /// **'내보낼 커스텀 모델이 없습니다'**
+  String get customModelNoExportable;
+
+  /// No description provided for @customModelSaveFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'저장에 실패했습니다'**
+  String get customModelSaveFailed;
+
+  /// No description provided for @customModelExportFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'내보내기 실패: {error}'**
+  String customModelExportFailed(String error);
+
+  /// No description provided for @customModelImportSuccess.
+  ///
+  /// In ko, this message translates to:
+  /// **'제조사 {providerCount}개, 모델 {modelCount}개를 가져왔습니다'**
+  String customModelImportSuccess(int providerCount, int modelCount);
+
+  /// No description provided for @customModelImportFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'가져오기 실패: {error}'**
+  String customModelImportFailed(String error);
+
+  /// No description provided for @customModelAddModel.
+  ///
+  /// In ko, this message translates to:
+  /// **'모델 추가'**
+  String get customModelAddModel;
+
+  /// No description provided for @customModelEditModel.
+  ///
+  /// In ko, this message translates to:
+  /// **'모델 수정'**
+  String get customModelEditModel;
+
+  /// No description provided for @customModelProviderUpdated.
+  ///
+  /// In ko, this message translates to:
+  /// **'제조사가 수정되었습니다'**
+  String get customModelProviderUpdated;
+
+  /// No description provided for @customModelProviderAdded.
+  ///
+  /// In ko, this message translates to:
+  /// **'제조사가 추가되었습니다'**
+  String get customModelProviderAdded;
+
+  /// No description provided for @customModelProviderName.
+  ///
+  /// In ko, this message translates to:
+  /// **'제조사 이름'**
+  String get customModelProviderName;
+
+  /// No description provided for @customModelProviderNameHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'예: OpenRouter'**
+  String get customModelProviderNameHint;
+
+  /// No description provided for @customModelProviderNameRequired.
+  ///
+  /// In ko, this message translates to:
+  /// **'제조사 이름을 입력해주세요'**
+  String get customModelProviderNameRequired;
+
+  /// No description provided for @customModelEndpointHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'예: https://openrouter.ai/api'**
+  String get customModelEndpointHint;
+
+  /// No description provided for @customModelRetrySection.
+  ///
+  /// In ko, this message translates to:
+  /// **'실패 시 재전송'**
+  String get customModelRetrySection;
+
+  /// No description provided for @customModelRetryCount.
+  ///
+  /// In ko, this message translates to:
+  /// **'재전송 횟수'**
+  String get customModelRetryCount;
+
+  /// No description provided for @customModelEdit.
+  ///
+  /// In ko, this message translates to:
+  /// **'수정'**
+  String get customModelEdit;
+
+  /// No description provided for @customModelAdd.
+  ///
+  /// In ko, this message translates to:
+  /// **'추가'**
+  String get customModelAdd;
+
+  /// No description provided for @customModelUpdated.
+  ///
+  /// In ko, this message translates to:
+  /// **'모델이 수정되었습니다'**
+  String get customModelUpdated;
+
+  /// No description provided for @customModelAdded.
+  ///
+  /// In ko, this message translates to:
+  /// **'모델이 추가되었습니다'**
+  String get customModelAdded;
+
+  /// No description provided for @customModelName.
+  ///
+  /// In ko, this message translates to:
+  /// **'모델 이름'**
+  String get customModelName;
+
+  /// No description provided for @customModelNameHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'예: GPT-4o'**
+  String get customModelNameHint;
+
+  /// No description provided for @customModelNameRequired.
+  ///
+  /// In ko, this message translates to:
+  /// **'모델 이름을 입력해주세요'**
+  String get customModelNameRequired;
+
+  /// No description provided for @customModelId.
+  ///
+  /// In ko, this message translates to:
+  /// **'모델 ID'**
+  String get customModelId;
+
+  /// No description provided for @customModelIdHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'예: openai/gpt-4o'**
+  String get customModelIdHint;
+
+  /// No description provided for @customModelIdRequired.
+  ///
+  /// In ko, this message translates to:
+  /// **'모델 ID를 입력해주세요'**
+  String get customModelIdRequired;
+
+  /// No description provided for @customModelPriceSection.
+  ///
+  /// In ko, this message translates to:
+  /// **'가격 (선택)'**
+  String get customModelPriceSection;
+
+  /// No description provided for @customModelDeleteProviderWithModels.
+  ///
+  /// In ko, this message translates to:
+  /// **'\'{name}\' 제조사와 하위 모델 {count}개를 삭제하시겠습니까?'**
+  String customModelDeleteProviderWithModels(String name, int count);
+
+  /// No description provided for @customModelDeleteProvider.
+  ///
+  /// In ko, this message translates to:
+  /// **'\'{name}\' 제조사를 삭제하시겠습니까?'**
+  String customModelDeleteProvider(String name);
+
+  /// No description provided for @customModelDeleteModel.
+  ///
+  /// In ko, this message translates to:
+  /// **'\'{name}\' 모델을 삭제하시겠습니까?'**
+  String customModelDeleteModel(String name);
+
+  /// No description provided for @promptEditDefaultName.
+  ///
+  /// In ko, this message translates to:
+  /// **'기본'**
+  String get promptEditDefaultName;
+
+  /// No description provided for @promptEditNewFolderName.
+  ///
+  /// In ko, this message translates to:
+  /// **'새 폴더'**
+  String get promptEditNewFolderName;
+
+  /// No description provided for @promptEditDefaultRuleName.
+  ///
+  /// In ko, this message translates to:
+  /// **'정규식 규칙'**
+  String get promptEditDefaultRuleName;
+
+  /// No description provided for @promptEditDefaultPresetName.
+  ///
+  /// In ko, this message translates to:
+  /// **'프리셋'**
+  String get promptEditDefaultPresetName;
+
+  /// No description provided for @promptEditDefaultConditionName.
+  ///
+  /// In ko, this message translates to:
+  /// **'조건'**
+  String get promptEditDefaultConditionName;
+
+  /// No description provided for @promptEditUpdated.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트가 수정되었습니다'**
+  String get promptEditUpdated;
+
+  /// No description provided for @promptEditCreated.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트가 생성되었습니다'**
+  String get promptEditCreated;
+
+  /// No description provided for @promptEditSaveFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트 저장 실패: {error}'**
+  String promptEditSaveFailed(String error);
+
+  /// No description provided for @promptEditTitleView.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트 보기'**
+  String get promptEditTitleView;
+
+  /// No description provided for @promptEditTitleEdit.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트 수정'**
+  String get promptEditTitleEdit;
+
+  /// No description provided for @promptEditTitleNew.
+  ///
+  /// In ko, this message translates to:
+  /// **'새 프롬프트'**
+  String get promptEditTitleNew;
+
+  /// No description provided for @promptEditTabBasic.
+  ///
+  /// In ko, this message translates to:
+  /// **'기본정보'**
+  String get promptEditTabBasic;
+
+  /// No description provided for @promptEditTabParameters.
+  ///
+  /// In ko, this message translates to:
+  /// **'파라미터'**
+  String get promptEditTabParameters;
+
+  /// No description provided for @promptEditTabPrompt.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트'**
+  String get promptEditTabPrompt;
+
+  /// No description provided for @promptEditTabRegex.
+  ///
+  /// In ko, this message translates to:
+  /// **'정규식'**
+  String get promptEditTabRegex;
+
+  /// No description provided for @promptEditTabOther.
+  ///
+  /// In ko, this message translates to:
+  /// **'기타설정'**
+  String get promptEditTabOther;
+
+  /// No description provided for @promptEditNameLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트 이름'**
+  String get promptEditNameLabel;
+
+  /// No description provided for @promptEditNameHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'예: 친근한 도우미, 전문가 모드'**
+  String get promptEditNameHint;
+
+  /// No description provided for @promptEditNameRequired.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트 이름을 입력해주세요'**
+  String get promptEditNameRequired;
+
+  /// No description provided for @promptEditDescriptionTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'설명'**
+  String get promptEditDescriptionTitle;
+
+  /// No description provided for @promptEditDescriptionHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 프롬프트에 대한 설명을 입력하세요'**
+  String get promptEditDescriptionHint;
+
+  /// No description provided for @promptEditMaxInputSize.
+  ///
+  /// In ko, this message translates to:
+  /// **'최대 입력 크기'**
+  String get promptEditMaxInputSize;
+
+  /// No description provided for @promptEditMaxInputHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'입력할 수 있는 최대 토큰 수입니다.'**
+  String get promptEditMaxInputHelp;
+
+  /// No description provided for @promptEditThinkingTokens.
+  ///
+  /// In ko, this message translates to:
+  /// **'사고토큰'**
+  String get promptEditThinkingTokens;
+
+  /// No description provided for @promptEditThinkingHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'사고에 사용할 토큰 수입니다.'**
+  String get promptEditThinkingHelp;
+
+  /// No description provided for @promptEditStopStrings.
+  ///
+  /// In ko, this message translates to:
+  /// **'정지 문자열'**
+  String get promptEditStopStrings;
+
+  /// No description provided for @promptEditStopStringsHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'문자열 입력 후 추가'**
+  String get promptEditStopStringsHint;
+
+  /// No description provided for @promptEditThinkingConfig.
+  ///
+  /// In ko, this message translates to:
+  /// **'사고기능 구성'**
+  String get promptEditThinkingConfig;
+
+  /// No description provided for @promptEditThinkingTokenCount.
+  ///
+  /// In ko, this message translates to:
+  /// **'생각토큰 수'**
+  String get promptEditThinkingTokenCount;
+
+  /// No description provided for @promptEditThinkingTokenHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'생각에 사용할 최대 토큰 수입니다.'**
+  String get promptEditThinkingTokenHelp;
+
+  /// No description provided for @promptEditThinkingLevel.
+  ///
+  /// In ko, this message translates to:
+  /// **'생각 수준'**
+  String get promptEditThinkingLevel;
+
+  /// No description provided for @chatModelTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅 모델'**
+  String get chatModelTitle;
+
+  /// No description provided for @chatModelTabMain.
+  ///
+  /// In ko, this message translates to:
+  /// **'주 모델'**
+  String get chatModelTabMain;
+
+  /// No description provided for @chatModelTabSub.
+  ///
+  /// In ko, this message translates to:
+  /// **'보조 모델'**
+  String get chatModelTabSub;
+
+  /// No description provided for @chatModelSubInfo.
+  ///
+  /// In ko, this message translates to:
+  /// **'보조 모델은 SNS 요약 등에 사용됩니다.\n설정 시 해당 기능들의 기본 모델이 변경됩니다.'**
+  String get chatModelSubInfo;
+
+  /// No description provided for @chatModelProviderSection.
+  ///
+  /// In ko, this message translates to:
+  /// **'제조사'**
+  String get chatModelProviderSection;
+
+  /// No description provided for @chatModelUsedModelSection.
+  ///
+  /// In ko, this message translates to:
+  /// **'사용 모델'**
+  String get chatModelUsedModelSection;
+
+  /// No description provided for @chatModelInfoSection.
+  ///
+  /// In ko, this message translates to:
+  /// **'모델 정보'**
+  String get chatModelInfoSection;
+
+  /// No description provided for @chatModelManagement.
+  ///
+  /// In ko, this message translates to:
+  /// **'커스텀 모델 관리'**
+  String get chatModelManagement;
+
+  /// No description provided for @chatModelApiKeyDeleteContent.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 API 키를 삭제하시겠습니까?'**
+  String get chatModelApiKeyDeleteContent;
+
+  /// No description provided for @chatModelVertexValidationFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'서비스 계정 검증 실패'**
+  String get chatModelVertexValidationFailed;
+
+  /// No description provided for @chatModelNewApiKey.
+  ///
+  /// In ko, this message translates to:
+  /// **'새 API 키'**
+  String get chatModelNewApiKey;
+
+  /// No description provided for @chatModelJsonAdd.
+  ///
+  /// In ko, this message translates to:
+  /// **'JSON 추가'**
+  String get chatModelJsonAdd;
+
+  /// No description provided for @chatModelKeyAdd.
+  ///
+  /// In ko, this message translates to:
+  /// **'키 추가'**
+  String get chatModelKeyAdd;
+
+  /// No description provided for @chatModelNoApiKey.
+  ///
+  /// In ko, this message translates to:
+  /// **'등록된 API 키가 없습니다'**
+  String get chatModelNoApiKey;
+
+  /// No description provided for @apiKeyMultiInfo.
+  ///
+  /// In ko, this message translates to:
+  /// **'각 제공사별로 여러 개의 API 키를 등록할 수 있습니다.'**
+  String get apiKeyMultiInfo;
+
+  /// No description provided for @chatPromptListLoadFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트 목록을 불러오는데 실패했습니다: {error}'**
+  String chatPromptListLoadFailed(String error);
+
+  /// No description provided for @chatPromptSelectFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트 선택에 실패했습니다: {error}'**
+  String chatPromptSelectFailed(String error);
+
+  /// No description provided for @chatPromptDeleted.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트가 삭제되었습니다'**
+  String get chatPromptDeleted;
+
+  /// No description provided for @chatPromptDeleteFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트 삭제에 실패했습니다: {error}'**
+  String chatPromptDeleteFailed(String error);
+
+  /// No description provided for @chatPromptDefaultSelect.
+  ///
+  /// In ko, this message translates to:
+  /// **'기본 프롬프트 선택'**
+  String get chatPromptDefaultSelect;
+
+  /// No description provided for @chatPromptEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'빈 프롬프트'**
+  String get chatPromptEmpty;
+
+  /// No description provided for @chatPromptCopied.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트가 복사되었습니다'**
+  String get chatPromptCopied;
+
+  /// No description provided for @chatPromptCopyFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트 복사에 실패했습니다: {error}'**
+  String chatPromptCopyFailed(String error);
+
+  /// No description provided for @chatPromptResetTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'초기화'**
+  String get chatPromptResetTitle;
+
+  /// No description provided for @chatPromptResetContent.
+  ///
+  /// In ko, this message translates to:
+  /// **'모든 기본 프롬프트를 초기 상태로 되돌리시겠습니까?'**
+  String get chatPromptResetContent;
+
+  /// No description provided for @chatPromptResetSuccess.
+  ///
+  /// In ko, this message translates to:
+  /// **'기본 프롬프트가 초기화되었습니다'**
+  String get chatPromptResetSuccess;
+
+  /// No description provided for @chatPromptResetFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'기본 프롬프트 초기화에 실패했습니다: {error}'**
+  String chatPromptResetFailed(String error);
+
+  /// No description provided for @chatPromptExportFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트 내보내기 실패: {error}'**
+  String chatPromptExportFailed(String error);
+
+  /// No description provided for @chatPromptImportSuccess.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트가 가져오기 되었습니다'**
+  String get chatPromptImportSuccess;
+
+  /// No description provided for @chatPromptImportFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트 가져오기 실패: {error}'**
+  String chatPromptImportFailed(String error);
+
+  /// No description provided for @chatPromptListEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트가 없습니다'**
+  String get chatPromptListEmpty;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {
