@@ -426,12 +426,90 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       }
     }
 
+    final tokenizerProvider = context.read<TokenizerProvider>();
+    final tokenizer = tokenizerProvider.selectedTokenizer;
+
     // Load agent context if agent mode is enabled
     String? agentContext;
     final summarySettings = await _db.getAutoSummarySettings(0);
     if (summarySettings != null && summarySettings.isAgentEnabled) {
       final agentService = AgentSummaryService();
-      agentContext = await agentService.buildActiveEntriesText(widget.chatRoomId);
+      final maxInputTokens = chatPrompt?.parameters?.maxInputTokens;
+
+      int? episodeBudget;
+      if (maxInputTokens != null && maxInputTokens > 0) {
+        // Probe: build agent context with no episode contents (just lists +
+        // non-episode sections), then measure how many tokens are consumed by
+        // the rest of the prompt frame to derive the remaining budget for
+        // episode contents.
+        final baselineAgentContext = await agentService.buildActiveEntriesText(
+          widget.chatRoomId,
+          episodeContentTokenBudget: 0,
+          tokenizer: tokenizer,
+        );
+
+        final consumedByItem = chatPrompt?.items.any((item) =>
+                item.content.contains('{{agent_context}}')) ??
+            false;
+
+        var baselineSystemPrompt = PromptBuilder.buildSystemPrompt(
+          chatPrompt: chatPrompt,
+          character: _character!,
+          persona: persona,
+          startScenario: startScenario,
+          activeCharacterBooks: activeCharacterBooks,
+          chatRoom: _chatRoom,
+          summaries: summaries,
+          summaryMetadataMap: summaryMetadataMap,
+          conditions: conditions,
+          conditionStates: conditionStates,
+          agentContext: baselineAgentContext,
+        );
+        // Mirror the auto-append logic used after the real system prompt build.
+        if (!consumedByItem && baselineAgentContext.isNotEmpty) {
+          baselineSystemPrompt = baselineSystemPrompt.isEmpty
+              ? baselineAgentContext
+              : '$baselineSystemPrompt\n\n$baselineAgentContext';
+        }
+
+        int baseline = TokenCounter.estimateTokenCount(
+          baselineSystemPrompt,
+          tokenizer: tokenizer,
+        );
+        baseline += TokenCounter.estimateTokenCount(
+          apiUserMessage,
+          tokenizer: tokenizer,
+        );
+        if (chatPrompt != null) {
+          final states = conditionStates ?? <int, String>{};
+          for (final item in chatPrompt.items) {
+            if (item.role == PromptRole.system ||
+                item.role == PromptRole.chat) {
+              continue;
+            }
+            if (!PromptBuilder.isItemActive(item, states)) continue;
+            // Resolve {{agent_context}} so the baseline reflects the actual
+            // user/assistant payload that will be sent.
+            final resolved = item.content.replaceAll(
+              '{{agent_context}}',
+              baselineAgentContext,
+            );
+            baseline += TokenCounter.estimateTokenCount(
+              resolved,
+              tokenizer: tokenizer,
+            );
+          }
+        }
+
+        episodeBudget = maxInputTokens - baseline;
+        if (episodeBudget < 0) episodeBudget = 0;
+      }
+
+      agentContext = await agentService.buildActiveEntriesText(
+        widget.chatRoomId,
+        episodeContentTokenBudget: episodeBudget,
+        tokenizer: tokenizer,
+      );
     }
 
     // Stage 1+2: Build frame and apply keyword substitution
@@ -449,13 +527,20 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       agentContext: agentContext,
     );
 
-    // Auto-append agent context if it wasn't consumed by {{agent_context}} keyword
-    if (agentContext != null &&
-        agentContext.isNotEmpty &&
-        !rawSystemPrompt.contains(agentContext)) {
-      rawSystemPrompt = rawSystemPrompt.isEmpty
-          ? agentContext
-          : '$rawSystemPrompt\n\n$agentContext';
+    // Auto-append agent context only when no prompt item consumes the
+    // {{agent_context}} keyword. If any item (system/user/assistant) uses the
+    // placeholder, it will be substituted in its own slot — appending here
+    // would duplicate the text and place a copy at the very front of the
+    // conversation.
+    if (agentContext != null && agentContext.isNotEmpty) {
+      final consumedByItem = chatPrompt?.items.any((item) =>
+              item.content.contains('{{agent_context}}')) ??
+          false;
+      if (!consumedByItem) {
+        rawSystemPrompt = rawSystemPrompt.isEmpty
+            ? agentContext
+            : '$rawSystemPrompt\n\n$agentContext';
+      }
     }
 
     // Exclude old messages from chat history
@@ -477,9 +562,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       excludeMessageIds: allExcludeIds.toList(),
       beforeMessageIndex: beforeMessageIndex,
     );
-
-    final tokenizerProvider = context.read<TokenizerProvider>();
-    final tokenizer = tokenizerProvider.selectedTokenizer;
 
     final rawContents = PromptBuilder.buildContents(
       chatPrompt: chatPrompt,
