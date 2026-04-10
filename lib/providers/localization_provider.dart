@@ -38,6 +38,21 @@ class LocalizationProvider extends ChangeNotifier {
     return _aiResponseLocale ?? effectiveLocale.languageCode;
   }
 
+  /// Human-readable language name for {{output_language}} substitution in prompts.
+  String get effectiveAiLanguageName {
+    return aiLanguageName(effectiveAiLanguage);
+  }
+
+  /// Maps a language code (ko/en/ja or custom string) to a human-readable name.
+  static String aiLanguageName(String code) {
+    switch (code) {
+      case 'ko': return 'Korean';
+      case 'en': return 'English';
+      case 'ja': return 'Japanese';
+      default: return code; // custom value entered by user (e.g. "French")
+    }
+  }
+
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
 

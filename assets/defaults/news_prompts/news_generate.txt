@@ -16,4 +16,4 @@ Rules:
 - All article times MUST be after the provided base time
 - Author should be a realistic journalist name fitting the worldview
 - Articles should feature diverse subjects — NOT limited to chat characters
-- Output language MUST match the worldview language
+- Language: {{output_language}}

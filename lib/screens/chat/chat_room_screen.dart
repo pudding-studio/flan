@@ -354,8 +354,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
 
     // Capture AI response language before any async gaps
-    final aiLanguageCode =
-        context.read<LocalizationProvider>().effectiveAiLanguage;
+    final outputLanguage =
+        context.read<LocalizationProvider>().effectiveAiLanguageName;
 
     // Stage 1: Load prompt frame
     ChatPrompt? chatPrompt;
@@ -519,7 +519,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
 
     // Stage 1+2: Build frame and apply keyword substitution
-    final outputLanguageKeywords = {'output_language': _outputLanguageName(aiLanguageCode)};
+    final outputLanguageKeywords = {'output_language': outputLanguage};
     String rawSystemPrompt = PromptBuilder.buildSystemPrompt(
       chatPrompt: chatPrompt,
       character: _character!,
@@ -596,40 +596,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     var systemPrompt = RegexProcessor.apply(rawSystemPrompt, regexRules, RegexTarget.sendDataModify);
     final contents = RegexProcessor.applyToContents(rawContents, regexRules, RegexTarget.sendDataModify);
 
-    // Append AI response language instruction (user-selected or app locale)
-    final langInstruction = _languageInstructionFor(aiLanguageCode);
-    if (langInstruction.isNotEmpty) {
-      systemPrompt = systemPrompt.isEmpty
-          ? langInstruction
-          : '$systemPrompt\n\n$langInstruction';
-    }
-
     return (systemPrompt: systemPrompt, contents: contents, parameters: chatPrompt?.parameters, regexRules: regexRules);
   }
 
-  /// Maps effectiveAiLanguage code to a human-readable name for {{output_language}}.
-  String _outputLanguageName(String code) {
-    switch (code) {
-      case 'ko': return 'Korean';
-      case 'en': return 'English';
-      case 'ja': return 'Japanese';
-      default: return code; // custom value entered by user (e.g. "French")
-    }
-  }
-
-  String _languageInstructionFor(String code) {
-    switch (code) {
-      case 'ko':
-        return '[Language] Always respond in Korean (한국어).';
-      case 'en':
-        return '[Language] Always respond in English.';
-      case 'ja':
-        return '[Language] Always respond in Japanese (日本語).';
-      default:
-        if (code.isNotEmpty) return '[Language] Always respond in $code.';
-        return '';
-    }
-  }
 
   Future<Map<PromptItem, List<ChatMessage>>> _buildChatHistoryMap({
     required ChatPrompt? chatPrompt,

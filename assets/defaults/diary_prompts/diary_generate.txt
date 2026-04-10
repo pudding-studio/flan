@@ -14,5 +14,5 @@ Rules:
 - Keep each diary entry rich and immersive (5-10 sentences)
 - The diary title should capture the mood or main event of the day
 - The {{user}} character NEVER writes diary entries. Do NOT use {{user}} as an author.
-- Output language MUST match the user's language (infer from the worldview/context provided)
+- Language: {{output_language}}
 - Write in a personal, intimate diary style appropriate to each character's personality

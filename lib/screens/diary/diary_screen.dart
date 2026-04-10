@@ -14,6 +14,7 @@ import '../../models/chat/unified_model.dart';
 import '../../models/diary/diary_entry.dart';
 import '../../providers/chat_model_provider.dart';
 import '../../providers/diary_model_provider.dart';
+import '../../providers/localization_provider.dart';
 import '../../services/ai_service.dart';
 import '../../utils/diary_parser.dart';
 import '../../utils/metadata_parser.dart';
@@ -176,6 +177,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
   }
 
   Future<void> _generateDiary(String date) async {
+    final outputLanguage = context.read<LocalizationProvider>().effectiveAiLanguageName;
     setState(() => _isGenerating = true);
     try {
       // Get chat messages for the target date
@@ -218,9 +220,9 @@ class _DiaryScreenState extends State<DiaryScreen> {
       final summaryText = relevantSummaries.map((s) => s.summaryContent).join('\n\n');
 
       final model = await _getModel();
-      final systemPrompt = await rootBundle.loadString(
+      final systemPrompt = (await rootBundle.loadString(
         'assets/defaults/diary_prompts/diary_generate.txt',
-      );
+      )).replaceAll('{{output_language}}', outputLanguage);
 
       final userMessage = 'Target date: $date\n\n'
           '${worldview.isNotEmpty ? '$worldview\n\n' : ''}'

@@ -126,7 +126,7 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
     if (text.isEmpty && !isRetry) return;
 
     final chatModelProvider = context.read<ChatModelSettingsProvider>();
-    final aiLang = context.read<LocalizationProvider>().effectiveAiLanguage;
+    final outputLanguage = context.read<LocalizationProvider>().effectiveAiLanguageName;
     await chatModelProvider.initialized;
     final model = _resolveModel();
 
@@ -162,18 +162,11 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
         await _reloadMessages();
       }
 
-      // aiLang captured before first await
-      final langInstruction = switch (aiLang) {
-        'ko' => '[Language] Always respond in Korean (한국어).',
-        'en' => '[Language] Always respond in English.',
-        'ja' => '[Language] Always respond in Japanese (日本語).',
-        _ => '',
-      };
       final agentMessage = await _agentService.sendMessage(
         userText: userText,
         chatHistory: _messages.take(_messages.length - 1).toList(),
         model: model,
-        languageInstruction: langInstruction.isNotEmpty ? langInstruction : null,
+        outputLanguage: outputLanguage,
       );
 
       // Save assistant response (strip tool_call blocks for display)

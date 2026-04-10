@@ -31,7 +31,7 @@ class AgentService {
 
   AgentService(DatabaseHelper db) : _executor = AgentExecutor(db);
 
-  Future<String> buildSystemPrompt() async {
+  Future<String> buildSystemPrompt(String outputLanguage) async {
     _cachedPromptTemplate ??= await rootBundle.loadString(_promptAssetPath);
 
     final toolDescriptions = _executor.toolSchemas.map((schema) {
@@ -45,17 +45,19 @@ class AgentService {
       return '- ${schema['name']}: ${schema['description']}$paramSection';
     }).join('\n\n');
 
-    return _cachedPromptTemplate!.replaceAll('{{tools}}', toolDescriptions);
+    return _cachedPromptTemplate!
+        .replaceAll('{{tools}}', toolDescriptions)
+        .replaceAll('{{output_language}}', outputLanguage);
   }
 
   Future<AgentMessage> sendMessage({
     required String userText,
     required List<ChatMessage> chatHistory,
     required UnifiedModel model,
-    String? languageInstruction,
+    String outputLanguage = 'English',
   }) async {
     final contents = _buildContents(chatHistory, userText);
-    return _executeLoop(contents, model, languageInstruction: languageInstruction);
+    return _executeLoop(contents, model, outputLanguage: outputLanguage);
   }
 
   List<Map<String, dynamic>> _buildContents(
@@ -83,14 +85,11 @@ class AgentService {
   Future<AgentMessage> _executeLoop(
     List<Map<String, dynamic>> contents,
     UnifiedModel model, {
-    String? languageInstruction,
+    String outputLanguage = 'English',
   }) async {
     final allToolResults = <AgentToolResult>[];
     UsageMetadata? lastUsage;
-    final basePrompt = await buildSystemPrompt();
-    final systemPrompt = (languageInstruction?.isNotEmpty == true)
-        ? '$basePrompt\n\n$languageInstruction'
-        : basePrompt;
+    final systemPrompt = await buildSystemPrompt(outputLanguage);
 
     for (int i = 0; i < maxToolIterations; i++) {
       final response = await _aiService.sendMessage(

@@ -17,6 +17,7 @@ import '../../models/chat/model_preset.dart';
 import '../../models/chat/unified_model.dart';
 import '../../providers/chat_model_provider.dart';
 import '../../providers/community_model_provider.dart';
+import '../../providers/localization_provider.dart';
 import '../../services/ai_service.dart';
 import '../../utils/community_parser.dart';
 import '../../widgets/common/common_dropdown_button.dart';
@@ -116,14 +117,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
     }
   }
 
-  String _appendCommunitySettings(String systemPrompt) {
+  String _appendCommunitySettings(String systemPrompt, String outputLanguage) {
     if (_character?.communityMood?.isNotEmpty == true) {
       systemPrompt += '\n- Community mood: ${_character!.communityMood}';
     }
-    if (_character?.communityLanguage?.isNotEmpty == true) {
-      systemPrompt += '\n- Language: ${_character!.communityLanguage}';
-    }
-    return systemPrompt;
+    // Use communityLanguage if explicitly set for this world, otherwise use app output language
+    final language = (_character?.communityLanguage?.isNotEmpty == true)
+        ? _character!.communityLanguage!
+        : outputLanguage;
+    return systemPrompt.replaceAll('{{output_language}}', language);
   }
 
   String _buildWorldviewText() {
@@ -174,6 +176,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
       return;
     }
 
+    final outputLanguage = context.read<LocalizationProvider>().effectiveAiLanguageName;
     _newPostIds.clear();
     _newCommentIds.clear();
     setState(() => _isGenerating = true);
@@ -186,7 +189,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
       var systemPrompt = await rootBundle.loadString(
         'assets/defaults/community_prompts/community_generate.txt',
       );
-      systemPrompt = _appendCommunitySettings(systemPrompt);
+      systemPrompt = _appendCommunitySettings(systemPrompt, outputLanguage);
 
       String latestPostInfo = '';
       if (_posts.isNotEmpty) {
@@ -496,11 +499,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
     required String title,
     required String content,
   }) async {
+    final outputLanguage = context.read<LocalizationProvider>().effectiveAiLanguageName;
     final model = await _getModel();
     var systemPrompt = await rootBundle.loadString(
       'assets/defaults/community_prompts/post_replies.txt',
     );
-    systemPrompt = _appendCommunitySettings(systemPrompt);
+    systemPrompt = _appendCommunitySettings(systemPrompt, outputLanguage);
     final now = DateTime.now();
     final nowStr = _nowString(now);
     final worldview = _buildWorldviewText();
@@ -525,14 +529,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Future<List<CommunityComment>> _generateCommentReplies({required CommunityPost post}) async {
+    final outputLanguage = context.read<LocalizationProvider>().effectiveAiLanguageName;
     final model = await _getModel();
     var systemPrompt = await rootBundle.loadString(
       'assets/defaults/community_prompts/comment_replies.txt',
     );
-    systemPrompt = _appendCommunitySettings(systemPrompt);
-    if (_character?.communityLanguage?.isNotEmpty == true) {
-      systemPrompt += '\n- Language: ${_character!.communityLanguage}';
-    }
+    systemPrompt = _appendCommunitySettings(systemPrompt, outputLanguage);
     final now = DateTime.now();
     final nowStr = _nowString(now);
     final worldview = _buildWorldviewText();
