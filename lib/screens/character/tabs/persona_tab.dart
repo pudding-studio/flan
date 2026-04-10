@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../constants/ui_constants.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../models/character/persona.dart';
 import '../../../utils/common_dialog.dart';
 import '../../../widgets/common/common_button.dart';
@@ -51,11 +52,12 @@ class _PersonaTabState extends State<PersonaTab> {
   }
 
   void _addPersona() {
+    final l10n = AppLocalizations.of(context);
     setState(() {
       final newPersona = Persona(
         id: _getNextTempId(),
         characterId: -1, // Will be set when saving
-        name: '새 페르소나',
+        name: l10n.personaNewName,
         order: widget.personas.length,
         isExpanded: true,
       );
@@ -81,23 +83,24 @@ class _PersonaTabState extends State<PersonaTab> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.all(UIConstants.spacing20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 5),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5),
             child: CommonTitleMedium(
-              text: '페르소나',
-              helpMessage: '캐릭터의 페르소나 정보를 추가할 수 있습니다.',
+              text: l10n.personaTitle,
+              helpMessage: l10n.personaTitleHelp,
             ),
           ),
           const SizedBox(height: 8),
           Expanded(
             child: widget.personas.isEmpty
-                ? const Center(
-                    child: Text('페르소나 항목이 없습니다'),
+                ? Center(
+                    child: Text(l10n.personaEmpty),
                   )
                 : ListView.builder(
                     itemCount: widget.personas.length,
@@ -112,7 +115,7 @@ class _PersonaTabState extends State<PersonaTab> {
             child: CommonButton.filled(
               onPressed: _addPersona,
               icon: Icons.add,
-              label: '페르소나 추가',
+              label: l10n.personaAddButton,
             ),
           ),
         ],
@@ -139,7 +142,7 @@ class _PersonaTabState extends State<PersonaTab> {
         });
       },
       onDelete: () => _deletePersona(persona),
-      nameHint: '페르소나 이름',
+      nameHint: AppLocalizations.of(context).personaNameHint,
       onNameChanged: (value) {
         persona.name = value;
         _notifyUpdate();
@@ -149,6 +152,7 @@ class _PersonaTabState extends State<PersonaTab> {
   }
 
   Widget _buildPersonaContentField(Persona persona) {
+    final l10n = AppLocalizations.of(context);
     final key = 'persona_${persona.id}_content';
     final controller = _getFieldController(key, persona.content ?? '');
 
@@ -156,7 +160,7 @@ class _PersonaTabState extends State<PersonaTab> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '내용',
+          l10n.personaContentLabel,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -164,7 +168,7 @@ class _PersonaTabState extends State<PersonaTab> {
         const SizedBox(height: 2),
         CommonEditText(
           controller: controller,
-          hintText: '페르소나 내용을 입력해주세요',
+          hintText: l10n.personaContentHint,
           size: CommonEditTextSize.small,
           maxLines: null,
           minLines: 5,

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../../l10n/app_localizations.dart';
 import '../../providers/tokenizer_provider.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../../widgets/common/common_title_medium.dart';
@@ -9,19 +10,20 @@ class TokenizerScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
-      appBar: const CommonAppBar(
-        title: '토크나이저',
+      appBar: CommonAppBar(
+        title: l10n.tokenizerTitle,
       ),
       body: Consumer<TokenizerProvider>(
         builder: (context, provider, child) {
           return ListView(
             children: [
-              _buildSectionHeader(context, '토크나이저 선택'),
+              _buildSectionHeader(context, l10n.tokenizerSectionTitle),
               _buildListTile(
                 context: context,
                 icon: Icons.token,
-                title: '토크나이저',
+                title: l10n.tokenizerLabel,
                 trailing: DropdownButton<TokenizerType>(
                   value: provider.selectedTokenizer,
                   underline: const SizedBox(),
@@ -43,8 +45,7 @@ class TokenizerScreen extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.all(16),
                 child: Text(
-                  '토크나이저는 텍스트를 토큰으로 변환하는 방식을 결정합니다. '
-                  '모델에 따라 적합한 토크나이저가 다를 수 있습니다.',
+                  l10n.tokenizerDescription,
                   style: TextStyle(
                     fontSize: 14,
                     color: Theme.of(context).colorScheme.onSurfaceVariant,

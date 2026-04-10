@@ -42,6 +42,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get commonClose => '닫기';
 
   @override
+  String get commonCopy => '복사';
+
+  @override
   String get commonDeleteConfirmTitle => '삭제 확인';
 
   @override
@@ -1873,4 +1876,628 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get newsEmptySubtitle => '당겨서 뉴스를 불러오세요';
+
+  @override
+  String get promptItemsTitle => '프롬프트 항목';
+
+  @override
+  String get promptItemsTitleHelp => 'AI에게 전달될 프롬프트 항목들을 추가하세요. 순서대로 전달됩니다.\n\n길게 눌러 순서를 변경할 수 있습니다.';
+
+  @override
+  String get promptItemsAddItem => '항목 추가';
+
+  @override
+  String get promptItemsAddFolder => '폴더 추가';
+
+  @override
+  String get promptItemsEmpty => '프롬프트 항목이 없습니다';
+
+  @override
+  String get promptItemsNameHint => '항목 이름 (예: 시스템 설정, 캐릭터 성격)';
+
+  @override
+  String get promptItemsLabelEnable => '활성화';
+
+  @override
+  String get promptItemsLabelRole => '역할';
+
+  @override
+  String get promptItemsLabelPrompt => '프롬프트';
+
+  @override
+  String get promptItemsPromptHint => 'AI의 역할과 응답 방식을 정의하세요';
+
+  @override
+  String get promptItemsConditionSelect => '조건 선택';
+
+  @override
+  String get promptItemsConditionSelectHint => '조건을 선택하세요';
+
+  @override
+  String get promptItemsConditionNoName => '이름 없음';
+
+  @override
+  String get promptItemsConditionValue => '조건 값';
+
+  @override
+  String get promptItemsConditionEnabled => '활성화';
+
+  @override
+  String get promptItemsConditionDisabled => '비활성화';
+
+  @override
+  String get promptItemsSingleSelectItems => '선택 항목';
+
+  @override
+  String get promptItemsSingleSelectHint => '항목을 선택하세요';
+
+  @override
+  String get promptItemsChatSettings => '설정';
+
+  @override
+  String get promptItemsRecentChatCount => '최근 채팅 포함 개수';
+
+  @override
+  String get promptItemsRecentChatCountHint => '개수';
+
+  @override
+  String get promptItemsChatStartPos => '이전 채팅 시작 위치';
+
+  @override
+  String get promptItemsChatStartPosHint => '시작 위치';
+
+  @override
+  String get promptItemsChatEndPos => '이전 채팅 마지막 위치';
+
+  @override
+  String get promptItemsChatEndPosHint => '마지막 위치';
+
+  @override
+  String get promptConditionsTitle => '프롬프트 조건';
+
+  @override
+  String get promptConditionsTitleHelp => '프롬프트에 적용할 조건을 설정합니다.\n\n• 토글: ON/OFF 스위치\n• 하나만 선택: 여러 항목 중 하나를 선택\n• 변수 치환: 변수명을 선택한 항목으로 치환';
+
+  @override
+  String get promptConditionsAddButton => '조건 추가';
+
+  @override
+  String get promptConditionsNewName => '새 조건';
+
+  @override
+  String get promptConditionsNameHint => '조건 이름 (예: 말투, 분위기)';
+
+  @override
+  String get promptConditionsLabelType => '형태';
+
+  @override
+  String get promptConditionsLabelVarName => '변수 이름';
+
+  @override
+  String get promptConditionsVarNameHint => '변수 이름';
+
+  @override
+  String get promptConditionsLabelOptions => '항목 목록';
+
+  @override
+  String get promptConditionsOptionsEmpty => '항목이 없습니다';
+
+  @override
+  String get promptConditionsOptionAddHint => '항목 이름 입력';
+
+  @override
+  String get promptPresetsTitle => '프롬프트 조건 프리셋';
+
+  @override
+  String get promptPresetsTitleHelp => '프롬프트 조건의 값을 미리 설정해둔 프리셋입니다.\n\n채팅 시 프리셋을 선택하면 조건 값이 일괄 적용됩니다.';
+
+  @override
+  String get promptPresetsAddButton => '프리셋 추가';
+
+  @override
+  String get promptPresetsNewName => '새 프리셋';
+
+  @override
+  String get promptPresetsLabelName => '이름';
+
+  @override
+  String get promptPresetsNameHint => '프리셋 이름';
+
+  @override
+  String get promptPresetsLabelConditions => '조건 목록';
+
+  @override
+  String get promptPresetsConditionNoName => '이름 없음';
+
+  @override
+  String get promptPresetsSelectHint => '항목을 선택하세요';
+
+  @override
+  String get promptPresetsCustomLabel => '기타';
+
+  @override
+  String get promptPresetsCustomInputLabel => '직접입력';
+
+  @override
+  String get promptPresetsCustomInputHint => '값을 입력하세요';
+
+  @override
+  String get promptRegexTitle => '정규식 규칙';
+
+  @override
+  String get promptRegexTitleHelp => '정규식(RegExp)을 사용하여 텍스트를 변환합니다.\n\n속성에 따라 적용 시점이 달라집니다:\n• 입력문 수정: 사용자 입력 텍스트에 적용\n• 출력문 수정: AI 응답 텍스트에 적용\n• 전송데이터 수정: API 전송 데이터에 적용\n• 출력화면 수정: 화면 표시 시에만 적용';
+
+  @override
+  String get promptRegexEmpty => '정규식 규칙이 없습니다';
+
+  @override
+  String promptRegexRuleDefaultName(int index) {
+    return '규칙 $index';
+  }
+
+  @override
+  String get promptRegexNameHint => '규칙 이름 (예: OOC 제거, 태그 변환)';
+
+  @override
+  String get promptRegexLabelTarget => '속성';
+
+  @override
+  String get promptRegexLabelPattern => '정규식 패턴';
+
+  @override
+  String get promptRegexPatternHint => '예: \\(OOC:.*?\\)';
+
+  @override
+  String get promptRegexLabelReplacement => '변환 형식';
+
+  @override
+  String get promptRegexReplacementHint => '정규식에 매칭된 텍스트가 이 형식으로 변환됩니다\n\n캡처 그룹: \$1, \$2, ...';
+
+  @override
+  String get promptRegexAddButton => '규칙 추가';
+
+  @override
+  String get backupTitle => '백업 및 복구';
+
+  @override
+  String get backupSectionTitle => '백업 생성';
+
+  @override
+  String get backupSectionDesc => '캐릭터(이미지 포함), 채팅 기록, 프롬프트, 커스텀 모델, 설정 등 모든 데이터를 하나의 백업 파일로 내보냅니다.';
+
+  @override
+  String get backupCreateButton => '백업 파일 생성';
+
+  @override
+  String get backupRestoreTitle => '백업 복구';
+
+  @override
+  String get backupRestoreDesc => '백업 .zip 파일을 선택하여 데이터를 복원합니다. (기존 .db 파일도 지원)';
+
+  @override
+  String get backupRestoreWarning => '주의: 기존 데이터가 모두 삭제됩니다. 복구 후 앱 재시작이 필요합니다.';
+
+  @override
+  String get backupRestoreButton => '백업 파일 선택';
+
+  @override
+  String get backupProcessing => '처리 중...';
+
+  @override
+  String backupSuccessDownloads(String fileName) {
+    return '백업 완료: Downloads/$fileName';
+  }
+
+  @override
+  String backupSuccessIos(String fileName) {
+    return '백업 완료: $fileName';
+  }
+
+  @override
+  String get backupSaveFailed => '파일 저장에 실패했습니다';
+
+  @override
+  String backupFailed(String error) {
+    return '백업 실패: $error';
+  }
+
+  @override
+  String get backupInvalidFile => '.zip 또는 .db 백업 파일을 선택해주세요';
+
+  @override
+  String get backupZipNoDb => 'ZIP 파일에서 backup.db를 찾을 수 없습니다';
+
+  @override
+  String get backupRestoreConfirmTitle => '백업 복구';
+
+  @override
+  String backupRestoreConfirmContent(String createdAt) {
+    return '백업 일시: $createdAt\n\n기존 데이터가 모두 삭제되고 백업 데이터로 대체됩니다.\n계속하시겠습니까?';
+  }
+
+  @override
+  String get backupRestoreConfirmButton => '복구';
+
+  @override
+  String get backupRestoreSuccessTitle => '복구 완료';
+
+  @override
+  String get backupRestoreSuccessContent => '백업 데이터가 복구되었습니다.\n변경사항을 완전히 적용하려면 앱을 재시작해주세요.';
+
+  @override
+  String backupRestoreFailed(String error) {
+    return '복구 실패: $error';
+  }
+
+  @override
+  String get backupCreatedAtUnknown => '알 수 없음';
+
+  @override
+  String get logTitle => 'API 로그';
+
+  @override
+  String get logDeleteAllTooltip => '전체 삭제';
+
+  @override
+  String get logInfoMessage => 'API 요청/응답 로그를 확인할 수 있습니다.\n7일이 지난 로그는 자동으로 삭제됩니다.';
+
+  @override
+  String get logEmpty => '로그가 없습니다';
+
+  @override
+  String get logAutoSummaryLabel => '자동 요약';
+
+  @override
+  String get logDeleteTitle => '로그 삭제';
+
+  @override
+  String get logDeleteContent => '이 로그를 삭제하시겠습니까?';
+
+  @override
+  String get logDeleteSuccess => '로그가 삭제되었습니다';
+
+  @override
+  String logDeleteFailed(String error) {
+    return '로그 삭제 실패: $error';
+  }
+
+  @override
+  String get logDeleteAllTitle => '전체 로그 삭제';
+
+  @override
+  String get logDeleteAllContent => '모든 로그를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.';
+
+  @override
+  String get logDeleteAllSuccess => '모든 로그가 삭제되었습니다';
+
+  @override
+  String logLoadFailed(String error) {
+    return '로그 불러오기 실패: $error';
+  }
+
+  @override
+  String get logDetailTitle => '로그 상세';
+
+  @override
+  String get logDetailInfoSection => '기본 정보';
+
+  @override
+  String get logDetailTime => '시간';
+
+  @override
+  String get logDetailType => '타입';
+
+  @override
+  String get logDetailModel => '모델';
+
+  @override
+  String get logDetailChatRoomId => '채팅방 ID';
+
+  @override
+  String get logDetailCharacterId => '캐릭터 ID';
+
+  @override
+  String get logDetailCopied => '클립보드에 복사되었습니다';
+
+  @override
+  String get logDetailFormatLabel => '포맷';
+
+  @override
+  String get statisticsTitle => '통계';
+
+  @override
+  String get statisticsNoData => '데이터가 없습니다';
+
+  @override
+  String get statisticsPeriod7Days => '7일';
+
+  @override
+  String get statisticsPeriod30Days => '30일';
+
+  @override
+  String get statisticsPeriodAll => '전체';
+
+  @override
+  String get statisticsCost => '예상 비용';
+
+  @override
+  String get statisticsTokens => '총 토큰';
+
+  @override
+  String get statisticsMessages => '메시지';
+
+  @override
+  String statisticsDailyTokens(String tokens) {
+    return '$tokens 토큰';
+  }
+
+  @override
+  String statisticsDailyMessages(int count) {
+    return '$count개 메시지';
+  }
+
+  @override
+  String statisticsModelMessages(int count) {
+    return '$count개';
+  }
+
+  @override
+  String statisticsDailyModels(int count) {
+    return '$count개 모델';
+  }
+
+  @override
+  String statisticsDateFormat(String year, String month, String day) {
+    return '$year년 $month월 $day일';
+  }
+
+  @override
+  String get statisticsTokenInput => '입력';
+
+  @override
+  String get statisticsTokenOutput => '출력';
+
+  @override
+  String get statisticsTokenCached => '캐시';
+
+  @override
+  String get statisticsTokenThinking => '사고';
+
+  @override
+  String get tokenizerTitle => '토크나이저';
+
+  @override
+  String get tokenizerSectionTitle => '토크나이저 선택';
+
+  @override
+  String get tokenizerLabel => '토크나이저';
+
+  @override
+  String get tokenizerDescription => '토크나이저는 텍스트를 토큰으로 변환하는 방식을 결정합니다. 모델에 따라 적합한 토크나이저가 다를 수 있습니다.';
+
+  @override
+  String get profileTabLabelName => '이름';
+
+  @override
+  String get profileTabNameHelp => '캐릭터의 고유한 이름을 입력해주세요.';
+
+  @override
+  String get profileTabNameHint => '캐릭터의 이름을 입력해주세요.';
+
+  @override
+  String get profileTabNameValidation => '캐릭터 이름을 입력해주세요';
+
+  @override
+  String get profileTabLabelNickname => '닉네임';
+
+  @override
+  String get profileTabNicknameHelp => '프롬프트에서 char 변수 대신 사용할 호칭입니다. 비워두면 이름이 사용됩니다.';
+
+  @override
+  String get profileTabNicknameHint => '캐릭터의 닉네임을 입력해주세요.';
+
+  @override
+  String get profileTabLabelCreatorNotes => '한 줄 소개';
+
+  @override
+  String get profileTabCreatorNotesHelp => '캐릭터를 간단히 설명하는 한 문장을 작성해주세요.';
+
+  @override
+  String get profileTabCreatorNotesHint => '어떤 캐릭터인지 설명할 수 있는 간단한 소개를 입력해주세요.';
+
+  @override
+  String get profileTabLabelKeywords => '키워드';
+
+  @override
+  String get profileTabKeywordsHelp => '캐릭터를 나타내는 키워드를 쉼표(,)로 구분하여 입력해주세요.';
+
+  @override
+  String get profileTabKeywordsHint => '키워드 입력 예시: 판타지, 남자';
+
+  @override
+  String get startScenarioTitle => '시작설정';
+
+  @override
+  String get startScenarioTitleHelp => '대화의 시작 설정 정보를 추가할 수 있습니다.';
+
+  @override
+  String get startScenarioEmpty => '시작설정 항목이 없습니다';
+
+  @override
+  String get startScenarioAddButton => '시작설정 추가';
+
+  @override
+  String get startScenarioNewName => '새 시작설정';
+
+  @override
+  String get startScenarioNameHint => '시작설정 이름';
+
+  @override
+  String get startScenarioStartSettingLabel => '시작 설정';
+
+  @override
+  String get startScenarioStartSettingInfo => '해당 내용은 요약 이전에 삽입되고 삭제되지 않습니다.';
+
+  @override
+  String get startScenarioStartSettingHint => '시작 설정 내용을 입력해주세요';
+
+  @override
+  String get startScenarioStartMessageLabel => '시작 메시지';
+
+  @override
+  String get startScenarioStartMessageHint => '시작 메시지를 입력해주세요';
+
+  @override
+  String get personaTitle => '페르소나';
+
+  @override
+  String get personaTitleHelp => '캐릭터의 페르소나 정보를 추가할 수 있습니다.';
+
+  @override
+  String get personaEmpty => '페르소나 항목이 없습니다';
+
+  @override
+  String get personaAddButton => '페르소나 추가';
+
+  @override
+  String get personaNewName => '새 페르소나';
+
+  @override
+  String get personaNameHint => '페르소나 이름';
+
+  @override
+  String get personaContentLabel => '내용';
+
+  @override
+  String get personaContentHint => '페르소나 내용을 입력해주세요';
+
+  @override
+  String get coverImageTitle => '표지';
+
+  @override
+  String get coverImageTitleHelp => '캐릭터의 표지 이미지를 추가할 수 있습니다.';
+
+  @override
+  String get coverImageEmpty => '표지 이미지가 없습니다';
+
+  @override
+  String get coverImageAddButton => '표지 이미지 추가';
+
+  @override
+  String coverImageDefaultName(int index) {
+    return '표지 $index';
+  }
+
+  @override
+  String coverImageSaveError(String error) {
+    return '이미지 저장 중 오류가 발생했습니다: $error';
+  }
+
+  @override
+  String get additionalImageTitle => '추가 이미지';
+
+  @override
+  String get additionalImageTitleHelp => '캐릭터에 관련된 참고 이미지를 추가할 수 있습니다.';
+
+  @override
+  String get additionalImageEmpty => '추가 이미지가 없습니다';
+
+  @override
+  String get additionalImageAddButton => '이미지 추가';
+
+  @override
+  String additionalImageDefaultName(int index) {
+    return '이미지 $index';
+  }
+
+  @override
+  String additionalImageSaveError(String error) {
+    return '이미지 저장 중 오류가 발생했습니다: $error';
+  }
+
+  @override
+  String get detailSettingsTitle => '세계관 설정';
+
+  @override
+  String get detailSettingsTitleHelp => '캐릭터가 속한 세계관이나 배경 설정을 자유롭게 작성해주세요.';
+
+  @override
+  String get detailSettingsHint => '세계관 설정을 입력해주세요.';
+
+  @override
+  String get chatBottomPanelTitle => '뷰어';
+
+  @override
+  String get chatBottomPanelFontSize => '글자 크기';
+
+  @override
+  String get chatBottomPanelLineHeight => '줄 간격';
+
+  @override
+  String get chatBottomPanelParagraphSpacing => '문단 간격';
+
+  @override
+  String get chatBottomPanelParagraphWidth => '문단 너비';
+
+  @override
+  String get chatBottomPanelParagraphAlign => '문단 정렬';
+
+  @override
+  String get chatBottomPanelAlignLeft => '왼쪽';
+
+  @override
+  String get chatBottomPanelAlignJustify => '양쪽';
+
+  @override
+  String get tutorialStepGoogleAiAccess => 'Google AI Studio 접속';
+
+  @override
+  String get tutorialStepGoogleAiPayment => '결제 계정 생성 (유료 모델 사용 시 필요)';
+
+  @override
+  String get tutorialStepGetApiKey => 'Get API Key 클릭';
+
+  @override
+  String get tutorialStepCreateApiKey => 'Create API Key 선택';
+
+  @override
+  String get tutorialStepCopyKey => '생성된 키를 복사하여 위에 붙여넣기';
+
+  @override
+  String get tutorialStepVertexAccess => 'Google Cloud Console 접속';
+
+  @override
+  String get tutorialStepVertexBilling => '결제 계정 생성 및 프로젝트에 연결';
+
+  @override
+  String get tutorialStepVertexServiceAccount => 'IAM → 서비스 계정 → 계정 생성';
+
+  @override
+  String get tutorialStepVertexRole => 'Vertex AI User 역할 부여';
+
+  @override
+  String get tutorialStepVertexCreateKey => '키 만들기 → JSON → 다운로드';
+
+  @override
+  String get tutorialStepOpenaiAccess => 'OpenAI Platform 접속';
+
+  @override
+  String get tutorialStepApiKeysMenu => 'API Keys 메뉴 선택';
+
+  @override
+  String get tutorialStepCreateSecretKey => 'Create new secret key 클릭';
+
+  @override
+  String get tutorialStepAnthropicAccess => 'Anthropic Console 접속';
+
+  @override
+  String get tutorialStepAnthropicCreate => 'Create Key 클릭';
+
+  @override
+  String tutorialModelPrice(String inputPrice, String outputPrice) {
+    return '입력 $inputPrice/1M · 출력 $outputPrice/1M';
+  }
+
+  @override
+  String get legalDocumentKorean => '한국어';
 }

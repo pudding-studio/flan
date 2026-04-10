@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../../constants/ui_constants.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../models/character/cover_image.dart';
 import '../../../utils/character_image_storage.dart';
 import '../../../utils/common_dialog.dart';
@@ -55,6 +56,7 @@ class _CoverImageTabState extends State<CoverImageTab> {
   }
 
   Future<void> _addCoverImage() async {
+    final l10n = AppLocalizations.of(context);
     final XFile? picked = await _imagePicker.pickImage(
       source: ImageSource.gallery,
     );
@@ -81,7 +83,7 @@ class _CoverImageTabState extends State<CoverImageTab> {
           characterId: -1,
           name: originalName.isNotEmpty
               ? originalName
-              : '표지 ${widget.coverImages.length + 1}',
+              : l10n.coverImageDefaultName(widget.coverImages.length + 1),
           order: widget.coverImages.length,
           path: filePath,
           isExpanded: true,
@@ -96,7 +98,7 @@ class _CoverImageTabState extends State<CoverImageTab> {
       if (!mounted) return;
       CommonDialog.showSnackBar(
         context: context,
-        message: '이미지 저장 중 오류가 발생했습니다: $e',
+        message: AppLocalizations.of(context).coverImageSaveError(e.toString()),
       );
     }
   }
@@ -167,22 +169,23 @@ class _CoverImageTabState extends State<CoverImageTab> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.all(UIConstants.spacing20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Padding(
-            padding: EdgeInsets.symmetric(horizontal: 5),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 5),
             child: CommonTitleMedium(
-              text: '표지',
-              helpMessage: '캐릭터의 표지 이미지를 추가할 수 있습니다.',
+              text: l10n.coverImageTitle,
+              helpMessage: l10n.coverImageTitleHelp,
             ),
           ),
           const SizedBox(height: 8),
           Expanded(
             child: widget.coverImages.isEmpty
-                ? const Center(child: Text('표지 이미지가 없습니다'))
+                ? Center(child: Text(l10n.coverImageEmpty))
                 : ListView.builder(
                     itemCount: widget.coverImages.length,
                     itemBuilder: (context, index) =>
@@ -195,7 +198,7 @@ class _CoverImageTabState extends State<CoverImageTab> {
             child: CommonButton.filled(
               onPressed: _addCoverImage,
               icon: Icons.add,
-              label: '표지 이미지 추가',
+              label: l10n.coverImageAddButton,
             ),
           ),
         ],

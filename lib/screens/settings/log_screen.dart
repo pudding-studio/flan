@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'dart:convert';
 import '../../models/chat/chat_log.dart';
 import '../../database/database_helper.dart';
+import '../../l10n/app_localizations.dart';
 import '../../utils/common_dialog.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../../widgets/common/common_info_box.dart';
@@ -31,6 +32,7 @@ class _LogScreenState extends State<LogScreen> {
   }
 
   Future<void> _loadLogs() async {
+    final l10n = AppLocalizations.of(context);
     setState(() => _isLoading = true);
     try {
       final logs = await _db.readAllChatLogs();
@@ -43,18 +45,19 @@ class _LogScreenState extends State<LogScreen> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '로그 불러오기 실패: $e',
+          message: l10n.logLoadFailed(e.toString()),
         );
       }
     }
   }
 
   Future<void> _deleteLog(int id) async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await CommonDialog.showConfirmation(
       context: context,
-      title: '로그 삭제',
-      content: '이 로그를 삭제하시겠습니까?',
-      confirmText: '삭제',
+      title: l10n.logDeleteTitle,
+      content: l10n.logDeleteContent,
+      confirmText: l10n.commonDelete,
       isDestructive: true,
     );
 
@@ -66,25 +69,26 @@ class _LogScreenState extends State<LogScreen> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '로그가 삭제되었습니다',
+          message: l10n.logDeleteSuccess,
         );
       }
     } catch (e) {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '로그 삭제 실패: $e',
+          message: l10n.logDeleteFailed(e.toString()),
         );
       }
     }
   }
 
   Future<void> _deleteAllLogs() async {
+    final l10n = AppLocalizations.of(context);
     final confirmed = await CommonDialog.showConfirmation(
       context: context,
-      title: '전체 로그 삭제',
-      content: '모든 로그를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.',
-      confirmText: '삭제',
+      title: l10n.logDeleteAllTitle,
+      content: l10n.logDeleteAllContent,
+      confirmText: l10n.commonDelete,
       isDestructive: true,
     );
 
@@ -96,14 +100,14 @@ class _LogScreenState extends State<LogScreen> {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '모든 로그가 삭제되었습니다',
+          message: l10n.logDeleteAllSuccess,
         );
       }
     } catch (e) {
       if (mounted) {
         CommonDialog.showSnackBar(
           context: context,
-          message: '로그 삭제 실패: $e',
+          message: l10n.logDeleteFailed(e.toString()),
         );
       }
     }
@@ -122,15 +126,16 @@ class _LogScreenState extends State<LogScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Scaffold(
       appBar: CommonAppBar(
-        title: 'API 로그',
+        title: l10n.logTitle,
         actions: [
           if (_logs.isNotEmpty)
             CommonAppBarIconButton(
               icon: Icons.delete_sweep,
               onPressed: _deleteAllLogs,
-              tooltip: '전체 삭제',
+              tooltip: l10n.logDeleteAllTooltip,
             ),
         ],
       ),
@@ -141,7 +146,7 @@ class _LogScreenState extends State<LogScreen> {
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
                   child: CommonInfoBox(
-                    message: 'API 요청/응답 로그를 확인할 수 있습니다.\n7일이 지난 로그는 자동으로 삭제됩니다.',
+                    message: l10n.logInfoMessage,
                   ),
                 ),
                 Expanded(
@@ -157,7 +162,7 @@ class _LogScreenState extends State<LogScreen> {
                               ),
                               const SizedBox(height: 16),
                               Text(
-                                '로그가 없습니다',
+                                l10n.logEmpty,
                                 style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                                     ),
@@ -189,7 +194,7 @@ class _LogScreenState extends State<LogScreen> {
                                     ),
                               ),
                               subtitle: Text(
-                                isAutoSummary ? '자동 요약' : 'Type: ${log.type}',
+                                isAutoSummary ? l10n.logAutoSummaryLabel : 'Type: ${log.type}',
                                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                       color: isAutoSummary
                                           ? Theme.of(context).colorScheme.tertiary
@@ -241,7 +246,7 @@ class _LogDetailSheetState extends State<_LogDetailSheet> {
     Clipboard.setData(ClipboardData(text: text));
     CommonDialog.showSnackBar(
       context: context,
-      message: '클립보드에 복사되었습니다',
+      message: AppLocalizations.of(context).logDetailCopied,
     );
   }
 
@@ -273,7 +278,7 @@ class _LogDetailSheetState extends State<_LogDetailSheet> {
                   children: [
                     Expanded(
                       child: Text(
-                        '로그 상세',
+                        AppLocalizations.of(context).logDetailTitle,
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                     ),
@@ -305,6 +310,7 @@ class _LogDetailSheetState extends State<_LogDetailSheet> {
   }
 
   Widget _buildInfoCard(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -312,19 +318,19 @@ class _LogDetailSheetState extends State<_LogDetailSheet> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '기본 정보',
+              l10n.logDetailInfoSection,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
                     fontWeight: FontWeight.bold,
                   ),
             ),
             const SizedBox(height: 12),
-            _buildInfoRow('시간', _formatTimestamp(widget.log.timestamp)),
-            _buildInfoRow('타입', widget.log.type),
-            _buildInfoRow('모델', _getModelName()),
+            _buildInfoRow(l10n.logDetailTime, _formatTimestamp(widget.log.timestamp)),
+            _buildInfoRow(l10n.logDetailType, widget.log.type),
+            _buildInfoRow(l10n.logDetailModel, _getModelName()),
             if (widget.log.chatRoomId != null)
-              _buildInfoRow('채팅방 ID', widget.log.chatRoomId.toString()),
+              _buildInfoRow(l10n.logDetailChatRoomId, widget.log.chatRoomId.toString()),
             if (widget.log.characterId != null)
-              _buildInfoRow('캐릭터 ID', widget.log.characterId.toString()),
+              _buildInfoRow(l10n.logDetailCharacterId, widget.log.characterId.toString()),
           ],
         ),
       ),
@@ -377,7 +383,7 @@ class _LogDetailSheetState extends State<_LogDetailSheet> {
                 IconButton(
                   icon: const Icon(Icons.copy, size: 20),
                   onPressed: () => _copyToClipboard(widget.log.request),
-                  tooltip: '복사',
+                  tooltip: AppLocalizations.of(context).commonCopy,
                 ),
                 Switch(
                   value: _showFormattedRequest,
@@ -385,7 +391,7 @@ class _LogDetailSheetState extends State<_LogDetailSheet> {
                     setState(() => _showFormattedRequest = value);
                   },
                 ),
-                Text('포맷', style: Theme.of(context).textTheme.bodySmall),
+                Text(AppLocalizations.of(context).logDetailFormatLabel, style: Theme.of(context).textTheme.bodySmall),
               ],
             ),
             const SizedBox(height: 12),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../constants/ui_constants.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../widgets/common/common_edit_text.dart';
 import '../../../widgets/common/common_title_medium.dart';
 
@@ -13,6 +14,7 @@ class DetailSettingsTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return Padding(
       padding: const EdgeInsets.all(UIConstants.spacing20),
       child: Column(
@@ -23,9 +25,9 @@ class DetailSettingsTab extends StatelessWidget {
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                const CommonTitleMedium(
-                  text: '세계관 설정',
-                  helpMessage: '캐릭터가 속한 세계관이나 배경 설정을 자유롭게 작성해주세요.',
+                CommonTitleMedium(
+                  text: l10n.detailSettingsTitle,
+                  helpMessage: l10n.detailSettingsTitleHelp,
                 ),
                 const Spacer(),
                 ValueListenableBuilder<TextEditingValue>(
@@ -46,7 +48,7 @@ class DetailSettingsTab extends StatelessWidget {
           Expanded(
             child: CommonEditText(
               controller: descriptionController,
-              hintText: '세계관 설정을 입력해주세요.',
+              hintText: l10n.detailSettingsHint,
               size: CommonEditTextSize.medium,
               expands: true,
               textAlignVertical: TextAlignVertical.top,

@@ -14,6 +14,7 @@
   "commonSave": "저장",
   "commonRetry": "재시도",
   "commonClose": "닫기",
+  "commonCopy": "복사",
   "commonDeleteConfirmTitle": "삭제 확인",
   "commonDeleteConfirmContent": "{itemName}을(를) 삭제하시겠습니까?",
 
@@ -600,5 +601,311 @@
   "newsArticleDeleteTitle": "기사 삭제",
   "newsArticleDeleteContent": "이 기사를 삭제하시겠습니까?",
   "newsEmptyTitle": "아직 기사가 없습니다",
-  "newsEmptySubtitle": "당겨서 뉴스를 불러오세요"
+  "newsEmptySubtitle": "당겨서 뉴스를 불러오세요",
+
+  "promptItemsTitle": "프롬프트 항목",
+  "promptItemsTitleHelp": "AI에게 전달될 프롬프트 항목들을 추가하세요. 순서대로 전달됩니다.\n\n길게 눌러 순서를 변경할 수 있습니다.",
+  "promptItemsAddItem": "항목 추가",
+  "promptItemsAddFolder": "폴더 추가",
+  "promptItemsEmpty": "프롬프트 항목이 없습니다",
+  "promptItemsNameHint": "항목 이름 (예: 시스템 설정, 캐릭터 성격)",
+  "promptItemsLabelEnable": "활성화",
+  "promptItemsLabelRole": "역할",
+  "promptItemsLabelPrompt": "프롬프트",
+  "promptItemsPromptHint": "AI의 역할과 응답 방식을 정의하세요",
+  "promptItemsConditionSelect": "조건 선택",
+  "promptItemsConditionSelectHint": "조건을 선택하세요",
+  "promptItemsConditionNoName": "이름 없음",
+  "promptItemsConditionValue": "조건 값",
+  "promptItemsConditionEnabled": "활성화",
+  "promptItemsConditionDisabled": "비활성화",
+  "promptItemsSingleSelectItems": "선택 항목",
+  "promptItemsSingleSelectHint": "항목을 선택하세요",
+  "promptItemsChatSettings": "설정",
+  "promptItemsRecentChatCount": "최근 채팅 포함 개수",
+  "promptItemsRecentChatCountHint": "개수",
+  "promptItemsChatStartPos": "이전 채팅 시작 위치",
+  "promptItemsChatStartPosHint": "시작 위치",
+  "promptItemsChatEndPos": "이전 채팅 마지막 위치",
+  "promptItemsChatEndPosHint": "마지막 위치",
+
+  "promptConditionsTitle": "프롬프트 조건",
+  "promptConditionsTitleHelp": "프롬프트에 적용할 조건을 설정합니다.\n\n• 토글: ON/OFF 스위치\n• 하나만 선택: 여러 항목 중 하나를 선택\n• 변수 치환: 변수명을 선택한 항목으로 치환",
+  "promptConditionsAddButton": "조건 추가",
+  "promptConditionsNewName": "새 조건",
+  "promptConditionsNameHint": "조건 이름 (예: 말투, 분위기)",
+  "promptConditionsLabelType": "형태",
+  "promptConditionsLabelVarName": "변수 이름",
+  "promptConditionsVarNameHint": "변수 이름",
+  "promptConditionsLabelOptions": "항목 목록",
+  "promptConditionsOptionsEmpty": "항목이 없습니다",
+  "promptConditionsOptionAddHint": "항목 이름 입력",
+
+  "promptPresetsTitle": "프롬프트 조건 프리셋",
+  "promptPresetsTitleHelp": "프롬프트 조건의 값을 미리 설정해둔 프리셋입니다.\n\n채팅 시 프리셋을 선택하면 조건 값이 일괄 적용됩니다.",
+  "promptPresetsAddButton": "프리셋 추가",
+  "promptPresetsNewName": "새 프리셋",
+  "promptPresetsLabelName": "이름",
+  "promptPresetsNameHint": "프리셋 이름",
+  "promptPresetsLabelConditions": "조건 목록",
+  "promptPresetsConditionNoName": "이름 없음",
+  "promptPresetsSelectHint": "항목을 선택하세요",
+  "promptPresetsCustomLabel": "기타",
+  "promptPresetsCustomInputLabel": "직접입력",
+  "promptPresetsCustomInputHint": "값을 입력하세요",
+
+  "promptRegexTitle": "정규식 규칙",
+  "promptRegexTitleHelp": "정규식(RegExp)을 사용하여 텍스트를 변환합니다.\n\n속성에 따라 적용 시점이 달라집니다:\n• 입력문 수정: 사용자 입력 텍스트에 적용\n• 출력문 수정: AI 응답 텍스트에 적용\n• 전송데이터 수정: API 전송 데이터에 적용\n• 출력화면 수정: 화면 표시 시에만 적용",
+  "promptRegexEmpty": "정규식 규칙이 없습니다",
+  "promptRegexRuleDefaultName": "규칙 {index}",
+  "@promptRegexRuleDefaultName": {
+    "placeholders": {
+      "index": { "type": "int" }
+    }
+  },
+  "promptRegexNameHint": "규칙 이름 (예: OOC 제거, 태그 변환)",
+  "promptRegexLabelTarget": "속성",
+  "promptRegexLabelPattern": "정규식 패턴",
+  "promptRegexPatternHint": "예: \\(OOC:.*?\\)",
+  "promptRegexLabelReplacement": "변환 형식",
+  "promptRegexReplacementHint": "정규식에 매칭된 텍스트가 이 형식으로 변환됩니다\n\n캡처 그룹: $1, $2, ...",
+  "promptRegexAddButton": "규칙 추가",
+
+  "backupTitle": "백업 및 복구",
+  "backupSectionTitle": "백업 생성",
+  "backupSectionDesc": "캐릭터(이미지 포함), 채팅 기록, 프롬프트, 커스텀 모델, 설정 등 모든 데이터를 하나의 백업 파일로 내보냅니다.",
+  "backupCreateButton": "백업 파일 생성",
+  "backupRestoreTitle": "백업 복구",
+  "backupRestoreDesc": "백업 .zip 파일을 선택하여 데이터를 복원합니다. (기존 .db 파일도 지원)",
+  "backupRestoreWarning": "주의: 기존 데이터가 모두 삭제됩니다. 복구 후 앱 재시작이 필요합니다.",
+  "backupRestoreButton": "백업 파일 선택",
+  "backupProcessing": "처리 중...",
+  "backupSuccessDownloads": "백업 완료: Downloads/{fileName}",
+  "@backupSuccessDownloads": {
+    "placeholders": {
+      "fileName": { "type": "String" }
+    }
+  },
+  "backupSuccessIos": "백업 완료: {fileName}",
+  "@backupSuccessIos": {
+    "placeholders": {
+      "fileName": { "type": "String" }
+    }
+  },
+  "backupSaveFailed": "파일 저장에 실패했습니다",
+  "backupFailed": "백업 실패: {error}",
+  "@backupFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "backupInvalidFile": ".zip 또는 .db 백업 파일을 선택해주세요",
+  "backupZipNoDb": "ZIP 파일에서 backup.db를 찾을 수 없습니다",
+  "backupRestoreConfirmTitle": "백업 복구",
+  "backupRestoreConfirmContent": "백업 일시: {createdAt}\n\n기존 데이터가 모두 삭제되고 백업 데이터로 대체됩니다.\n계속하시겠습니까?",
+  "@backupRestoreConfirmContent": {
+    "placeholders": {
+      "createdAt": { "type": "String" }
+    }
+  },
+  "backupRestoreConfirmButton": "복구",
+  "backupRestoreSuccessTitle": "복구 완료",
+  "backupRestoreSuccessContent": "백업 데이터가 복구되었습니다.\n변경사항을 완전히 적용하려면 앱을 재시작해주세요.",
+  "backupRestoreFailed": "복구 실패: {error}",
+  "@backupRestoreFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "backupCreatedAtUnknown": "알 수 없음",
+
+  "logTitle": "API 로그",
+  "logDeleteAllTooltip": "전체 삭제",
+  "logInfoMessage": "API 요청/응답 로그를 확인할 수 있습니다.\n7일이 지난 로그는 자동으로 삭제됩니다.",
+  "logEmpty": "로그가 없습니다",
+  "logAutoSummaryLabel": "자동 요약",
+  "logDeleteTitle": "로그 삭제",
+  "logDeleteContent": "이 로그를 삭제하시겠습니까?",
+  "logDeleteSuccess": "로그가 삭제되었습니다",
+  "logDeleteFailed": "로그 삭제 실패: {error}",
+  "@logDeleteFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "logDeleteAllTitle": "전체 로그 삭제",
+  "logDeleteAllContent": "모든 로그를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.",
+  "logDeleteAllSuccess": "모든 로그가 삭제되었습니다",
+  "logLoadFailed": "로그 불러오기 실패: {error}",
+  "@logLoadFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "logDetailTitle": "로그 상세",
+  "logDetailInfoSection": "기본 정보",
+  "logDetailTime": "시간",
+  "logDetailType": "타입",
+  "logDetailModel": "모델",
+  "logDetailChatRoomId": "채팅방 ID",
+  "logDetailCharacterId": "캐릭터 ID",
+  "logDetailCopied": "클립보드에 복사되었습니다",
+  "logDetailFormatLabel": "포맷",
+
+  "statisticsTitle": "통계",
+  "statisticsNoData": "데이터가 없습니다",
+  "statisticsPeriod7Days": "7일",
+  "statisticsPeriod30Days": "30일",
+  "statisticsPeriodAll": "전체",
+  "statisticsCost": "예상 비용",
+  "statisticsTokens": "총 토큰",
+  "statisticsMessages": "메시지",
+  "statisticsDailyTokens": "{tokens} 토큰",
+  "@statisticsDailyTokens": {
+    "placeholders": {
+      "tokens": { "type": "String" }
+    }
+  },
+  "statisticsDailyMessages": "{count}개 메시지",
+  "@statisticsDailyMessages": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "statisticsModelMessages": "{count}개",
+  "@statisticsModelMessages": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "statisticsDailyModels": "{count}개 모델",
+  "@statisticsDailyModels": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
+  "statisticsDateFormat": "{year}년 {month}월 {day}일",
+  "@statisticsDateFormat": {
+    "placeholders": {
+      "year": { "type": "String" },
+      "month": { "type": "String" },
+      "day": { "type": "String" }
+    }
+  },
+  "statisticsTokenInput": "입력",
+  "statisticsTokenOutput": "출력",
+  "statisticsTokenCached": "캐시",
+  "statisticsTokenThinking": "사고",
+
+  "tokenizerTitle": "토크나이저",
+  "tokenizerSectionTitle": "토크나이저 선택",
+  "tokenizerLabel": "토크나이저",
+  "tokenizerDescription": "토크나이저는 텍스트를 토큰으로 변환하는 방식을 결정합니다. 모델에 따라 적합한 토크나이저가 다를 수 있습니다.",
+
+  "profileTabLabelName": "이름",
+  "profileTabNameHelp": "캐릭터의 고유한 이름을 입력해주세요.",
+  "profileTabNameHint": "캐릭터의 이름을 입력해주세요.",
+  "profileTabNameValidation": "캐릭터 이름을 입력해주세요",
+  "profileTabLabelNickname": "닉네임",
+  "profileTabNicknameHelp": "프롬프트에서 char 변수 대신 사용할 호칭입니다. 비워두면 이름이 사용됩니다.",
+  "profileTabNicknameHint": "캐릭터의 닉네임을 입력해주세요.",
+  "profileTabLabelCreatorNotes": "한 줄 소개",
+  "profileTabCreatorNotesHelp": "캐릭터를 간단히 설명하는 한 문장을 작성해주세요.",
+  "profileTabCreatorNotesHint": "어떤 캐릭터인지 설명할 수 있는 간단한 소개를 입력해주세요.",
+  "profileTabLabelKeywords": "키워드",
+  "profileTabKeywordsHelp": "캐릭터를 나타내는 키워드를 쉼표(,)로 구분하여 입력해주세요.",
+  "profileTabKeywordsHint": "키워드 입력 예시: 판타지, 남자",
+
+  "startScenarioTitle": "시작설정",
+  "startScenarioTitleHelp": "대화의 시작 설정 정보를 추가할 수 있습니다.",
+  "startScenarioEmpty": "시작설정 항목이 없습니다",
+  "startScenarioAddButton": "시작설정 추가",
+  "startScenarioNewName": "새 시작설정",
+  "startScenarioNameHint": "시작설정 이름",
+  "startScenarioStartSettingLabel": "시작 설정",
+  "startScenarioStartSettingInfo": "해당 내용은 요약 이전에 삽입되고 삭제되지 않습니다.",
+  "startScenarioStartSettingHint": "시작 설정 내용을 입력해주세요",
+  "startScenarioStartMessageLabel": "시작 메시지",
+  "startScenarioStartMessageHint": "시작 메시지를 입력해주세요",
+
+  "personaTitle": "페르소나",
+  "personaTitleHelp": "캐릭터의 페르소나 정보를 추가할 수 있습니다.",
+  "personaEmpty": "페르소나 항목이 없습니다",
+  "personaAddButton": "페르소나 추가",
+  "personaNewName": "새 페르소나",
+  "personaNameHint": "페르소나 이름",
+  "personaContentLabel": "내용",
+  "personaContentHint": "페르소나 내용을 입력해주세요",
+
+  "coverImageTitle": "표지",
+  "coverImageTitleHelp": "캐릭터의 표지 이미지를 추가할 수 있습니다.",
+  "coverImageEmpty": "표지 이미지가 없습니다",
+  "coverImageAddButton": "표지 이미지 추가",
+  "coverImageDefaultName": "표지 {index}",
+  "@coverImageDefaultName": {
+    "placeholders": {
+      "index": { "type": "int" }
+    }
+  },
+  "coverImageSaveError": "이미지 저장 중 오류가 발생했습니다: {error}",
+  "@coverImageSaveError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+
+  "additionalImageTitle": "추가 이미지",
+  "additionalImageTitleHelp": "캐릭터에 관련된 참고 이미지를 추가할 수 있습니다.",
+  "additionalImageEmpty": "추가 이미지가 없습니다",
+  "additionalImageAddButton": "이미지 추가",
+  "additionalImageDefaultName": "이미지 {index}",
+  "@additionalImageDefaultName": {
+    "placeholders": {
+      "index": { "type": "int" }
+    }
+  },
+  "additionalImageSaveError": "이미지 저장 중 오류가 발생했습니다: {error}",
+  "@additionalImageSaveError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+
+  "detailSettingsTitle": "세계관 설정",
+  "detailSettingsTitleHelp": "캐릭터가 속한 세계관이나 배경 설정을 자유롭게 작성해주세요.",
+  "detailSettingsHint": "세계관 설정을 입력해주세요.",
+
+  "chatBottomPanelTitle": "뷰어",
+  "chatBottomPanelFontSize": "글자 크기",
+  "chatBottomPanelLineHeight": "줄 간격",
+  "chatBottomPanelParagraphSpacing": "문단 간격",
+  "chatBottomPanelParagraphWidth": "문단 너비",
+  "chatBottomPanelParagraphAlign": "문단 정렬",
+  "chatBottomPanelAlignLeft": "왼쪽",
+  "chatBottomPanelAlignJustify": "양쪽",
+
+  "tutorialStepGoogleAiAccess": "Google AI Studio 접속",
+  "tutorialStepGoogleAiPayment": "결제 계정 생성 (유료 모델 사용 시 필요)",
+  "tutorialStepGetApiKey": "Get API Key 클릭",
+  "tutorialStepCreateApiKey": "Create API Key 선택",
+  "tutorialStepCopyKey": "생성된 키를 복사하여 위에 붙여넣기",
+  "tutorialStepVertexAccess": "Google Cloud Console 접속",
+  "tutorialStepVertexBilling": "결제 계정 생성 및 프로젝트에 연결",
+  "tutorialStepVertexServiceAccount": "IAM → 서비스 계정 → 계정 생성",
+  "tutorialStepVertexRole": "Vertex AI User 역할 부여",
+  "tutorialStepVertexCreateKey": "키 만들기 → JSON → 다운로드",
+  "tutorialStepOpenaiAccess": "OpenAI Platform 접속",
+  "tutorialStepApiKeysMenu": "API Keys 메뉴 선택",
+  "tutorialStepCreateSecretKey": "Create new secret key 클릭",
+  "tutorialStepAnthropicAccess": "Anthropic Console 접속",
+  "tutorialStepAnthropicCreate": "Create Key 클릭",
+  "tutorialModelPrice": "입력 {inputPrice}/1M · 출력 {outputPrice}/1M",
+  "@tutorialModelPrice": {
+    "placeholders": {
+      "inputPrice": { "type": "String" },
+      "outputPrice": { "type": "String" }
+    }
+  },
+
+  "legalDocumentKorean": "한국어"
 }

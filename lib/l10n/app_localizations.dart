@@ -163,6 +163,12 @@ abstract class AppLocalizations {
   /// **'닫기'**
   String get commonClose;
 
+  /// No description provided for @commonCopy.
+  ///
+  /// In ko, this message translates to:
+  /// **'복사'**
+  String get commonCopy;
+
   /// No description provided for @commonDeleteConfirmTitle.
   ///
   /// In ko, this message translates to:
@@ -3564,6 +3570,1182 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'당겨서 뉴스를 불러오세요'**
   String get newsEmptySubtitle;
+
+  /// No description provided for @promptItemsTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트 항목'**
+  String get promptItemsTitle;
+
+  /// No description provided for @promptItemsTitleHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'AI에게 전달될 프롬프트 항목들을 추가하세요. 순서대로 전달됩니다.\n\n길게 눌러 순서를 변경할 수 있습니다.'**
+  String get promptItemsTitleHelp;
+
+  /// No description provided for @promptItemsAddItem.
+  ///
+  /// In ko, this message translates to:
+  /// **'항목 추가'**
+  String get promptItemsAddItem;
+
+  /// No description provided for @promptItemsAddFolder.
+  ///
+  /// In ko, this message translates to:
+  /// **'폴더 추가'**
+  String get promptItemsAddFolder;
+
+  /// No description provided for @promptItemsEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트 항목이 없습니다'**
+  String get promptItemsEmpty;
+
+  /// No description provided for @promptItemsNameHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'항목 이름 (예: 시스템 설정, 캐릭터 성격)'**
+  String get promptItemsNameHint;
+
+  /// No description provided for @promptItemsLabelEnable.
+  ///
+  /// In ko, this message translates to:
+  /// **'활성화'**
+  String get promptItemsLabelEnable;
+
+  /// No description provided for @promptItemsLabelRole.
+  ///
+  /// In ko, this message translates to:
+  /// **'역할'**
+  String get promptItemsLabelRole;
+
+  /// No description provided for @promptItemsLabelPrompt.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트'**
+  String get promptItemsLabelPrompt;
+
+  /// No description provided for @promptItemsPromptHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'AI의 역할과 응답 방식을 정의하세요'**
+  String get promptItemsPromptHint;
+
+  /// No description provided for @promptItemsConditionSelect.
+  ///
+  /// In ko, this message translates to:
+  /// **'조건 선택'**
+  String get promptItemsConditionSelect;
+
+  /// No description provided for @promptItemsConditionSelectHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'조건을 선택하세요'**
+  String get promptItemsConditionSelectHint;
+
+  /// No description provided for @promptItemsConditionNoName.
+  ///
+  /// In ko, this message translates to:
+  /// **'이름 없음'**
+  String get promptItemsConditionNoName;
+
+  /// No description provided for @promptItemsConditionValue.
+  ///
+  /// In ko, this message translates to:
+  /// **'조건 값'**
+  String get promptItemsConditionValue;
+
+  /// No description provided for @promptItemsConditionEnabled.
+  ///
+  /// In ko, this message translates to:
+  /// **'활성화'**
+  String get promptItemsConditionEnabled;
+
+  /// No description provided for @promptItemsConditionDisabled.
+  ///
+  /// In ko, this message translates to:
+  /// **'비활성화'**
+  String get promptItemsConditionDisabled;
+
+  /// No description provided for @promptItemsSingleSelectItems.
+  ///
+  /// In ko, this message translates to:
+  /// **'선택 항목'**
+  String get promptItemsSingleSelectItems;
+
+  /// No description provided for @promptItemsSingleSelectHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'항목을 선택하세요'**
+  String get promptItemsSingleSelectHint;
+
+  /// No description provided for @promptItemsChatSettings.
+  ///
+  /// In ko, this message translates to:
+  /// **'설정'**
+  String get promptItemsChatSettings;
+
+  /// No description provided for @promptItemsRecentChatCount.
+  ///
+  /// In ko, this message translates to:
+  /// **'최근 채팅 포함 개수'**
+  String get promptItemsRecentChatCount;
+
+  /// No description provided for @promptItemsRecentChatCountHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'개수'**
+  String get promptItemsRecentChatCountHint;
+
+  /// No description provided for @promptItemsChatStartPos.
+  ///
+  /// In ko, this message translates to:
+  /// **'이전 채팅 시작 위치'**
+  String get promptItemsChatStartPos;
+
+  /// No description provided for @promptItemsChatStartPosHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'시작 위치'**
+  String get promptItemsChatStartPosHint;
+
+  /// No description provided for @promptItemsChatEndPos.
+  ///
+  /// In ko, this message translates to:
+  /// **'이전 채팅 마지막 위치'**
+  String get promptItemsChatEndPos;
+
+  /// No description provided for @promptItemsChatEndPosHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'마지막 위치'**
+  String get promptItemsChatEndPosHint;
+
+  /// No description provided for @promptConditionsTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트 조건'**
+  String get promptConditionsTitle;
+
+  /// No description provided for @promptConditionsTitleHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트에 적용할 조건을 설정합니다.\n\n• 토글: ON/OFF 스위치\n• 하나만 선택: 여러 항목 중 하나를 선택\n• 변수 치환: 변수명을 선택한 항목으로 치환'**
+  String get promptConditionsTitleHelp;
+
+  /// No description provided for @promptConditionsAddButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'조건 추가'**
+  String get promptConditionsAddButton;
+
+  /// No description provided for @promptConditionsNewName.
+  ///
+  /// In ko, this message translates to:
+  /// **'새 조건'**
+  String get promptConditionsNewName;
+
+  /// No description provided for @promptConditionsNameHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'조건 이름 (예: 말투, 분위기)'**
+  String get promptConditionsNameHint;
+
+  /// No description provided for @promptConditionsLabelType.
+  ///
+  /// In ko, this message translates to:
+  /// **'형태'**
+  String get promptConditionsLabelType;
+
+  /// No description provided for @promptConditionsLabelVarName.
+  ///
+  /// In ko, this message translates to:
+  /// **'변수 이름'**
+  String get promptConditionsLabelVarName;
+
+  /// No description provided for @promptConditionsVarNameHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'변수 이름'**
+  String get promptConditionsVarNameHint;
+
+  /// No description provided for @promptConditionsLabelOptions.
+  ///
+  /// In ko, this message translates to:
+  /// **'항목 목록'**
+  String get promptConditionsLabelOptions;
+
+  /// No description provided for @promptConditionsOptionsEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'항목이 없습니다'**
+  String get promptConditionsOptionsEmpty;
+
+  /// No description provided for @promptConditionsOptionAddHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'항목 이름 입력'**
+  String get promptConditionsOptionAddHint;
+
+  /// No description provided for @promptPresetsTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트 조건 프리셋'**
+  String get promptPresetsTitle;
+
+  /// No description provided for @promptPresetsTitleHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트 조건의 값을 미리 설정해둔 프리셋입니다.\n\n채팅 시 프리셋을 선택하면 조건 값이 일괄 적용됩니다.'**
+  String get promptPresetsTitleHelp;
+
+  /// No description provided for @promptPresetsAddButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'프리셋 추가'**
+  String get promptPresetsAddButton;
+
+  /// No description provided for @promptPresetsNewName.
+  ///
+  /// In ko, this message translates to:
+  /// **'새 프리셋'**
+  String get promptPresetsNewName;
+
+  /// No description provided for @promptPresetsLabelName.
+  ///
+  /// In ko, this message translates to:
+  /// **'이름'**
+  String get promptPresetsLabelName;
+
+  /// No description provided for @promptPresetsNameHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'프리셋 이름'**
+  String get promptPresetsNameHint;
+
+  /// No description provided for @promptPresetsLabelConditions.
+  ///
+  /// In ko, this message translates to:
+  /// **'조건 목록'**
+  String get promptPresetsLabelConditions;
+
+  /// No description provided for @promptPresetsConditionNoName.
+  ///
+  /// In ko, this message translates to:
+  /// **'이름 없음'**
+  String get promptPresetsConditionNoName;
+
+  /// No description provided for @promptPresetsSelectHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'항목을 선택하세요'**
+  String get promptPresetsSelectHint;
+
+  /// No description provided for @promptPresetsCustomLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'기타'**
+  String get promptPresetsCustomLabel;
+
+  /// No description provided for @promptPresetsCustomInputLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'직접입력'**
+  String get promptPresetsCustomInputLabel;
+
+  /// No description provided for @promptPresetsCustomInputHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'값을 입력하세요'**
+  String get promptPresetsCustomInputHint;
+
+  /// No description provided for @promptRegexTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'정규식 규칙'**
+  String get promptRegexTitle;
+
+  /// No description provided for @promptRegexTitleHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'정규식(RegExp)을 사용하여 텍스트를 변환합니다.\n\n속성에 따라 적용 시점이 달라집니다:\n• 입력문 수정: 사용자 입력 텍스트에 적용\n• 출력문 수정: AI 응답 텍스트에 적용\n• 전송데이터 수정: API 전송 데이터에 적용\n• 출력화면 수정: 화면 표시 시에만 적용'**
+  String get promptRegexTitleHelp;
+
+  /// No description provided for @promptRegexEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'정규식 규칙이 없습니다'**
+  String get promptRegexEmpty;
+
+  /// No description provided for @promptRegexRuleDefaultName.
+  ///
+  /// In ko, this message translates to:
+  /// **'규칙 {index}'**
+  String promptRegexRuleDefaultName(int index);
+
+  /// No description provided for @promptRegexNameHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'규칙 이름 (예: OOC 제거, 태그 변환)'**
+  String get promptRegexNameHint;
+
+  /// No description provided for @promptRegexLabelTarget.
+  ///
+  /// In ko, this message translates to:
+  /// **'속성'**
+  String get promptRegexLabelTarget;
+
+  /// No description provided for @promptRegexLabelPattern.
+  ///
+  /// In ko, this message translates to:
+  /// **'정규식 패턴'**
+  String get promptRegexLabelPattern;
+
+  /// No description provided for @promptRegexPatternHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'예: \\(OOC:.*?\\)'**
+  String get promptRegexPatternHint;
+
+  /// No description provided for @promptRegexLabelReplacement.
+  ///
+  /// In ko, this message translates to:
+  /// **'변환 형식'**
+  String get promptRegexLabelReplacement;
+
+  /// No description provided for @promptRegexReplacementHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'정규식에 매칭된 텍스트가 이 형식으로 변환됩니다\n\n캡처 그룹: \$1, \$2, ...'**
+  String get promptRegexReplacementHint;
+
+  /// No description provided for @promptRegexAddButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'규칙 추가'**
+  String get promptRegexAddButton;
+
+  /// No description provided for @backupTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'백업 및 복구'**
+  String get backupTitle;
+
+  /// No description provided for @backupSectionTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'백업 생성'**
+  String get backupSectionTitle;
+
+  /// No description provided for @backupSectionDesc.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터(이미지 포함), 채팅 기록, 프롬프트, 커스텀 모델, 설정 등 모든 데이터를 하나의 백업 파일로 내보냅니다.'**
+  String get backupSectionDesc;
+
+  /// No description provided for @backupCreateButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'백업 파일 생성'**
+  String get backupCreateButton;
+
+  /// No description provided for @backupRestoreTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'백업 복구'**
+  String get backupRestoreTitle;
+
+  /// No description provided for @backupRestoreDesc.
+  ///
+  /// In ko, this message translates to:
+  /// **'백업 .zip 파일을 선택하여 데이터를 복원합니다. (기존 .db 파일도 지원)'**
+  String get backupRestoreDesc;
+
+  /// No description provided for @backupRestoreWarning.
+  ///
+  /// In ko, this message translates to:
+  /// **'주의: 기존 데이터가 모두 삭제됩니다. 복구 후 앱 재시작이 필요합니다.'**
+  String get backupRestoreWarning;
+
+  /// No description provided for @backupRestoreButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'백업 파일 선택'**
+  String get backupRestoreButton;
+
+  /// No description provided for @backupProcessing.
+  ///
+  /// In ko, this message translates to:
+  /// **'처리 중...'**
+  String get backupProcessing;
+
+  /// No description provided for @backupSuccessDownloads.
+  ///
+  /// In ko, this message translates to:
+  /// **'백업 완료: Downloads/{fileName}'**
+  String backupSuccessDownloads(String fileName);
+
+  /// No description provided for @backupSuccessIos.
+  ///
+  /// In ko, this message translates to:
+  /// **'백업 완료: {fileName}'**
+  String backupSuccessIos(String fileName);
+
+  /// No description provided for @backupSaveFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'파일 저장에 실패했습니다'**
+  String get backupSaveFailed;
+
+  /// No description provided for @backupFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'백업 실패: {error}'**
+  String backupFailed(String error);
+
+  /// No description provided for @backupInvalidFile.
+  ///
+  /// In ko, this message translates to:
+  /// **'.zip 또는 .db 백업 파일을 선택해주세요'**
+  String get backupInvalidFile;
+
+  /// No description provided for @backupZipNoDb.
+  ///
+  /// In ko, this message translates to:
+  /// **'ZIP 파일에서 backup.db를 찾을 수 없습니다'**
+  String get backupZipNoDb;
+
+  /// No description provided for @backupRestoreConfirmTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'백업 복구'**
+  String get backupRestoreConfirmTitle;
+
+  /// No description provided for @backupRestoreConfirmContent.
+  ///
+  /// In ko, this message translates to:
+  /// **'백업 일시: {createdAt}\n\n기존 데이터가 모두 삭제되고 백업 데이터로 대체됩니다.\n계속하시겠습니까?'**
+  String backupRestoreConfirmContent(String createdAt);
+
+  /// No description provided for @backupRestoreConfirmButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'복구'**
+  String get backupRestoreConfirmButton;
+
+  /// No description provided for @backupRestoreSuccessTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'복구 완료'**
+  String get backupRestoreSuccessTitle;
+
+  /// No description provided for @backupRestoreSuccessContent.
+  ///
+  /// In ko, this message translates to:
+  /// **'백업 데이터가 복구되었습니다.\n변경사항을 완전히 적용하려면 앱을 재시작해주세요.'**
+  String get backupRestoreSuccessContent;
+
+  /// No description provided for @backupRestoreFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'복구 실패: {error}'**
+  String backupRestoreFailed(String error);
+
+  /// No description provided for @backupCreatedAtUnknown.
+  ///
+  /// In ko, this message translates to:
+  /// **'알 수 없음'**
+  String get backupCreatedAtUnknown;
+
+  /// No description provided for @logTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'API 로그'**
+  String get logTitle;
+
+  /// No description provided for @logDeleteAllTooltip.
+  ///
+  /// In ko, this message translates to:
+  /// **'전체 삭제'**
+  String get logDeleteAllTooltip;
+
+  /// No description provided for @logInfoMessage.
+  ///
+  /// In ko, this message translates to:
+  /// **'API 요청/응답 로그를 확인할 수 있습니다.\n7일이 지난 로그는 자동으로 삭제됩니다.'**
+  String get logInfoMessage;
+
+  /// No description provided for @logEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'로그가 없습니다'**
+  String get logEmpty;
+
+  /// No description provided for @logAutoSummaryLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'자동 요약'**
+  String get logAutoSummaryLabel;
+
+  /// No description provided for @logDeleteTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'로그 삭제'**
+  String get logDeleteTitle;
+
+  /// No description provided for @logDeleteContent.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 로그를 삭제하시겠습니까?'**
+  String get logDeleteContent;
+
+  /// No description provided for @logDeleteSuccess.
+  ///
+  /// In ko, this message translates to:
+  /// **'로그가 삭제되었습니다'**
+  String get logDeleteSuccess;
+
+  /// No description provided for @logDeleteFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'로그 삭제 실패: {error}'**
+  String logDeleteFailed(String error);
+
+  /// No description provided for @logDeleteAllTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'전체 로그 삭제'**
+  String get logDeleteAllTitle;
+
+  /// No description provided for @logDeleteAllContent.
+  ///
+  /// In ko, this message translates to:
+  /// **'모든 로그를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.'**
+  String get logDeleteAllContent;
+
+  /// No description provided for @logDeleteAllSuccess.
+  ///
+  /// In ko, this message translates to:
+  /// **'모든 로그가 삭제되었습니다'**
+  String get logDeleteAllSuccess;
+
+  /// No description provided for @logLoadFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'로그 불러오기 실패: {error}'**
+  String logLoadFailed(String error);
+
+  /// No description provided for @logDetailTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'로그 상세'**
+  String get logDetailTitle;
+
+  /// No description provided for @logDetailInfoSection.
+  ///
+  /// In ko, this message translates to:
+  /// **'기본 정보'**
+  String get logDetailInfoSection;
+
+  /// No description provided for @logDetailTime.
+  ///
+  /// In ko, this message translates to:
+  /// **'시간'**
+  String get logDetailTime;
+
+  /// No description provided for @logDetailType.
+  ///
+  /// In ko, this message translates to:
+  /// **'타입'**
+  String get logDetailType;
+
+  /// No description provided for @logDetailModel.
+  ///
+  /// In ko, this message translates to:
+  /// **'모델'**
+  String get logDetailModel;
+
+  /// No description provided for @logDetailChatRoomId.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅방 ID'**
+  String get logDetailChatRoomId;
+
+  /// No description provided for @logDetailCharacterId.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터 ID'**
+  String get logDetailCharacterId;
+
+  /// No description provided for @logDetailCopied.
+  ///
+  /// In ko, this message translates to:
+  /// **'클립보드에 복사되었습니다'**
+  String get logDetailCopied;
+
+  /// No description provided for @logDetailFormatLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'포맷'**
+  String get logDetailFormatLabel;
+
+  /// No description provided for @statisticsTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'통계'**
+  String get statisticsTitle;
+
+  /// No description provided for @statisticsNoData.
+  ///
+  /// In ko, this message translates to:
+  /// **'데이터가 없습니다'**
+  String get statisticsNoData;
+
+  /// No description provided for @statisticsPeriod7Days.
+  ///
+  /// In ko, this message translates to:
+  /// **'7일'**
+  String get statisticsPeriod7Days;
+
+  /// No description provided for @statisticsPeriod30Days.
+  ///
+  /// In ko, this message translates to:
+  /// **'30일'**
+  String get statisticsPeriod30Days;
+
+  /// No description provided for @statisticsPeriodAll.
+  ///
+  /// In ko, this message translates to:
+  /// **'전체'**
+  String get statisticsPeriodAll;
+
+  /// No description provided for @statisticsCost.
+  ///
+  /// In ko, this message translates to:
+  /// **'예상 비용'**
+  String get statisticsCost;
+
+  /// No description provided for @statisticsTokens.
+  ///
+  /// In ko, this message translates to:
+  /// **'총 토큰'**
+  String get statisticsTokens;
+
+  /// No description provided for @statisticsMessages.
+  ///
+  /// In ko, this message translates to:
+  /// **'메시지'**
+  String get statisticsMessages;
+
+  /// No description provided for @statisticsDailyTokens.
+  ///
+  /// In ko, this message translates to:
+  /// **'{tokens} 토큰'**
+  String statisticsDailyTokens(String tokens);
+
+  /// No description provided for @statisticsDailyMessages.
+  ///
+  /// In ko, this message translates to:
+  /// **'{count}개 메시지'**
+  String statisticsDailyMessages(int count);
+
+  /// No description provided for @statisticsModelMessages.
+  ///
+  /// In ko, this message translates to:
+  /// **'{count}개'**
+  String statisticsModelMessages(int count);
+
+  /// No description provided for @statisticsDailyModels.
+  ///
+  /// In ko, this message translates to:
+  /// **'{count}개 모델'**
+  String statisticsDailyModels(int count);
+
+  /// No description provided for @statisticsDateFormat.
+  ///
+  /// In ko, this message translates to:
+  /// **'{year}년 {month}월 {day}일'**
+  String statisticsDateFormat(String year, String month, String day);
+
+  /// No description provided for @statisticsTokenInput.
+  ///
+  /// In ko, this message translates to:
+  /// **'입력'**
+  String get statisticsTokenInput;
+
+  /// No description provided for @statisticsTokenOutput.
+  ///
+  /// In ko, this message translates to:
+  /// **'출력'**
+  String get statisticsTokenOutput;
+
+  /// No description provided for @statisticsTokenCached.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐시'**
+  String get statisticsTokenCached;
+
+  /// No description provided for @statisticsTokenThinking.
+  ///
+  /// In ko, this message translates to:
+  /// **'사고'**
+  String get statisticsTokenThinking;
+
+  /// No description provided for @tokenizerTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'토크나이저'**
+  String get tokenizerTitle;
+
+  /// No description provided for @tokenizerSectionTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'토크나이저 선택'**
+  String get tokenizerSectionTitle;
+
+  /// No description provided for @tokenizerLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'토크나이저'**
+  String get tokenizerLabel;
+
+  /// No description provided for @tokenizerDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'토크나이저는 텍스트를 토큰으로 변환하는 방식을 결정합니다. 모델에 따라 적합한 토크나이저가 다를 수 있습니다.'**
+  String get tokenizerDescription;
+
+  /// No description provided for @profileTabLabelName.
+  ///
+  /// In ko, this message translates to:
+  /// **'이름'**
+  String get profileTabLabelName;
+
+  /// No description provided for @profileTabNameHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터의 고유한 이름을 입력해주세요.'**
+  String get profileTabNameHelp;
+
+  /// No description provided for @profileTabNameHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터의 이름을 입력해주세요.'**
+  String get profileTabNameHint;
+
+  /// No description provided for @profileTabNameValidation.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터 이름을 입력해주세요'**
+  String get profileTabNameValidation;
+
+  /// No description provided for @profileTabLabelNickname.
+  ///
+  /// In ko, this message translates to:
+  /// **'닉네임'**
+  String get profileTabLabelNickname;
+
+  /// No description provided for @profileTabNicknameHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트에서 char 변수 대신 사용할 호칭입니다. 비워두면 이름이 사용됩니다.'**
+  String get profileTabNicknameHelp;
+
+  /// No description provided for @profileTabNicknameHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터의 닉네임을 입력해주세요.'**
+  String get profileTabNicknameHint;
+
+  /// No description provided for @profileTabLabelCreatorNotes.
+  ///
+  /// In ko, this message translates to:
+  /// **'한 줄 소개'**
+  String get profileTabLabelCreatorNotes;
+
+  /// No description provided for @profileTabCreatorNotesHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터를 간단히 설명하는 한 문장을 작성해주세요.'**
+  String get profileTabCreatorNotesHelp;
+
+  /// No description provided for @profileTabCreatorNotesHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'어떤 캐릭터인지 설명할 수 있는 간단한 소개를 입력해주세요.'**
+  String get profileTabCreatorNotesHint;
+
+  /// No description provided for @profileTabLabelKeywords.
+  ///
+  /// In ko, this message translates to:
+  /// **'키워드'**
+  String get profileTabLabelKeywords;
+
+  /// No description provided for @profileTabKeywordsHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터를 나타내는 키워드를 쉼표(,)로 구분하여 입력해주세요.'**
+  String get profileTabKeywordsHelp;
+
+  /// No description provided for @profileTabKeywordsHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'키워드 입력 예시: 판타지, 남자'**
+  String get profileTabKeywordsHint;
+
+  /// No description provided for @startScenarioTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'시작설정'**
+  String get startScenarioTitle;
+
+  /// No description provided for @startScenarioTitleHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'대화의 시작 설정 정보를 추가할 수 있습니다.'**
+  String get startScenarioTitleHelp;
+
+  /// No description provided for @startScenarioEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'시작설정 항목이 없습니다'**
+  String get startScenarioEmpty;
+
+  /// No description provided for @startScenarioAddButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'시작설정 추가'**
+  String get startScenarioAddButton;
+
+  /// No description provided for @startScenarioNewName.
+  ///
+  /// In ko, this message translates to:
+  /// **'새 시작설정'**
+  String get startScenarioNewName;
+
+  /// No description provided for @startScenarioNameHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'시작설정 이름'**
+  String get startScenarioNameHint;
+
+  /// No description provided for @startScenarioStartSettingLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'시작 설정'**
+  String get startScenarioStartSettingLabel;
+
+  /// No description provided for @startScenarioStartSettingInfo.
+  ///
+  /// In ko, this message translates to:
+  /// **'해당 내용은 요약 이전에 삽입되고 삭제되지 않습니다.'**
+  String get startScenarioStartSettingInfo;
+
+  /// No description provided for @startScenarioStartSettingHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'시작 설정 내용을 입력해주세요'**
+  String get startScenarioStartSettingHint;
+
+  /// No description provided for @startScenarioStartMessageLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'시작 메시지'**
+  String get startScenarioStartMessageLabel;
+
+  /// No description provided for @startScenarioStartMessageHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'시작 메시지를 입력해주세요'**
+  String get startScenarioStartMessageHint;
+
+  /// No description provided for @personaTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'페르소나'**
+  String get personaTitle;
+
+  /// No description provided for @personaTitleHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터의 페르소나 정보를 추가할 수 있습니다.'**
+  String get personaTitleHelp;
+
+  /// No description provided for @personaEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'페르소나 항목이 없습니다'**
+  String get personaEmpty;
+
+  /// No description provided for @personaAddButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'페르소나 추가'**
+  String get personaAddButton;
+
+  /// No description provided for @personaNewName.
+  ///
+  /// In ko, this message translates to:
+  /// **'새 페르소나'**
+  String get personaNewName;
+
+  /// No description provided for @personaNameHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'페르소나 이름'**
+  String get personaNameHint;
+
+  /// No description provided for @personaContentLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'내용'**
+  String get personaContentLabel;
+
+  /// No description provided for @personaContentHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'페르소나 내용을 입력해주세요'**
+  String get personaContentHint;
+
+  /// No description provided for @coverImageTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'표지'**
+  String get coverImageTitle;
+
+  /// No description provided for @coverImageTitleHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터의 표지 이미지를 추가할 수 있습니다.'**
+  String get coverImageTitleHelp;
+
+  /// No description provided for @coverImageEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'표지 이미지가 없습니다'**
+  String get coverImageEmpty;
+
+  /// No description provided for @coverImageAddButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'표지 이미지 추가'**
+  String get coverImageAddButton;
+
+  /// No description provided for @coverImageDefaultName.
+  ///
+  /// In ko, this message translates to:
+  /// **'표지 {index}'**
+  String coverImageDefaultName(int index);
+
+  /// No description provided for @coverImageSaveError.
+  ///
+  /// In ko, this message translates to:
+  /// **'이미지 저장 중 오류가 발생했습니다: {error}'**
+  String coverImageSaveError(String error);
+
+  /// No description provided for @additionalImageTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'추가 이미지'**
+  String get additionalImageTitle;
+
+  /// No description provided for @additionalImageTitleHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터에 관련된 참고 이미지를 추가할 수 있습니다.'**
+  String get additionalImageTitleHelp;
+
+  /// No description provided for @additionalImageEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'추가 이미지가 없습니다'**
+  String get additionalImageEmpty;
+
+  /// No description provided for @additionalImageAddButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'이미지 추가'**
+  String get additionalImageAddButton;
+
+  /// No description provided for @additionalImageDefaultName.
+  ///
+  /// In ko, this message translates to:
+  /// **'이미지 {index}'**
+  String additionalImageDefaultName(int index);
+
+  /// No description provided for @additionalImageSaveError.
+  ///
+  /// In ko, this message translates to:
+  /// **'이미지 저장 중 오류가 발생했습니다: {error}'**
+  String additionalImageSaveError(String error);
+
+  /// No description provided for @detailSettingsTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'세계관 설정'**
+  String get detailSettingsTitle;
+
+  /// No description provided for @detailSettingsTitleHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터가 속한 세계관이나 배경 설정을 자유롭게 작성해주세요.'**
+  String get detailSettingsTitleHelp;
+
+  /// No description provided for @detailSettingsHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'세계관 설정을 입력해주세요.'**
+  String get detailSettingsHint;
+
+  /// No description provided for @chatBottomPanelTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'뷰어'**
+  String get chatBottomPanelTitle;
+
+  /// No description provided for @chatBottomPanelFontSize.
+  ///
+  /// In ko, this message translates to:
+  /// **'글자 크기'**
+  String get chatBottomPanelFontSize;
+
+  /// No description provided for @chatBottomPanelLineHeight.
+  ///
+  /// In ko, this message translates to:
+  /// **'줄 간격'**
+  String get chatBottomPanelLineHeight;
+
+  /// No description provided for @chatBottomPanelParagraphSpacing.
+  ///
+  /// In ko, this message translates to:
+  /// **'문단 간격'**
+  String get chatBottomPanelParagraphSpacing;
+
+  /// No description provided for @chatBottomPanelParagraphWidth.
+  ///
+  /// In ko, this message translates to:
+  /// **'문단 너비'**
+  String get chatBottomPanelParagraphWidth;
+
+  /// No description provided for @chatBottomPanelParagraphAlign.
+  ///
+  /// In ko, this message translates to:
+  /// **'문단 정렬'**
+  String get chatBottomPanelParagraphAlign;
+
+  /// No description provided for @chatBottomPanelAlignLeft.
+  ///
+  /// In ko, this message translates to:
+  /// **'왼쪽'**
+  String get chatBottomPanelAlignLeft;
+
+  /// No description provided for @chatBottomPanelAlignJustify.
+  ///
+  /// In ko, this message translates to:
+  /// **'양쪽'**
+  String get chatBottomPanelAlignJustify;
+
+  /// No description provided for @tutorialStepGoogleAiAccess.
+  ///
+  /// In ko, this message translates to:
+  /// **'Google AI Studio 접속'**
+  String get tutorialStepGoogleAiAccess;
+
+  /// No description provided for @tutorialStepGoogleAiPayment.
+  ///
+  /// In ko, this message translates to:
+  /// **'결제 계정 생성 (유료 모델 사용 시 필요)'**
+  String get tutorialStepGoogleAiPayment;
+
+  /// No description provided for @tutorialStepGetApiKey.
+  ///
+  /// In ko, this message translates to:
+  /// **'Get API Key 클릭'**
+  String get tutorialStepGetApiKey;
+
+  /// No description provided for @tutorialStepCreateApiKey.
+  ///
+  /// In ko, this message translates to:
+  /// **'Create API Key 선택'**
+  String get tutorialStepCreateApiKey;
+
+  /// No description provided for @tutorialStepCopyKey.
+  ///
+  /// In ko, this message translates to:
+  /// **'생성된 키를 복사하여 위에 붙여넣기'**
+  String get tutorialStepCopyKey;
+
+  /// No description provided for @tutorialStepVertexAccess.
+  ///
+  /// In ko, this message translates to:
+  /// **'Google Cloud Console 접속'**
+  String get tutorialStepVertexAccess;
+
+  /// No description provided for @tutorialStepVertexBilling.
+  ///
+  /// In ko, this message translates to:
+  /// **'결제 계정 생성 및 프로젝트에 연결'**
+  String get tutorialStepVertexBilling;
+
+  /// No description provided for @tutorialStepVertexServiceAccount.
+  ///
+  /// In ko, this message translates to:
+  /// **'IAM → 서비스 계정 → 계정 생성'**
+  String get tutorialStepVertexServiceAccount;
+
+  /// No description provided for @tutorialStepVertexRole.
+  ///
+  /// In ko, this message translates to:
+  /// **'Vertex AI User 역할 부여'**
+  String get tutorialStepVertexRole;
+
+  /// No description provided for @tutorialStepVertexCreateKey.
+  ///
+  /// In ko, this message translates to:
+  /// **'키 만들기 → JSON → 다운로드'**
+  String get tutorialStepVertexCreateKey;
+
+  /// No description provided for @tutorialStepOpenaiAccess.
+  ///
+  /// In ko, this message translates to:
+  /// **'OpenAI Platform 접속'**
+  String get tutorialStepOpenaiAccess;
+
+  /// No description provided for @tutorialStepApiKeysMenu.
+  ///
+  /// In ko, this message translates to:
+  /// **'API Keys 메뉴 선택'**
+  String get tutorialStepApiKeysMenu;
+
+  /// No description provided for @tutorialStepCreateSecretKey.
+  ///
+  /// In ko, this message translates to:
+  /// **'Create new secret key 클릭'**
+  String get tutorialStepCreateSecretKey;
+
+  /// No description provided for @tutorialStepAnthropicAccess.
+  ///
+  /// In ko, this message translates to:
+  /// **'Anthropic Console 접속'**
+  String get tutorialStepAnthropicAccess;
+
+  /// No description provided for @tutorialStepAnthropicCreate.
+  ///
+  /// In ko, this message translates to:
+  /// **'Create Key 클릭'**
+  String get tutorialStepAnthropicCreate;
+
+  /// No description provided for @tutorialModelPrice.
+  ///
+  /// In ko, this message translates to:
+  /// **'입력 {inputPrice}/1M · 출력 {outputPrice}/1M'**
+  String tutorialModelPrice(String inputPrice, String outputPrice);
+
+  /// No description provided for @legalDocumentKorean.
+  ///
+  /// In ko, this message translates to:
+  /// **'한국어'**
+  String get legalDocumentKorean;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

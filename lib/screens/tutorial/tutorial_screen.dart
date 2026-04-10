@@ -580,36 +580,36 @@ class _TutorialScreenState extends State<TutorialScreen> {
       case ApiKeyType.googleAiStudio:
         helpTitle = l10n.tutorialHelpGoogleAi;
         steps = [
-          _HelpStep('Google AI Studio 접속', 'https://aistudio.google.com'),
-          const _HelpStep('결제 계정 생성 (유료 모델 사용 시 필요)'),
-          const _HelpStep('Get API Key 클릭'),
-          const _HelpStep('Create API Key 선택'),
-          const _HelpStep('생성된 키를 복사하여 위에 붙여넣기'),
+          _HelpStep(l10n.tutorialStepGoogleAiAccess, 'https://aistudio.google.com'),
+          _HelpStep(l10n.tutorialStepGoogleAiPayment),
+          _HelpStep(l10n.tutorialStepGetApiKey),
+          _HelpStep(l10n.tutorialStepCreateApiKey),
+          _HelpStep(l10n.tutorialStepCopyKey),
         ];
       case ApiKeyType.vertexAi:
         helpTitle = l10n.tutorialHelpVertex;
         steps = [
-          _HelpStep('Google Cloud Console 접속', 'https://console.cloud.google.com'),
-          _HelpStep('결제 계정 생성 및 프로젝트에 연결', 'https://console.cloud.google.com/billing'),
-          const _HelpStep('IAM → 서비스 계정 → 계정 생성'),
-          const _HelpStep('Vertex AI User 역할 부여'),
-          const _HelpStep('키 만들기 → JSON → 다운로드'),
+          _HelpStep(l10n.tutorialStepVertexAccess, 'https://console.cloud.google.com'),
+          _HelpStep(l10n.tutorialStepVertexBilling, 'https://console.cloud.google.com/billing'),
+          _HelpStep(l10n.tutorialStepVertexServiceAccount),
+          _HelpStep(l10n.tutorialStepVertexRole),
+          _HelpStep(l10n.tutorialStepVertexCreateKey),
         ];
       case ApiKeyType.openai:
         helpTitle = l10n.tutorialHelpOpenai;
         steps = [
-          _HelpStep('OpenAI Platform 접속', 'https://platform.openai.com'),
-          const _HelpStep('API Keys 메뉴 선택'),
-          const _HelpStep('Create new secret key 클릭'),
-          const _HelpStep('생성된 키를 복사하여 위에 붙여넣기'),
+          _HelpStep(l10n.tutorialStepOpenaiAccess, 'https://platform.openai.com'),
+          _HelpStep(l10n.tutorialStepApiKeysMenu),
+          _HelpStep(l10n.tutorialStepCreateSecretKey),
+          _HelpStep(l10n.tutorialStepCopyKey),
         ];
       case ApiKeyType.anthropic:
         helpTitle = l10n.tutorialHelpAnthropic;
         steps = [
-          _HelpStep('Anthropic Console 접속', 'https://console.anthropic.com'),
-          const _HelpStep('API Keys 메뉴 선택'),
-          const _HelpStep('Create Key 클릭'),
-          const _HelpStep('생성된 키를 복사하여 위에 붙여넣기'),
+          _HelpStep(l10n.tutorialStepAnthropicAccess, 'https://console.anthropic.com'),
+          _HelpStep(l10n.tutorialStepApiKeysMenu),
+          _HelpStep(l10n.tutorialStepAnthropicCreate),
+          _HelpStep(l10n.tutorialStepCopyKey),
         ];
     }
 
@@ -997,7 +997,7 @@ class _TutorialScreenState extends State<TutorialScreen> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        _modelPriceLabel(model),
+                        _modelPriceLabel(model, l10n),
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                           fontSize: 11,
@@ -1014,8 +1014,8 @@ class _TutorialScreenState extends State<TutorialScreen> {
     );
   }
 
-  String _modelPriceLabel(ChatModel model) {
+  String _modelPriceLabel(ChatModel model, AppLocalizations l10n) {
     final p = model.pricing;
-    return '입력 \$${p.inputPrice}/1M · 출력 \$${p.outputPrice}/1M';
+    return l10n.tutorialModelPrice('\$${p.inputPrice}', '\$${p.outputPrice}');
   }
 }

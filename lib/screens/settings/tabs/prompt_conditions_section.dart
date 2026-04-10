@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../constants/ui_constants.dart';
+import '../../../l10n/app_localizations.dart';
 import '../../../models/prompt/prompt_condition.dart';
 import '../../../models/prompt/prompt_condition_option.dart';
 import '../../../widgets/common/common_dropdown_button.dart';
@@ -64,6 +65,7 @@ class _PromptConditionsSectionState extends State<PromptConditionsSection> {
   }
 
   Widget _buildSectionHeader(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return InkWell(
       onTap: widget.onToggle,
       borderRadius: BorderRadius.circular(UIConstants.borderRadiusMedium),
@@ -71,12 +73,9 @@ class _PromptConditionsSectionState extends State<PromptConditionsSection> {
         padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 4),
         child: Row(
           children: [
-            const CommonTitleMedium(
-              text: '프롬프트 조건',
-              helpMessage: '프롬프트에 적용할 조건을 설정합니다.\n\n'
-                  '• 토글: ON/OFF 스위치\n'
-                  '• 하나만 선택: 여러 항목 중 하나를 선택\n'
-                  '• 변수 치환: 변수명을 선택한 항목으로 치환',
+            CommonTitleMedium(
+              text: l10n.promptConditionsTitle,
+              helpMessage: l10n.promptConditionsTitleHelp,
             ),
             const Spacer(),
             Icon(
@@ -97,7 +96,7 @@ class _PromptConditionsSectionState extends State<PromptConditionsSection> {
         child: OutlinedButton.icon(
           onPressed: widget.onAddCondition,
           icon: const Icon(Icons.add, size: 18),
-          label: const Text('조건 추가'),
+          label: Text(AppLocalizations.of(context).promptConditionsAddButton),
           style: OutlinedButton.styleFrom(
             padding: const EdgeInsets.symmetric(vertical: 12),
             shape: RoundedRectangleBorder(
@@ -156,7 +155,7 @@ class _ConditionCardState extends State<_ConditionCard> {
         size: UIConstants.iconSizeMedium,
         color: Theme.of(context).colorScheme.secondary,
       ),
-      name: condition.name.isEmpty ? '새 조건' : condition.name,
+      name: condition.name.isEmpty ? AppLocalizations.of(context).promptConditionsNewName : condition.name,
       isExpanded: condition.isExpanded,
       onToggleExpanded: () {
         if (condition.isExpanded) {
@@ -170,7 +169,7 @@ class _ConditionCardState extends State<_ConditionCard> {
       onDelete: widget.readOnly ? () {} : widget.onDelete,
       showDeleteButton: !widget.readOnly,
       showNameField: true,
-      nameHint: '조건 이름 (예: 말투, 분위기)',
+      nameHint: AppLocalizations.of(context).promptConditionsNameHint,
       onNameChanged: (value) {
         final idx = widget.conditions.indexOf(condition);
         if (idx != -1) {
@@ -183,6 +182,7 @@ class _ConditionCardState extends State<_ConditionCard> {
   }
 
   Widget _buildContent(PromptCondition condition) {
+    final l10n = AppLocalizations.of(context);
     final labelStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
           fontWeight: FontWeight.w600,
         );
@@ -190,7 +190,7 @@ class _ConditionCardState extends State<_ConditionCard> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('형태', style: labelStyle),
+        Text(l10n.promptConditionsLabelType, style: labelStyle),
         const SizedBox(height: 6),
         CommonDropdownButton<ConditionType>(
           value: condition.type,
@@ -214,11 +214,11 @@ class _ConditionCardState extends State<_ConditionCard> {
         ),
         if (condition.type == ConditionType.variable) ...[
           const SizedBox(height: UIConstants.spacing12),
-          Text('변수 이름', style: labelStyle),
+          Text(l10n.promptConditionsLabelVarName, style: labelStyle),
           const SizedBox(height: 6),
           CommonEditText(
             size: CommonEditTextSize.small,
-            hintText: '변수 이름',
+            hintText: l10n.promptConditionsVarNameHint,
             initialValue: condition.variableName ?? '',
             onFocusLost: (value) {
               final idx = widget.conditions.indexOf(condition);
@@ -234,7 +234,7 @@ class _ConditionCardState extends State<_ConditionCard> {
         if (condition.type == ConditionType.singleSelect ||
             condition.type == ConditionType.variable) ...[
           const SizedBox(height: UIConstants.spacing12),
-          Text('항목 목록', style: labelStyle),
+          Text(l10n.promptConditionsLabelOptions, style: labelStyle),
           const SizedBox(height: 6),
           _buildOptionList(condition),
           const SizedBox(height: 6),
@@ -249,7 +249,7 @@ class _ConditionCardState extends State<_ConditionCard> {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 4),
         child: Text(
-          '항목이 없습니다',
+          AppLocalizations.of(context).promptConditionsOptionsEmpty,
           style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -372,7 +372,7 @@ class _ConditionCardState extends State<_ConditionCard> {
   Widget _buildOptionAddInput(PromptCondition condition) {
     return CommonEditText(
       controller: _addOptionController,
-      hintText: '항목 이름 입력',
+      hintText: AppLocalizations.of(context).promptConditionsOptionAddHint,
       size: CommonEditTextSize.small,
       textInputAction: TextInputAction.done,
       onFieldSubmitted: (_) => _commitAddOption(condition),
