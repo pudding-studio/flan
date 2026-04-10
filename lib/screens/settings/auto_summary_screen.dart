@@ -444,24 +444,9 @@ _syncContentFromControllers();
               overlayColor: WidgetStateProperty.all(Colors.transparent),
               splashFactory: NoSplash.splashFactory,
               tabs: [
-                Tab(
-                  child: SizedBox(
-                    width: 65,
-                    child: Center(child: Text(l10n.autoSummaryTabBasic)),
-                  ),
-                ),
-                Tab(
-                  child: SizedBox(
-                    width: 65,
-                    child: Center(child: Text(l10n.autoSummaryTabParameters)),
-                  ),
-                ),
-                Tab(
-                  child: SizedBox(
-                    width: 65,
-                    child: Center(child: Text(l10n.autoSummaryTabPrompt)),
-                  ),
-                ),
+                Tab(text: l10n.autoSummaryTabBasic),
+                Tab(text: l10n.autoSummaryTabParameters),
+                Tab(text: l10n.autoSummaryTabPrompt),
               ],
             ),
           ),
