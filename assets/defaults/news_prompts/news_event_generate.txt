@@ -17,4 +17,4 @@ Rules:
 - Time MUST be exactly 12 digits in 'YYYYMMDDHHmm' format
 - All article times MUST be after the provided base time
 - Articles must be grounded in the worldview and event details provided
-- Output language MUST match the worldview language
+- Language: {{output_language}}

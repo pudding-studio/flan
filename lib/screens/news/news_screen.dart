@@ -13,6 +13,7 @@ import '../../models/chat/model_preset.dart';
 import '../../models/chat/unified_model.dart';
 import '../../providers/chat_model_provider.dart';
 import '../../providers/community_model_provider.dart';
+import '../../providers/localization_provider.dart';
 import '../../services/ai_service.dart';
 import '../../utils/news_parser.dart';
 
@@ -135,6 +136,7 @@ class _NewsScreenState extends State<NewsScreen> {
       return;
     }
 
+    final outputLanguage = context.read<LocalizationProvider>().effectiveAiLanguageName;
     _newArticleIds.clear();
     setState(() => _isGenerating = true);
 
@@ -147,9 +149,9 @@ class _NewsScreenState extends State<NewsScreen> {
       final topics = List<String>.from(_allTopics)..shuffle();
       final selectedTopics = topics.take(2).toList();
 
-      var systemPrompt = await rootBundle.loadString(
+      var systemPrompt = (await rootBundle.loadString(
         'assets/defaults/news_prompts/news_generate.txt',
-      );
+      )).replaceAll('{{output_language}}', outputLanguage);
 
       String latestArticleInfo = '';
       if (_articles.isNotEmpty) {
@@ -192,7 +194,7 @@ class _NewsScreenState extends State<NewsScreen> {
       }
 
       // Step 2: Generate event-based articles
-      await _generateEventArticles(model, nowStr, latestArticleInfo, worldview);
+      await _generateEventArticles(model, nowStr, latestArticleInfo, worldview, outputLanguage);
 
       await _load(showLoading: false);
     } catch (e) {
@@ -210,6 +212,7 @@ class _NewsScreenState extends State<NewsScreen> {
     String nowStr,
     String latestArticleInfo,
     String worldview,
+    String outputLanguage,
   ) async {
     final events = await _db.getAgentEntries(
       widget.chatRoomId,
@@ -224,9 +227,9 @@ class _NewsScreenState extends State<NewsScreen> {
     // Limit to 3 most recent uncovered events
     final toProcess = uncovered.length > 3 ? uncovered.sublist(uncovered.length - 3) : uncovered;
 
-    final eventSystemPrompt = await rootBundle.loadString(
+    final eventSystemPrompt = (await rootBundle.loadString(
       'assets/defaults/news_prompts/news_event_generate.txt',
-    );
+    )).replaceAll('{{output_language}}', outputLanguage);
 
     for (final event in toProcess) {
       final tones = List<String>.from(_allTones)..shuffle();

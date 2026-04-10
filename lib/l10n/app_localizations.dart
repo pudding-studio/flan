@@ -5028,6 +5028,30 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'업적/사건'**
   String get agentEntryTypeEvent;
+
+  /// No description provided for @settingsAiResponseLanguageOthers.
+  ///
+  /// In ko, this message translates to:
+  /// **'기타 (직접 입력)'**
+  String get settingsAiResponseLanguageOthers;
+
+  /// No description provided for @settingsAiResponseLanguageOthersTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'AI 응답 언어 입력'**
+  String get settingsAiResponseLanguageOthersTitle;
+
+  /// No description provided for @settingsAiResponseLanguageOthersHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'언어 이름 입력 (예: French)'**
+  String get settingsAiResponseLanguageOthersHint;
+
+  /// No description provided for @settingsAiResponseLanguageOthersLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'언어 이름'**
+  String get settingsAiResponseLanguageOthersLabel;
 }
 
 class _AppLocalizationsDelegate extends LocalizationsDelegate<AppLocalizations> {

@@ -26,6 +26,7 @@ class PromptBuilder {
     List<PromptCondition>? conditions,
     Map<int, String>? conditionStates,
     String? agentContext,
+    Map<String, String>? extraKeywords,
   }) {
     final keywords = buildKeywordMap(
       character: character,
@@ -42,6 +43,9 @@ class PromptBuilder {
     if (conditions != null && conditionStates != null) {
       keywords.addAll(buildConditionKeywords(conditions, conditionStates, existingKeywords: keywords));
     }
+
+    // Extra keywords (e.g. output_language resolved from app settings)
+    if (extraKeywords != null) keywords.addAll(extraKeywords);
 
     final states = conditionStates ?? {};
     final buffer = StringBuffer();
@@ -77,6 +81,7 @@ class PromptBuilder {
     List<PromptCondition>? conditions,
     Map<int, String>? conditionStates,
     String? agentContext,
+    Map<String, String>? extraKeywords,
   }) {
     final keywords = buildKeywordMap(
       character: character,
@@ -93,6 +98,9 @@ class PromptBuilder {
     if (conditions != null && conditionStates != null) {
       keywords.addAll(buildConditionKeywords(conditions, conditionStates, existingKeywords: keywords));
     }
+
+    // Extra keywords (e.g. output_language resolved from app settings)
+    if (extraKeywords != null) keywords.addAll(extraKeywords);
 
     final states = conditionStates ?? {};
 

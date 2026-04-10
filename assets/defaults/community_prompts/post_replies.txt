@@ -11,4 +11,4 @@ Rules:
 - Distribute times realistically around the current time
 - All comment times MUST be after the provided base time
 - The {{user}} character NEVER writes posts or comments. Do NOT use {{user}} as an author.
-- Output language MUST match the user's language (infer from the worldview/context provided)
+- Language: {{output_language}}

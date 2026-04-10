@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../../l10n/app_localizations.dart';
 import '../../database/database_helper.dart';
+import '../../providers/localization_provider.dart';
 import '../../models/chat/chat_message.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/chat/chat_model.dart';
@@ -125,6 +126,7 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
     if (text.isEmpty && !isRetry) return;
 
     final chatModelProvider = context.read<ChatModelSettingsProvider>();
+    final outputLanguage = context.read<LocalizationProvider>().effectiveAiLanguageName;
     await chatModelProvider.initialized;
     final model = _resolveModel();
 
@@ -164,6 +166,7 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
         userText: userText,
         chatHistory: _messages.take(_messages.length - 1).toList(),
         model: model,
+        outputLanguage: outputLanguage,
       );
 
       // Save assistant response (strip tool_call blocks for display)

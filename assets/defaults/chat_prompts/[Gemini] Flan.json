@@ -1180,28 +1180,6 @@
       ]
     },
     {
-      "id": 36,
-      "chatPromptId": 25,
-      "name": "Output Language",
-      "type": "variable",
-      "variableName": "output_language",
-      "order": 1,
-      "options": [
-        {
-          "id": 107,
-          "conditionId": 36,
-          "name": "english",
-          "order": 0
-        },
-        {
-          "id": 108,
-          "conditionId": 36,
-          "name": "korean",
-          "order": 1
-        }
-      ]
-    },
-    {
       "id": 37,
       "chatPromptId": 25,
       "name": "Point of View",

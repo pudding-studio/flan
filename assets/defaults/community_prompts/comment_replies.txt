@@ -12,4 +12,4 @@ Rules:
 - All comment times MUST be after the provided base time
 - NEVER use 'Me', 'User', '나', or '사용자' as an author name
 - The {{user}} character NEVER writes posts or comments. Do NOT use {{user}} as an author.
-- Output language MUST match the user's language (infer from the worldview/context provided)
+- Language: {{output_language}}

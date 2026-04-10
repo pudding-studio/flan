@@ -46,8 +46,8 @@
   "settingsThemeColorDefault": "Default",
   "settingsLanguage": "App Language",
   "settingsLanguageSystem": "System Default",
-  "settingsAiResponseLanguage": "AI Response Language",
-  "settingsAiResponseLanguageAuto": "Same as App Language",
+  "settingsAiResponseLanguage": "AI Response",
+  "settingsAiResponseLanguageAuto": "App Language",
   "languageKorean": "한국어",
   "languageEnglish": "English",
   "languageJapanese": "日本語",
@@ -1321,5 +1321,10 @@
   "agentEntryTypeCharacter": "Characters",
   "agentEntryTypeLocation": "Locations",
   "agentEntryTypeItem": "Items",
-  "agentEntryTypeEvent": "Events"
+  "agentEntryTypeEvent": "Events",
+
+  "settingsAiResponseLanguageOthers": "Others (custom)",
+  "settingsAiResponseLanguageOthersTitle": "AI Response Language",
+  "settingsAiResponseLanguageOthersHint": "Enter language name (e.g. French)",
+  "settingsAiResponseLanguageOthersLabel": "Language name"
 }
