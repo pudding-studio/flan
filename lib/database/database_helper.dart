@@ -45,11 +45,90 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 52,
+      version: 53,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
   }
+
+  /// Adds [column] to [table] only if it doesn't already exist. Used by the
+  /// defensive schema reconciliation step to repair fresh-install databases
+  /// whose `_createDB` definition drifted behind the migration history — most
+  /// notably the cover_images.path / cover_images.image_type drift that broke
+  /// fresh web installs.
+  Future<void> _ensureColumn(
+    Database db,
+    String table,
+    String column,
+    String columnDef,
+  ) async {
+    final info = await db.rawQuery("PRAGMA table_info('$table')");
+    // PRAGMA returns unquoted identifiers, so strip any backticks the caller
+    // supplied (reserved keywords like `order` need quoting in DDL).
+    final normalized = column.replaceAll('`', '');
+    final exists = info.any((row) => row['name'] == normalized);
+    if (exists) return;
+    await db.execute('ALTER TABLE "$table" ADD COLUMN $column $columnDef');
+  }
+
+  /// Full catalogue of every column ever added to an existing table via an
+  /// ALTER TABLE migration. Must be kept in sync as new migrations are added.
+  /// The defensive sweep below runs these once per upgrade to `v53` and
+  /// thereafter — on fresh installs it's a no-op since `_createDB` already has
+  /// every column; on broken databases it backfills missing ones.
+  static const List<({String table, String column, String def})>
+      _migratedColumns = [
+    (table: 'chat_prompts', column: 'is_selected', def: 'INTEGER NOT NULL DEFAULT 0'),
+    (table: 'chat_prompts', column: 'role', def: "TEXT DEFAULT 'system'"),
+    (table: 'chat_prompts', column: '`order`', def: 'INTEGER NOT NULL DEFAULT 0'),
+    (table: 'chat_prompts', column: 'description', def: 'TEXT'),
+    (table: 'chat_prompts', column: 'supported_model', def: "TEXT NOT NULL DEFAULT 'ALL'"),
+    (table: 'chat_prompts', column: 'parameters', def: 'TEXT'),
+    (table: 'chat_prompts', column: 'is_default', def: 'INTEGER NOT NULL DEFAULT 0'),
+    (table: 'characters', column: 'sort_order', def: 'INTEGER'),
+    (table: 'characters', column: 'nickname', def: 'TEXT'),
+    (table: 'characters', column: 'community_name', def: 'TEXT'),
+    (table: 'characters', column: 'community_mood', def: 'TEXT'),
+    (table: 'characters', column: 'community_language', def: 'TEXT'),
+    (table: 'character_books', column: 'secondary_keys', def: 'TEXT'),
+    (table: 'prompt_items', column: 'name', def: 'TEXT'),
+    (table: 'prompt_items', column: 'folder_id', def: 'INTEGER'),
+    (table: 'prompt_items', column: 'enabled', def: 'INTEGER NOT NULL DEFAULT 1'),
+    (table: 'prompt_items', column: 'chat_setting_mode', def: "TEXT DEFAULT 'basic'"),
+    (table: 'prompt_items', column: 'include_start_position', def: 'INTEGER'),
+    (table: 'prompt_items', column: 'chat_range_type', def: "TEXT DEFAULT 'recent'"),
+    (table: 'prompt_items', column: 'recent_chat_count', def: 'INTEGER'),
+    (table: 'prompt_items', column: 'chat_start_position', def: 'INTEGER'),
+    (table: 'prompt_items', column: 'chat_end_position', def: 'INTEGER'),
+    (table: 'prompt_items', column: 'enable_mode', def: "TEXT NOT NULL DEFAULT 'enabled'"),
+    (table: 'prompt_items', column: 'condition_id', def: 'INTEGER'),
+    (table: 'prompt_items', column: 'condition_value', def: 'TEXT'),
+    (table: 'chat_messages', column: 'token_count', def: 'INTEGER NOT NULL DEFAULT 0'),
+    (table: 'chat_messages', column: 'usage_metadata', def: 'TEXT'),
+    (table: 'chat_messages', column: 'model_id', def: 'TEXT'),
+    (table: 'chat_message_metadata', column: 'is_pinned', def: 'INTEGER NOT NULL DEFAULT 0'),
+    (table: 'chat_rooms', column: 'total_token_count', def: 'INTEGER NOT NULL DEFAULT 0'),
+    (table: 'chat_rooms', column: 'memo', def: "TEXT NOT NULL DEFAULT ''"),
+    (table: 'chat_rooms', column: 'summary', def: "TEXT NOT NULL DEFAULT ''"),
+    (table: 'chat_rooms', column: 'pin_mode', def: "TEXT NOT NULL DEFAULT 'auto'"),
+    (table: 'chat_rooms', column: 'auto_pin_by_date', def: 'INTEGER NOT NULL DEFAULT 1'),
+    (table: 'chat_rooms', column: 'auto_pin_by_location', def: 'INTEGER NOT NULL DEFAULT 1'),
+    (table: 'chat_rooms', column: 'auto_pin_by_ai', def: 'INTEGER NOT NULL DEFAULT 0'),
+    (table: 'chat_rooms', column: 'auto_pin_by_message_count', def: 'INTEGER'),
+    (table: 'chat_rooms', column: 'selected_condition_preset_id', def: 'INTEGER'),
+    (table: 'chat_rooms', column: 'selected_model_id', def: 'TEXT'),
+    (table: 'chat_rooms', column: 'model_preset', def: "TEXT NOT NULL DEFAULT 'primary'"),
+    (table: 'chat_rooms', column: 'show_images', def: 'INTEGER NOT NULL DEFAULT 1'),
+    (table: 'chat_logs', column: 'model_name', def: 'TEXT'),
+    (table: 'auto_summary_settings', column: 'parameters', def: 'TEXT'),
+    (table: 'auto_summary_settings', column: 'summary_prompt_items', def: 'TEXT'),
+    (table: 'auto_summary_settings', column: 'use_sub_model', def: 'INTEGER NOT NULL DEFAULT 0'),
+    (table: 'auto_summary_settings', column: 'is_agent_enabled', def: 'INTEGER NOT NULL DEFAULT 0'),
+    (table: 'cover_images', column: 'path', def: 'TEXT'),
+    (table: 'cover_images', column: 'image_type', def: "TEXT DEFAULT 'cover'"),
+    (table: 'community_posts', column: 'is_favorited', def: 'INTEGER NOT NULL DEFAULT 0'),
+    (table: 'community_posts', column: 'favorite_used', def: 'INTEGER NOT NULL DEFAULT 0'),
+  ];
 
   Future<void> _createDB(Database db, int version) async {
     const idType = 'INTEGER PRIMARY KEY AUTOINCREMENT';
@@ -145,6 +224,8 @@ class DatabaseHelper {
         `order` $intType,
         is_expanded $boolType,
         image_data BLOB,
+        path TEXT,
+        image_type TEXT DEFAULT 'cover',
         FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE
       )
     ''');
@@ -1408,6 +1489,17 @@ class DatabaseHelper {
       await db.execute('''
         ALTER TABLE chat_rooms ADD COLUMN show_images INTEGER NOT NULL DEFAULT 1
       ''');
+    }
+
+    if (oldVersion < 53) {
+      // Defensive schema reconciliation: for every column ever added via an
+      // ALTER TABLE migration, check PRAGMA table_info and add the column if
+      // it's missing. This repairs databases whose `_createDB` definition
+      // drifted behind the migration history (discovered when fresh web
+      // installs failed on `cover_images.image_type`).
+      for (final entry in _migratedColumns) {
+        await _ensureColumn(db, entry.table, entry.column, entry.def);
+      }
     }
   }
 
