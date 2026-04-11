@@ -1,8 +1,17 @@
-import 'dart:io';
-import 'dart:typed_data';
+import 'package:universal_io/io.dart';
 
+import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
+
+/// Result of [CharacterImageStorage.saveImageBytes].
+/// Native: [path] is set, [bytes] is null.
+/// Web: [bytes] is set, [path] is null (no filesystem available).
+class StoredImage {
+  final String? path;
+  final Uint8List? bytes;
+  const StoredImage({this.path, this.bytes});
+}
 
 class CharacterImageStorage {
   /// Saves image bytes to {appDocDir}/characters/{characterName}/{imageName}.{ext}
@@ -18,6 +27,22 @@ class CharacterImageStorage {
     final file = File(filePath);
     await file.writeAsBytes(bytes);
     return filePath;
+  }
+
+  /// Platform-aware variant: writes to disk on native, keeps bytes in-memory on web.
+  /// Callers store the result on [CoverImage] via either `path` or `imageData`,
+  /// and rendering picks whichever is available via `resolveImageData()`.
+  static Future<StoredImage> saveImageBytes(
+    String characterName,
+    String imageName,
+    String ext,
+    Uint8List bytes,
+  ) async {
+    if (kIsWeb) {
+      return StoredImage(bytes: bytes);
+    }
+    final path = await saveImage(characterName, imageName, ext, bytes);
+    return StoredImage(path: path);
   }
 
   /// Loads image bytes from the given absolute path. Returns null if not found.

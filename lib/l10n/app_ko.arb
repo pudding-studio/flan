@@ -416,6 +416,30 @@
       "error": { "type": "String" }
     }
   },
+  "chatRoomMainModelLoadFailed": "주모델 '{modelId}'을(를) 불러올 수 없습니다. 채팅 모델 설정에서 다시 선택해주세요.",
+  "@chatRoomMainModelLoadFailed": {
+    "placeholders": {
+      "modelId": { "type": "String" }
+    }
+  },
+  "chatRoomSubModelLoadFailed": "보조모델 '{modelId}'을(를) 불러올 수 없습니다. 채팅 모델 설정에서 다시 선택해주세요.",
+  "@chatRoomSubModelLoadFailed": {
+    "placeholders": {
+      "modelId": { "type": "String" }
+    }
+  },
+  "chatRoomCustomModelLoadFailed": "이 채팅방에 지정된 모델 '{modelId}'을(를) 불러올 수 없습니다. 채팅방 설정에서 모델을 다시 선택해주세요.",
+  "@chatRoomCustomModelLoadFailed": {
+    "placeholders": {
+      "modelId": { "type": "String" }
+    }
+  },
+  "chatRoomPromptLoadFailed": "채팅 프롬프트(id: {promptId})를 불러올 수 없습니다. 채팅방 설정에서 프롬프트를 다시 선택해주세요.",
+  "@chatRoomPromptLoadFailed": {
+    "placeholders": {
+      "promptId": { "type": "String" }
+    }
+  },
   "chatRoomTextSettings": "텍스트 설정",
   "chatRoomBranchTitle": "분기 생성",
   "chatRoomBranchContent": "이 메시지까지의 내용으로 새 분기점을 생성하시겠습니까?",
@@ -821,6 +845,7 @@
   "communityPostDeleteContent": "이 게시글을 삭제할까요?",
   "communityDefaultName": "자유게시판",
   "communitySettingsTooltip": "설정",
+  "communityRefreshTooltip": "새 게시글 생성",
   "communityNoPostsTitle": "아직 게시글이 없습니다",
   "communityNoPostsSubtitle": "당겨서 게시글을 새로 불러오세요",
   "communityCommentLabel": "댓글 달기",
@@ -943,6 +968,7 @@
   "newsArticleDeleteContent": "이 기사를 삭제하시겠습니까?",
   "newsEmptyTitle": "아직 기사가 없습니다",
   "newsEmptySubtitle": "당겨서 뉴스를 불러오세요",
+  "newsRefreshTooltip": "새 기사 생성",
 
   "promptItemsTitle": "프롬프트 항목",
   "promptItemsTitleHelp": "AI에게 전달될 프롬프트 항목들을 추가하세요. 순서대로 전달됩니다.\n\n길게 눌러 순서를 변경할 수 있습니다.",

@@ -416,6 +416,30 @@
       "error": { "type": "String" }
     }
   },
+  "chatRoomMainModelLoadFailed": "Failed to load the main model '{modelId}'. Please re-select it in chat model settings.",
+  "@chatRoomMainModelLoadFailed": {
+    "placeholders": {
+      "modelId": { "type": "String" }
+    }
+  },
+  "chatRoomSubModelLoadFailed": "Failed to load the sub model '{modelId}'. Please re-select it in chat model settings.",
+  "@chatRoomSubModelLoadFailed": {
+    "placeholders": {
+      "modelId": { "type": "String" }
+    }
+  },
+  "chatRoomCustomModelLoadFailed": "Failed to load this chat room's assigned model '{modelId}'. Please re-select a model in the chat room settings.",
+  "@chatRoomCustomModelLoadFailed": {
+    "placeholders": {
+      "modelId": { "type": "String" }
+    }
+  },
+  "chatRoomPromptLoadFailed": "Failed to load the chat prompt (id: {promptId}). Please re-select a prompt in the chat room settings.",
+  "@chatRoomPromptLoadFailed": {
+    "placeholders": {
+      "promptId": { "type": "String" }
+    }
+  },
   "chatRoomTextSettings": "Text Settings",
   "chatRoomBranchTitle": "Create Branch",
   "chatRoomBranchContent": "Create a new branch up to this message?",
@@ -821,6 +845,7 @@
   "communityPostDeleteContent": "Delete this post?",
   "communityDefaultName": "General",
   "communitySettingsTooltip": "Settings",
+  "communityRefreshTooltip": "Generate new posts",
   "communityNoPostsTitle": "No posts yet",
   "communityNoPostsSubtitle": "Pull down to refresh",
   "communityCommentLabel": "Add a comment",
@@ -943,6 +968,7 @@
   "newsArticleDeleteContent": "Delete this article?",
   "newsEmptyTitle": "No articles yet",
   "newsEmptySubtitle": "Pull down to load news",
+  "newsRefreshTooltip": "Generate new articles",
 
   "promptItemsTitle": "Prompt Items",
   "promptItemsTitleHelp": "Add prompt items to send to the AI. They are sent in order.\n\nLong-press to reorder.",

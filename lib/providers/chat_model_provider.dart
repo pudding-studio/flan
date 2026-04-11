@@ -28,6 +28,13 @@ class ChatModelSettingsProvider extends ChangeNotifier {
   List<CustomModel> _customModels = [];
   List<CustomProvider> _customProviders = [];
 
+  // Saved model identifiers that failed to resolve at load time.
+  // When non-null, it means the user's saved choice could not be found
+  // (e.g. custom model deleted, built-in renamed) — callers MUST treat
+  // this as a load failure rather than silently using a default.
+  String? _unresolvedPrimaryModelId;
+  String? _unresolvedSubModelId;
+
   final Completer<void> _initCompleter = Completer<void>();
   Future<void> get initialized => _initCompleter.future;
 
@@ -38,6 +45,11 @@ class ChatModelSettingsProvider extends ChangeNotifier {
   ChatModelProvider get subProvider => _subProvider;
   String? get subCustomProviderId => _subCustomProviderId;
   UnifiedModel get subModel => _subModel;
+
+  bool get hasPrimaryLoadFailed => _unresolvedPrimaryModelId != null;
+  bool get hasSubLoadFailed => _unresolvedSubModelId != null;
+  String? get unresolvedPrimaryModelId => _unresolvedPrimaryModelId;
+  String? get unresolvedSubModelId => _unresolvedSubModelId;
 
   List<CustomModel> get customModels => _customModels;
   List<CustomProvider> get customProviders => _customProviders;
@@ -97,11 +109,27 @@ class ChatModelSettingsProvider extends ChangeNotifier {
   }
 
   void _refreshSelectedModels() {
-    _selectedModel = _resolveModel(_selectedModel.id);
-    _subModel = _resolveModel(_subModel.id);
+    final primary = _resolveModelOrNull(_selectedModel.id);
+    if (primary != null) {
+      _selectedModel = primary;
+      _unresolvedPrimaryModelId = null;
+    } else {
+      _unresolvedPrimaryModelId = _selectedModel.id;
+    }
+    final sub = _resolveModelOrNull(_subModel.id);
+    if (sub != null) {
+      _subModel = sub;
+      _unresolvedSubModelId = null;
+    } else {
+      _unresolvedSubModelId = _subModel.id;
+    }
   }
 
-  UnifiedModel _resolveModel(String modelString) {
+  /// Resolves a stored model identifier to a [UnifiedModel].
+  /// Returns null when the identifier no longer matches any built-in or
+  /// custom model — callers must handle this explicitly instead of
+  /// substituting a default.
+  UnifiedModel? _resolveModelOrNull(String modelString) {
     if (modelString.startsWith('custom:')) {
       final customId = modelString.substring(7);
       final custom = _customModels.where((m) => m.id == customId);
@@ -119,7 +147,47 @@ class ChatModelSettingsProvider extends ChangeNotifier {
         return UnifiedModel.fromChatModel(builtIn.first);
       }
     }
-    return UnifiedModel.fromChatModel(ChatModel.geminiPro31Preview);
+    return null;
+  }
+
+  /// Re-attempts resolution of the primary model from its saved identifier
+  /// after refreshing custom models/providers from disk. Used at send time
+  /// to recover from a load failure without falling back to a default.
+  Future<bool> retryLoadPrimary() async {
+    if (_unresolvedPrimaryModelId == null) return true;
+    _customProviders = await CustomProviderRepository.loadAll();
+    _customModels = await CustomModelRepository.loadAll();
+    final resolved = _resolveModelOrNull(_unresolvedPrimaryModelId!);
+    if (resolved != null) {
+      _selectedModel = resolved;
+      _unresolvedPrimaryModelId = null;
+      notifyListeners();
+      return true;
+    }
+    return false;
+  }
+
+  /// Same as [retryLoadPrimary] but for the secondary model.
+  Future<bool> retryLoadSub() async {
+    if (_unresolvedSubModelId == null) return true;
+    _customProviders = await CustomProviderRepository.loadAll();
+    _customModels = await CustomModelRepository.loadAll();
+    final resolved = _resolveModelOrNull(_unresolvedSubModelId!);
+    if (resolved != null) {
+      _subModel = resolved;
+      _unresolvedSubModelId = null;
+      notifyListeners();
+      return true;
+    }
+    return false;
+  }
+
+  /// Refreshes custom models/providers from disk. Used by chat-room
+  /// scoped retries when a per-room saved model id needs to be re-checked.
+  Future<void> refreshCustomCatalog() async {
+    _customProviders = await CustomProviderRepository.loadAll();
+    _customModels = await CustomModelRepository.loadAll();
+    notifyListeners();
   }
 
   Future<void> _loadSettings() async {
@@ -143,7 +211,15 @@ class ChatModelSettingsProvider extends ChangeNotifier {
     }
 
     if (modelString != null) {
-      _selectedModel = _resolveModel(modelString);
+      final resolved = _resolveModelOrNull(modelString);
+      if (resolved != null) {
+        _selectedModel = resolved;
+        _unresolvedPrimaryModelId = null;
+      } else {
+        // Keep the initial default in _selectedModel as a UI placeholder
+        // but record the failure so send-time code can detect and retry.
+        _unresolvedPrimaryModelId = modelString;
+      }
     }
 
     // Load sub model settings
@@ -162,7 +238,13 @@ class ChatModelSettingsProvider extends ChangeNotifier {
     }
 
     if (subModelString != null) {
-      _subModel = _resolveModel(subModelString);
+      final resolved = _resolveModelOrNull(subModelString);
+      if (resolved != null) {
+        _subModel = resolved;
+        _unresolvedSubModelId = null;
+      } else {
+        _unresolvedSubModelId = subModelString;
+      }
     }
 
     notifyListeners();

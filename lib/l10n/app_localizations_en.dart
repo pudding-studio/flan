@@ -827,6 +827,26 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String chatRoomMainModelLoadFailed(String modelId) {
+    return 'Failed to load the main model \'$modelId\'. Please re-select it in chat model settings.';
+  }
+
+  @override
+  String chatRoomSubModelLoadFailed(String modelId) {
+    return 'Failed to load the sub model \'$modelId\'. Please re-select it in chat model settings.';
+  }
+
+  @override
+  String chatRoomCustomModelLoadFailed(String modelId) {
+    return 'Failed to load this chat room\'s assigned model \'$modelId\'. Please re-select a model in the chat room settings.';
+  }
+
+  @override
+  String chatRoomPromptLoadFailed(String promptId) {
+    return 'Failed to load the chat prompt (id: $promptId). Please re-select a prompt in the chat room settings.';
+  }
+
+  @override
   String get chatRoomTextSettings => 'Text Settings';
 
   @override
@@ -1635,6 +1655,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communitySettingsTooltip => 'Settings';
 
   @override
+  String get communityRefreshTooltip => 'Generate new posts';
+
+  @override
   String get communityNoPostsTitle => 'No posts yet';
 
   @override
@@ -1906,6 +1929,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get newsEmptySubtitle => 'Pull down to load news';
+
+  @override
+  String get newsRefreshTooltip => 'Generate new articles';
 
   @override
   String get promptItemsTitle => 'Prompt Items';

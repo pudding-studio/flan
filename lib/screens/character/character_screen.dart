@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:io';
+import 'package:universal_io/io.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -927,7 +927,7 @@ class _CharacterScreenState extends State<CharacterScreen> {
             final fileName = p.basename(file.path);
             final dotIndex = fileName.lastIndexOf('.');
             final baseName = dotIndex > 0 ? fileName.substring(0, dotIndex) : fileName;
-            final filePath = await CharacterImageStorage.saveImage(
+            final stored = await CharacterImageStorage.saveImageBytes(
               character.name,
               baseName,
               'png',
@@ -938,7 +938,8 @@ class _CharacterScreenState extends State<CharacterScreen> {
                 characterId: 0,
                 name: AppLocalizations.of(context).characterCoverDefault,
                 order: 0,
-                path: filePath,
+                path: stored.path,
+                imageData: stored.bytes,
               ),
             ];
           } catch (_) {
@@ -1052,14 +1053,15 @@ class _CharacterScreenState extends State<CharacterScreen> {
             final imgBytes = Uint8List.fromList(found.content as List<int>);
             final ext = p.extension(found.name).replaceFirst('.', '');
             try {
-              final savedPath = await CharacterImageStorage.saveImage(
+              final stored = await CharacterImageStorage.saveImageBytes(
                 character.name, name, ext, imgBytes,
               );
               coverImages.add(CoverImage(
                 characterId: 0,
                 name: name,
                 order: order,
-                path: savedPath,
+                path: stored.path,
+                imageData: stored.bytes,
                 imageType: imageType,
               ));
             } catch (_) {

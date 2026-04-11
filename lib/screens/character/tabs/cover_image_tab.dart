@@ -70,7 +70,7 @@ class _CoverImageTabState extends State<CoverImageTab> {
           ? widget.characterName
           : 'unknown';
 
-      final filePath = await CharacterImageStorage.saveImage(
+      final stored = await CharacterImageStorage.saveImageBytes(
         characterName,
         originalName,
         ext,
@@ -85,7 +85,8 @@ class _CoverImageTabState extends State<CoverImageTab> {
               ? originalName
               : l10n.coverImageDefaultName(widget.coverImages.length + 1),
           order: widget.coverImages.length,
-          path: filePath,
+          path: stored.path,
+          imageData: stored.bytes,
           isExpanded: true,
         );
         widget.coverImages.add(newImage);

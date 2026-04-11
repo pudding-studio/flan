@@ -1609,6 +1609,30 @@ abstract class AppLocalizations {
   /// **'메시지 재생성 중 오류가 발생했습니다: {error}'**
   String chatRoomMessageRegenerateFailed(String error);
 
+  /// No description provided for @chatRoomMainModelLoadFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'주모델 \'{modelId}\'을(를) 불러올 수 없습니다. 채팅 모델 설정에서 다시 선택해주세요.'**
+  String chatRoomMainModelLoadFailed(String modelId);
+
+  /// No description provided for @chatRoomSubModelLoadFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'보조모델 \'{modelId}\'을(를) 불러올 수 없습니다. 채팅 모델 설정에서 다시 선택해주세요.'**
+  String chatRoomSubModelLoadFailed(String modelId);
+
+  /// No description provided for @chatRoomCustomModelLoadFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 채팅방에 지정된 모델 \'{modelId}\'을(를) 불러올 수 없습니다. 채팅방 설정에서 모델을 다시 선택해주세요.'**
+  String chatRoomCustomModelLoadFailed(String modelId);
+
+  /// No description provided for @chatRoomPromptLoadFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅 프롬프트(id: {promptId})를 불러올 수 없습니다. 채팅방 설정에서 프롬프트를 다시 선택해주세요.'**
+  String chatRoomPromptLoadFailed(String promptId);
+
   /// No description provided for @chatRoomTextSettings.
   ///
   /// In ko, this message translates to:
@@ -3109,6 +3133,12 @@ abstract class AppLocalizations {
   /// **'설정'**
   String get communitySettingsTooltip;
 
+  /// No description provided for @communityRefreshTooltip.
+  ///
+  /// In ko, this message translates to:
+  /// **'새 게시글 생성'**
+  String get communityRefreshTooltip;
+
   /// No description provided for @communityNoPostsTitle.
   ///
   /// In ko, this message translates to:
@@ -3630,6 +3660,12 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'당겨서 뉴스를 불러오세요'**
   String get newsEmptySubtitle;
+
+  /// No description provided for @newsRefreshTooltip.
+  ///
+  /// In ko, this message translates to:
+  /// **'새 기사 생성'**
+  String get newsRefreshTooltip;
 
   /// No description provided for @promptItemsTitle.
   ///
