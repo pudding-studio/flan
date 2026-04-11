@@ -2467,6 +2467,21 @@ class DatabaseHelper {
     return result.map((map) => ChatLog.fromMap(map)).toList();
   }
 
+  Future<List<ChatLog>> readChatLogsPaged({
+    required int limit,
+    required int offset,
+  }) async {
+    final db = await database;
+    final result = await db.query(
+      'chat_logs',
+      columns: _chatLogListColumns,
+      orderBy: 'timestamp DESC',
+      limit: limit,
+      offset: offset,
+    );
+    return result.map((map) => ChatLog.fromMap(map)).toList();
+  }
+
   Future<ChatLog?> readChatLog(int id) async {
     final db = await database;
     final result = await db.query(

@@ -21,33 +21,81 @@ class LogScreen extends StatefulWidget {
 }
 
 class _LogScreenState extends State<LogScreen> {
+  static const int _pageSize = 10;
+
   final DatabaseHelper _db = DatabaseHelper.instance;
+  final ScrollController _scrollController = ScrollController();
   List<ChatLog> _logs = [];
   bool _isLoading = true;
+  bool _isLoadingMore = false;
+  bool _hasMore = true;
 
   @override
   void initState() {
     super.initState();
+    _scrollController.addListener(_onScroll);
     _loadLogs();
   }
 
+  @override
+  void dispose() {
+    _scrollController.removeListener(_onScroll);
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (_scrollController.position.pixels >=
+        _scrollController.position.maxScrollExtent - 200) {
+      _loadMoreLogs();
+    }
+  }
+
   Future<void> _loadLogs() async {
-    final l10n = AppLocalizations.of(context);
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _logs = [];
+      _hasMore = true;
+    });
     try {
-      final logs = await _db.readAllChatLogs();
+      final logs = await _db.readChatLogsPaged(limit: _pageSize, offset: 0);
+      if (!mounted) return;
       setState(() {
         _logs = logs;
+        _hasMore = logs.length == _pageSize;
         _isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() => _isLoading = false);
-      if (mounted) {
-        CommonDialog.showSnackBar(
-          context: context,
-          message: l10n.logLoadFailed(e.toString()),
-        );
-      }
+      CommonDialog.showSnackBar(
+        context: context,
+        message: AppLocalizations.of(context).logLoadFailed(e.toString()),
+      );
+    }
+  }
+
+  Future<void> _loadMoreLogs() async {
+    if (_isLoadingMore || !_hasMore || _isLoading) return;
+    setState(() => _isLoadingMore = true);
+    try {
+      final logs = await _db.readChatLogsPaged(
+        limit: _pageSize,
+        offset: _logs.length,
+      );
+      if (!mounted) return;
+      setState(() {
+        _logs.addAll(logs);
+        _hasMore = logs.length == _pageSize;
+        _isLoadingMore = false;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoadingMore = false);
+      CommonDialog.showSnackBar(
+        context: context,
+        message: AppLocalizations.of(context).logLoadFailed(e.toString()),
+      );
     }
   }
 
@@ -171,9 +219,22 @@ class _LogScreenState extends State<LogScreen> {
                           ),
                         )
                       : ListView.separated(
-                          itemCount: _logs.length,
+                          controller: _scrollController,
+                          itemCount: _logs.length + (_hasMore ? 1 : 0),
                           separatorBuilder: (context, index) => const Divider(height: 1),
                           itemBuilder: (context, index) {
+                            if (index >= _logs.length) {
+                              return const Padding(
+                                padding: EdgeInsets.symmetric(vertical: 16),
+                                child: Center(
+                                  child: SizedBox(
+                                    width: 24,
+                                    height: 24,
+                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                  ),
+                                ),
+                              );
+                            }
                             final log = _logs[index];
                             final isAutoSummary = log.type == 'auto_summary';
                             return ListTile(
@@ -226,8 +287,8 @@ class _LogDetailSheet extends StatefulWidget {
 }
 
 class _LogDetailSheetState extends State<_LogDetailSheet> {
-  bool _showFormattedRequest = true;
-  bool _showFormattedResponse = true;
+  bool _requestExpanded = false;
+  bool _responseExpanded = false;
 
   String _formatJson(String jsonString) {
     try {
@@ -364,109 +425,86 @@ class _LogDetailSheetState extends State<_LogDetailSheet> {
   }
 
   Widget _buildRequestCard(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Request',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.copy, size: 20),
-                  onPressed: () => _copyToClipboard(widget.log.request),
-                  tooltip: AppLocalizations.of(context).commonCopy,
-                ),
-                Switch(
-                  value: _showFormattedRequest,
-                  onChanged: (value) {
-                    setState(() => _showFormattedRequest = value);
-                  },
-                ),
-                Text(AppLocalizations.of(context).logDetailFormatLabel, style: Theme.of(context).textTheme.bodySmall),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: SelectableText(
-                _showFormattedRequest
-                    ? _formatJson(widget.log.request)
-                    : widget.log.request,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontFamily: 'monospace',
-                    ),
-              ),
-            ),
-          ],
-        ),
-      ),
+    return _buildExpandableJsonCard(
+      context: context,
+      title: 'Request',
+      content: widget.log.request,
+      expanded: _requestExpanded,
+      onToggle: () => setState(() => _requestExpanded = !_requestExpanded),
+      formatJson: true,
     );
   }
 
   Widget _buildResponseCard(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Response',
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.copy, size: 20),
-                  onPressed: () => _copyToClipboard(widget.log.response),
-                  tooltip: AppLocalizations.of(context).commonCopy,
-                ),
-                Switch(
-                  value: _showFormattedResponse,
-                  onChanged: (value) {
-                    setState(() => _showFormattedResponse = value);
-                  },
-                ),
-                Text(AppLocalizations.of(context).logDetailFormatLabel, style: Theme.of(context).textTheme.bodySmall),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: SelectableText(
-                _showFormattedResponse && !widget.log.response.startsWith('Error:')
-                    ? _formatJson(widget.log.response)
-                    : widget.log.response,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      fontFamily: 'monospace',
-                    ),
-              ),
-            ),
-          ],
-        ),
-      ),
+    return _buildExpandableJsonCard(
+      context: context,
+      title: 'Response',
+      content: widget.log.response,
+      expanded: _responseExpanded,
+      onToggle: () => setState(() => _responseExpanded = !_responseExpanded),
+      formatJson: !widget.log.response.startsWith('Error:'),
     );
   }
 
+  Widget _buildExpandableJsonCard({
+    required BuildContext context,
+    required String title,
+    required String content,
+    required bool expanded,
+    required VoidCallback onToggle,
+    required bool formatJson,
+  }) {
+    return Card(
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          InkWell(
+            onTap: onToggle,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      title,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.copy, size: 20),
+                    onPressed: () => _copyToClipboard(content),
+                    tooltip: AppLocalizations.of(context).commonCopy,
+                  ),
+                  Icon(
+                    expanded ? Icons.expand_less : Icons.expand_more,
+                  ),
+                  const SizedBox(width: 8),
+                ],
+              ),
+            ),
+          ),
+          if (expanded)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: SelectableText(
+                  formatJson ? _formatJson(content) : content,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontFamily: 'monospace',
+                      ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 }
