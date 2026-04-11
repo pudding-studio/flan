@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -669,6 +671,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 ),
               ),
             ),
+          if (kIsWeb)
+            IconButton(
+              icon: Icon(Icons.refresh, color: onSecondary),
+              tooltip: l10n.communityRefreshTooltip,
+              onPressed: _isGenerating ? null : _regenerate,
+            ),
           IconButton(
             icon: Icon(Icons.menu, color: onSecondary),
             tooltip: l10n.communitySettingsTooltip,
@@ -684,15 +692,17 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 if (_isGenerating)
                   const LinearProgressIndicator(),
                 Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: _regenerate,
-                    child: _posts.isEmpty
-                        ? _buildEmptyState()
-                        : ListView.builder(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            itemCount: _posts.length,
-                            itemBuilder: (context, i) => _buildPostCard(_posts[i]),
-                          ),
+                  child: _webScrollWrapper(
+                    RefreshIndicator(
+                      onRefresh: _regenerate,
+                      child: _posts.isEmpty
+                          ? _buildEmptyState()
+                          : ListView.builder(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              itemCount: _posts.length,
+                              itemBuilder: (context, i) => _buildPostCard(_posts[i]),
+                            ),
+                    ),
                   ),
                 ),
               ],
@@ -700,6 +710,25 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
   }
 
+
+  /// On web, wraps the scrollable in a ScrollConfiguration that treats mouse
+  /// pointers as drag devices, so desktop users can trigger the pull-to-refresh
+  /// gesture by click-dragging. On native platforms this is a no-op passthrough
+  /// to keep the existing touch UX untouched.
+  Widget _webScrollWrapper(Widget child) {
+    if (!kIsWeb) return child;
+    return ScrollConfiguration(
+      behavior: ScrollConfiguration.of(context).copyWith(
+        dragDevices: {
+          PointerDeviceKind.touch,
+          PointerDeviceKind.mouse,
+          PointerDeviceKind.trackpad,
+          PointerDeviceKind.stylus,
+        },
+      ),
+      child: child,
+    );
+  }
 
   Widget _buildEmptyState() {
     final l10n = AppLocalizations.of(context);

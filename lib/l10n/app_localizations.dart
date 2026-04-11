@@ -3133,6 +3133,12 @@ abstract class AppLocalizations {
   /// **'설정'**
   String get communitySettingsTooltip;
 
+  /// No description provided for @communityRefreshTooltip.
+  ///
+  /// In ko, this message translates to:
+  /// **'새 게시글 생성'**
+  String get communityRefreshTooltip;
+
   /// No description provided for @communityNoPostsTitle.
   ///
   /// In ko, this message translates to:
@@ -3654,6 +3660,12 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'당겨서 뉴스를 불러오세요'**
   String get newsEmptySubtitle;
+
+  /// No description provided for @newsRefreshTooltip.
+  ///
+  /// In ko, this message translates to:
+  /// **'새 기사 생성'**
+  String get newsRefreshTooltip;
 
   /// No description provided for @promptItemsTitle.
   ///

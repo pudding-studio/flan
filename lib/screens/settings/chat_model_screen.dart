@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -474,13 +473,15 @@ class _ApiKeySectionState extends State<_ApiKeySection> {
   }
 
   Future<void> _pickVertexAiJsonFile() async {
-    final result = await FilePicker.platform.pickFiles(type: FileType.any);
-    if (result == null || result.files.single.path == null) return;
+    final result = await FilePicker.platform.pickFiles(
+      type: FileType.any,
+      withData: true,
+    );
+    if (result == null || result.files.single.bytes == null) return;
 
     setState(() => _isLoading = true);
     try {
-      final file = File(result.files.single.path!);
-      final jsonString = await file.readAsString();
+      final jsonString = utf8.decode(result.files.single.bytes!);
 
       final validationError =
           await VertexAuthService.validateServiceAccountJson(jsonString);

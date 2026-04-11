@@ -1655,6 +1655,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get communitySettingsTooltip => '설정';
 
   @override
+  String get communityRefreshTooltip => '새 게시글 생성';
+
+  @override
   String get communityNoPostsTitle => '아직 게시글이 없습니다';
 
   @override
@@ -1926,6 +1929,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get newsEmptySubtitle => '당겨서 뉴스를 불러오세요';
+
+  @override
+  String get newsRefreshTooltip => '새 기사 생성';
 
   @override
   String get promptItemsTitle => '프롬프트 항목';

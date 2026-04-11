@@ -845,6 +845,7 @@
   "communityPostDeleteContent": "Delete this post?",
   "communityDefaultName": "General",
   "communitySettingsTooltip": "Settings",
+  "communityRefreshTooltip": "Generate new posts",
   "communityNoPostsTitle": "No posts yet",
   "communityNoPostsSubtitle": "Pull down to refresh",
   "communityCommentLabel": "Add a comment",
@@ -967,6 +968,7 @@
   "newsArticleDeleteContent": "Delete this article?",
   "newsEmptyTitle": "No articles yet",
   "newsEmptySubtitle": "Pull down to load news",
+  "newsRefreshTooltip": "Generate new articles",
 
   "promptItemsTitle": "Prompt Items",
   "promptItemsTitleHelp": "Add prompt items to send to the AI. They are sent in order.\n\nLong-press to reorder.",

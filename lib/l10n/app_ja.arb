@@ -845,6 +845,7 @@
   "communityPostDeleteContent": "この投稿を削除しますか？",
   "communityDefaultName": "自由掲示板",
   "communitySettingsTooltip": "設定",
+  "communityRefreshTooltip": "新しい投稿を生成",
   "communityNoPostsTitle": "まだ投稿がありません",
   "communityNoPostsSubtitle": "引っ張って更新してください",
   "communityCommentLabel": "コメントを追加",
@@ -967,6 +968,7 @@
   "newsArticleDeleteContent": "この記事を削除しますか？",
   "newsEmptyTitle": "まだ記事がありません",
   "newsEmptySubtitle": "引っ張ってニュースを読み込んでください",
+  "newsRefreshTooltip": "新しい記事を生成",
 
   "promptItemsTitle": "プロンプト項目",
   "promptItemsTitleHelp": "AIに送るプロンプト項目を追加してください。順番通りに送信されます。\n\n長押しで順番を変更できます。",

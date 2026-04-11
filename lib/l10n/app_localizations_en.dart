@@ -1655,6 +1655,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communitySettingsTooltip => 'Settings';
 
   @override
+  String get communityRefreshTooltip => 'Generate new posts';
+
+  @override
   String get communityNoPostsTitle => 'No posts yet';
 
   @override
@@ -1926,6 +1929,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get newsEmptySubtitle => 'Pull down to load news';
+
+  @override
+  String get newsRefreshTooltip => 'Generate new articles';
 
   @override
   String get promptItemsTitle => 'Prompt Items';

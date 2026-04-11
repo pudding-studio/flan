@@ -1655,6 +1655,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get communitySettingsTooltip => '設定';
 
   @override
+  String get communityRefreshTooltip => '新しい投稿を生成';
+
+  @override
   String get communityNoPostsTitle => 'まだ投稿がありません';
 
   @override
@@ -1926,6 +1929,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get newsEmptySubtitle => '引っ張ってニュースを読み込んでください';
+
+  @override
+  String get newsRefreshTooltip => '新しい記事を生成';
 
   @override
   String get promptItemsTitle => 'プロンプト項目';

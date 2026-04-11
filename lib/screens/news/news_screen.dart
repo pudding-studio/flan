@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
@@ -292,6 +294,8 @@ class _NewsScreenState extends State<NewsScreen> {
     final secondary = Theme.of(context).colorScheme.secondary;
     final onSecondary = Theme.of(context).colorScheme.onSecondary;
 
+    final l10n = AppLocalizations.of(context);
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: secondary,
@@ -301,6 +305,14 @@ class _NewsScreenState extends State<NewsScreen> {
           'News',
           style: TextStyle(color: onSecondary),
         ),
+        actions: [
+          if (kIsWeb)
+            IconButton(
+              icon: Icon(Icons.refresh, color: onSecondary),
+              tooltip: l10n.newsRefreshTooltip,
+              onPressed: _isGenerating ? null : _regenerate,
+            ),
+        ],
       ),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
@@ -309,19 +321,40 @@ class _NewsScreenState extends State<NewsScreen> {
                 if (_isGenerating)
                   const LinearProgressIndicator(),
                 Expanded(
-                  child: RefreshIndicator(
-                    onRefresh: _regenerate,
-                    child: _articles.isEmpty
-                        ? _buildEmptyState()
-                        : ListView.builder(
-                            padding: const EdgeInsets.symmetric(vertical: 8),
-                            itemCount: _articles.length,
-                            itemBuilder: (context, i) => _buildArticleCard(_articles[i]),
-                          ),
+                  child: _webScrollWrapper(
+                    RefreshIndicator(
+                      onRefresh: _regenerate,
+                      child: _articles.isEmpty
+                          ? _buildEmptyState()
+                          : ListView.builder(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              itemCount: _articles.length,
+                              itemBuilder: (context, i) => _buildArticleCard(_articles[i]),
+                            ),
+                    ),
                   ),
                 ),
               ],
             ),
+    );
+  }
+
+  /// On web, wraps the scrollable in a ScrollConfiguration that treats mouse
+  /// pointers as drag devices, so desktop users can trigger the pull-to-refresh
+  /// gesture by click-dragging. On native platforms this is a no-op passthrough
+  /// to keep the existing touch UX untouched.
+  Widget _webScrollWrapper(Widget child) {
+    if (!kIsWeb) return child;
+    return ScrollConfiguration(
+      behavior: ScrollConfiguration.of(context).copyWith(
+        dragDevices: {
+          PointerDeviceKind.touch,
+          PointerDeviceKind.mouse,
+          PointerDeviceKind.trackpad,
+          PointerDeviceKind.stylus,
+        },
+      ),
+      child: child,
     );
   }
 
