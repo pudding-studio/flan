@@ -1,76 +1,48 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../l10n/app_localizations.dart';
-import '../../widgets/common/markdown_text.dart';
 import '../../models/chat/chat_room.dart';
 import '../../models/chat/chat_message.dart';
 import '../../models/character/character.dart';
 import '../../models/character/cover_image.dart';
 import '../../models/character/persona.dart';
-import '../../models/character/character_book_folder.dart';
 import '../../models/character/start_scenario.dart';
 import '../../models/prompt/chat_prompt.dart';
-import '../../models/prompt/prompt_item.dart';
-import '../../models/prompt/prompt_parameters.dart';
-import '../../models/prompt/prompt_condition.dart';
-import '../../models/prompt/prompt_condition_preset.dart';
-import '../../models/prompt/prompt_condition_preset_value.dart';
 import '../../models/prompt/prompt_regex_rule.dart';
+import '../../utils/chat_content_formatter.dart';
 import '../../utils/regex_processor.dart';
+import '../../utils/retry_runner.dart';
 import '../../database/database_helper.dart';
 import '../../providers/tokenizer_provider.dart';
-import '../../utils/prompt_builder.dart';
 import '../../utils/common_dialog.dart';
 import '../../utils/token_counter.dart';
 import '../../services/ai_service.dart';
 import '../../services/agent_summary_service.dart';
 import '../../services/auto_summary_service.dart';
+import '../../services/chat_api_data_builder.dart';
+import '../../services/chat_branch_service.dart';
+import '../../services/chat_model_resolver.dart';
 import '../../models/chat/chat_message_metadata.dart';
-import '../../models/chat/chat_summary.dart';
-import '../../models/chat/chat_model.dart';
 import '../../models/chat/unified_model.dart';
-import '../../models/community/community_comment.dart';
-import '../../models/news/news_article.dart';
 import '../../utils/metadata_parser.dart';
-import '../../widgets/common/common_character_card.dart';
 import '../../widgets/common/common_appbar.dart';
-import '../../widgets/common/common_settings.dart';
-import '../../widgets/common/common_edit_text.dart';
 import '../../providers/chat_model_provider.dart';
 import '../../providers/localization_provider.dart';
-import '../../providers/viewer_settings_provider.dart';
-import 'widgets/chat_bottom_panel.dart';
+import 'chat_send_errors.dart';
+import 'controllers/chat_message_edit_controller.dart';
+import 'controllers/chat_search_controller.dart';
+import 'widgets/chat_message_bubble.dart';
+import 'widgets/chat_room_character_avatar.dart';
 import 'widgets/chat_room_drawer.dart';
+import 'widgets/chat_room_header.dart';
+import 'widgets/chat_room_input_bar.dart';
+import 'widgets/chat_room_more_menu.dart';
+import 'widgets/chat_room_scroll_buttons.dart';
+import 'widgets/chat_room_search_app_bar.dart';
+import 'widgets/chat_usage_metadata_dialog.dart';
 import '../character/character_view_screen.dart';
-import '../community/community_screen.dart';
-import '../news/news_screen.dart';
-import '../diary/diary_screen.dart';
-
-enum SendingPhase { none, preparing, waiting, summarizing }
-
-/// Thrown when a model required for sending could not be resolved from
-/// its saved identifier — e.g. the user's saved primary/sub model was
-/// deleted, or the chat room's per-room custom model id no longer maps
-/// to an available model. Caught by the send paths to show a clear,
-/// localized error instead of silently falling back to a default model.
-class _ModelLoadException implements Exception {
-  final String localizedMessage;
-  _ModelLoadException(this.localizedMessage);
-  @override
-  String toString() => localizedMessage;
-}
-
-/// Thrown when [ChatRoom.selectedChatPromptId] points to a chat prompt
-/// row that no longer exists. Distinct from the user explicitly choosing
-/// "없음" (which is represented as `selectedChatPromptId == null`).
-class _PromptLoadException implements Exception {
-  final String localizedMessage;
-  _PromptLoadException(this.localizedMessage);
-  @override
-  String toString() => localizedMessage;
-}
+import 'chat_sending_phase.dart';
 
 class ChatRoomScreen extends StatefulWidget {
   final int chatRoomId;
@@ -106,8 +78,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   SendingPhase _sendingPhase = SendingPhase.none;
   int _retryAttempt = 0;
   bool get _isSending => _sendingPhase != SendingPhase.none;
-  int? _editingMessageId;
-  final Map<int, TextEditingController> _editControllers = {};
+  late final ChatMessageEditController _editController =
+      ChatMessageEditController(onChanged: () => setState(() {}));
   Map<int, ChatMessageMetadata> _metadataMap = {};
   int? _summaryThresholdIndex;
   Set<int> _summarizedMessageIds = {};
@@ -124,22 +96,24 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   String? _customModelLoadFailedId;
   final FocusNode _messageFocusNode = FocusNode();
 
-  // Search
-  bool _isSearching = false;
-  final TextEditingController _searchController = TextEditingController();
-  final FocusNode _searchFocusNode = FocusNode();
-  // Each entry: (messageIndex, occurrenceIndex within that message)
-  List<(int msgIdx, int occIdx)> _searchMatches = [];
-  int _currentSearchIndex = -1;
-  GlobalKey _searchHighlightKey = GlobalKey();
-  bool _highlightKeyActive = false;
+  late final ChatSearchController _searchController = ChatSearchController(
+    messagesProvider: () => _messages,
+    displayContentBuilder: _buildDisplayContent,
+    itemScrollController: _itemScrollController,
+    itemPositionsListener: _itemPositionsListener,
+  );
 
   @override
   void initState() {
     super.initState();
     _messageFocusNode.addListener(_onMessageFocusChanged);
     _itemPositionsListener.itemPositions.addListener(_onScrollChanged);
+    _searchController.addListener(_onSearchChanged);
     _loadChatData();
+  }
+
+  void _onSearchChanged() {
+    if (mounted) setState(() {});
   }
 
   void _onScrollChanged() {
@@ -161,121 +135,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
-  void _toggleSearch() {
-    setState(() {
-      _isSearching = !_isSearching;
-      if (!_isSearching) {
-        _searchController.clear();
-        _searchMatches = [];
-        _currentSearchIndex = -1;
-      } else {
-        _searchFocusNode.requestFocus();
-      }
-    });
-  }
-
-  static final _imageMarkdownPattern = RegExp(r'!\[[^\]]*\]\([^)]+\)');
-
-  void _performSearch(String query) {
-    if (query.isEmpty) {
-      setState(() {
-        _searchMatches = [];
-        _currentSearchIndex = -1;
-      });
-      return;
-    }
-
-    final lowerQuery = query.toLowerCase();
-    final matches = <(int, int)>[];
-    for (int i = 0; i < _messages.length; i++) {
-      // Strip image markdown to match what MarkdownText actually renders as text
-      var displayText = _buildDisplayContent(_messages[i].content);
-      displayText = displayText.replaceAll(_imageMarkdownPattern, '');
-      final lowerContent = displayText.toLowerCase();
-      int start = 0;
-      int occIdx = 0;
-      while (true) {
-        final pos = lowerContent.indexOf(lowerQuery, start);
-        if (pos == -1) break;
-        matches.add((i, occIdx));
-        occIdx++;
-        start = pos + lowerQuery.length;
-      }
-    }
-
-    setState(() {
-      _searchMatches = matches;
-      _currentSearchIndex = matches.isNotEmpty ? 0 : -1;
-    });
-
-    if (matches.isNotEmpty) {
-      _scrollToSearchResult(0);
-    }
-  }
-
-  void _navigateSearch(int direction) {
-    if (_searchMatches.isEmpty) return;
-    setState(() {
-      _currentSearchIndex =
-          (_currentSearchIndex + direction) % _searchMatches.length;
-      if (_currentSearchIndex < 0) {
-        _currentSearchIndex = _searchMatches.length - 1;
-      }
-    });
-    _scrollToSearchResult(_currentSearchIndex);
-  }
-
-  void _scrollToSearchResult(int searchIndex) {
-    final (messageIndex, _) = _searchMatches[searchIndex];
-    final listIndex = _messages.length - 1 - messageIndex;
-
-    void doEnsureVisible() {
-      setState(() {
-        _searchHighlightKey = GlobalKey();
-        _highlightKeyActive = true;
-      });
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (_searchHighlightKey.currentContext != null) {
-          Scrollable.ensureVisible(
-            _searchHighlightKey.currentContext!,
-            duration: const Duration(milliseconds: 300),
-            curve: Curves.easeOut,
-            alignment: 0.0,
-          ).then((_) {
-            if (mounted) setState(() => _highlightKeyActive = false);
-          });
-        } else {
-          setState(() => _highlightKeyActive = false);
-        }
-      });
-    }
-
-    // Check if the item is already on screen
-    final positions = _itemPositionsListener.itemPositions.value;
-    final isOnScreen = positions.any((p) => p.index == listIndex);
-
-    if (isOnScreen) {
-      doEnsureVisible();
-    } else {
-      // Jump first, wait for settle, then assign key
-      _itemScrollController.jumpTo(index: listIndex, alignment: 0.5);
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        doEnsureVisible();
-      });
-    }
-  }
-
   @override
   void dispose() {
     _messageFocusNode.removeListener(_onMessageFocusChanged);
     _messageFocusNode.dispose();
     _messageController.dispose();
+    _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
-    _searchFocusNode.dispose();
     _itemPositionsListener.itemPositions.removeListener(_onScrollChanged);
-    for (var controller in _editControllers.values) {
-      controller.dispose();
-    }
+    _editController.dispose();
     super.dispose();
   }
 
@@ -381,326 +249,32 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
 
-  Future<({String systemPrompt, List<Map<String, dynamic>> contents, PromptParameters? parameters, List<PromptRegexRule> regexRules})> _buildApiData({
+  Future<ChatApiData> _buildApiData({
     required String userMessage,
     List<int>? excludeMessageIds,
     int? beforeMessageIndex,
   }) async {
-    if (_chatRoom == null || _character == null) {
-      return (systemPrompt: '', contents: <Map<String, dynamic>>[], parameters: null, regexRules: <PromptRegexRule>[]);
-    }
+    if (_chatRoom == null || _character == null) return ChatApiData.empty;
 
-    // Capture AI response language before any async gaps
+    // Capture context-derived values before any async gaps.
+    final l10n = AppLocalizations.of(context);
     final outputLanguage =
         context.read<LocalizationProvider>().effectiveAiLanguageName;
+    final tokenizer = context.read<TokenizerProvider>().selectedTokenizer;
 
-    // Stage 1: Load prompt frame.
-    // selectedChatPromptId == null means the user explicitly chose "없음".
-    // Anything else is a saved prompt id that MUST resolve — if the row
-    // is missing we retry once and then throw, instead of silently
-    // sending with an empty system prompt as if "없음" had been chosen.
-    ChatPrompt? chatPrompt;
-    if (_chatRoom!.selectedChatPromptId != null) {
-      final selectedId = _chatRoom!.selectedChatPromptId!;
-      final l10n = AppLocalizations.of(context);
-      chatPrompt = await _db.readChatPrompt(selectedId);
-      // Retry once — the row may have been re-created in another
-      // screen between the chat room loading and this send.
-      chatPrompt ??= await _db.readChatPrompt(selectedId);
-      if (chatPrompt == null) {
-        throw _PromptLoadException(
-          l10n.chatRoomPromptLoadFailed(selectedId.toString()),
-        );
-      }
-    }
-
-    // Load regex rules for this prompt
-    final List<PromptRegexRule> regexRules = chatPrompt?.id != null
-        ? await _db.readPromptRegexRules(chatPrompt!.id!)
-        : [];
-
-    // Stage 3 (pre): Apply inputModify to user message (API-only, DB message unchanged)
-    final apiUserMessage = RegexProcessor.apply(userMessage, regexRules, RegexTarget.inputModify);
-
-    Persona? persona;
-    if (_chatRoom!.selectedPersonaId != null) {
-      persona = await _db.readPersona(_chatRoom!.selectedPersonaId!);
-    }
-
-    StartScenario? startScenario;
-    if (_chatRoom!.selectedStartScenarioId != null) {
-      startScenario = await _db.readStartScenario(_chatRoom!.selectedStartScenarioId!);
-    }
-
-    // Stage 2.1: Filter character books (enabled only, ordered by insertionOrder in PromptBuilder)
-    final allCharacterBooks = await _db.readCharacterBooks(_character!.id!);
-    final activeCharacterBooks = allCharacterBooks
-        .where((b) => b.enabled == CharacterBookActivationCondition.enabled)
-        .toList();
-
-    final summaries = await _db.getChatSummaries(widget.chatRoomId);
-
-    final summaryMetadataMap = <int, ChatMessageMetadata>{};
-    for (final summary in summaries) {
-      final metadata = await _db.readChatMessageMetadataByMessage(summary.endPinMessageId);
-      if (metadata != null) {
-        summaryMetadataMap[summary.endPinMessageId] = metadata;
-      }
-    }
-
-    // Load condition states from selected preset
-    List<PromptCondition>? conditions;
-    Map<int, String>? conditionStates;
-    if (chatPrompt != null) {
-      conditions = await _db.readPromptConditions(chatPrompt.id!);
-      for (final condition in conditions) {
-        final options = await _db.readPromptConditionOptions(condition.id!);
-        condition.options.addAll(options);
-      }
-
-      final presets = await _db.readPromptConditionPresets(chatPrompt.id!);
-      PromptConditionPreset? selectedPreset;
-      final presetId = _chatRoom!.selectedConditionPresetId;
-      if (presetId != null) {
-        try {
-          selectedPreset = presets.firstWhere((p) => p.id == presetId);
-        } catch (_) {}
-      }
-      selectedPreset ??= presets.where((p) => p.isDefault).firstOrNull ?? presets.firstOrNull;
-
-      if (selectedPreset != null) {
-        final values = await _db.readPromptConditionPresetValues(selectedPreset.id!);
-        conditionStates = {};
-        for (final v in values) {
-          if (v.conditionId != null) {
-            if (v.value == PromptConditionPresetValue.customOptionKey) {
-              conditionStates[v.conditionId!] = v.customValue ?? '';
-            } else {
-              conditionStates[v.conditionId!] = v.value;
-            }
-          }
-        }
-      }
-    }
-
-    final tokenizerProvider = context.read<TokenizerProvider>();
-    final tokenizer = tokenizerProvider.selectedTokenizer;
-
-    // Load agent context if agent mode is enabled
-    String? agentContext;
-    final summarySettings = await _db.getAutoSummarySettings(0);
-    if (summarySettings != null && summarySettings.isAgentEnabled) {
-      final agentService = AgentSummaryService();
-      final maxInputTokens = chatPrompt?.parameters?.maxInputTokens;
-
-      int? episodeBudget;
-      if (maxInputTokens != null && maxInputTokens > 0) {
-        // Probe: build agent context with no episode contents (just lists +
-        // non-episode sections), then measure how many tokens are consumed by
-        // the rest of the prompt frame to derive the remaining budget for
-        // episode contents.
-        final baselineAgentContext = await agentService.buildActiveEntriesText(
-          widget.chatRoomId,
-          episodeContentTokenBudget: 0,
-          tokenizer: tokenizer,
-        );
-
-        final consumedByItem = chatPrompt?.items.any((item) =>
-                item.content.contains('{{agent_context}}')) ??
-            false;
-
-        var baselineSystemPrompt = PromptBuilder.buildSystemPrompt(
-          chatPrompt: chatPrompt,
-          character: _character!,
-          persona: persona,
-          startScenario: startScenario,
-          activeCharacterBooks: activeCharacterBooks,
-          chatRoom: _chatRoom,
-          summaries: summaries,
-          summaryMetadataMap: summaryMetadataMap,
-          conditions: conditions,
-          conditionStates: conditionStates,
-          agentContext: baselineAgentContext,
-        );
-        // Mirror the auto-append logic used after the real system prompt build.
-        if (!consumedByItem && baselineAgentContext.isNotEmpty) {
-          baselineSystemPrompt = baselineSystemPrompt.isEmpty
-              ? baselineAgentContext
-              : '$baselineSystemPrompt\n\n$baselineAgentContext';
-        }
-
-        int baseline = TokenCounter.estimateTokenCount(
-          baselineSystemPrompt,
-          tokenizer: tokenizer,
-        );
-        baseline += TokenCounter.estimateTokenCount(
-          apiUserMessage,
-          tokenizer: tokenizer,
-        );
-        if (chatPrompt != null) {
-          final states = conditionStates ?? <int, String>{};
-          for (final item in chatPrompt.items) {
-            if (item.role == PromptRole.system ||
-                item.role == PromptRole.chat) {
-              continue;
-            }
-            if (!PromptBuilder.isItemActive(item, states)) continue;
-            // Resolve {{agent_context}} so the baseline reflects the actual
-            // user/assistant payload that will be sent.
-            final resolved = item.content.replaceAll(
-              '{{agent_context}}',
-              baselineAgentContext,
-            );
-            baseline += TokenCounter.estimateTokenCount(
-              resolved,
-              tokenizer: tokenizer,
-            );
-          }
-        }
-
-        episodeBudget = maxInputTokens - baseline;
-        if (episodeBudget < 0) episodeBudget = 0;
-      }
-
-      agentContext = await agentService.buildActiveEntriesText(
-        widget.chatRoomId,
-        episodeContentTokenBudget: episodeBudget,
-        tokenizer: tokenizer,
-      );
-    }
-
-    // Stage 1+2: Build frame and apply keyword substitution
-    final outputLanguageKeywords = {'output_language': outputLanguage};
-    String rawSystemPrompt = PromptBuilder.buildSystemPrompt(
-      chatPrompt: chatPrompt,
+    return ChatApiDataBuilder.instance.build(
+      chatRoom: _chatRoom!,
       character: _character!,
-      persona: persona,
-      startScenario: startScenario,
-      activeCharacterBooks: activeCharacterBooks,
-      chatRoom: _chatRoom,
-      summaries: summaries,
-      summaryMetadataMap: summaryMetadataMap,
-      conditions: conditions,
-      conditionStates: conditionStates,
-      agentContext: agentContext,
-      extraKeywords: outputLanguageKeywords,
-    );
-
-    // Auto-append agent context only when no prompt item consumes the
-    // {{agent_context}} keyword. If any item (system/user/assistant) uses the
-    // placeholder, it will be substituted in its own slot — appending here
-    // would duplicate the text and place a copy at the very front of the
-    // conversation.
-    if (agentContext != null && agentContext.isNotEmpty) {
-      final consumedByItem = chatPrompt?.items.any((item) =>
-              item.content.contains('{{agent_context}}')) ??
-          false;
-      if (!consumedByItem) {
-        rawSystemPrompt = rawSystemPrompt.isEmpty
-            ? agentContext
-            : '$rawSystemPrompt\n\n$agentContext';
-      }
-    }
-
-    // Exclude old messages from chat history
-    Set<int> contextExcludeIds;
-    if (summarySettings != null && summarySettings.isAgentEnabled) {
-      // Agent mode: keep messages from 2 summary periods ago onwards
-      final period = _chatRoom!.autoPinByMessageCount ?? 10;
-      contextExcludeIds = await _autoSummaryService.getAgentModeExcludeIds(
-        chatRoomId: widget.chatRoomId,
-        period: period,
-      );
-    } else {
-      contextExcludeIds = await _autoSummaryService.getSummarizedMessageIds(widget.chatRoomId);
-    }
-    final allExcludeIds = {...contextExcludeIds, ...?excludeMessageIds};
-
-    final chatHistoryMap = await _buildChatHistoryMap(
-      chatPrompt: chatPrompt,
-      excludeMessageIds: allExcludeIds.toList(),
+      chatRoomId: widget.chatRoomId,
+      messages: _messages,
+      metadataMap: _metadataMap,
+      userMessage: userMessage,
+      outputLanguage: outputLanguage,
+      tokenizer: tokenizer,
+      promptLoadFailedMessage: l10n.chatRoomPromptLoadFailed,
+      excludeMessageIds: excludeMessageIds,
       beforeMessageIndex: beforeMessageIndex,
     );
-
-    final rawContents = PromptBuilder.buildContents(
-      chatPrompt: chatPrompt,
-      character: _character!,
-      userMessage: apiUserMessage,
-      chatHistoryMap: chatHistoryMap,
-      systemPrompt: rawSystemPrompt,
-      persona: persona,
-      startScenario: startScenario,
-      activeCharacterBooks: activeCharacterBooks,
-      maxInputTokens: chatPrompt?.parameters?.maxInputTokens,
-      tokenizer: tokenizer,
-      metadataMap: _metadataMap,
-      chatRoom: _chatRoom,
-      summaries: summaries,
-      summaryMetadataMap: summaryMetadataMap,
-      conditions: conditions,
-      conditionStates: conditionStates,
-      agentContext: agentContext,
-      extraKeywords: outputLanguageKeywords,
-    );
-
-    // Stage 3: Apply sendDataModify to the fully assembled prompt data
-    var systemPrompt = RegexProcessor.apply(rawSystemPrompt, regexRules, RegexTarget.sendDataModify);
-    final contents = RegexProcessor.applyToContents(rawContents, regexRules, RegexTarget.sendDataModify);
-
-    return (systemPrompt: systemPrompt, contents: contents, parameters: chatPrompt?.parameters, regexRules: regexRules);
-  }
-
-
-  Future<Map<PromptItem, List<ChatMessage>>> _buildChatHistoryMap({
-    required ChatPrompt? chatPrompt,
-    List<int>? excludeMessageIds,
-    int? beforeMessageIndex,
-  }) async {
-    final map = <PromptItem, List<ChatMessage>>{};
-    if (chatPrompt == null) return map;
-
-    final chatItems = chatPrompt.items.where((item) => item.role == PromptRole.chat).toList();
-    if (chatItems.isEmpty) return map;
-
-    for (final chatItem in chatItems) {
-      var messages = await _loadChatItemMessages(chatItem);
-
-      if (excludeMessageIds != null && excludeMessageIds.isNotEmpty) {
-        messages = messages.where((m) => !excludeMessageIds.contains(m.id)).toList();
-      }
-
-      if (beforeMessageIndex != null) {
-        messages = messages.where((m) {
-          final idx = _messages.indexWhere((msg) => msg.id == m.id);
-          return idx >= 0 && idx < beforeMessageIndex;
-        }).toList();
-      }
-
-      map[chatItem] = messages;
-    }
-
-    return map;
-  }
-
-  Future<List<ChatMessage>> _loadChatItemMessages(PromptItem chatItem) async {
-    if (chatItem.chatSettingMode == ChatSettingMode.basic) {
-      return await _db.readChatMessagesByChatRoom(widget.chatRoomId);
-    }
-
-    switch (chatItem.chatRangeType) {
-      case ChatRangeType.recent:
-        final count = chatItem.recentChatCount ?? 0;
-        if (count <= 0) return await _db.readChatMessagesByChatRoom(widget.chatRoomId);
-        return await _db.readChatMessagesRecent(widget.chatRoomId, count);
-      case ChatRangeType.middle:
-        final start = chatItem.chatStartPosition ?? 1;
-        final end = chatItem.chatEndPosition ?? start;
-        return await _db.readChatMessagesMiddle(widget.chatRoomId, start, end);
-      case ChatRangeType.old:
-        final recentExclude = chatItem.chatStartPosition ?? 0;
-        if (recentExclude <= 0) return await _db.readChatMessagesByChatRoom(widget.chatRoomId);
-        return await _db.readChatMessagesOld(widget.chatRoomId, recentExclude);
-    }
   }
 
   Future<void> _sendMessage() async {
@@ -777,19 +351,19 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       final modelProvider = context.read<ChatModelSettingsProvider>();
       await modelProvider.initialized;
       final model = await _resolveModel();
-      final maxRetries = model.retryCount;
-      Object? lastError;
 
-      for (int attempt = 0; attempt <= maxRetries; attempt++) {
-        try {
-          if (attempt > 0) {
-            debugPrint('Retrying sendMessage (attempt ${attempt + 1}/${maxRetries + 1})');
-            if (mounted) setState(() {
+      await RetryRunner.run<void>(
+        maxRetries: model.retryCount,
+        tag: 'sendMessage',
+        onRetry: (attempt) {
+          if (mounted) {
+            setState(() {
               _sendingPhase = SendingPhase.waiting;
               _retryAttempt = attempt;
             });
           }
-
+        },
+        attempt: (_) async {
           final aiResponse = await _aiService.sendMessage(
             systemPrompt: apiData.systemPrompt,
             contents: apiData.contents,
@@ -800,7 +374,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           );
 
           // Stage 3: Apply outputModify to AI response
-          final responseText = RegexProcessor.apply(aiResponse.text, apiData.regexRules, RegexTarget.outputModify);
+          final responseText = RegexProcessor.apply(
+              aiResponse.text, apiData.regexRules, RegexTarget.outputModify);
 
           final assistantTokenCount = aiResponse.usageMetadata?.candidatesTokenCount ??
               TokenCounter.estimateTokenCount(responseText, tokenizer: tokenizer);
@@ -814,16 +389,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           );
 
           final assistantMessageId = await _db.createChatMessage(assistantMessage);
-
           final pinCreated = await _saveMessageMetadata(assistantMessageId, responseText);
 
           // 채팅방 토큰 합산 업데이트
           await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
-
-          final updatedChatRoom = _chatRoom!.copyWith(
-            updatedAt: DateTime.now(),
-          );
-          await _db.updateChatRoom(updatedChatRoom);
+          await _db.updateChatRoom(_chatRoom!.copyWith(updatedAt: DateTime.now()));
 
           // 자동 요약 트리거 체크: 새 핀이 생성된 경우에만 실행
           if (pinCreated) {
@@ -833,10 +403,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 chatRoomId: widget.chatRoomId,
                 currentTokenCount: latestChatRoom.totalTokenCount,
               );
-
               if (shouldTrigger) {
                 if (mounted) setState(() => _sendingPhase = SendingPhase.summarizing);
-                await _autoSummaryService.generateAllPendingSummaries(chatRoomId: widget.chatRoomId);
+                await _autoSummaryService.generateAllPendingSummaries(
+                    chatRoomId: widget.chatRoomId);
               }
             }
           }
@@ -844,28 +414,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           // Future plan: agent summary 이후에 실행하여 우선순위를 보장
           final agentSettings = await _db.getAutoSummarySettings(0);
           if (agentSettings != null && agentSettings.isAgentEnabled) {
-            final agentService = AgentSummaryService();
-            await agentService.processFuturePlan(widget.chatRoomId, responseText);
+            await AgentSummaryService()
+                .processFuturePlan(widget.chatRoomId, responseText);
           }
-
-          lastError = null;
-          break;
-        } catch (e) {
-          lastError = e;
-          debugPrint('sendMessage attempt ${attempt + 1} failed: $e');
-          if (attempt >= maxRetries) break;
-        }
-      }
-
-      if (lastError != null) {
-        throw lastError!;
-      }
-
+        },
+      );
     } catch (e) {
       debugPrint('Error sending message: $e');
       if (!mounted) return;
       final l10n = AppLocalizations.of(context);
-      final message = (e is _ModelLoadException || e is _PromptLoadException)
+      final message = (e is ChatModelLoadException || e is ChatPromptLoadException)
           ? e.toString()
           : l10n.chatRoomMessageSendFailed(e.toString());
       ScaffoldMessenger.of(context).showSnackBar(
@@ -906,58 +464,20 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
-  static final _imgTagPattern = RegExp(r'<img="([^"]+)">');
-
   String _buildDisplayContent(String content) {
-    var text = MetadataParser.removeMetadataTags(content);
-    text = RegexProcessor.apply(text, _regexRules, RegexTarget.displayModify);
-    // <img="이름"> → 캐릭터 이미지가 있으면 로컬 이미지로 변환, 없으면 삭제
-    text = text.replaceAllMapped(_imgTagPattern, (match) {
-      if (_chatRoom?.showImages == false) return '';
-      final name = match.group(1)!;
-      final path = _imagePathMap[name];
-      if (path != null) {
-        return '![$name]($path)';
-      }
-      return '';
-    });
-    if (_chatRoom?.showImages == false) {
-      text = text.replaceAll(_imageMarkdownPattern, '');
-    }
-    return text;
-  }
-
-
-  String _buildEditableContent(ChatMessage message) {
-    return message.content;
-  }
-
-  void _startEditMessage(ChatMessage message) {
-    setState(() {
-      _editingMessageId = message.id;
-      _editControllers[message.id!] = TextEditingController(
-        text: _buildEditableContent(message),
-      );
-    });
-  }
-
-  void _cancelEditMessage() {
-    if (_editingMessageId != null) {
-      _editControllers[_editingMessageId]?.dispose();
-      _editControllers.remove(_editingMessageId);
-      setState(() {
-        _editingMessageId = null;
-      });
-    }
+    return ChatContentFormatter.buildDisplayContent(
+      content: content,
+      chatRoom: _chatRoom,
+      regexRules: _regexRules,
+      imagePathMap: _imagePathMap,
+    );
   }
 
   Future<void> _saveEditMessage(ChatMessage message) async {
-    final controller = _editControllers[message.id];
-    if (controller == null) return;
-
-    final rawContent = controller.text.trim();
+    final rawContent = _editController.trimmedTextFor(message);
+    if (rawContent == null) return;
     if (rawContent.isEmpty) {
-      _cancelEditMessage();
+      _editController.cancel();
       return;
     }
 
@@ -999,7 +519,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       await _db.updateChatMessage(updatedMessage);
       await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
-      _cancelEditMessage();
+      _editController.cancel();
       await _loadChatData(showLoading: false);
       if (!mounted) return;
       CommonDialog.showSnackBar(
@@ -1062,135 +582,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
-  Widget _buildMorePanel() {
-    return Container(
-      color: Theme.of(context).colorScheme.surface,
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: const EdgeInsets.only(left: 16, right: 16, top: 6, bottom: 12),
-          child: GridView.count(
-            crossAxisCount: 4,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 20,
-            crossAxisSpacing: 8,
-            childAspectRatio: 0.85,
-            children: [
-              _buildMenuAppIcon(
-                context,
-                icon: Icons.forum_outlined,
-                label: 'SNS',
-                onTap: () {
-                  setState(() => _showMorePanel = false);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => CommunityScreen(
-                        characterId: _character!.id!,
-                        chatRoomId: widget.chatRoomId,
-                      ),
-                    ),
-                  );
-                },
-              ),
-              _buildMenuAppIcon(
-                context,
-                icon: Icons.newspaper_outlined,
-                label: 'News',
-                onTap: () {
-                  setState(() => _showMorePanel = false);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => NewsScreen(
-                        characterId: _character!.id!,
-                        chatRoomId: widget.chatRoomId,
-                      ),
-                    ),
-                  );
-                },
-              ),
-              _buildMenuAppIcon(
-                context,
-                icon: Icons.auto_stories_outlined,
-                label: 'Diary',
-                onTap: () {
-                  setState(() => _showMorePanel = false);
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => DiaryScreen(
-                        characterId: _character!.id!,
-                        chatRoomId: widget.chatRoomId,
-                      ),
-                    ),
-                  );
-                },
-              ),
-              _buildMenuAppIcon(
-                context,
-                icon: Icons.text_fields,
-                label: AppLocalizations.of(context).chatRoomTextSettings,
-                onTap: () {
-                  setState(() => _showMorePanel = false);
-                  _showViewerSettings();
-                },
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildMenuAppIcon(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 45,
-            height: 45,
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.primaryContainer,
-              shape: BoxShape.circle,
-            ),
-            child: Icon(
-              icon,
-              color: Theme.of(context).colorScheme.onPrimaryContainer,
-              size: 21,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Text(
-            label,
-            style: Theme.of(context).textTheme.labelSmall,
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showViewerSettings() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (context) => const ChatBottomPanel(),
-    );
-  }
-
   Future<void> _finishSending() async {
     final wasScrolledUp = _showScrollButtons;
     await _loadChatData(showLoading: false);
@@ -1214,67 +605,18 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   Future<UnifiedModel> _resolveModel() async {
     final provider = context.read<ChatModelSettingsProvider>();
     final l10n = AppLocalizations.of(context);
-    switch (_chatRoom?.modelPreset) {
-      case 'secondary':
-        if (provider.hasSubLoadFailed) {
-          final ok = await provider.retryLoadSub();
-          if (!ok) {
-            throw _ModelLoadException(
-              l10n.chatRoomSubModelLoadFailed(
-                provider.unresolvedSubModelId ?? '?',
-              ),
-            );
-          }
-        }
-        return provider.subModel;
-      case 'custom':
-        // Per-room custom model: re-check against the (possibly stale)
-        // available models, refreshing the catalog from disk on a miss
-        // before giving up.
-        final savedId = _chatRoom?.selectedModelId ?? _customModelLoadFailedId;
-        if (savedId != null) {
-          var match = provider.availableModels.where((m) => m.id == savedId);
-          if (match.isEmpty) {
-            await provider.refreshCustomCatalog();
-            match = provider.availableModels.where((m) => m.id == savedId);
-          }
-          if (match.isEmpty) {
-            throw _ModelLoadException(
-              l10n.chatRoomCustomModelLoadFailed(savedId),
-            );
-          }
-          if (provider.selectedModel.id != savedId) {
-            await provider.setModel(match.first);
-          }
-          if (mounted && _customModelLoadFailedId != null) {
-            setState(() => _customModelLoadFailedId = null);
-          }
-          return match.first;
-        }
-        if (provider.hasPrimaryLoadFailed) {
-          final ok = await provider.retryLoadPrimary();
-          if (!ok) {
-            throw _ModelLoadException(
-              l10n.chatRoomMainModelLoadFailed(
-                provider.unresolvedPrimaryModelId ?? '?',
-              ),
-            );
-          }
-        }
-        return provider.selectedModel;
-      default: // 'primary'
-        if (provider.hasPrimaryLoadFailed) {
-          final ok = await provider.retryLoadPrimary();
-          if (!ok) {
-            throw _ModelLoadException(
-              l10n.chatRoomMainModelLoadFailed(
-                provider.unresolvedPrimaryModelId ?? '?',
-              ),
-            );
-          }
-        }
-        return provider.selectedModel;
+    final resolution = await ChatModelResolver.resolve(
+      provider: provider,
+      chatRoom: _chatRoom,
+      customModelLoadFailedId: _customModelLoadFailedId,
+      subModelLoadFailedMessage: l10n.chatRoomSubModelLoadFailed,
+      primaryModelLoadFailedMessage: l10n.chatRoomMainModelLoadFailed,
+      customModelLoadFailedMessage: l10n.chatRoomCustomModelLoadFailed,
+    );
+    if (resolution.clearCustomLoadFailedFlag && mounted) {
+      setState(() => _customModelLoadFailedId = null);
     }
+    return resolution.model;
   }
 
   Future<void> _onModelPresetChanged(String preset) async {
@@ -1372,16 +714,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       if (mounted) setState(() => _sendingPhase = SendingPhase.waiting);
 
       final model = await _resolveModel();
-      final maxRetries = model.retryCount;
-      Object? lastError;
 
-      for (int attempt = 0; attempt <= maxRetries; attempt++) {
-        try {
-          if (attempt > 0) {
-            debugPrint('Retrying resendLastUserMessage (attempt ${attempt + 1}/${maxRetries + 1})');
-            if (mounted) setState(() => _sendingPhase = SendingPhase.waiting);
-          }
-
+      await RetryRunner.run<void>(
+        maxRetries: model.retryCount,
+        tag: 'resendLastUserMessage',
+        onRetry: (_) {
+          if (mounted) setState(() => _sendingPhase = SendingPhase.waiting);
+        },
+        attempt: (_) async {
           final aiResponse2 = await _aiService.sendMessage(
             systemPrompt: apiData.systemPrompt,
             contents: apiData.contents,
@@ -1392,7 +732,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           );
 
           // Stage 3: Apply outputModify to AI response
-          final responseText2 = RegexProcessor.apply(aiResponse2.text, apiData.regexRules, RegexTarget.outputModify);
+          final responseText2 = RegexProcessor.apply(
+              aiResponse2.text, apiData.regexRules, RegexTarget.outputModify);
 
           final tokenCount = aiResponse2.usageMetadata?.candidatesTokenCount ??
               TokenCounter.estimateTokenCount(responseText2, tokenizer: tokenizer);
@@ -1406,42 +747,25 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           );
 
           final assistantMessageId = await _db.createChatMessage(assistantMessage);
-
           await _saveMessageMetadata(assistantMessageId, responseText2);
 
           // 채팅방 토큰 합산 업데이트
           await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
-
-          final updatedChatRoom = _chatRoom!.copyWith(
-            updatedAt: DateTime.now(),
-          );
-          await _db.updateChatRoom(updatedChatRoom);
+          await _db.updateChatRoom(_chatRoom!.copyWith(updatedAt: DateTime.now()));
 
           // Future plan: AI 응답에서 [PLAN: ...] 파싱하여 활성화
           final agentSettings2 = await _db.getAutoSummarySettings(0);
           if (agentSettings2 != null && agentSettings2.isAgentEnabled) {
-            final agentService = AgentSummaryService();
-            await agentService.processFuturePlan(widget.chatRoomId, responseText2);
+            await AgentSummaryService()
+                .processFuturePlan(widget.chatRoomId, responseText2);
           }
-
-          lastError = null;
-          break;
-        } catch (e) {
-          lastError = e;
-          debugPrint('resendLastUserMessage attempt ${attempt + 1} failed: $e');
-          if (attempt >= maxRetries) break;
-        }
-      }
-
-      if (lastError != null) {
-        throw lastError!;
-      }
-
+        },
+      );
     } catch (e) {
       debugPrint('Error resending message: $e');
       if (!mounted) return;
       final l10n = AppLocalizations.of(context);
-      final message = (e is _ModelLoadException || e is _PromptLoadException)
+      final message = (e is ChatModelLoadException || e is ChatPromptLoadException)
           ? e.toString()
           : l10n.chatRoomMessageRetryFailed(e.toString());
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1450,34 +774,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     } finally {
       await _finishSending();
     }
-  }
-
-  Future<String> _generateBranchName() async {
-    final currentName = _chatRoom!.name;
-
-    // 기존 이름에서 베이스 이름 추출 (예: "채팅방(2)" -> "채팅방")
-    final branchPattern = RegExp(r'^(.+)\((\d+)\)$');
-    final match = branchPattern.firstMatch(currentName);
-    final baseName = match != null ? match.group(1)! : currentName;
-
-    // 같은 캐릭터의 모든 채팅방 조회
-    final allChatRooms = await _db.readChatRoomsByCharacter(_chatRoom!.characterId);
-
-    // 같은 베이스 이름을 가진 채팅방들의 숫자 추출
-    int maxNumber = 0;
-    final namePattern = RegExp('^${RegExp.escape(baseName)}\\((\\d+)\\)\$');
-
-    for (final room in allChatRooms) {
-      final roomMatch = namePattern.firstMatch(room.name);
-      if (roomMatch != null) {
-        final number = int.parse(roomMatch.group(1)!);
-        if (number > maxNumber) {
-          maxNumber = number;
-        }
-      }
-    }
-
-    return '$baseName(${maxNumber + 1})';
   }
 
   Future<void> _createBranch(int messageIndex) async {
@@ -1490,165 +786,21 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     );
 
     if (confirmed != true) return;
+    if (_chatRoom == null || _character == null) return;
 
     try {
-      if (_chatRoom == null || _character == null) return;
-
-      // 새 채팅방 생성 (기존 설정 전체 복사, id 제외)
-      final branchName = await _generateBranchName();
-      final newChatRoom = ChatRoom(
-        characterId: _chatRoom!.characterId,
-        name: branchName,
-        selectedChatPromptId: _chatRoom!.selectedChatPromptId,
-        selectedPersonaId: _chatRoom!.selectedPersonaId,
-        selectedStartScenarioId: _chatRoom!.selectedStartScenarioId,
-        selectedConditionPresetId: _chatRoom!.selectedConditionPresetId,
-        memo: _chatRoom!.memo,
-        summary: _chatRoom!.summary,
-        autoPinByMessageCount: _chatRoom!.autoPinByMessageCount,
-        selectedModelId: _chatRoom!.selectedModelId,
-        modelPreset: _chatRoom!.modelPreset,
+      final newChatRoomId = await ChatBranchService.instance.createBranch(
+        source: _chatRoom!,
+        messages: _messages,
+        metadataMap: _metadataMap,
+        branchAtIndex: messageIndex,
       );
 
-      final newChatRoomId = await _db.createChatRoom(newChatRoom);
-
-      // 분기점까지의 메시지 및 메타데이터 복사 (old ID -> new ID 매핑 생성)
-      final messageIdMap = <int, int>{};
-      for (int i = 0; i <= messageIndex; i++) {
-        final msg = _messages[i];
-        final newMessage = ChatMessage(
-          chatRoomId: newChatRoomId,
-          role: msg.role,
-          content: msg.content,
-          tokenCount: msg.tokenCount,
-          createdAt: msg.createdAt,
-          editedAt: msg.editedAt,
-          usageMetadata: msg.usageMetadata,
-          modelId: msg.modelId,
-        );
-        final newMessageId = await _db.createChatMessage(newMessage);
-
-        if (msg.id != null) {
-          messageIdMap[msg.id!] = newMessageId;
-
-          // 메타데이터 복사 (날짜, 시간, 장소, 핀 상태)
-          final metadata = _metadataMap[msg.id!];
-          if (metadata != null) {
-            final newMetadata = ChatMessageMetadata(
-              chatMessageId: newMessageId,
-              chatRoomId: newChatRoomId,
-              location: metadata.location,
-              date: metadata.date,
-              time: metadata.time,
-              isPinned: metadata.isPinned,
-              createdAt: metadata.createdAt,
-            );
-            await _db.createChatMessageMetadata(newMetadata);
-          }
-        }
-      }
-
-      // 요약 복사 (메시지 ID 매핑 적용)
-      final summaries = await _db.getChatSummaries(_chatRoom!.id!);
-      for (final summary in summaries) {
-        final newEndId = messageIdMap[summary.endPinMessageId];
-        if (newEndId == null) continue;
-
-        final newStartId = summary.startPinMessageId == 0
-            ? 0
-            : messageIdMap[summary.startPinMessageId];
-        if (newStartId == null) continue;
-
-        await _db.createChatSummary(ChatSummary(
-          chatRoomId: newChatRoomId,
-          startPinMessageId: newStartId,
-          endPinMessageId: newEndId,
-          summaryContent: summary.summaryContent,
-          tokenCount: summary.tokenCount,
-          createdAt: summary.createdAt,
-          updatedAt: summary.updatedAt,
-        ));
-      }
-
-      // 자동 요약 설정 복사
-      final autoSummarySettings =
-          await _db.getAutoSummarySettings(_chatRoom!.id!);
-      if (autoSummarySettings != null) {
-        await _db.createAutoSummarySettings(autoSummarySettings.copyWith(
-          id: null,
-          chatRoomId: newChatRoomId,
-        ));
-      }
-
-      // 에이전트 엔트리 복사 (요약/등장인물/장소/물품/사건)
-      final agentIdMap = <int, int>{};
-      final agentEntries = await _db.getAgentEntries(_chatRoom!.id!);
-      for (final entry in agentEntries) {
-        final newId = await _db.createAgentEntry(entry.copyWith(
-          id: null,
-          chatRoomId: newChatRoomId,
-        ));
-        if (entry.id != null) {
-          agentIdMap[entry.id!] = newId;
-        }
-      }
-
-      // SNS(커뮤니티) 게시글 및 댓글 복사
-      final communityPosts = await _db.readCommunityPosts(_chatRoom!.id!);
-      for (final post in communityPosts) {
-        final newPostId = await _db.createCommunityPost(post.copyWith(
-          id: null,
-          chatRoomId: newChatRoomId,
-        ));
-        for (final comment in post.comments) {
-          await _db.createCommunityComment(CommunityComment(
-            postId: newPostId,
-            author: comment.author,
-            time: comment.time,
-            content: comment.content,
-          ));
-        }
-      }
-
-      // 다이어리 복사
-      final diaryEntries = await _db.readDiaryEntries(_chatRoom!.id!);
-      for (final diary in diaryEntries) {
-        await _db.createDiaryEntry(diary.copyWith(
-          id: null,
-          chatRoomId: newChatRoomId,
-        ));
-      }
-
-      // 뉴스 기사 복사 (에이전트 엔트리 ID 매핑 적용)
-      final newsArticles = await _db.readNewsArticles(_chatRoom!.id!);
-      for (final article in newsArticles) {
-        final newAgentEntryId = article.agentEntryId != null
-            ? agentIdMap[article.agentEntryId!]
-            : null;
-        await _db.createNewsArticle(NewsArticle(
-          chatRoomId: newChatRoomId,
-          topic: article.topic,
-          tone: article.tone,
-          author: article.author,
-          title: article.title,
-          time: article.time,
-          content: article.content,
-          createdAt: article.createdAt,
-          agentEntryId: newAgentEntryId,
-        ));
-      }
-
-      // 새 채팅방 토큰 합산 업데이트
-      await _db.updateChatRoomTotalTokenCount(newChatRoomId);
-
       if (!mounted) return;
-
       CommonDialog.showSnackBar(
         context: context,
         message: l10n.chatRoomBranchCreated,
       );
-
-      // Navigate to new chat room
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(
@@ -1690,19 +842,19 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       if (mounted) setState(() => _sendingPhase = SendingPhase.waiting);
 
       final model = await _resolveModel();
-      final maxRetries = model.retryCount;
-      Object? lastError;
 
-      for (int attempt = 0; attempt <= maxRetries; attempt++) {
-        try {
-          if (attempt > 0) {
-            debugPrint('Retrying regenerateMessage (attempt ${attempt + 1}/${maxRetries + 1})');
-            if (mounted) setState(() {
+      await RetryRunner.run<void>(
+        maxRetries: model.retryCount,
+        tag: 'regenerateMessage',
+        onRetry: (attempt) {
+          if (mounted) {
+            setState(() {
               _sendingPhase = SendingPhase.waiting;
               _retryAttempt = attempt;
             });
           }
-
+        },
+        attempt: (_) async {
           final aiResponse3 = await _aiService.sendMessage(
             systemPrompt: apiData.systemPrompt,
             contents: apiData.contents,
@@ -1713,7 +865,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           );
 
           // Stage 3: Apply outputModify to AI response
-          final responseText3 = RegexProcessor.apply(aiResponse3.text, apiData.regexRules, RegexTarget.outputModify);
+          final responseText3 = RegexProcessor.apply(
+              aiResponse3.text, apiData.regexRules, RegexTarget.outputModify);
 
           final tokenCount = aiResponse3.usageMetadata?.candidatesTokenCount ??
               TokenCounter.estimateTokenCount(responseText3, tokenizer: tokenizer);
@@ -1726,31 +879,18 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           );
 
           await _db.updateChatMessage(updatedMessage);
-
           await _db.deleteChatMessageMetadataByMessage(messageId);
           await _saveMessageMetadata(messageId, responseText3);
 
           // 채팅방 토큰 합산 업데이트
           await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
-
-          lastError = null;
-          break;
-        } catch (e) {
-          lastError = e;
-          debugPrint('regenerateMessage attempt ${attempt + 1} failed: $e');
-          if (attempt >= maxRetries) break;
-        }
-      }
-
-      if (lastError != null) {
-        throw lastError!;
-      }
-
+        },
+      );
     } catch (e) {
       debugPrint('Error regenerating message: $e');
       if (!mounted) return;
       final l10n = AppLocalizations.of(context);
-      final message = (e is _ModelLoadException || e is _PromptLoadException)
+      final message = (e is ChatModelLoadException || e is ChatPromptLoadException)
           ? e.toString()
           : l10n.chatRoomMessageRegenerateFailed(e.toString());
       ScaffoldMessenger.of(context).showSnackBar(
@@ -1761,470 +901,45 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
-  Widget _buildCharacterAvatar() {
-    final selectedCover = _coverImages.isNotEmpty ? _coverImages.first : null;
-
-    const fallback = CircleAvatar(
-      radius: 16,
-      backgroundColor: Color(0xFFE0E0E0),
-      child: Icon(
-        Icons.person_outline,
-        size: 16,
-        color: Color(0xFF757575),
-      ),
-    );
-
-    if (selectedCover == null) return fallback;
-
-    return FutureBuilder<Uint8List?>(
-      future: selectedCover.resolveImageData(),
-      builder: (context, snapshot) {
-        final bytes = snapshot.data;
-        if (bytes == null) return fallback;
-        return CircleAvatar(
-          radius: 16,
-          backgroundImage: MemoryImage(bytes),
-        );
-      },
-    );
-  }
-
-  Widget _buildChatHeader() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _buildWarningCard(),
-          if (_startScenario?.startSetting != null &&
-              _startScenario!.startSetting!.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            _buildStartSettingCard(),
-          ],
-          if (_startScenario?.startMessage != null &&
-              _startScenario!.startMessage!.isNotEmpty) ...[
-            const SizedBox(height: 12),
-            _buildStartMessageBubble(),
-          ],
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWarningCard() {
-    final l10n = AppLocalizations.of(context);
-    return CommonSettingsInfoCard(
-      icon: Icons.warning_amber_rounded,
-      iconColor: Theme.of(context).colorScheme.error,
-      title: l10n.chatRoomWarningTitle,
-      description: l10n.chatRoomWarningDesc,
-    );
-  }
-
-  String _replaceStartTextKeywords(String text) {
-    final selectedPersona = _personas
-        .where((p) => p.id == _chatRoom?.selectedPersonaId)
-        .firstOrNull;
-    final keywords = {
-      'char': _character?.name ?? '',
-      'user': selectedPersona?.name ?? '',
-    };
-    var result = text;
-    for (final entry in keywords.entries) {
-      result = result.replaceAll('{{${entry.key}}}', entry.value);
-    }
-    return result;
-  }
-
-  Widget _buildStartSettingCard() {
-    return CommonSettingsInfoCard(
-      icon: Icons.settings_outlined,
-      title: AppLocalizations.of(context).chatRoomStartSetting,
-      description: _replaceStartTextKeywords(_startScenario!.startSetting!),
-    );
-  }
-
-  Widget _buildStartMessageBubble() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Text(
-        _replaceStartTextKeywords(_startScenario!.startMessage!),
-        style: Theme.of(context).textTheme.bodyLarge,
-      ),
-    );
-  }
-
-  void _showUsageMetadataDialog(ChatMessage message) {
-    final l10n = AppLocalizations.of(context);
-    final metadata = message.usageMetadata;
-    if (metadata == null) {
-      CommonDialog.showSnackBar(
-        context: context,
-        message: l10n.chatRoomNoStats,
-      );
-      return;
-    }
-
-    final model = message.modelId != null ? ChatModel.fromModelId(message.modelId!) : null;
-
-    double? cost;
-    if (model != null) {
-      cost = model.pricing.calculateCost(
-        promptTokens: metadata.promptTokenCount,
-        cachedTokens: metadata.cachedContentTokenCount ?? 0,
-        outputTokens: metadata.candidatesTokenCount,
-        thinkingTokens: metadata.thoughtsTokenCount ?? 0,
-      );
-    }
-
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.chatRoomStatsTitle),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            if (model != null)
-              _buildStatRow(l10n.chatRoomStatModel, model.displayName),
-            if (model != null) const Divider(),
-            _buildStatRow(l10n.chatRoomStatInputTokens, '${metadata.promptTokenCount}'),
-            if (metadata.cachedContentTokenCount != null) ...[
-              _buildStatRow(l10n.chatRoomStatCachedTokens, '${metadata.cachedContentTokenCount}'),
-              _buildStatRow(l10n.chatRoomStatCacheRatio, '${(metadata.cacheRatio * 100).toStringAsFixed(1)}%'),
-            ],
-            const Divider(),
-            _buildStatRow(l10n.chatRoomStatOutputTokens, '${metadata.candidatesTokenCount}'),
-            if (metadata.thoughtsTokenCount != null) ...[
-              _buildStatRow(l10n.chatRoomStatThoughtTokens, '${metadata.thoughtsTokenCount}'),
-              _buildStatRow(l10n.chatRoomStatThoughtRatio, '${(metadata.thoughtsRatio * 100).toStringAsFixed(1)}%'),
-            ],
-            const Divider(),
-            _buildStatRow(l10n.chatRoomStatTotalTokens, '${metadata.totalTokenCount}'),
-            if (cost != null) ...[
-              const Divider(),
-              _buildStatRow(l10n.chatRoomStatEstimatedCost, '\$${cost.toStringAsFixed(6)}'),
-            ],
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.commonClose),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatRow(String label, String value) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 4),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Text(label, style: Theme.of(context).textTheme.bodyMedium),
-          Text(value, style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          )),
-        ],
-      ),
-    );
-  }
-
-  List<String> _localizedDayNames(AppLocalizations l10n) => [
-        l10n.chatRoomDayMon,
-        l10n.chatRoomDayTue,
-        l10n.chatRoomDayWed,
-        l10n.chatRoomDayThu,
-        l10n.chatRoomDayFri,
-        l10n.chatRoomDaySat,
-        l10n.chatRoomDaySun,
-      ];
-
-  String _formatMetadataDateTime(String? date, String? time) {
-    final l10n = AppLocalizations.of(context);
-    final dayNames = _localizedDayNames(l10n);
-    final parts = <String>[];
-    if (date != null) {
-      final segments = date.split('.');
-      if (segments.length == 3) {
-        final year = int.tryParse(segments[0]);
-        final month = int.tryParse(segments[1]);
-        final day = int.tryParse(segments[2]);
-        if (year != null && month != null && day != null) {
-          final dt = DateTime(year, month, day);
-          final dayName = dayNames[dt.weekday - 1];
-          parts.add('$date($dayName)');
-        } else {
-          parts.add(date);
-        }
-      } else {
-        parts.add(date);
-      }
-    }
-    if (time != null) {
-      final timeParts = time.split(':');
-      if (timeParts.length == 2) {
-        final hour = int.tryParse(timeParts[0]);
-        if (hour != null) {
-          final period = (hour >= 6 && hour < 18) ? l10n.chatRoomDay : l10n.chatRoomNight;
-          parts.add('$time($period)');
-        } else {
-          parts.add(time);
-        }
-      } else {
-        parts.add(time);
-      }
-    }
-    return parts.join(' ');
-  }
-
-  Widget _buildMetadataHeader(ChatMessageMetadata metadata) {
-    final metaStyle = Theme.of(context).textTheme.bodySmall?.copyWith(
-      color: Theme.of(context).colorScheme.onSurfaceVariant,
-    );
-
-    final hasDateTime = metadata.date != null || metadata.time != null;
-    final location = metadata.location;
-
-    // 장소를 쉼표 기준으로 분리
-    String? locationMain;
-    String? locationSub;
-    if (location != null) {
-      final commaIndex = location.indexOf(',');
-      if (commaIndex != -1) {
-        locationMain = location.substring(0, commaIndex).trim();
-        locationSub = location.substring(commaIndex + 1).trim();
-      } else {
-        locationMain = location;
-      }
-    }
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.end,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            if (hasDateTime)
-              Text(
-                _formatMetadataDateTime(metadata.date, metadata.time),
-                style: metaStyle,
-              )
-            else
-              const SizedBox.shrink(),
-            if (locationMain != null)
-              Flexible(
-                child: Text(
-                  locationMain,
-                  style: metaStyle,
-                  textAlign: TextAlign.end,
-                ),
-              ),
-          ],
-        ),
-        if (locationSub != null)
-          Align(
-            alignment: Alignment.centerRight,
-            child: Text(locationSub, style: metaStyle),
-          ),
-      ],
-    );
-  }
-
   Widget _buildMessage(ChatMessage message, int index) {
     final isUser = message.role == MessageRole.user;
-    final isEditing = _editingMessageId == message.id;
     final isLastMessage = index == _messages.length - 1;
-    final hasUsageMetadata = !isUser && message.usageMetadata != null;
     final metadata = message.id != null ? _metadataMap[message.id!] : null;
-    final hasMetadata = !isUser && metadata != null &&
-        (metadata.date != null || metadata.time != null || metadata.location != null);
-    final viewer = context.watch<ViewerSettingsProvider>();
+    final isSummaryThreshold =
+        _summaryThresholdIndex != null && index == _summaryThresholdIndex;
+    final isSummarized =
+        message.id != null && _summarizedMessageIds.contains(message.id!);
+    final isSearchMatch =
+        _searchController.isSearching && _searchController.isMatchedMessage(index);
+    final isCurrentSearchMatch =
+        isSearchMatch && _searchController.isCurrentMessage(index);
+    final currentOccurrenceInMsg =
+        isCurrentSearchMatch ? _searchController.currentOccurrenceIn(index) : -1;
 
-    final isSummaryThreshold = _summaryThresholdIndex != null && index == _summaryThresholdIndex;
-    final isSummarized = message.id != null && _summarizedMessageIds.contains(message.id!);
-    final isSearchMatch = _isSearching && _searchMatches.any((m) => m.$1 == index);
-    final currentMatch = _currentSearchIndex >= 0 ? _searchMatches[_currentSearchIndex] : null;
-    final isCurrentSearchMatch = isSearchMatch && currentMatch?.$1 == index;
-    // Which occurrence within this message is the current one (-1 if none)
-    final currentOccurrenceInMsg = isCurrentSearchMatch ? currentMatch!.$2 : -1;
-
-    return Column(
-      children: [
-        Container(
-          padding: EdgeInsets.symmetric(
-            horizontal: 16 + viewer.paragraphWidth,
-            vertical: 0,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              if (hasMetadata)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 4),
-                  child: _buildMetadataHeader(metadata),
-                ),
-              if (isEditing)
-                CommonEditText(
-                  controller: _editControllers[message.id],
-                  size: CommonEditTextSize.small,
-                  maxLines: null,
-                )
-              else ...[
-                MarkdownText(
-                  text: _buildDisplayContent(message.content),
-                  baseStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontSize: viewer.fontSize,
-                    height: viewer.lineHeight,
-                  ),
-                  textAlign: viewer.textAlign,
-                  paragraphSpacing: viewer.paragraphSpacing,
-                  highlightQuery: isSearchMatch ? _searchController.text : null,
-                  highlightColor: isSearchMatch
-                      ? Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.35)
-                      : null,
-                  currentHighlightColor: isCurrentSearchMatch
-                      ? Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.7)
-                      : null,
-                  currentOccurrence: currentOccurrenceInMsg,
-                  highlightKey: (isCurrentSearchMatch && _highlightKeyActive) ? _searchHighlightKey : null,
-                ),
-                if (MetadataParser.parseCharacterTags(message.content).isNotEmpty)
-                  const SizedBox(height: 4),
-                ...MetadataParser.parseCharacterTags(message.content)
-                    .map((tag) => CommonCharacterCard(tag: tag, fontSize: viewer.fontSize)),
-              ],
-              const SizedBox(height: 0),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  if (hasUsageMetadata) ...[
-                    IconButton(
-                      icon: const Icon(Icons.bar_chart, size: 18),
-                      onPressed: () => _showUsageMetadataDialog(message),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
-                    ),
-                  ],
-                  if (hasMetadata) ...[
-                    IconButton(
-                      icon: Icon(
-                        metadata.isPinned ? Icons.push_pin : Icons.push_pin_outlined,
-                        size: 18,
-                        color: metadata.isPinned
-                            ? Theme.of(context).colorScheme.primary
-                            : Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.4),
-                      ),
-                      onPressed: () => _togglePin(message.id!),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
-                    ),
-                  ],
-                  const Spacer(),
-                  if (isEditing) ...[
-                    IconButton(
-                      icon: const Icon(Icons.close, size: 18),
-                      onPressed: _cancelEditMessage,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
-                    ),
-                    const SizedBox(width: 0),
-                    IconButton(
-                      icon: const Icon(Icons.check, size: 18),
-                      onPressed: () => _saveEditMessage(message),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
-                    ),
-                  ] else ...[
-                    IconButton(
-                      icon: const Icon(Icons.copy_outlined, size: 18),
-                      onPressed: () => Clipboard.setData(ClipboardData(text: message.content)),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
-                    ),
-                    const SizedBox(width: 0),
-                    IconButton(
-                      icon: const Icon(Icons.edit_outlined, size: 18),
-                      onPressed: () => _startEditMessage(message),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
-                    ),
-                    const SizedBox(width: 0),
-                    IconButton(
-                      icon: const Icon(Icons.call_split, size: 18),
-                      onPressed: () => _createBranch(index),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
-                    ),
-                    const SizedBox(width: 0),
-                    IconButton(
-                      icon: const Icon(Icons.delete_outline, size: 18),
-                      onPressed: () => _deleteMessage(message.id!),
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
-                    ),
-                    if (isLastMessage) ...[
-                      const SizedBox(width: 0),
-                      IconButton(
-                        icon: const Icon(Icons.refresh, size: 18),
-                        onPressed: isUser
-                          ? _resendLastUserMessage
-                          : () => _regenerateMessage(message.id!),
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                        visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
-                      ),
-                    ],
-                  ],
-                ],
-              ),
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsets.only(left: 16, right: 16, top: 0, bottom: 8),
-          child: Divider(
-            height: 1,
-            thickness: isSummaryThreshold ? 1.5 : 1,
-            color: isSummaryThreshold
-                ? Theme.of(context).colorScheme.primary
-                : isSummarized
-                    ? Theme.of(context).colorScheme.secondary
-                    : Theme.of(context).colorScheme.outlineVariant,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildScrollButton({required IconData icon, required VoidCallback onPressed}) {
-    return SizedBox(
-      width: 36,
-      height: 36,
-      child: FloatingActionButton.small(
-        heroTag: null,
-        onPressed: onPressed,
-        elevation: 2,
-        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-        foregroundColor: Theme.of(context).colorScheme.onSurface,
-        shape: const CircleBorder(),
-        child: Icon(icon, size: 20),
-      ),
+    return ChatMessageBubble(
+      message: message,
+      index: index,
+      isLastMessage: isLastMessage,
+      displayContent: _buildDisplayContent(message.content),
+      metadata: metadata,
+      isEditing: _editController.isEditing(message),
+      editController: _editController.controllerFor(message),
+      isSummaryThreshold: isSummaryThreshold,
+      isSummarized: isSummarized,
+      isSearchMatch: isSearchMatch,
+      isCurrentSearchMatch: isCurrentSearchMatch,
+      currentOccurrenceInMsg: currentOccurrenceInMsg,
+      searchQuery: _searchController.inputController.text,
+      searchHighlightKey: _searchController.highlightKey,
+      onTogglePin: () => _togglePin(message.id!),
+      onShowUsage: () => ChatUsageMetadataDialog.show(context, message),
+      onCancelEdit: _editController.cancel,
+      onSaveEdit: () => _saveEditMessage(message),
+      onStartEdit: () => _editController.start(message),
+      onCreateBranch: () => _createBranch(index),
+      onDelete: () => _deleteMessage(message.id!),
+      onResendOrRegenerate:
+          isUser ? _resendLastUserMessage : () => _regenerateMessage(message.id!),
     );
   }
 
@@ -2275,53 +990,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         onPresetChanged: _onPresetChanged,
         onShowImagesChanged: _onShowImagesChanged,
       ),
-      appBar: _isSearching
-          ? AppBar(
-              automaticallyImplyLeading: false,
-              titleSpacing: 0,
-              title: Row(
-                children: [
-                  IconButton(
-                    icon: const Icon(Icons.arrow_back),
-                    onPressed: _toggleSearch,
-                    padding: const EdgeInsets.only(left: 16),
-                    visualDensity: VisualDensity.compact,
-                    constraints: const BoxConstraints(),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: _searchController,
-                      focusNode: _searchFocusNode,
-                      decoration: InputDecoration(
-                        hintText: l10n.chatRoomMessageSearch,
-                        border: InputBorder.none,
-                      ),
-                      onChanged: _performSearch,
-                      textInputAction: TextInputAction.search,
-                    ),
-                  ),
-                  if (_searchMatches.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(right: 4),
-                      child: Text(
-                        '${_currentSearchIndex + 1}/${_searchMatches.length}',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ),
-                  IconButton(
-                    icon: const Icon(Icons.keyboard_arrow_up),
-                    onPressed: () => _navigateSearch(-1),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  IconButton(
-                    icon: const Icon(Icons.keyboard_arrow_down),
-                    onPressed: () => _navigateSearch(1),
-                    visualDensity: VisualDensity.compact,
-                  ),
-                  const SizedBox(width: 8),
-                ],
-              ),
+      appBar: _searchController.isSearching
+          ? ChatRoomSearchAppBar(
+              controller: _searchController.inputController,
+              focusNode: _searchController.focusNode,
+              currentIndex: _searchController.currentIndex,
+              totalMatches: _searchController.matches.length,
+              onClose: _searchController.toggle,
+              onChanged: _searchController.search,
+              onPrev: () => _searchController.navigate(-1),
+              onNext: () => _searchController.navigate(1),
             )
           : CommonAppBar(
               title: _character!.name,
@@ -2336,7 +1014,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 },
                 child: Row(
                   children: [
-                    _buildCharacterAvatar(),
+                    ChatRoomCharacterAvatar(coverImages: _coverImages),
                     const SizedBox(width: 12),
                     Flexible(
                       child: Text(
@@ -2350,7 +1028,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               actions: [
                 CommonAppBarIconButton(
                   icon: Icons.search,
-                  onPressed: _toggleSearch,
+                  onPressed: _searchController.toggle,
                   tooltip: l10n.chatRoomSearchTooltip,
                   offsetX: 20.0,
                 ),
@@ -2372,174 +1050,63 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     itemCount: _messages.length + 1,
                     itemBuilder: (context, index) {
                       if (index == _messages.length) {
-                        return _buildChatHeader();
+                        return ChatRoomHeader(
+                          character: _character!,
+                          selectedPersona: _personas
+                              .where((p) => p.id == _chatRoom?.selectedPersonaId)
+                              .firstOrNull,
+                          startScenario: _startScenario,
+                        );
                       }
                       final messageIndex = _messages.length - 1 - index;
                       return _buildMessage(_messages[messageIndex], messageIndex);
                     },
                   ),
                 ),
-                if (_hasNewMessage)
-                  Positioned.fill(
-                    child: Align(
-                      alignment: Alignment.bottomCenter,
-                      child: Material(
-                        color: Colors.transparent,
-                        child: InkWell(
-                          borderRadius: BorderRadius.circular(20),
-                          onTap: () {
-                            _itemScrollController.scrollTo(
-                              index: 0,
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeOut,
-                            );
-                            setState(() => _hasNewMessage = false);
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-                            decoration: BoxDecoration(
-                              color: Theme.of(context).colorScheme.primary,
-                              borderRadius: BorderRadius.circular(20),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.2),
-                                  blurRadius: 6,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                Text(
-                                  l10n.chatRoomNewMessages,
-                                  style: TextStyle(
-                                    color: Theme.of(context).colorScheme.onPrimary,
-                                    fontSize: 14,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                                const SizedBox(width: 4),
-                                Icon(
-                                  Icons.keyboard_arrow_down,
-                                  color: Theme.of(context).colorScheme.onPrimary,
-                                  size: 20,
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  )
-                else if (_showScrollButtons)
-                  Positioned(
-                    right: 12,
-                    bottom: 12,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        _buildScrollButton(
-                          icon: Icons.keyboard_arrow_up,
-                          onPressed: () {
-                            _itemScrollController.scrollTo(
-                              index: _messages.length,
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeOut,
-                            );
-                          },
-                        ),
-                        const SizedBox(height: 8),
-                        _buildScrollButton(
-                          icon: Icons.keyboard_arrow_down,
-                          onPressed: () {
-                            _itemScrollController.scrollTo(
-                              index: 0,
-                              duration: const Duration(milliseconds: 300),
-                              curve: Curves.easeOut,
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-          ),
-          Container(
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surface,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 4,
-                  offset: const Offset(0, 0),
+                ChatRoomScrollButtons(
+                  hasNewMessage: _hasNewMessage,
+                  showScrollButtons: _showScrollButtons,
+                  onJumpToLatest: () {
+                    _itemScrollController.scrollTo(
+                      index: 0,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOut,
+                    );
+                    setState(() => _hasNewMessage = false);
+                  },
+                  onScrollToTop: () {
+                    _itemScrollController.scrollTo(
+                      index: _messages.length,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOut,
+                    );
+                  },
+                  onScrollToBottom: () {
+                    _itemScrollController.scrollTo(
+                      index: 0,
+                      duration: const Duration(milliseconds: 300),
+                      curve: Curves.easeOut,
+                    );
+                  },
                 ),
               ],
             ),
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    IconButton(
-                      icon: AnimatedRotation(
-                        turns: _showMorePanel ? 0.125 : 0,
-                        duration: const Duration(milliseconds: 200),
-                        child: Icon(
-                          Icons.add,
-                          color: _showMorePanel
-                              ? Theme.of(context).colorScheme.primary
-                              : null,
-                        ),
-                      ),
-                      onPressed: _showMoreMenu,
-                      padding: const EdgeInsets.all(8),
-                      constraints: const BoxConstraints(),
-                    ),
-                    Expanded(
-                      child: CommonEditText(
-                        controller: _messageController,
-                        focusNode: _messageFocusNode,
-                        enabled: !_isSending,
-                        hintText: _sendingPhase == SendingPhase.preparing
-                            ? l10n.chatRoomGenerating
-                            : _sendingPhase == SendingPhase.waiting
-                                ? _retryAttempt > 0
-                                    ? l10n.chatRoomRetrying(_retryAttempt)
-                                    : l10n.chatRoomWaiting
-                                : _sendingPhase == SendingPhase.summarizing
-                                    ? l10n.chatRoomSummarizing
-                                    : l10n.chatRoomMessageHint,
-                        minLines: 1,
-                        maxLines: 5,
-                        textInputAction: TextInputAction.newline,
-                        suffixIcon: IconButton(
-                          icon: _isSending
-                              ? SizedBox(
-                                  width: 24,
-                                  height: 24,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                    color: _sendingPhase == SendingPhase.preparing
-                                        ? Theme.of(context).colorScheme.primary
-                                        : _sendingPhase == SendingPhase.summarizing
-                                            ? Theme.of(context).colorScheme.secondary
-                                            : null,
-                                  ),
-                                )
-                              : const Icon(Icons.send),
-                          onPressed: _isSending ? null : _sendMessage,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
           ),
-          if (_showMorePanel) _buildMorePanel(),
+          ChatRoomInputBar(
+            controller: _messageController,
+            focusNode: _messageFocusNode,
+            sendingPhase: _sendingPhase,
+            retryAttempt: _retryAttempt,
+            isMorePanelOpen: _showMorePanel,
+            onSend: _sendMessage,
+            onMoreToggle: _showMoreMenu,
+          ),
+          if (_showMorePanel)
+            ChatRoomMoreMenu(
+              characterId: _character!.id!,
+              chatRoomId: widget.chatRoomId,
+              onClose: () => setState(() => _showMorePanel = false),
+            ),
         ],
       ),
     );
