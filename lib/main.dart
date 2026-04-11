@@ -2,9 +2,12 @@ import 'dart:async';
 
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
+
+import 'platform/database_factory_init.dart';
 
 import 'firebase_options.dart';
 import 'l10n/app_localizations.dart';
@@ -27,12 +30,17 @@ void main() async {
   runZonedGuarded<Future<void>>(() async {
     WidgetsFlutterBinding.ensureInitialized();
 
+    // Web uses sqflite_common_ffi_web (IndexedDB-backed SQLite WASM); native is no-op.
+    initDatabaseFactoryForPlatform();
+
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
 
-    // Crashlytics 설정
-    FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+    // Crashlytics — native only (package does not support web).
+    if (!kIsWeb) {
+      FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
+    }
 
     // Seed default data on first launch
     await DefaultSeederService().seedAllDefaults();
@@ -55,7 +63,9 @@ void main() async {
       ),
     );
   }, (error, stack) {
-    FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    if (!kIsWeb) {
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
+    }
   });
 }
 

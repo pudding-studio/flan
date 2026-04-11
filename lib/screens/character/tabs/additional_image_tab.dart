@@ -66,7 +66,7 @@ class _AdditionalImageTabState extends State<AdditionalImageTab> {
           ? widget.characterName
           : 'unknown';
 
-      final filePath = await CharacterImageStorage.saveImage(
+      final stored = await CharacterImageStorage.saveImageBytes(
         characterName,
         originalName,
         ext,
@@ -81,7 +81,8 @@ class _AdditionalImageTabState extends State<AdditionalImageTab> {
               ? originalName
               : l10n.additionalImageDefaultName(widget.images.length + 1),
           order: widget.images.length,
-          path: filePath,
+          path: stored.path,
+          imageData: stored.bytes,
           imageType: 'additional',
           isExpanded: true,
         );

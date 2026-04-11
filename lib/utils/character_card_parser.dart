@@ -315,7 +315,7 @@ class CharacterCardParser {
 
         if (imageBytes != null) {
           try {
-            final filePath = await CharacterImageStorage.saveImage(
+            final stored = await CharacterImageStorage.saveImageBytes(
               characterName,
               imageName,
               ext,
@@ -330,7 +330,8 @@ class CharacterCardParser {
                   ? assetDisplayName
                   : (isIcon ? '표지 ${order + 1}' : '이미지 ${order + 1}'),
               order: order,
-              path: filePath,
+              path: stored.path,
+              imageData: stored.bytes,
               imageType: imageType,
             ));
           } catch (_) {

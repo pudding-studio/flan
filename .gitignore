@@ -68,3 +68,10 @@ windows/flutter/generated_plugins.cmake
 
 # Example assets
 assets/example/
+
+# Firebase Hosting deploy cache
+.firebase/
+
+# sqflite_common_ffi_web setup output (regenerated in CI)
+web/sqflite_sw.js
+web/sqlite3.wasm

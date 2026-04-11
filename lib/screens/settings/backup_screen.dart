@@ -1,6 +1,7 @@
 import 'dart:convert';
-import 'dart:io';
+import 'package:universal_io/io.dart';
 import 'package:archive/archive.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:file_picker/file_picker.dart';
@@ -10,6 +11,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:sqflite/sqflite.dart';
 import '../../database/database_helper.dart';
 import '../../l10n/app_localizations.dart';
+import '../../services/backup/web_backup_service.dart';
+import '../../services/backup/web_download.dart';
 import '../../utils/common_dialog.dart';
 import '../../utils/streaming_zip_writer.dart';
 import '../../widgets/common/common_appbar.dart';
@@ -51,6 +54,11 @@ class _BackupScreenState extends State<BackupScreen> {
     setState(() => _isProcessing = true);
 
     try {
+      if (kIsWeb) {
+        await _createBackupWeb(l10n);
+        return;
+      }
+
       final dbPath = await _db.getDatabaseFilePath();
       final appDocDir = await getApplicationDocumentsDirectory();
       final now = DateTime.now();
@@ -159,6 +167,12 @@ class _BackupScreenState extends State<BackupScreen> {
 
   Future<void> _restoreBackup() async {
     final l10n = AppLocalizations.of(context);
+
+    if (kIsWeb) {
+      await _restoreBackupWeb(l10n);
+      return;
+    }
+
     try {
       final result = await FilePicker.platform.pickFiles(
         type: FileType.any,
@@ -337,6 +351,78 @@ class _BackupScreenState extends State<BackupScreen> {
           context: context,
           title: l10n.backupRestoreSuccessTitle,
           content: l10n.backupRestoreSuccessContent,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: l10n.backupRestoreFailed(e.toString()),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isProcessing = false);
+    }
+  }
+
+  // ── Web backup (JSON dump → browser download) ─────────────────────────────
+
+  Future<void> _createBackupWeb(AppLocalizations l10n) async {
+    try {
+      final bytes = await WebBackupService().exportToBytes();
+      final now = DateTime.now();
+      final timestamp =
+          '${now.year}${_pad(now.month)}${_pad(now.day)}_${_pad(now.hour)}${_pad(now.minute)}${_pad(now.second)}';
+      final fileName = 'flan_web_backup_$timestamp.json';
+      await downloadBytesAsFile(bytes, fileName);
+
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: l10n.backupSuccessDownloads(fileName),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: l10n.backupFailed(e.toString()),
+        );
+      }
+    }
+  }
+
+  Future<void> _restoreBackupWeb(AppLocalizations l10n) async {
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['json'],
+        withData: true,
+      );
+      if (result == null || result.files.single.bytes == null) return;
+
+      final bytes = result.files.single.bytes!;
+
+      if (!mounted) return;
+      final confirm = await CommonDialog.showConfirmation(
+        context: context,
+        title: l10n.backupRestoreConfirmTitle,
+        content: l10n.backupRestoreConfirmContent(result.files.single.name),
+        confirmText: l10n.backupRestoreConfirmButton,
+        isDestructive: true,
+      );
+      if (confirm != true) return;
+
+      setState(() => _isProcessing = true);
+      final restored = await WebBackupService().restoreFromBytes(bytes);
+
+      if (mounted) {
+        await CommonDialog.showInfo(
+          context: context,
+          title: l10n.backupRestoreSuccessTitle,
+          content: restored.hasSchemaMismatch
+              ? '${l10n.backupRestoreSuccessContent}\n(schema v${restored.backupSchemaVersion} → v${restored.currentSchemaVersion})'
+              : l10n.backupRestoreSuccessContent,
         );
       }
     } catch (e) {
