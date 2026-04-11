@@ -50,6 +50,28 @@ import '../diary/diary_screen.dart';
 
 enum SendingPhase { none, preparing, waiting, summarizing }
 
+/// Thrown when a model required for sending could not be resolved from
+/// its saved identifier — e.g. the user's saved primary/sub model was
+/// deleted, or the chat room's per-room custom model id no longer maps
+/// to an available model. Caught by the send paths to show a clear,
+/// localized error instead of silently falling back to a default model.
+class _ModelLoadException implements Exception {
+  final String localizedMessage;
+  _ModelLoadException(this.localizedMessage);
+  @override
+  String toString() => localizedMessage;
+}
+
+/// Thrown when [ChatRoom.selectedChatPromptId] points to a chat prompt
+/// row that no longer exists. Distinct from the user explicitly choosing
+/// "없음" (which is represented as `selectedChatPromptId == null`).
+class _PromptLoadException implements Exception {
+  final String localizedMessage;
+  _PromptLoadException(this.localizedMessage);
+  @override
+  String toString() => localizedMessage;
+}
+
 class ChatRoomScreen extends StatefulWidget {
   final int chatRoomId;
 
@@ -95,6 +117,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   List<ChatPrompt> _chatPrompts = [];
   List<Persona> _personas = [];
   List<PromptRegexRule> _regexRules = [];
+  // Set when chatRoom.modelPreset == 'custom' and the saved selectedModelId
+  // is not present in the provider's available models. Send-time code
+  // re-checks this and aborts with a clear error rather than silently
+  // sending with whatever model the provider currently exposes.
+  String? _customModelLoadFailedId;
   final FocusNode _messageFocusNode = FocusNode();
 
   // Search
@@ -309,14 +336,23 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       if (!mounted) return;
 
-      // Restore per-room model selection (only for custom preset)
+      // Restore per-room model selection (only for custom preset).
+      // If the saved model is missing we record the failure instead of
+      // silently leaving the provider on its current default — send-time
+      // code will retry the lookup and surface a clear error if it
+      // still cannot be resolved.
+      String? customModelLoadFailedId;
       if (chatRoom.modelPreset == 'custom' && chatRoom.selectedModelId != null) {
         final modelProvider = context.read<ChatModelSettingsProvider>();
         final savedId = chatRoom.selectedModelId!;
         final available = modelProvider.availableModels;
         final match = available.where((m) => m.id == savedId);
-        if (match.isNotEmpty && modelProvider.selectedModel.id != savedId) {
-          await modelProvider.setModel(match.first);
+        if (match.isNotEmpty) {
+          if (modelProvider.selectedModel.id != savedId) {
+            await modelProvider.setModel(match.first);
+          }
+        } else {
+          customModelLoadFailedId = savedId;
         }
       }
       setState(() {
@@ -333,6 +369,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         _chatPrompts = chatPrompts;
         _personas = personas;
         _regexRules = regexRules;
+        _customModelLoadFailedId = customModelLoadFailedId;
         _isLoading = false;
       });
 
@@ -357,10 +394,24 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final outputLanguage =
         context.read<LocalizationProvider>().effectiveAiLanguageName;
 
-    // Stage 1: Load prompt frame
+    // Stage 1: Load prompt frame.
+    // selectedChatPromptId == null means the user explicitly chose "없음".
+    // Anything else is a saved prompt id that MUST resolve — if the row
+    // is missing we retry once and then throw, instead of silently
+    // sending with an empty system prompt as if "없음" had been chosen.
     ChatPrompt? chatPrompt;
     if (_chatRoom!.selectedChatPromptId != null) {
-      chatPrompt = await _db.readChatPrompt(_chatRoom!.selectedChatPromptId!);
+      final selectedId = _chatRoom!.selectedChatPromptId!;
+      final l10n = AppLocalizations.of(context);
+      chatPrompt = await _db.readChatPrompt(selectedId);
+      // Retry once — the row may have been re-created in another
+      // screen between the chat room loading and this send.
+      chatPrompt ??= await _db.readChatPrompt(selectedId);
+      if (chatPrompt == null) {
+        throw _PromptLoadException(
+          l10n.chatRoomPromptLoadFailed(selectedId.toString()),
+        );
+      }
     }
 
     // Load regex rules for this prompt
@@ -725,7 +776,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       final modelProvider = context.read<ChatModelSettingsProvider>();
       await modelProvider.initialized;
-      final model = _resolveModel();
+      final model = await _resolveModel();
       final maxRetries = model.retryCount;
       Object? lastError;
 
@@ -813,8 +864,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     } catch (e) {
       debugPrint('Error sending message: $e');
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context);
+      final message = (e is _ModelLoadException || e is _PromptLoadException)
+          ? e.toString()
+          : l10n.chatRoomMessageSendFailed(e.toString());
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).chatRoomMessageSendFailed(e.toString()))),
+        SnackBar(content: Text(message)),
       );
     } finally {
       await _finishSending();
@@ -1148,14 +1203,76 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
-  UnifiedModel _resolveModel() {
+  /// Resolves the model to use for the next API call. Unlike a simple
+  /// getter, this verifies that the saved choice (primary, sub, or this
+  /// chat room's per-room custom model) actually resolves to an available
+  /// model. If the saved choice is missing it retries once after
+  /// refreshing the catalog from disk, and only throws if the model is
+  /// still unavailable. Throwing is intentional: it prevents send paths
+  /// from silently substituting a default (e.g. Google AIS Gemini Pro)
+  /// when the user's chosen model can't be found.
+  Future<UnifiedModel> _resolveModel() async {
     final provider = context.read<ChatModelSettingsProvider>();
+    final l10n = AppLocalizations.of(context);
     switch (_chatRoom?.modelPreset) {
       case 'secondary':
+        if (provider.hasSubLoadFailed) {
+          final ok = await provider.retryLoadSub();
+          if (!ok) {
+            throw _ModelLoadException(
+              l10n.chatRoomSubModelLoadFailed(
+                provider.unresolvedSubModelId ?? '?',
+              ),
+            );
+          }
+        }
         return provider.subModel;
       case 'custom':
+        // Per-room custom model: re-check against the (possibly stale)
+        // available models, refreshing the catalog from disk on a miss
+        // before giving up.
+        final savedId = _chatRoom?.selectedModelId ?? _customModelLoadFailedId;
+        if (savedId != null) {
+          var match = provider.availableModels.where((m) => m.id == savedId);
+          if (match.isEmpty) {
+            await provider.refreshCustomCatalog();
+            match = provider.availableModels.where((m) => m.id == savedId);
+          }
+          if (match.isEmpty) {
+            throw _ModelLoadException(
+              l10n.chatRoomCustomModelLoadFailed(savedId),
+            );
+          }
+          if (provider.selectedModel.id != savedId) {
+            await provider.setModel(match.first);
+          }
+          if (mounted && _customModelLoadFailedId != null) {
+            setState(() => _customModelLoadFailedId = null);
+          }
+          return match.first;
+        }
+        if (provider.hasPrimaryLoadFailed) {
+          final ok = await provider.retryLoadPrimary();
+          if (!ok) {
+            throw _ModelLoadException(
+              l10n.chatRoomMainModelLoadFailed(
+                provider.unresolvedPrimaryModelId ?? '?',
+              ),
+            );
+          }
+        }
         return provider.selectedModel;
       default: // 'primary'
+        if (provider.hasPrimaryLoadFailed) {
+          final ok = await provider.retryLoadPrimary();
+          if (!ok) {
+            throw _ModelLoadException(
+              l10n.chatRoomMainModelLoadFailed(
+                provider.unresolvedPrimaryModelId ?? '?',
+              ),
+            );
+          }
+        }
         return provider.selectedModel;
     }
   }
@@ -1254,7 +1371,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       if (mounted) setState(() => _sendingPhase = SendingPhase.waiting);
 
-      final model = _resolveModel();
+      final model = await _resolveModel();
       final maxRetries = model.retryCount;
       Object? lastError;
 
@@ -1323,8 +1440,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     } catch (e) {
       debugPrint('Error resending message: $e');
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context);
+      final message = (e is _ModelLoadException || e is _PromptLoadException)
+          ? e.toString()
+          : l10n.chatRoomMessageRetryFailed(e.toString());
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).chatRoomMessageRetryFailed(e.toString()))),
+        SnackBar(content: Text(message)),
       );
     } finally {
       await _finishSending();
@@ -1568,7 +1689,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       if (mounted) setState(() => _sendingPhase = SendingPhase.waiting);
 
-      final model = _resolveModel();
+      final model = await _resolveModel();
       final maxRetries = model.retryCount;
       Object? lastError;
 
@@ -1628,8 +1749,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     } catch (e) {
       debugPrint('Error regenerating message: $e');
       if (!mounted) return;
+      final l10n = AppLocalizations.of(context);
+      final message = (e is _ModelLoadException || e is _PromptLoadException)
+          ? e.toString()
+          : l10n.chatRoomMessageRegenerateFailed(e.toString());
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(AppLocalizations.of(context).chatRoomMessageRegenerateFailed(e.toString()))),
+        SnackBar(content: Text(message)),
       );
     } finally {
       await _finishSending();

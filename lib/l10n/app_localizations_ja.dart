@@ -827,6 +827,26 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String chatRoomMainModelLoadFailed(String modelId) {
+    return 'メインモデル \'$modelId\' を読み込めませんでした。チャットモデル設定で再選択してください。';
+  }
+
+  @override
+  String chatRoomSubModelLoadFailed(String modelId) {
+    return 'サブモデル \'$modelId\' を読み込めませんでした。チャットモデル設定で再選択してください。';
+  }
+
+  @override
+  String chatRoomCustomModelLoadFailed(String modelId) {
+    return 'このチャットルームに指定されたモデル \'$modelId\' を読み込めませんでした。チャットルーム設定でモデルを再選択してください。';
+  }
+
+  @override
+  String chatRoomPromptLoadFailed(String promptId) {
+    return 'チャットプロンプト (id: $promptId) を読み込めませんでした。チャットルーム設定でプロンプトを再選択してください。';
+  }
+
+  @override
   String get chatRoomTextSettings => 'テキスト設定';
 
   @override

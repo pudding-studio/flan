@@ -827,6 +827,26 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String chatRoomMainModelLoadFailed(String modelId) {
+    return '주모델 \'$modelId\'을(를) 불러올 수 없습니다. 채팅 모델 설정에서 다시 선택해주세요.';
+  }
+
+  @override
+  String chatRoomSubModelLoadFailed(String modelId) {
+    return '보조모델 \'$modelId\'을(를) 불러올 수 없습니다. 채팅 모델 설정에서 다시 선택해주세요.';
+  }
+
+  @override
+  String chatRoomCustomModelLoadFailed(String modelId) {
+    return '이 채팅방에 지정된 모델 \'$modelId\'을(를) 불러올 수 없습니다. 채팅방 설정에서 모델을 다시 선택해주세요.';
+  }
+
+  @override
+  String chatRoomPromptLoadFailed(String promptId) {
+    return '채팅 프롬프트(id: $promptId)를 불러올 수 없습니다. 채팅방 설정에서 프롬프트를 다시 선택해주세요.';
+  }
+
+  @override
   String get chatRoomTextSettings => '텍스트 설정';
 
   @override

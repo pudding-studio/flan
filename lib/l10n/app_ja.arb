@@ -416,6 +416,30 @@
       "error": { "type": "String" }
     }
   },
+  "chatRoomMainModelLoadFailed": "メインモデル '{modelId}' を読み込めませんでした。チャットモデル設定で再選択してください。",
+  "@chatRoomMainModelLoadFailed": {
+    "placeholders": {
+      "modelId": { "type": "String" }
+    }
+  },
+  "chatRoomSubModelLoadFailed": "サブモデル '{modelId}' を読み込めませんでした。チャットモデル設定で再選択してください。",
+  "@chatRoomSubModelLoadFailed": {
+    "placeholders": {
+      "modelId": { "type": "String" }
+    }
+  },
+  "chatRoomCustomModelLoadFailed": "このチャットルームに指定されたモデル '{modelId}' を読み込めませんでした。チャットルーム設定でモデルを再選択してください。",
+  "@chatRoomCustomModelLoadFailed": {
+    "placeholders": {
+      "modelId": { "type": "String" }
+    }
+  },
+  "chatRoomPromptLoadFailed": "チャットプロンプト (id: {promptId}) を読み込めませんでした。チャットルーム設定でプロンプトを再選択してください。",
+  "@chatRoomPromptLoadFailed": {
+    "placeholders": {
+      "promptId": { "type": "String" }
+    }
+  },
   "chatRoomTextSettings": "テキスト設定",
   "chatRoomBranchTitle": "分岐を作成",
   "chatRoomBranchContent": "このメッセージまでの内容で新しい分岐を作成しますか？",

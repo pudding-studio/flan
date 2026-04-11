@@ -718,7 +718,7 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
           label: l10n.drawerChatPrompt,
           child: CommonDropdownButton<int?>(
             value: widget.chatRoom.selectedChatPromptId,
-            items: [null, ...widget.chatPrompts.map((p) => p.id)],
+            items: [...widget.chatPrompts.map((p) => p.id), null],
             onChanged: (id) => widget.onPromptChanged(id),
             labelBuilder: (id) {
               if (id == null) return l10n.drawerNone;
