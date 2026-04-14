@@ -76,4 +76,14 @@ mixin ChatRoomPaginationMixin<T extends StatefulWidget> on State<T> {
   }
 
   void onChatRoomsLoaded() {}
+
+  Future<void> resolveCoverImages() async {
+    for (final data in chatRooms) {
+      final cover = data.coverImage;
+      if (cover != null && cover.imageData == null && cover.path != null) {
+        cover.imageData = await cover.resolveImageData();
+      }
+    }
+    if (mounted) setState(() {});
+  }
 }

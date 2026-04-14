@@ -1,12 +1,13 @@
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../../mixins/chat_room_pagination_mixin.dart';
-import '../../widgets/chat/chat_room_card.dart';
-import '../../models/chat/chat_room.dart';
+import '../../utils/chat_room_dialogs.dart';
 import '../../utils/common_dialog.dart';
+import '../../utils/date_formatter.dart';
 import '../../utils/metadata_parser.dart';
+import '../../widgets/chat/chat_room_card.dart';
+import '../../widgets/chat/chat_room_context_menu.dart';
 import '../../widgets/common/common_appbar.dart';
-import '../../widgets/common/common_edit_text.dart';
 import 'chat_room_screen.dart';
 
 class ChatScreen extends StatefulWidget {
@@ -37,17 +38,7 @@ class _ChatScreenState extends State<ChatScreen> with ChatRoomPaginationMixin {
   @override
   void onChatRoomsLoaded() {
     _sortChatRooms();
-    _resolveCoverImages();
-  }
-
-  Future<void> _resolveCoverImages() async {
-    for (final data in chatRooms) {
-      final cover = data.coverImage;
-      if (cover != null && cover.imageData == null && cover.path != null) {
-        cover.imageData = await cover.resolveImageData();
-      }
-    }
-    if (mounted) setState(() {});
+    resolveCoverImages();
   }
 
   @override
@@ -130,103 +121,6 @@ class _ChatScreenState extends State<ChatScreen> with ChatRoomPaginationMixin {
     }
   }
 
-  String _formatDate(DateTime dateTime, AppLocalizations l10n) {
-    final now = DateTime.now();
-    final difference = now.difference(dateTime);
-
-    if (difference.inDays == 0) {
-      return l10n.chatDateToday;
-    } else if (difference.inDays == 1) {
-      return l10n.chatDateYesterday;
-    } else if (difference.inDays < 7) {
-      return l10n.chatDateDaysAgo(difference.inDays);
-    } else if (difference.inDays < 30) {
-      final weeks = (difference.inDays / 7).floor();
-      return l10n.chatDateWeeksAgo(weeks);
-    } else if (difference.inDays < 365) {
-      final months = (difference.inDays / 30).floor();
-      return l10n.chatDateMonthsAgo(months);
-    } else {
-      final years = (difference.inDays / 365).floor();
-      return l10n.chatDateYearsAgo(years);
-    }
-  }
-
-  Future<void> _showRenameChatRoomDialog(ChatRoom chatRoom) async {
-    final l10n = AppLocalizations.of(context);
-    final controller = TextEditingController(text: chatRoom.name);
-
-    final result = await showDialog<String>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.chatRoomRenameTitle),
-        content: CommonEditText(
-          controller: controller,
-          hintText: l10n.chatRoomRenameHint,
-          size: CommonEditTextSize.medium,
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: Text(l10n.commonCancel),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(context, controller.text.trim()),
-            child: Text(l10n.commonConfirm),
-          ),
-        ],
-      ),
-    );
-
-    if (result != null && result.isNotEmpty && result != chatRoom.name) {
-      try {
-        final updatedChatRoom = chatRoom.copyWith(
-          name: result,
-        );
-        await paginationDb.updateChatRoom(updatedChatRoom);
-        loadChatRooms();
-      } catch (e) {
-        debugPrint('Error renaming chat room: $e');
-        if (!mounted) return;
-        CommonDialog.showSnackBar(
-          context: context,
-          message: l10n.chatRoomRenameFailed,
-        );
-      }
-    }
-
-    controller.dispose();
-  }
-
-  Future<void> _showDeleteChatRoomDialog(ChatRoom chatRoom) async {
-    final l10n = AppLocalizations.of(context);
-    final confirmed = await CommonDialog.showConfirmation(
-      context: context,
-      title: l10n.chatRoomDeleteTitle,
-      content: l10n.chatRoomDeleteOneContent(chatRoom.name),
-      confirmText: l10n.commonDelete,
-      isDestructive: true,
-    );
-
-    if (confirmed == true) {
-      try {
-        await paginationDb.deleteChatRoom(chatRoom.id!);
-        loadChatRooms();
-        if (!mounted) return;
-        CommonDialog.showSnackBar(
-          context: context,
-          message: l10n.chatRoomDeleted,
-        );
-      } catch (e) {
-        debugPrint('Error deleting chat room: $e');
-        if (!mounted) return;
-        CommonDialog.showSnackBar(
-          context: context,
-          message: l10n.chatRoomDeleteFailed,
-        );
-      }
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -388,52 +282,19 @@ class _ChatScreenState extends State<ChatScreen> with ChatRoomPaginationMixin {
                       onLongPress: _isEditMode ? null : () {
                         showDialog(
                           context: context,
-                          builder: (context) => Dialog(
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(16),
+                          builder: (_) => ChatRoomContextMenu(
+                            chatRoomName: data.chatRoom.name,
+                            onRename: () => ChatRoomDialogs.showRename(
+                              context: context,
+                              chatRoom: data.chatRoom,
+                              db: paginationDb,
+                              onSuccess: loadChatRooms,
                             ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16.0),
-                              child: Column(
-                                mainAxisSize: MainAxisSize.min,
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    data.chatRoom.name,
-                                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                      fontWeight: FontWeight.bold,
-                                    ),
-                                  ),
-                                  const SizedBox(height: 8),
-                                  const Divider(),
-                                  ListTile(
-                                    contentPadding: EdgeInsets.zero,
-                                    leading: const Icon(Icons.edit_outlined),
-                                    title: Text(l10n.chatRoomRenameTitle),
-                                    onTap: () {
-                                      Navigator.pop(context);
-                                      _showRenameChatRoomDialog(data.chatRoom);
-                                    },
-                                  ),
-                                  ListTile(
-                                    contentPadding: EdgeInsets.zero,
-                                    leading: Icon(
-                                      Icons.delete_outline,
-                                      color: Theme.of(context).colorScheme.error,
-                                    ),
-                                    title: Text(
-                                      l10n.commonDelete,
-                                      style: TextStyle(
-                                        color: Theme.of(context).colorScheme.error,
-                                      ),
-                                    ),
-                                    onTap: () {
-                                      Navigator.pop(context);
-                                      _showDeleteChatRoomDialog(data.chatRoom);
-                                    },
-                                  ),
-                                ],
-                              ),
+                            onDelete: () => ChatRoomDialogs.showDelete(
+                              context: context,
+                              chatRoom: data.chatRoom,
+                              db: paginationDb,
+                              onSuccess: loadChatRooms,
                             ),
                           ),
                         );
@@ -443,7 +304,7 @@ class _ChatScreenState extends State<ChatScreen> with ChatRoomPaginationMixin {
                         lastMessage: data.lastMessage != null
                             ? MetadataParser.removeMetadataTags(data.lastMessage!.content)
                             : l10n.chatNoMessages,
-                        date: _formatDate(data.chatRoom.updatedAt, l10n),
+                        date: DateFormatter.formatRelativeDate(data.chatRoom.updatedAt, l10n),
                         imageData: data.coverImage?.imageData,
                         messageCount: data.messageCount,
                         tokenCount: data.tokenCount,

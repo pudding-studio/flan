@@ -22,6 +22,7 @@ import '../../models/prompt/prompt_condition.dart';
 import '../../models/prompt/prompt_condition_preset.dart';
 import '../../models/prompt/prompt_regex_rule.dart';
 import 'tabs/prompt_items_tab.dart';
+import '../../widgets/common/prompt_parameters_editor.dart';
 import 'tabs/prompt_other_settings_tab.dart';
 import 'tabs/prompt_regex_tab.dart';
 
@@ -850,131 +851,50 @@ class _PromptEditScreenState extends State<PromptEditScreen>
     return IgnorePointer(
       ignoring: _isReadOnly,
       child: ListView(
-      padding: const EdgeInsets.all(UIConstants.spacing20),
-      children: [
-        const CommonInfoBox(message: ''),
-        const SizedBox(height: 24),
-        CommonParameterTextField(
-          label: l10n.promptEditMaxInputSize,
-          helpText: l10n.promptEditMaxInputHelp,
-          controller: _maxInputTokensController,
-          onChanged: (value) {
-            setState(() {
-              _parameters = _parameters.copyWith(maxInputTokens: value);
-            });
-          },
-        ),
-        const SizedBox(height: UIConstants.spacing20),
-        CommonParameterTextField(
-          label: l10n.autoSummaryMaxResponseSize,
-          helpText: l10n.autoSummaryMaxResponseHelp,
-          controller: _maxOutputTokensController,
-          onChanged: (value) {
-            setState(() {
-              _parameters = _parameters.copyWith(maxOutputTokens: value);
-            });
-          },
-        ),
-        const SizedBox(height: UIConstants.spacing20),
-        CommonParameterTextField(
-          label: l10n.promptEditThinkingTokens,
-          helpText: l10n.promptEditThinkingHelp,
-          controller: _thinkingTokensController,
-          showCheckbox: true,
-          isChecked: _parameters.thinkingTokens != null,
-          onCheckboxChanged: (checked) {
-            setState(() {
-              _parameters = _parameters.copyWith(thinkingTokens: checked ? 0 : null);
-            });
-          },
-          onChanged: (value) {
-            setState(() {
-              _parameters = _parameters.copyWith(thinkingTokens: value);
-            });
-          },
-        ),
-        const SizedBox(height: UIConstants.spacing20),
-        CommonParameterSlider(
-          label: l10n.autoSummaryTemperature,
-          value: _parameters.temperature,
-          defaultValue: 1.0,
-          min: 0.0,
-          max: 2.0,
-          divisions: 40,
-          helpText: l10n.autoSummaryTemperatureHelp,
-          onChanged: (value) {
-            setState(() {
-              _parameters = _parameters.copyWith(temperature: value);
-            });
-          },
-        ),
-        const SizedBox(height: UIConstants.spacing20),
-        CommonParameterSlider(
-          label: 'Top P',
-          value: _parameters.topP,
-          defaultValue: 0.95,
-          min: 0.0,
-          max: 1.0,
-          divisions: 100,
-          helpText: l10n.autoSummaryTopPHelp,
-          onChanged: (value) {
-            setState(() {
-              _parameters = _parameters.copyWith(topP: value);
-            });
-          },
-        ),
-        const SizedBox(height: UIConstants.spacing20),
-        CommonParameterSlider(
-          label: 'Top K',
-          value: _parameters.topK?.toDouble(),
-          defaultValue: 40.0,
-          min: 1.0,
-          max: 100.0,
-          divisions: 99,
-          decimalPlaces: 0,
-          helpText: l10n.autoSummaryTopKHelp,
-          onChanged: (value) {
-            setState(() {
-              _parameters = _parameters.copyWith(topK: value?.round());
-            });
-          },
-        ),
-        const SizedBox(height: UIConstants.spacing20),
-        CommonParameterSlider(
-          label: l10n.autoSummaryPresencePenalty,
-          value: _parameters.presencePenalty,
-          defaultValue: 0.0,
-          min: -2.0,
-          max: 2.0,
-          divisions: 80,
-          helpText: l10n.autoSummaryPresencePenaltyHelp,
-          onChanged: (value) {
-            setState(() {
-              _parameters = _parameters.copyWith(presencePenalty: value);
-            });
-          },
-        ),
-        const SizedBox(height: UIConstants.spacing20),
-        CommonParameterSlider(
-          label: l10n.autoSummaryFrequencyPenalty,
-          value: _parameters.frequencyPenalty,
-          defaultValue: 0.0,
-          min: -2.0,
-          max: 2.0,
-          divisions: 80,
-          helpText: l10n.autoSummaryFrequencyPenaltyHelp,
-          onChanged: (value) {
-            setState(() {
-              _parameters = _parameters.copyWith(frequencyPenalty: value);
-            });
-          },
-        ),
-        const SizedBox(height: UIConstants.spacing20),
-        _buildStopSequencesSection(),
-        const SizedBox(height: 24),
-        _buildThinkingSection(),
-      ],
-    ),
+        padding: const EdgeInsets.all(UIConstants.spacing20),
+        children: [
+          const CommonInfoBox(message: ''),
+          const SizedBox(height: 24),
+          CommonParameterTextField(
+            label: l10n.promptEditMaxInputSize,
+            helpText: l10n.promptEditMaxInputHelp,
+            controller: _maxInputTokensController,
+            onChanged: (value) {
+              setState(() {
+                _parameters = _parameters.copyWith(maxInputTokens: value);
+              });
+            },
+          ),
+          const SizedBox(height: UIConstants.spacing20),
+          CommonParameterTextField(
+            label: l10n.promptEditThinkingTokens,
+            helpText: l10n.promptEditThinkingHelp,
+            controller: _thinkingTokensController,
+            showCheckbox: true,
+            isChecked: _parameters.thinkingTokens != null,
+            onCheckboxChanged: (checked) {
+              setState(() {
+                _parameters = _parameters.copyWith(thinkingTokens: checked ? 0 : null);
+              });
+            },
+            onChanged: (value) {
+              setState(() {
+                _parameters = _parameters.copyWith(thinkingTokens: value);
+              });
+            },
+          ),
+          const SizedBox(height: UIConstants.spacing20),
+          PromptParametersEditor(
+            parameters: _parameters,
+            maxOutputTokensController: _maxOutputTokensController,
+            onChanged: (params) => setState(() => _parameters = params),
+          ),
+          const SizedBox(height: UIConstants.spacing20),
+          _buildStopSequencesSection(),
+          const SizedBox(height: 24),
+          _buildThinkingSection(),
+        ],
+      ),
     );
   }
 

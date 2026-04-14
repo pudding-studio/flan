@@ -19,6 +19,7 @@ import '../../services/ai_service.dart';
 import '../../utils/diary_parser.dart';
 import '../../utils/metadata_parser.dart';
 import '../../widgets/common/common_dropdown_button.dart';
+import '../../widgets/common/common_setting_row.dart';
 import 'diary_detail_screen.dart';
 
 class DiaryScreen extends StatefulWidget {
@@ -150,16 +151,12 @@ class _DiaryScreenState extends State<DiaryScreen> {
   Future<UnifiedModel> _getModel() async {
     final diaryProvider = context.read<DiaryModelProvider>();
     final chatProvider = context.read<ChatModelSettingsProvider>();
-    await diaryProvider.initialized;
-    await chatProvider.initialized;
-    switch (diaryProvider.modelPreset) {
-      case ModelPreset.primary:
-        return chatProvider.selectedModel;
-      case ModelPreset.secondary:
-        return chatProvider.subModel;
-      case ModelPreset.custom:
-        return diaryProvider.selectedModel;
-    }
+    return ModelPreset.resolveModel(
+      featureInitialized: diaryProvider.initialized,
+      preset: diaryProvider.modelPreset,
+      customModel: diaryProvider.selectedModel,
+      chatProvider: chatProvider,
+    );
   }
 
   String _buildWorldviewText() {
@@ -720,7 +717,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(fontSize: 16),
                   ),
                   const SizedBox(height: 16),
-                  _buildSettingRow(
+                  CommonSettingRow(
                     label: l10n.diaryModelPreset,
                     child: CommonDropdownButton<ModelPreset>(
                       value: provider.modelPreset,
@@ -750,7 +747,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                   ],
                   if (provider.modelPreset == ModelPreset.custom) ...[
                     const SizedBox(height: 8),
-                    _buildSettingRow(
+                    CommonSettingRow(
                       label: l10n.diaryProvider,
                       child: CommonDropdownButton<ProviderOption>(
                         value: currentProviderOption,
@@ -768,7 +765,7 @@ class _DiaryScreenState extends State<DiaryScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    _buildSettingRow(
+                    CommonSettingRow(
                       label: l10n.diaryChatModel,
                       child: CommonDropdownButton<UnifiedModel>(
                         value: provider.selectedModel,
@@ -820,20 +817,4 @@ class _DiaryScreenState extends State<DiaryScreen> {
     );
   }
 
-  Widget _buildSettingRow({required String label, required Widget child}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
-        ),
-        const SizedBox(height: 4),
-        child,
-      ],
-    );
-  }
 }

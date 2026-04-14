@@ -18,14 +18,12 @@ import '../../../models/chat/chat_model.dart';
 import '../../../models/chat/model_preset.dart';
 import '../../../providers/chat_model_provider.dart';
 import '../../../models/chat/agent_entry.dart';
-import '../../../services/auto_summary_service.dart';
-import '../../../utils/common_dialog.dart';
 import '../../../widgets/common/common_dropdown_button.dart';
 import '../../../widgets/common/common_edit_text.dart';
-import '../../../widgets/common/common_button.dart';
-import '../../../widgets/common/common_editable_expandable_item.dart';
 import '../../../widgets/common/common_field_section.dart';
-import '../../../widgets/common/common_segmented_button.dart';
+import 'drawer_agent_panel.dart';
+import 'drawer_lorebook_panel.dart';
+import 'drawer_summary_panel.dart';
 
 enum DrawerTab {
   info,
@@ -78,6 +76,10 @@ class ChatRoomDrawer extends StatefulWidget {
 class ChatRoomDrawerState extends State<ChatRoomDrawer> {
   final DatabaseHelper _db = DatabaseHelper.instance;
 
+  // Keys for child panels that need save-on-tab-change
+  final _lorebookKey = GlobalKey<DrawerLorebookPanelState>();
+  final _summaryKey = GlobalKey<DrawerSummaryPanelState>();
+
   // Drawer label styles (+2pt from default)
   TextStyle? get _sectionHeaderStyle =>
       Theme.of(context).textTheme.titleSmall?.copyWith(fontSize: 16);
@@ -102,29 +104,17 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
 
   List<CharacterBookFolder> _folders = [];
   List<CharacterBook> _standaloneBooks = [];
-  final Map<String, TextEditingController> _bookFieldControllers = {};
 
   late TextEditingController _pinMessageCountController;
 
   List<ChatSummary> _summaries = [];
-  final Map<int, TextEditingController> _summaryControllers = {};
-  final Set<int> _expandedSummaryIds = {};
-  final Set<int> _regeneratingSummaryIds = {};
-  final AutoSummaryService _autoSummaryService = AutoSummaryService();
 
   // Agent mode state
   bool _autoSummaryEnabled = false;
   bool _agentEnabled = false;
-  int _agentSubTabIndex = 0;
   List<AgentEntry> _agentEntries = [];
-  final Map<int, TextEditingController> _agentEntryControllers = {};
-  final Set<int> _expandedAgentEntryIds = {};
-  final Set<int> _editingAgentEntryIds = {};
-  final Map<int, Map<String, TextEditingController>> _agentEditControllers = {};
-  final Map<int, TextEditingController> _agentNameEditControllers = {};
 
   bool _isLoading = true;
-  bool _isAddingSummary = false;
 
   @override
   void initState() {
@@ -151,16 +141,6 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
     for (final c in _customValueControllers.values) {
       c.dispose();
     }
-    for (final c in _bookFieldControllers.values) {
-      c.dispose();
-    }
-    for (final c in _summaryControllers.values) {
-      c.dispose();
-    }
-    for (final c in _agentEntryControllers.values) {
-      c.dispose();
-    }
-    _disposeAllAgentEditControllers();
     super.dispose();
   }
 
@@ -176,24 +156,11 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
         _saveDescription();
         break;
       case DrawerTab.lorebook:
-        _saveLorebook();
+        _lorebookKey.currentState?.save();
         break;
       case DrawerTab.summary:
-        _saveAllSummaries();
+        _summaryKey.currentState?.saveAll();
         break;
-    }
-  }
-
-  Future<void> _saveAllSummaries() async {
-    for (final summary in _summaries) {
-      final controller = _summaryControllers[summary.id];
-      if (controller != null && controller.text != summary.summaryContent) {
-        final updated = summary.copyWith(
-          summaryContent: controller.text,
-          updatedAt: DateTime.now(),
-        );
-        await _db.updateChatSummary(updated);
-      }
     }
   }
 
@@ -219,22 +186,10 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
     final standaloneBooks = await _db.readStandaloneCharacterBooks(characterId);
 
     final summaries = await _db.getChatSummaries(widget.chatRoom.id!);
-    for (final summary in summaries) {
-      if (!_summaryControllers.containsKey(summary.id)) {
-        _summaryControllers[summary.id!] = TextEditingController(text: summary.summaryContent);
-      }
-    }
 
     // Load agent settings and entries
     final summarySettings = await _db.getAutoSummarySettings(0);
     final agentEntries = await _db.getAgentEntries(widget.chatRoom.id!);
-    for (final entry in agentEntries) {
-      if (entry.id != null && !_agentEntryControllers.containsKey(entry.id)) {
-        _agentEntryControllers[entry.id!] = TextEditingController(
-          text: entry.toReadableText(),
-        );
-      }
-    }
 
     setState(() {
       _folders = folders;
@@ -245,13 +200,6 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
       _agentEntries = agentEntries;
       _isLoading = false;
     });
-  }
-
-  TextEditingController _getBookFieldController(String key, String initialValue) {
-    if (!_bookFieldControllers.containsKey(key)) {
-      _bookFieldControllers[key] = TextEditingController(text: initialValue);
-    }
-    return _bookFieldControllers[key]!;
   }
 
   Future<void> _loadPresetsAndConditions() async {
@@ -388,85 +336,6 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
       updatedAt: DateTime.now(),
     );
     await _db.updateCharacter(updated);
-  }
-
-  void _syncBookFieldsFromControllers() {
-    for (final folder in _folders) {
-      for (final book in folder.characterBooks) {
-        _syncBookFromController(book);
-      }
-    }
-    for (final book in _standaloneBooks) {
-      _syncBookFromController(book);
-    }
-  }
-
-  void _syncBookFromController(CharacterBook book) {
-    final contentKey = 'book_${book.id}_content';
-    if (_bookFieldControllers.containsKey(contentKey)) {
-      book.content = _bookFieldControllers[contentKey]!.text;
-    }
-    final keysKey = 'book_${book.id}_keys';
-    if (_bookFieldControllers.containsKey(keysKey)) {
-      book.keys = _bookFieldControllers[keysKey]!.text
-          .split(',')
-          .map((e) => e.trim())
-          .where((e) => e.isNotEmpty)
-          .toList();
-    }
-    final secondaryKeysKey = 'book_${book.id}_secondaryKeys';
-    if (_bookFieldControllers.containsKey(secondaryKeysKey)) {
-      book.secondaryKeys = _bookFieldControllers[secondaryKeysKey]!.text
-          .split(',')
-          .map((e) => e.trim())
-          .where((e) => e.isNotEmpty)
-          .toList();
-    }
-    final orderKey = 'book_${book.id}_insertionOrder';
-    if (_bookFieldControllers.containsKey(orderKey)) {
-      final intValue = int.tryParse(_bookFieldControllers[orderKey]!.text);
-      if (intValue != null) book.insertionOrder = intValue;
-    }
-  }
-
-  Future<void> _saveLorebook() async {
-    _syncBookFieldsFromControllers();
-
-    final characterId = widget.character.id!;
-
-    for (final folder in _folders) {
-      if (folder.id != null && folder.id! > 0) {
-        await _db.updateCharacterBookFolder(folder.copyWith(characterId: characterId));
-      } else {
-        final newId = await _db.createCharacterBookFolder(
-          folder.copyWith(characterId: characterId),
-        );
-        for (final book in folder.characterBooks) {
-          book.order = folder.characterBooks.indexOf(book);
-        }
-        for (final book in folder.characterBooks) {
-          await _saveOrCreateBook(book, characterId, folderId: newId);
-        }
-        continue;
-      }
-
-      for (final book in folder.characterBooks) {
-        await _saveOrCreateBook(book, characterId, folderId: folder.id);
-      }
-    }
-
-    for (final book in _standaloneBooks) {
-      await _saveOrCreateBook(book, characterId);
-    }
-
-  }
-
-  Future<void> _saveOrCreateBook(CharacterBook book, int characterId, {int? folderId}) async {
-    if (book.id != null && book.id! > 0) {
-      await _db.updateCharacterBook(book.copyWith(characterId: characterId, folderId: folderId));
-    } else {
-      await _db.createCharacterBook(book.copyWith(characterId: characterId, folderId: folderId));
-    }
   }
 
   @override
@@ -1109,199 +978,13 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
     if (_isLoading) {
       return const Center(child: CircularProgressIndicator());
     }
-
-    final allItems = <Widget>[];
-
-    for (final folder in _folders) {
-      allItems.add(_buildFolderSection(folder));
-    }
-
-    for (final book in _standaloneBooks) {
-      allItems.add(_buildBookCard(book, null));
-    }
-
-    return Column(
-      children: [
-        Expanded(
-          child: allItems.isEmpty
-              ? Center(
-                  child: Text(
-                    AppLocalizations.of(context).drawerLorebookEmpty,
-                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                )
-              : ListView(
-                  padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + MediaQuery.of(context).viewInsets.bottom),
-                  children: allItems,
-                ),
-        ),
-      ],
+    return DrawerLorebookPanel(
+      key: _lorebookKey,
+      folders: _folders,
+      standaloneBooks: _standaloneBooks,
+      db: _db,
+      characterId: widget.character.id!,
     );
-  }
-
-  Widget _buildFolderSection(CharacterBookFolder folder) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 8),
-      child: ExpansionTile(
-        title: Text(folder.name, style: _sectionHeaderStyle),
-        leading: const Icon(Icons.folder_outlined, size: 20),
-        initiallyExpanded: folder.isExpanded,
-        onExpansionChanged: (expanded) => folder.isExpanded = expanded,
-        children: [
-          for (final book in folder.characterBooks)
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-              child: _buildBookCard(book, folder),
-            ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBookCard(CharacterBook book, CharacterBookFolder? folder) {
-    final l10n = AppLocalizations.of(context);
-    return CommonEditableExpandableItem(
-      key: ValueKey('book_${book.id}'),
-      icon: Icon(
-        Icons.description_outlined,
-        size: 20,
-        color: Theme.of(context).colorScheme.secondary,
-      ),
-      name: book.name,
-      isExpanded: book.isExpanded,
-      onToggleExpanded: () {
-        setState(() => book.isExpanded = !book.isExpanded);
-      },
-      onDelete: () => _deleteBook(book, folder),
-      nameHint: l10n.drawerBookNameHint,
-      onNameChanged: (value) => book.name = value,
-      content: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CommonFieldSection(
-            label: l10n.drawerBookActivationCondition,
-            child: CommonSegmentedButton<CharacterBookActivationCondition>(
-              values: CharacterBookActivationCondition.values,
-              selected: book.enabled,
-              onSelectionChanged: (selected) {
-                setState(() => book.enabled = selected);
-              },
-              labelBuilder: (c) => c.displayName,
-            ),
-          ),
-          if (book.enabled == CharacterBookActivationCondition.keyBased) ...[
-            _buildBookKeysField(book),
-            CommonFieldSection(
-              label: l10n.drawerBookSecondaryKey,
-              child: CommonSegmentedButton<CharacterBookSecondaryKeyUsage>(
-                values: CharacterBookSecondaryKeyUsage.values,
-                selected: book.secondaryKeyUsage,
-                onSelectionChanged: (selected) {
-                  setState(() => book.secondaryKeyUsage = selected);
-                },
-                labelBuilder: (c) => c.displayName,
-              ),
-            ),
-            if (book.secondaryKeyUsage == CharacterBookSecondaryKeyUsage.enabled)
-              _buildBookSecondaryKeysField(book),
-          ],
-          _buildBookInsertionOrderField(book),
-          _buildBookContentField(book),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBookKeysField(CharacterBook book) {
-    final l10n = AppLocalizations.of(context);
-    final key = 'book_${book.id}_keys';
-    final controller = _getBookFieldController(key, book.keys.join(', '));
-    return CommonFieldSection(
-      label: l10n.drawerBookActivationKey,
-      child: CommonEditText(
-        controller: controller,
-        hintText: l10n.drawerBookKeysHint,
-        size: CommonEditTextSize.small,
-        onFocusLost: (value) {
-          book.keys = value.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-        },
-      ),
-    );
-  }
-
-  Widget _buildBookSecondaryKeysField(CharacterBook book) {
-    final l10n = AppLocalizations.of(context);
-    final key = 'book_${book.id}_secondaryKeys';
-    final controller = _getBookFieldController(key, book.secondaryKeys.join(', '));
-    return CommonFieldSection(
-      label: l10n.drawerBookSecondaryKey,
-      child: CommonEditText(
-        controller: controller,
-        hintText: l10n.drawerBookSecondaryKeysHint,
-        size: CommonEditTextSize.small,
-        onFocusLost: (value) {
-          book.secondaryKeys = value.split(',').map((e) => e.trim()).where((e) => e.isNotEmpty).toList();
-        },
-      ),
-    );
-  }
-
-  Widget _buildBookInsertionOrderField(CharacterBook book) {
-    final key = 'book_${book.id}_insertionOrder';
-    final controller = _getBookFieldController(key, book.insertionOrder.toString());
-    return CommonFieldSection(
-      label: AppLocalizations.of(context).drawerBookInsertionOrder,
-      child: CommonEditText(
-        controller: controller,
-        hintText: '0',
-        size: CommonEditTextSize.small,
-        keyboardType: TextInputType.number,
-        onFocusLost: (value) {
-          final intValue = int.tryParse(value);
-          if (intValue != null) book.insertionOrder = intValue;
-        },
-      ),
-    );
-  }
-
-  Widget _buildBookContentField(CharacterBook book) {
-    final l10n = AppLocalizations.of(context);
-    final key = 'book_${book.id}_content';
-    final controller = _getBookFieldController(key, book.content ?? '');
-    return CommonFieldSection(
-      label: l10n.drawerBookContent,
-      bottomSpacing: 0,
-      child: CommonEditText(
-        controller: controller,
-        hintText: l10n.drawerBookContentHint,
-        size: CommonEditTextSize.small,
-        maxLines: null,
-        minLines: 5,
-        onFocusLost: (value) => book.content = value,
-      ),
-    );
-  }
-
-  Future<void> _deleteBook(CharacterBook book, CharacterBookFolder? folder) async {
-    final confirmed = await CommonDialog.showDeleteConfirmation(
-      context: context,
-      itemName: book.name,
-    );
-    if (!confirmed) return;
-
-    if (book.id != null && book.id! > 0) {
-      await _db.deleteCharacterBook(book.id!);
-    }
-
-    setState(() {
-      if (folder != null) {
-        folder.characterBooks.remove(book);
-      } else {
-        _standaloneBooks.remove(book);
-      }
-    });
   }
 
   // ==================== 요약 탭 ====================
@@ -1366,709 +1049,21 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
         // Content area
         Expanded(
           child: _autoSummaryEnabled && _agentEnabled
-              ? _buildAgentView()
-              : _buildClassicSummaryView(),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildClassicSummaryView() {
-    final l10n = AppLocalizations.of(context);
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    return Column(
-      children: [
-        Expanded(
-          child: ListView(
-            padding: EdgeInsets.fromLTRB(16, 16, 16, 16 + bottomInset),
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text(
-                    l10n.drawerAutoSummaryList,
-                    style: _sectionHeaderStyle,
-                  ),
-                  Text(
-                    l10n.drawerSummaryCount(_summaries.length),
-                    style: Theme.of(context).textTheme.bodySmall,
-                  ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              if (_summaries.isEmpty)
-                Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(32),
-                    child: Text(
-                      l10n.drawerNoSummaries,
-                      textAlign: TextAlign.center,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
-                      ),
-                    ),
-                  ),
+              ? DrawerAgentPanel(
+                  agentEntries: _agentEntries,
+                  db: _db,
+                  onDataChanged: _loadData,
                 )
-              else
-                ...List.generate(_summaries.length, (index) {
-                  final summary = _summaries[index];
-                  final controller = _summaryControllers[summary.id]!;
-                  final isExpanded = _expandedSummaryIds.contains(summary.id);
-
-                  return CommonEditableExpandableItem(
-                    key: ValueKey('summary_${summary.id}'),
-                    icon: Icon(
-                      Icons.summarize_outlined,
-                      size: 20,
-                      color: Theme.of(context).colorScheme.secondary,
-                    ),
-                    name: 'Summary #${index + 1}',
-                    isExpanded: isExpanded,
-                    showNameField: false,
-                    onToggleExpanded: () {
-                      setState(() {
-                        if (isExpanded) {
-                          _expandedSummaryIds.remove(summary.id!);
-                        } else {
-                          _expandedSummaryIds.add(summary.id!);
-                        }
-                      });
-                    },
-                    onDelete: () => _deleteSummary(summary.id!),
-                    content: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        CommonEditText(
-                          controller: controller,
-                          hintText: l10n.drawerSummaryContentHint,
-                          maxLines: null,
-                          minLines: 4,
-                          size: CommonEditTextSize.small,
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            TextButton.icon(
-                              onPressed: _regeneratingSummaryIds.contains(summary.id)
-                                  ? null
-                                  : () => _regenerateSummary(summary),
-                              icon: _regeneratingSummaryIds.contains(summary.id)
-                                  ? const SizedBox(
-                                      width: 16,
-                                      height: 16,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    )
-                                  : const Icon(Icons.refresh, size: 16),
-                              label: Text(
-                                _regeneratingSummaryIds.contains(summary.id)
-                                    ? l10n.drawerGenerating
-                                    : l10n.drawerRegenerate,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ],
-                    ),
-                  );
-                }),
-            ],
-          ),
-        ),
-        _buildAddSummaryButton(),
-      ],
-    );
-  }
-
-  // ==================== Agent 뷰 ====================
-
-  static const _agentTabTypes = AgentEntryType.values;
-  static const _agentTabIcons = [
-    Icons.auto_stories,
-    Icons.person_outline,
-    Icons.place_outlined,
-    Icons.inventory_2_outlined,
-    Icons.emoji_events_outlined,
-  ];
-
-  Widget _buildAgentView() {
-    final bottomInset = MediaQuery.of(context).viewInsets.bottom;
-    return Column(
-      children: [
-        // Sub-tab chips
-        SingleChildScrollView(
-          scrollDirection: Axis.horizontal,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          child: Row(
-            children: List.generate(_agentTabTypes.length, (i) {
-              final type = _agentTabTypes[i];
-              final count = _agentEntries.where((e) => e.entryType == type).length;
-              return Padding(
-                padding: const EdgeInsets.only(right: 6),
-                child: FilterChip(
-                  avatar: Icon(_agentTabIcons[i], size: 16),
-                  label: Text('${_agentEntryTypeName(type, AppLocalizations.of(context))} ($count)'),
-                  selected: _agentSubTabIndex == i,
-                  onSelected: (_) => setState(() => _agentSubTabIndex = i),
-                  visualDensity: VisualDensity.compact,
+              : DrawerSummaryPanel(
+                  key: _summaryKey,
+                  summaries: _summaries,
+                  chatRoomId: widget.chatRoom.id!,
+                  db: _db,
+                  onDataChanged: _loadData,
                 ),
-              );
-            }),
-          ),
-        ),
-        const Divider(height: 1),
-        // Entry list for selected type
-        Expanded(
-          child: _buildAgentEntryList(
-            _agentTabTypes[_agentSubTabIndex],
-            bottomInset,
-          ),
         ),
       ],
     );
   }
 
-  Widget _buildAgentEntryList(AgentEntryType type, double bottomInset) {
-    final l10n = AppLocalizations.of(context);
-    final entries = _agentEntries.where((e) => e.entryType == type).toList();
-
-    if (entries.isEmpty) {
-      return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Text(
-            l10n.drawerAgentEntryEmpty(_agentEntryTypeName(type, l10n)),
-            textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-        ),
-      );
-    }
-
-    return ListView.builder(
-      padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + bottomInset),
-      itemCount: entries.length,
-      itemBuilder: (context, index) {
-        final entry = entries[index];
-        final isExpanded = _expandedAgentEntryIds.contains(entry.id);
-
-        return CommonEditableExpandableItem(
-          key: ValueKey('agent_${entry.id}'),
-          icon: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                _agentTabIcons[_agentTabTypes.indexOf(type)],
-                size: 20,
-                color: entry.isActive
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(width: 4),
-              Container(
-                width: 8,
-                height: 8,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: entry.isActive
-                      ? Colors.green
-                      : Theme.of(context).colorScheme.outlineVariant,
-                ),
-              ),
-            ],
-          ),
-          name: entry.name,
-          isExpanded: isExpanded,
-          showNameField: false,
-          onToggleExpanded: () {
-            setState(() {
-              if (isExpanded) {
-                _expandedAgentEntryIds.remove(entry.id!);
-              } else {
-                _expandedAgentEntryIds.add(entry.id!);
-              }
-            });
-          },
-          onDelete: () => _deleteAgentEntry(entry),
-          onEdit: _editingAgentEntryIds.contains(entry.id)
-              ? null
-              : () => _editAgentEntry(entry),
-          content: _editingAgentEntryIds.contains(entry.id)
-              ? _buildAgentEntryEditContent(entry)
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Active toggle
-                    Row(
-                      children: [
-                        Text(
-                          entry.isActive ? l10n.drawerActive : l10n.drawerInactive,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: entry.isActive
-                                ? Colors.green
-                                : Theme.of(context).colorScheme.onSurfaceVariant,
-                          ),
-                        ),
-                        const Spacer(),
-                        Switch(
-                          value: entry.isActive,
-                          onChanged: (value) => _toggleAgentEntryActive(entry, value),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    // Data fields
-                    ..._buildAgentEntryFields(entry),
-                  ],
-                ),
-        );
-      },
-    );
-  }
-
-  Widget _buildAgentEntryEditContent(AgentEntry entry) {
-    final l10n = AppLocalizations.of(context);
-    final id = entry.id!;
-    final nameCtrl = _agentNameEditControllers[id]!;
-    final controllers = _agentEditControllers[id]!;
-    final fieldDefs = _agentFieldDefs(entry.entryType, l10n);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          l10n.drawerNameLabel,
-          style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: Theme.of(context).colorScheme.primary,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        const SizedBox(height: 4),
-        CommonEditText(
-          controller: nameCtrl,
-          hintText: l10n.drawerNameHint,
-          size: CommonEditTextSize.small,
-        ),
-        ...fieldDefs.map((def) {
-          final (key, label, _) = def;
-          return Padding(
-            padding: const EdgeInsets.only(top: 10),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                    color: Theme.of(context).colorScheme.primary,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                CommonEditText(
-                  controller: controllers[key],
-                  hintText: label,
-                  maxLines: null,
-                  minLines: 1,
-                  size: CommonEditTextSize.small,
-                ),
-              ],
-            ),
-          );
-        }),
-        const SizedBox(height: 12),
-        Row(
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            TextButton(
-              onPressed: () => _cancelEditAgentEntry(id),
-              child: Text(l10n.commonCancel),
-            ),
-            const SizedBox(width: 8),
-            FilledButton(
-              onPressed: () => _saveAgentEntry(entry),
-              child: Text(l10n.commonSave),
-            ),
-          ],
-        ),
-      ],
-    );
-  }
-
-  List<Widget> _buildAgentEntryFields(AgentEntry entry) {
-    final l10n = AppLocalizations.of(context);
-    final fields = <Widget>[];
-    final data = entry.data;
-
-    void addField(String label, dynamic value) {
-      if (value == null) return;
-      final text = value is List ? value.join(', ') : value.toString();
-      if (text.isEmpty) return;
-      fields.add(Padding(
-        padding: const EdgeInsets.only(bottom: 6),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              label,
-              style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                color: Theme.of(context).colorScheme.primary,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 2),
-            Text(
-              text,
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-          ],
-        ),
-      ));
-    }
-
-    switch (entry.entryType) {
-      case AgentEntryType.episode:
-        addField(l10n.agentFieldDateRange, data['date_range']);
-        addField(l10n.agentFieldCharacters, data['characters']);
-        addField(l10n.agentFieldLocations, data['locations']);
-        addField(l10n.agentFieldSummary, data['summary_text']);
-      case AgentEntryType.character:
-        addField(l10n.agentFieldAppearance, data['appearance']);
-        addField(l10n.agentFieldPersonality, data['personality']);
-        addField(l10n.agentFieldPast, data['past']);
-        addField(l10n.agentFieldAbilities, data['abilities']);
-        addField(l10n.agentFieldStoryActions, data['story_actions']);
-        addField(l10n.agentFieldDialogueStyle, data['dialogue_style']);
-        addField(l10n.agentFieldPossessions, data['possessions']);
-      case AgentEntryType.location:
-        addField(l10n.agentFieldParentLocation, data['parent_location']);
-        addField(l10n.agentFieldFeatures, data['features']);
-        if (data['ascii_map'] != null) addField(l10n.agentFieldAsciiMap, data['ascii_map']);
-        addField(l10n.agentFieldRelatedEpisodes, data['related_episodes']);
-      case AgentEntryType.item:
-        addField(l10n.agentFieldKeywords, data['keywords']);
-        addField(l10n.agentFieldFeatures, data['features']);
-        addField(l10n.agentFieldRelatedEpisodes, data['related_episodes']);
-      case AgentEntryType.event:
-        addField(l10n.agentFieldDatetime, data['datetime']);
-        addField(l10n.agentFieldOverview, data['overview']);
-        addField(l10n.agentFieldResult, data['result']);
-        addField(l10n.agentFieldRelatedEpisodes, data['related_episodes']);
-    }
-
-    // Related names (cross-references)
-    if (entry.relatedNames.isNotEmpty) {
-      fields.add(Padding(
-        padding: const EdgeInsets.only(top: 4),
-        child: Wrap(
-          spacing: 4,
-          runSpacing: 4,
-          children: entry.relatedNames.map((name) {
-            return Chip(
-              label: Text(name),
-              visualDensity: VisualDensity.compact,
-              labelStyle: Theme.of(context).textTheme.labelSmall,
-              padding: EdgeInsets.zero,
-              materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-            );
-          }).toList(),
-        ),
-      ));
-    }
-
-    return fields;
-  }
-
-  Future<void> _toggleAgentEntryActive(AgentEntry entry, bool isActive) async {
-    if (entry.id == null) return;
-    await _db.setAgentEntryActive(entry.id!, isActive);
-    await _loadData();
-  }
-
-  String _agentEntryTypeName(AgentEntryType type, AppLocalizations l10n) {
-    switch (type) {
-      case AgentEntryType.episode: return l10n.agentEntryTypeEpisode;
-      case AgentEntryType.character: return l10n.agentEntryTypeCharacter;
-      case AgentEntryType.location: return l10n.agentEntryTypeLocation;
-      case AgentEntryType.item: return l10n.agentEntryTypeItem;
-      case AgentEntryType.event: return l10n.agentEntryTypeEvent;
-    }
-  }
-
-  List<(String, String, bool)> _agentFieldDefs(
-      AgentEntryType type, AppLocalizations l10n) {
-    switch (type) {
-      case AgentEntryType.episode:
-        return [
-          ('date_range', l10n.agentFieldDateRange, false),
-          ('characters', l10n.agentFieldCharactersList, true),
-          ('locations', l10n.agentFieldLocationsList, true),
-          ('summary_text', l10n.agentFieldSummary, false),
-        ];
-      case AgentEntryType.character:
-        return [
-          ('appearance', l10n.agentFieldAppearance, false),
-          ('personality', l10n.agentFieldPersonality, false),
-          ('past', l10n.agentFieldPast, false),
-          ('abilities', l10n.agentFieldAbilities, false),
-          ('story_actions', l10n.agentFieldStoryActions, false),
-          ('dialogue_style', l10n.agentFieldDialogueStyle, false),
-          ('possessions', l10n.agentFieldPossessionsList, true),
-        ];
-      case AgentEntryType.location:
-        return [
-          ('parent_location', l10n.agentFieldParentLocation, false),
-          ('features', l10n.agentFieldFeatures, false),
-          ('ascii_map', l10n.agentFieldAsciiMap, false),
-          ('related_episodes', l10n.agentFieldRelatedEpisodesList, true),
-        ];
-      case AgentEntryType.item:
-        return [
-          ('keywords', l10n.agentFieldKeywords, false),
-          ('features', l10n.agentFieldFeatures, false),
-          ('related_episodes', l10n.agentFieldRelatedEpisodesList, true),
-        ];
-      case AgentEntryType.event:
-        return [
-          ('datetime', l10n.agentFieldDatetime, false),
-          ('overview', l10n.agentFieldOverview, false),
-          ('result', l10n.agentFieldResult, false),
-          ('related_episodes', l10n.agentFieldRelatedEpisodesList, true),
-        ];
-    }
-  }
-
-  void _initAgentEditControllers(AgentEntry entry) {
-    final id = entry.id!;
-    final data = entry.data;
-    final fieldDefs = _agentFieldDefs(entry.entryType, AppLocalizations.of(context));
-
-    _agentNameEditControllers[id] = TextEditingController(text: entry.name);
-    _agentEditControllers[id] = {
-      for (final (key, _, isList) in fieldDefs)
-        key: TextEditingController(
-          text: isList
-              ? ((data[key] as List?)?.join(', ') ?? '')
-              : (data[key]?.toString() ?? ''),
-        ),
-    };
-  }
-
-  void _disposeAgentEditControllers(int id) {
-    _agentNameEditControllers[id]?.dispose();
-    _agentNameEditControllers.remove(id);
-    final controllers = _agentEditControllers.remove(id);
-    if (controllers != null) {
-      for (final c in controllers.values) { c.dispose(); }
-    }
-  }
-
-  void _disposeAllAgentEditControllers() {
-    for (final id in _agentEditControllers.keys.toList()) {
-      _disposeAgentEditControllers(id);
-    }
-  }
-
-  void _editAgentEntry(AgentEntry entry) {
-    final id = entry.id!;
-    setState(() {
-      _editingAgentEntryIds.add(id);
-      _expandedAgentEntryIds.add(id);
-      _initAgentEditControllers(entry);
-    });
-  }
-
-  void _cancelEditAgentEntry(int id) {
-    setState(() {
-      _editingAgentEntryIds.remove(id);
-      _disposeAgentEditControllers(id);
-    });
-  }
-
-  Future<void> _saveAgentEntry(AgentEntry entry) async {
-    final l10n = AppLocalizations.of(context);
-    final id = entry.id!;
-    final nameCtrl = _agentNameEditControllers[id];
-    final controllers = _agentEditControllers[id];
-    if (nameCtrl == null || controllers == null) return;
-
-    final fieldDefs = _agentFieldDefs(entry.entryType, l10n);
-    final updatedData = Map<String, dynamic>.from(entry.data);
-
-    for (final (key, _, isList) in fieldDefs) {
-      final text = controllers[key]!.text.trim();
-      if (text.isEmpty) {
-        updatedData.remove(key);
-      } else if (isList) {
-        updatedData[key] = text.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
-      } else {
-        updatedData[key] = text;
-      }
-    }
-
-    final updatedEntry = entry.copyWith(
-      name: nameCtrl.text.trim().isEmpty ? entry.name : nameCtrl.text.trim(),
-      data: updatedData,
-      updatedAt: DateTime.now(),
-    );
-    await _db.updateAgentEntry(updatedEntry);
-
-    _cancelEditAgentEntry(id);
-    await _loadData();
-
-    if (!mounted) return;
-    CommonDialog.showSnackBar(
-      context: context,
-      message: l10n.drawerAgentEntrySaved(updatedEntry.name),
-    );
-  }
-
-  Future<void> _deleteAgentEntry(AgentEntry entry) async {
-    if (entry.id == null) return;
-    final entryName = entry.name;
-    final confirmed = await CommonDialog.showDeleteConfirmation(
-      context: context,
-      itemName: entryName,
-    );
-    if (!confirmed) return;
-
-    await _db.deleteAgentEntry(entry.id!);
-    _agentEntryControllers[entry.id!]?.dispose();
-    _agentEntryControllers.remove(entry.id!);
-    await _loadData();
-
-    if (!mounted) return;
-    CommonDialog.showSnackBar(
-      context: context,
-      message: AppLocalizations.of(context).drawerAgentEntryDeleted(entryName),
-    );
-  }
-
-  Widget _buildAddSummaryButton() {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: SizedBox(
-        width: double.infinity,
-        child: _isAddingSummary
-            ? const Center(child: CircularProgressIndicator())
-            : CommonButton.filled(
-                onPressed: _addManualSummary,
-                icon: Icons.add,
-                label: AppLocalizations.of(context).drawerAddSummaryButton,
-                size: CommonButtonSize.small,
-              ),
-      ),
-    );
-  }
-
-  Future<void> _addManualSummary() async {
-    final l10n = AppLocalizations.of(context);
-    setState(() => _isAddingSummary = true);
-
-    try {
-      final chatRoomId = widget.chatRoom.id!;
-      final allMessages = await _db.readChatMessagesByChatRoom(chatRoomId);
-      if (allMessages.isEmpty) {
-        if (!mounted) return;
-        CommonDialog.showSnackBar(context: context, message: l10n.drawerNoMessages);
-        return;
-      }
-
-      // Determine start: after the last existing summary's end, or 0
-      final existingSummaries = await _db.getChatSummaries(chatRoomId);
-      final startPinMessageId = existingSummaries.isNotEmpty
-          ? existingSummaries.last.endPinMessageId
-          : 0;
-
-      final endPinMessageId = allMessages.last.id!;
-
-      if (startPinMessageId == endPinMessageId) {
-        if (!mounted) return;
-        CommonDialog.showSnackBar(context: context, message: l10n.drawerNoNewMessages);
-        return;
-      }
-
-      final summary = ChatSummary(
-        chatRoomId: chatRoomId,
-        startPinMessageId: startPinMessageId,
-        endPinMessageId: endPinMessageId,
-        summaryContent: '',
-      );
-      final newId = await _db.createChatSummary(summary);
-
-      _summaryControllers[newId] = TextEditingController(text: '');
-      _expandedSummaryIds.add(newId);
-
-      await _loadData();
-
-      if (!mounted) return;
-      CommonDialog.showSnackBar(context: context, message: l10n.drawerSummaryAdded);
-    } catch (e) {
-      if (!mounted) return;
-      CommonDialog.showSnackBar(
-        context: context,
-        message: l10n.drawerSummaryAddFailed(e.toString()),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _isAddingSummary = false);
-      }
-    }
-  }
-
-  Future<void> _regenerateSummary(ChatSummary summary) async {
-    final l10n = AppLocalizations.of(context);
-    final summaryId = summary.id!;
-    setState(() => _regeneratingSummaryIds.add(summaryId));
-
-    try {
-      final updated = await _autoSummaryService.regenerateSummary(summary: summary);
-
-      _summaryControllers[summaryId]?.text = updated.summaryContent;
-
-      await _loadData();
-
-      if (!mounted) return;
-      CommonDialog.showSnackBar(context: context, message: l10n.drawerSummaryRegenerated);
-    } catch (e) {
-      if (!mounted) return;
-      CommonDialog.showSnackBar(
-        context: context,
-        message: l10n.drawerSummaryRegenerateFailed(e.toString()),
-      );
-    } finally {
-      if (mounted) {
-        setState(() => _regeneratingSummaryIds.remove(summaryId));
-      }
-    }
-  }
-
-  Future<void> _deleteSummary(int summaryId) async {
-    final l10n = AppLocalizations.of(context);
-    final confirmed = await CommonDialog.showDeleteConfirmation(
-      context: context,
-      itemName: l10n.drawerSummaryItemName,
-    );
-
-    if (!confirmed) return;
-
-    try {
-      await _db.deleteChatSummary(summaryId);
-
-      _summaryControllers[summaryId]?.dispose();
-      _summaryControllers.remove(summaryId);
-
-      await _loadData();
-
-      if (!mounted) return;
-      CommonDialog.showSnackBar(context: context, message: l10n.drawerSummaryDeleted);
-    } catch (e) {
-      if (!mounted) return;
-      CommonDialog.showSnackBar(
-        context: context,
-        message: l10n.drawerSummaryDeleteFailed(e.toString()),
-      );
-    }
-  }
 }

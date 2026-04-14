@@ -20,7 +20,7 @@ import '../../widgets/common/common_appbar.dart';
 import '../../widgets/common/common_edit_text.dart';
 import '../../widgets/common/common_editable_expandable_item.dart';
 import '../../widgets/common/common_info_box.dart';
-import '../../widgets/common/common_parameter_field.dart';
+import '../../widgets/common/prompt_parameters_editor.dart';
 import '../../widgets/common/common_segmented_button.dart';
 
 class AutoSummaryScreen extends StatefulWidget {
@@ -605,99 +605,15 @@ _syncContentFromControllers();
   // ==================== Tab 2: Parameters ====================
 
   Widget _buildParametersTab() {
-    final l10n = AppLocalizations.of(context);
     return ListView(
       padding: const EdgeInsets.all(UIConstants.spacing20),
       children: [
-        const CommonInfoBox(
-          message: '',
-        ),
+        const CommonInfoBox(message: ''),
         const SizedBox(height: 24),
-        CommonParameterTextField(
-          label: l10n.autoSummaryMaxResponseSize,
-          helpText: l10n.autoSummaryMaxResponseHelp,
-          controller: _maxOutputTokensController,
-          onChanged: (value) {
-            setState(() {
-              _parameters = _parameters.copyWith(maxOutputTokens: value);
-            });
-          },
-        ),
-        const SizedBox(height: UIConstants.spacing20),
-        CommonParameterSlider(
-          label: l10n.autoSummaryTemperature,
-          value: _parameters.temperature,
-          defaultValue: 1.0,
-          min: 0.0,
-          max: 2.0,
-          divisions: 40,
-          helpText: l10n.autoSummaryTemperatureHelp,
-          onChanged: (value) {
-            setState(() {
-              _parameters = _parameters.copyWith(temperature: value);
-            });
-          },
-        ),
-        const SizedBox(height: UIConstants.spacing20),
-        CommonParameterSlider(
-          label: 'Top P',
-          value: _parameters.topP,
-          defaultValue: 0.95,
-          min: 0.0,
-          max: 1.0,
-          divisions: 100,
-          helpText: l10n.autoSummaryTopPHelp,
-          onChanged: (value) {
-            setState(() {
-              _parameters = _parameters.copyWith(topP: value);
-            });
-          },
-        ),
-        const SizedBox(height: UIConstants.spacing20),
-        CommonParameterSlider(
-          label: 'Top K',
-          value: _parameters.topK?.toDouble(),
-          defaultValue: 40.0,
-          min: 1.0,
-          max: 100.0,
-          divisions: 99,
-          decimalPlaces: 0,
-          helpText: l10n.autoSummaryTopKHelp,
-          onChanged: (value) {
-            setState(() {
-              _parameters = _parameters.copyWith(topK: value?.round());
-            });
-          },
-        ),
-        const SizedBox(height: UIConstants.spacing20),
-        CommonParameterSlider(
-          label: l10n.autoSummaryPresencePenalty,
-          value: _parameters.presencePenalty,
-          defaultValue: 0.0,
-          min: -2.0,
-          max: 2.0,
-          divisions: 80,
-          helpText: l10n.autoSummaryPresencePenaltyHelp,
-          onChanged: (value) {
-            setState(() {
-              _parameters = _parameters.copyWith(presencePenalty: value);
-            });
-          },
-        ),
-        const SizedBox(height: UIConstants.spacing20),
-        CommonParameterSlider(
-          label: l10n.autoSummaryFrequencyPenalty,
-          value: _parameters.frequencyPenalty,
-          defaultValue: 0.0,
-          min: -2.0,
-          max: 2.0,
-          divisions: 80,
-          helpText: l10n.autoSummaryFrequencyPenaltyHelp,
-          onChanged: (value) {
-            setState(() {
-              _parameters = _parameters.copyWith(frequencyPenalty: value);
-            });
-          },
+        PromptParametersEditor(
+          parameters: _parameters,
+          maxOutputTokensController: _maxOutputTokensController,
+          onChanged: (params) => setState(() => _parameters = params),
         ),
         const SizedBox(height: 32),
       ],
