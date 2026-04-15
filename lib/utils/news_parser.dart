@@ -40,19 +40,33 @@ class NewsParser {
   static Map<String, String> _extractFields(String segment) {
     final result = <String, String>{};
 
-    final contentKey = "|Content:'";
-    final contentStart = segment.indexOf(contentKey);
-    String remaining = segment;
+    // Find all field start positions: Key:'
+    final keyPattern = RegExp(r"(\w+):'");
+    final keyMatches = keyPattern.allMatches(segment).toList();
 
-    if (contentStart >= 0) {
-      final raw = segment.substring(contentStart + contentKey.length);
-      result['Content'] = raw.endsWith("'") ? raw.substring(0, raw.length - 1) : raw;
-      remaining = segment.substring(0, contentStart);
-    }
+    for (int i = 0; i < keyMatches.length; i++) {
+      final key = keyMatches[i].group(1)!;
+      final valueStart = keyMatches[i].end; // right after Key:'
 
-    final pattern = RegExp(r"(\w+):'(.*?)'");
-    for (final match in pattern.allMatches(remaining)) {
-      result[match.group(1)!] = match.group(2)!;
+      // Value ends at the next field boundary (|Key:') or end of segment
+      String value;
+      if (i + 1 < keyMatches.length) {
+        // End before the | that precedes the next key
+        final nextFieldStart = keyMatches[i + 1].start;
+        final endPos = nextFieldStart > 0 && segment[nextFieldStart - 1] == '|'
+            ? nextFieldStart - 1
+            : nextFieldStart;
+        value = segment.substring(valueStart, endPos);
+      } else {
+        value = segment.substring(valueStart);
+      }
+
+      // Strip trailing quote
+      if (value.endsWith("'")) {
+        value = value.substring(0, value.length - 1);
+      }
+
+      result[key] = value;
     }
 
     return result;
