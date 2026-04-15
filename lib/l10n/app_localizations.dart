@@ -4075,6 +4075,42 @@ abstract class AppLocalizations {
   /// **'처리 중...'**
   String get backupProcessing;
 
+  /// No description provided for @backupProgressDb.
+  ///
+  /// In ko, this message translates to:
+  /// **'데이터베이스 준비 중...'**
+  String get backupProgressDb;
+
+  /// No description provided for @backupProgressFiles.
+  ///
+  /// In ko, this message translates to:
+  /// **'파일 압축 중... ({current}/{total})'**
+  String backupProgressFiles(int current, int total);
+
+  /// No description provided for @backupProgressSaving.
+  ///
+  /// In ko, this message translates to:
+  /// **'백업 파일 저장 중...'**
+  String get backupProgressSaving;
+
+  /// No description provided for @backupRestoreProgressReading.
+  ///
+  /// In ko, this message translates to:
+  /// **'백업 파일 읽는 중...'**
+  String get backupRestoreProgressReading;
+
+  /// No description provided for @backupRestoreProgressFiles.
+  ///
+  /// In ko, this message translates to:
+  /// **'파일 복원 중... ({current}/{total})'**
+  String backupRestoreProgressFiles(int current, int total);
+
+  /// No description provided for @backupRestoreProgressDb.
+  ///
+  /// In ko, this message translates to:
+  /// **'데이터베이스 복원 중...'**
+  String get backupRestoreProgressDb;
+
   /// No description provided for @backupSuccessDownloads.
   ///
   /// In ko, this message translates to:

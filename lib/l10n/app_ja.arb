@@ -1047,6 +1047,24 @@
   "backupRestoreWarning": "注意: 既存のデータはすべて削除されます。復元後はアプリの再起動が必要です。",
   "backupRestoreButton": "バックアップファイルを選択",
   "backupProcessing": "処理中...",
+  "backupProgressDb": "データベース準備中...",
+  "backupProgressFiles": "ファイル圧縮中... ({current}/{total})",
+  "@backupProgressFiles": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "backupProgressSaving": "バックアップファイル保存中...",
+  "backupRestoreProgressReading": "バックアップファイル読み込み中...",
+  "backupRestoreProgressFiles": "ファイル復元中... ({current}/{total})",
+  "@backupRestoreProgressFiles": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "backupRestoreProgressDb": "データベース復元中...",
   "backupSuccessDownloads": "バックアップ完了: Downloads/{fileName}",
   "@backupSuccessDownloads": {
     "placeholders": {

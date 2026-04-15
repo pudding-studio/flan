@@ -17,6 +17,7 @@ import '../../providers/chat_model_provider.dart';
 import '../../providers/community_model_provider.dart';
 import '../../providers/localization_provider.dart';
 import '../../services/ai_service.dart';
+import '../../utils/date_formatter.dart';
 import '../../utils/news_parser.dart';
 
 class NewsScreen extends StatefulWidget {
@@ -93,16 +94,12 @@ class _NewsScreenState extends State<NewsScreen> {
   Future<UnifiedModel> _getModel() async {
     final communityProvider = context.read<CommunityModelProvider>();
     final chatProvider = context.read<ChatModelSettingsProvider>();
-    await communityProvider.initialized;
-    await chatProvider.initialized;
-    switch (communityProvider.modelPreset) {
-      case ModelPreset.primary:
-        return chatProvider.selectedModel;
-      case ModelPreset.secondary:
-        return chatProvider.subModel;
-      case ModelPreset.custom:
-        return communityProvider.selectedModel;
-    }
+    return ModelPreset.resolveModel(
+      featureInitialized: communityProvider.initialized,
+      preset: communityProvider.modelPreset,
+      customModel: communityProvider.selectedModel,
+      chatProvider: chatProvider,
+    );
   }
 
   String _buildWorldviewText() {
@@ -144,8 +141,7 @@ class _NewsScreenState extends State<NewsScreen> {
 
     try {
       final model = await _getModel();
-      final now = DateTime.now();
-      final nowStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+      final nowStr = DateFormatter.formatPromptDateTime(DateTime.now());
 
       // Step 1: Generate general articles for 2 random topics
       final topics = List<String>.from(_allTopics)..shuffle();
@@ -157,8 +153,7 @@ class _NewsScreenState extends State<NewsScreen> {
 
       String latestArticleInfo = '';
       if (_articles.isNotEmpty) {
-        final latestTime = _articles.first.time;
-        final latestStr = '${latestTime.year}-${latestTime.month.toString().padLeft(2, '0')}-${latestTime.day.toString().padLeft(2, '0')} ${latestTime.hour.toString().padLeft(2, '0')}:${latestTime.minute.toString().padLeft(2, '0')}';
+        final latestStr = DateFormatter.formatPromptDateTime(_articles.first.time);
         latestArticleInfo = '\nBase time (generate only after this time): $latestStr\n';
       }
 
@@ -430,7 +425,7 @@ class _NewsScreenState extends State<NewsScreen> {
                   ),
                   const Spacer(),
                   Text(
-                    _formatDate(article.time),
+                    DateFormatter.formatDateTime(article.time),
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: Theme.of(context).colorScheme.outline,
                         ),
@@ -490,7 +485,4 @@ class _NewsScreenState extends State<NewsScreen> {
     }
   }
 
-  String _formatDate(DateTime dt) {
-    return '${dt.year}.${dt.month.toString().padLeft(2, '0')}.${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-  }
 }

@@ -22,7 +22,12 @@ import '../../providers/community_model_provider.dart';
 import '../../providers/localization_provider.dart';
 import '../../services/ai_service.dart';
 import '../../utils/community_parser.dart';
+import '../../utils/date_formatter.dart';
 import '../../widgets/common/common_dropdown_button.dart';
+import '../../widgets/common/common_setting_row.dart';
+import 'widgets/community_post_card.dart';
+import 'widgets/write_comment_sheet.dart';
+import 'widgets/write_post_sheet.dart';
 
 class CommunityScreen extends StatefulWidget {
   final int characterId;
@@ -107,16 +112,12 @@ class _CommunityScreenState extends State<CommunityScreen> {
   Future<UnifiedModel> _getModel() async {
     final communityProvider = context.read<CommunityModelProvider>();
     final chatProvider = context.read<ChatModelSettingsProvider>();
-    await communityProvider.initialized;
-    await chatProvider.initialized;
-    switch (communityProvider.modelPreset) {
-      case ModelPreset.primary:
-        return chatProvider.selectedModel;
-      case ModelPreset.secondary:
-        return chatProvider.subModel;
-      case ModelPreset.custom:
-        return communityProvider.selectedModel;
-    }
+    return ModelPreset.resolveModel(
+      featureInitialized: communityProvider.initialized,
+      preset: communityProvider.modelPreset,
+      customModel: communityProvider.selectedModel,
+      chatProvider: chatProvider,
+    );
   }
 
   String _appendCommunitySettings(String systemPrompt, String outputLanguage) {
@@ -185,8 +186,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
     try {
       final model = await _getModel();
-      final now = DateTime.now();
-      final nowStr = '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} ${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+      final nowStr = DateFormatter.formatPromptDateTime(DateTime.now());
 
       var systemPrompt = await rootBundle.loadString(
         'assets/defaults/community_prompts/community_generate.txt',
@@ -195,8 +195,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
       String latestPostInfo = '';
       if (_posts.isNotEmpty) {
-        final latestTime = _posts.first.time;
-        final latestStr = '${latestTime.year}-${latestTime.month.toString().padLeft(2, '0')}-${latestTime.day.toString().padLeft(2, '0')} ${latestTime.hour.toString().padLeft(2, '0')}:${latestTime.minute.toString().padLeft(2, '0')}';
+        final latestStr = DateFormatter.formatPromptDateTime(_posts.first.time);
         latestPostInfo = '\nBase time (generate only after this time): $latestStr\n';
       }
 
@@ -257,78 +256,25 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
   void _showWritePost() {
     final l10n = AppLocalizations.of(context);
-    final authorCtrl = TextEditingController(
-        text: _draftPostAuthor.isEmpty ? l10n.communityAnonymous : _draftPostAuthor);
-    final titleCtrl = TextEditingController(text: _draftPostTitle);
-    final contentCtrl = TextEditingController(text: _draftPostContent);
-
-    showModalBottomSheet(
+    showModalBottomSheet<({String author, String title, String content})>(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          left: 16, right: 16, top: 20,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(l10n.communityWritePost,
-                style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            TextField(
-              controller: authorCtrl,
-              decoration: InputDecoration(
-                hintText: l10n.communityNickname,
-                border: const OutlineInputBorder(),
-                isDense: true,
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: titleCtrl,
-              decoration: InputDecoration(
-                hintText: l10n.communityTitle,
-                border: const OutlineInputBorder(),
-                isDense: true,
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: contentCtrl,
-              maxLines: 4,
-              decoration: InputDecoration(
-                hintText: l10n.communityContent,
-                border: const OutlineInputBorder(),
-                isDense: true,
-              ),
-            ),
-            const SizedBox(height: 14),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () async {
-                  final author = authorCtrl.text.trim();
-                  final title = titleCtrl.text.trim();
-                  final content = contentCtrl.text.trim();
-                  if (author.isEmpty || title.isEmpty || content.isEmpty) return;
-                  _draftPostAuthor = author;
-                  _draftPostTitle = title;
-                  _draftPostContent = content;
-                  Navigator.pop(ctx);
-                  await _submitPost(author: author, title: title, content: content);
-                },
-                child: Text(l10n.communityRegister),
-              ),
-            ),
-          ],
-        ),
+      builder: (ctx) => WritePostSheet(
+        initialAuthor: _draftPostAuthor.isEmpty ? l10n.communityAnonymous : _draftPostAuthor,
+        initialTitle: _draftPostTitle,
+        initialContent: _draftPostContent,
       ),
-    );
+    ).then((result) {
+      if (result != null) {
+        _draftPostAuthor = result.author;
+        _draftPostTitle = result.title;
+        _draftPostContent = result.content;
+        _submitPost(author: result.author, title: result.title, content: result.content);
+      }
+    });
   }
 
   Future<void> _submitPost({required String author, required String title, required String content}) async {
@@ -375,76 +321,24 @@ class _CommunityScreenState extends State<CommunityScreen> {
   void _showWriteComment(CommunityPost post) {
     final l10n = AppLocalizations.of(context);
     final postId = post.id!;
-    final nicknameCtrl = TextEditingController(
-        text: _draftCommentAuthor[postId] ?? l10n.communityAnonymous);
-    final contentCtrl = TextEditingController(text: _draftCommentContent[postId] ?? '');
-
-    showModalBottomSheet(
+    showModalBottomSheet<({String author, String content})>(
       context: context,
       isScrollControlled: true,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
-      builder: (ctx) => Padding(
-        padding: EdgeInsets.only(
-          left: 16, right: 16, top: 20,
-          bottom: MediaQuery.of(ctx).viewInsets.bottom + 20,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(l10n.communityWriteComment,
-                style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 6),
-            Text(
-              post.title,
-              style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(ctx).colorScheme.outline,
-                  ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: nicknameCtrl,
-              decoration: InputDecoration(
-                hintText: l10n.communityNickname,
-                border: const OutlineInputBorder(),
-                isDense: true,
-              ),
-            ),
-            const SizedBox(height: 10),
-            TextField(
-              controller: contentCtrl,
-              maxLines: 3,
-              autofocus: true,
-              decoration: InputDecoration(
-                hintText: l10n.communityCommentContent,
-                border: const OutlineInputBorder(),
-                isDense: true,
-              ),
-            ),
-            const SizedBox(height: 14),
-            SizedBox(
-              width: double.infinity,
-              child: FilledButton(
-                onPressed: () async {
-                  final nickname = nicknameCtrl.text.trim();
-                  final content = contentCtrl.text.trim();
-                  if (nickname.isEmpty || content.isEmpty) return;
-                  _draftCommentAuthor[postId] = nickname;
-                  _draftCommentContent[postId] = content;
-                  Navigator.pop(ctx);
-                  await _submitComment(post: post, author: nickname, content: content);
-                },
-                child: Text(l10n.communityRegister),
-              ),
-            ),
-          ],
-        ),
+      builder: (ctx) => WriteCommentSheet(
+        postTitle: post.title,
+        initialAuthor: _draftCommentAuthor[postId] ?? l10n.communityAnonymous,
+        initialContent: _draftCommentContent[postId] ?? '',
       ),
-    );
+    ).then((result) {
+      if (result != null) {
+        _draftCommentAuthor[postId] = result.author;
+        _draftCommentContent[postId] = result.content;
+        _submitComment(post: post, author: result.author, content: result.content);
+      }
+    });
   }
 
   Future<void> _submitComment({required CommunityPost post, required String author, required String content}) async {
@@ -508,7 +402,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
     systemPrompt = _appendCommunitySettings(systemPrompt, outputLanguage);
     final now = DateTime.now();
-    final nowStr = _nowString(now);
+    final nowStr = DateFormatter.formatPromptDateTime(now);
     final worldview = _buildWorldviewText();
 
     final userMessage =
@@ -538,17 +432,17 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
     systemPrompt = _appendCommunitySettings(systemPrompt, outputLanguage);
     final now = DateTime.now();
-    final nowStr = _nowString(now);
+    final nowStr = DateFormatter.formatPromptDateTime(now);
     final worldview = _buildWorldviewText();
 
     final existingComments = post.comments.map((c) {
-      return '  - ${c.author} (${_formatDate(c.time)}): ${c.content}';
+      return '  - ${c.author} (${DateFormatter.formatDateTime(c.time)}): ${c.content}';
     }).join('\n');
 
     String baseTimeStr = nowStr;
     if (post.comments.isNotEmpty) {
       final latestComment = post.comments.last;
-      baseTimeStr = _nowString(latestComment.time);
+      baseTimeStr = DateFormatter.formatPromptDateTime(latestComment.time);
     }
 
     final userMessage =
@@ -612,10 +506,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
     await _db.togglePostFavorite(post.id!, newValue);
     await _load(showLoading: false);
   }
-
-  String _nowString(DateTime now) =>
-      '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')} '
-      '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
 
   @override
   Widget build(BuildContext context) {
@@ -700,7 +590,18 @@ class _CommunityScreenState extends State<CommunityScreen> {
                           : ListView.builder(
                               padding: const EdgeInsets.symmetric(vertical: 8),
                               itemCount: _posts.length,
-                              itemBuilder: (context, i) => _buildPostCard(_posts[i]),
+                              itemBuilder: (context, i) {
+                                final post = _posts[i];
+                                return CommunityPostCard(
+                                  post: post,
+                                  isNew: post.id != null && _newPostIds.contains(post.id),
+                                  newCommentIds: _newCommentIds,
+                                  onToggleFavorite: () => _toggleFavorite(post),
+                                  onDelete: () => _deletePost(post),
+                                  onWriteComment: () => _showWriteComment(post),
+                                  onDeleteComment: _deleteComment,
+                                );
+                              },
                             ),
                     ),
                   ),
@@ -759,193 +660,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
   }
 
-  Widget _buildPostCard(CommunityPost post) {
-    final secondaryContainer = Theme.of(context).colorScheme.secondaryContainer;
-    final onSecondaryContainer = Theme.of(context).colorScheme.onSecondaryContainer;
-    final isNewPost = post.id != null && _newPostIds.contains(post.id);
-
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
-      child: Card(
-        color: isNewPost
-            ? Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.1)
-            : Theme.of(context).colorScheme.surface,
-        elevation: 0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(12),
-          side: BorderSide(
-            color: isNewPost
-                ? Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.5)
-                : Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.5),
-          ),
-        ),
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  InkWell(
-                    onTap: () => _toggleFavorite(post),
-                    borderRadius: BorderRadius.circular(4),
-                    child: Icon(
-                      post.isFavorited ? Icons.star : Icons.star_border,
-                      size: 18,
-                      color: post.favoriteUsed
-                          ? Theme.of(context).colorScheme.tertiary
-                          : post.isFavorited
-                              ? Colors.amber
-                              : Theme.of(context).colorScheme.outline,
-                    ),
-                  ),
-                  const SizedBox(width: 4),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: secondaryContainer,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Text(
-                      post.author,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: onSecondaryContainer,
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    _formatDate(post.time),
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Theme.of(context).colorScheme.outline,
-                        ),
-                  ),
-                  const SizedBox(width: 8),
-                  InkWell(
-                    onTap: () => _deletePost(post),
-                    borderRadius: BorderRadius.circular(4),
-                    child: Icon(
-                      Icons.delete_outline,
-                      size: 18,
-                      color: Theme.of(context).colorScheme.outline,
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              Text(
-                post.title,
-                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                post.content,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-              ),
-              if (post.comments.isNotEmpty) ...[
-                const SizedBox(height: 10),
-                Divider(
-                  height: 1,
-                  color: Theme.of(context).colorScheme.outlineVariant.withValues(alpha: 0.4),
-                ),
-                const SizedBox(height: 8),
-                ...post.comments.map((c) => _buildComment(c)),
-              ],
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton.icon(
-                  icon: Icon(Icons.comment_outlined,
-                      size: 14,
-                      color: Theme.of(context).colorScheme.secondary),
-                  label: Text(
-                    AppLocalizations.of(context).communityCommentLabel,
-                    style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                          color: Theme.of(context).colorScheme.secondary,
-                        ),
-                  ),
-                  style: TextButton.styleFrom(
-                    padding: EdgeInsets.zero,
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  onPressed: () => _showWriteComment(post),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildComment(CommunityComment comment) {
-    final isNewComment = comment.id != null && _newCommentIds.contains(comment.id);
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 6),
-      padding: isNewComment ? const EdgeInsets.all(6) : EdgeInsets.zero,
-      decoration: isNewComment
-          ? BoxDecoration(
-              color: Theme.of(context).colorScheme.tertiary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(8),
-            )
-          : null,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(
-            Icons.subdirectory_arrow_right,
-            size: 14,
-            color: Theme.of(context).colorScheme.secondary.withValues(alpha: 0.7),
-          ),
-          const SizedBox(width: 4),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    Text(
-                      comment.author,
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: Theme.of(context).colorScheme.secondary,
-                            fontWeight: FontWeight.bold,
-                          ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      _formatDate(comment.time),
-                      style: Theme.of(context).textTheme.labelSmall?.copyWith(
-                            color: Theme.of(context).colorScheme.outline,
-                          ),
-                    ),
-                    const Spacer(),
-                    InkWell(
-                      onTap: () => _deleteComment(comment),
-                      borderRadius: BorderRadius.circular(4),
-                      child: Icon(
-                        Icons.delete_outline,
-                        size: 14,
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
-                    ),
-                  ],
-                ),
-                Text(comment.content, style: Theme.of(context).textTheme.bodySmall),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildModelDrawer() {
     final l10n = AppLocalizations.of(context);
     return Drawer(
@@ -972,7 +686,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(fontSize: 16),
                   ),
                   const SizedBox(height: 16),
-                  _buildSettingRow(
+                  CommonSettingRow(
                     label: l10n.communityModelPreset,
                     child: CommonDropdownButton<ModelPreset>(
                       value: provider.modelPreset,
@@ -1002,7 +716,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   ],
                   if (provider.modelPreset == ModelPreset.custom) ...[
                     const SizedBox(height: 8),
-                    _buildSettingRow(
+                    CommonSettingRow(
                       label: l10n.communityProvider,
                       child: CommonDropdownButton<ProviderOption>(
                         value: currentProviderOption,
@@ -1022,7 +736,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    _buildSettingRow(
+                    CommonSettingRow(
                       label: l10n.communityChatModel,
                       child: CommonDropdownButton<UnifiedModel>(
                         value: provider.selectedModel,
@@ -1042,7 +756,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(fontSize: 16),
                   ),
                   const SizedBox(height: 16),
-                  _buildSettingRow(
+                  CommonSettingRow(
                     label: l10n.communityNameLabel,
                     child: Text(
                       _character!.communityName?.isNotEmpty == true
@@ -1053,7 +767,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   ),
                   if (_character!.communityMood?.isNotEmpty == true) ...[
                     const SizedBox(height: 8),
-                    _buildSettingRow(
+                    CommonSettingRow(
                       label: l10n.communityToneLabel,
                       child: Text(
                         _character!.communityMood!,
@@ -1063,7 +777,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                   ],
                   if (_character!.communityLanguage?.isNotEmpty == true) ...[
                     const SizedBox(height: 8),
-                    _buildSettingRow(
+                    CommonSettingRow(
                       label: l10n.communityLanguageLabel,
                       child: Text(
                         _character!.communityLanguage!,
@@ -1081,24 +795,4 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
   }
 
-  Widget _buildSettingRow({required String label, required Widget child}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
-        ),
-        const SizedBox(height: 4),
-        child,
-      ],
-    );
-  }
-
-  String _formatDate(DateTime dt) {
-    return '${dt.year}.${dt.month.toString().padLeft(2, '0')}.${dt.day.toString().padLeft(2, '0')} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-  }
 }

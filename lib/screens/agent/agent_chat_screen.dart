@@ -16,6 +16,7 @@ import '../../widgets/agent/tool_result_card.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../../widgets/common/common_dropdown_button.dart';
 import '../../widgets/common/common_edit_text.dart';
+import '../../widgets/common/common_setting_row.dart';
 import '../../widgets/common/markdown_text.dart';
 
 class AgentChatScreen extends StatefulWidget {
@@ -451,7 +452,7 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
                     style: Theme.of(context).textTheme.titleSmall?.copyWith(fontSize: 16),
                   ),
                   const SizedBox(height: 16),
-                  _buildSettingRow(
+                  CommonSettingRow(
                     label: l10n.agentChatModelPreset,
                     child: CommonDropdownButton<ModelPreset>(
                       value: _modelPreset,
@@ -479,7 +480,7 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
                   ],
                   if (_modelPreset == ModelPreset.custom) ...[
                     const SizedBox(height: 8),
-                    _buildSettingRow(
+                    CommonSettingRow(
                       label: l10n.agentChatProvider,
                       child: CommonDropdownButton<ProviderOption>(
                         value: currentProviderOption,
@@ -497,7 +498,7 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
-                    _buildSettingRow(
+                    CommonSettingRow(
                       label: l10n.agentChatModel,
                       child: CommonDropdownButton<UnifiedModel>(
                         value: provider.selectedModel,
@@ -514,23 +515,6 @@ class _AgentChatScreenState extends State<AgentChatScreen> {
           ),
         ),
       ),
-    );
-  }
-
-  Widget _buildSettingRow({required String label, required Widget child}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w600,
-                fontSize: 14,
-              ),
-        ),
-        const SizedBox(height: 4),
-        child,
-      ],
     );
   }
 
