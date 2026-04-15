@@ -17,6 +17,52 @@ import '../../utils/common_dialog.dart';
 import '../../utils/streaming_zip_writer.dart';
 import '../../widgets/common/common_appbar.dart';
 
+// Isolate entry-point: extract backup.db from ZIP to temp path.
+// Returns true on success, false if backup.db not found in archive.
+Future<bool> _extractBackupDbIsolate(List<String> args) async {
+  final zipPath = args[0];
+  final dbOutPath = args[1];
+  final input = InputFileStream(zipPath);
+  final archive = ZipDecoder().decodeStream(input);
+  final dbEntry = archive.findFile('backup.db');
+  if (dbEntry == null) {
+    archive.clearSync();
+    input.closeSync();
+    return false;
+  }
+  final out = OutputFileStream(dbOutPath);
+  dbEntry.writeContent(out);
+  out.closeSync();
+  archive.clearSync();
+  input.closeSync();
+  return true;
+}
+
+// Isolate entry-point: extract character files from ZIP.
+// Returns total number of extracted files.
+Future<int> _extractCharacterFilesIsolate(List<String> args) async {
+  final zipPath = args[0];
+  final appDocPath = args[1];
+  final input = InputFileStream(zipPath);
+  final archive = ZipDecoder().decodeStream(input);
+  int count = 0;
+  for (final entry in archive) {
+    if (!entry.isFile || !entry.name.startsWith('characters/')) {
+      continue;
+    }
+    final outPath = p.join(appDocPath, entry.name);
+    Directory(p.dirname(outPath)).createSync(recursive: true);
+    final out = OutputFileStream(outPath);
+    entry.writeContent(out);
+    out.closeSync();
+    entry.clear();
+    count++;
+  }
+  archive.clearSync();
+  input.closeSync();
+  return count;
+}
+
 class BackupScreen extends StatefulWidget {
   const BackupScreen({super.key});
 
@@ -27,6 +73,11 @@ class BackupScreen extends StatefulWidget {
 class _BackupScreenState extends State<BackupScreen> {
   final DatabaseHelper _db = DatabaseHelper.instance;
   bool _isProcessing = false;
+  String _progressText = '';
+
+  void _updateProgress(String text) {
+    if (mounted) setState(() => _progressText = text);
+  }
 
   static const _prefsKeys = [
     'api_key_google',
@@ -58,6 +109,8 @@ class _BackupScreenState extends State<BackupScreen> {
         await _createBackupWeb(l10n);
         return;
       }
+
+      _updateProgress(l10n.backupProgressDb);
 
       final dbPath = await _db.getDatabaseFilePath();
       final appDocDir = await getApplicationDocumentsDirectory();
@@ -112,8 +165,15 @@ class _BackupScreenState extends State<BackupScreen> {
 
       final charsDir = Directory(p.join(appDocDir.path, 'characters'));
       if (await charsDir.exists()) {
+        // Count total files first for progress
+        final charFiles = <File>[];
         await for (final entity in charsDir.list(recursive: true)) {
-          if (entity is! File) continue;
+          if (entity is File) charFiles.add(entity);
+        }
+
+        for (var i = 0; i < charFiles.length; i++) {
+          _updateProgress(l10n.backupProgressFiles(i + 1, charFiles.length));
+          final entity = charFiles[i];
           final relativePath = p.relative(entity.path, from: appDocDir.path);
           final fileBytes = await entity.readAsBytes();
           await zipWriter.addFile(relativePath, fileBytes);
@@ -121,6 +181,8 @@ class _BackupScreenState extends State<BackupScreen> {
       }
 
       await zipWriter.close();
+
+      _updateProgress(l10n.backupProgressSaving);
 
       if (Platform.isAndroid) {
         const platform = MethodChannel('com.flanapp.flan/file_saver');
@@ -161,7 +223,7 @@ class _BackupScreenState extends State<BackupScreen> {
         );
       }
     } finally {
-      if (mounted) setState(() => _isProcessing = false);
+      if (mounted) setState(() { _isProcessing = false; _progressText = ''; });
     }
   }
 
@@ -186,8 +248,12 @@ class _BackupScreenState extends State<BackupScreen> {
       final isZip = originalName.endsWith('.zip');
       final isDb = originalName.endsWith('.db');
 
+      setState(() => _isProcessing = true);
+      _updateProgress(l10n.backupRestoreProgressReading);
+
       if (!isZip && !isDb) {
         if (mounted) {
+          setState(() { _isProcessing = false; _progressText = ''; });
           CommonDialog.showSnackBar(
             context: context,
             message: l10n.backupInvalidFile,
@@ -198,14 +264,18 @@ class _BackupScreenState extends State<BackupScreen> {
 
       // Resolve the DB path from ZIP or use directly
       String dbPathToRead = selectedPath;
-      Archive? archive;
       if (isZip) {
-        final zipBytes = await File(selectedPath).readAsBytes();
-        archive = ZipDecoder().decodeBytes(zipBytes, verify: false);
-        // Extract backup.db to a temp file for metadata reading
-        final dbEntry = archive.findFile('backup.db');
-        if (dbEntry == null) {
+        final tempDir = await getTemporaryDirectory();
+        dbPathToRead = '${tempDir.path}/backup_restore.db';
+
+        // Run ZIP decode + backup.db extraction in background isolate
+        final found = await compute(
+          _extractBackupDbIsolate,
+          [selectedPath, dbPathToRead],
+        );
+        if (!found) {
           if (mounted) {
+            setState(() { _isProcessing = false; _progressText = ''; });
             CommonDialog.showSnackBar(
               context: context,
               message: l10n.backupZipNoDb,
@@ -213,10 +283,10 @@ class _BackupScreenState extends State<BackupScreen> {
           }
           return;
         }
-        final tempDir = await getTemporaryDirectory();
-        dbPathToRead = '${tempDir.path}/backup_restore.db';
-        await File(dbPathToRead).writeAsBytes(dbEntry.content as List<int>);
       }
+
+      // Hide loading overlay before showing confirmation dialog
+      if (mounted) setState(() { _isProcessing = false; _progressText = ''; });
 
       // Read backup metadata to show info
       String createdAt = l10n.backupCreatedAtUnknown;
@@ -256,24 +326,23 @@ class _BackupScreenState extends State<BackupScreen> {
 
       final appDocDir = await getApplicationDocumentsDirectory();
 
-      // Restore character images from ZIP
-      if (isZip && archive != null) {
+      // Restore character images from ZIP in background isolate
+      if (isZip) {
+        _updateProgress(l10n.backupRestoreProgressReading);
+
         // Clear existing characters directory
         final charsDir = Directory(p.join(appDocDir.path, 'characters'));
         if (await charsDir.exists()) {
           await charsDir.delete(recursive: true);
         }
 
-        // Extract image files
-        for (final entry in archive) {
-          if (!entry.isFile) continue;
-          if (!entry.name.startsWith('characters/')) continue;
-          final outPath = p.join(appDocDir.path, entry.name);
-          final outFile = File(outPath);
-          await outFile.parent.create(recursive: true);
-          await outFile.writeAsBytes(entry.content as List<int>);
-        }
+        await compute(
+          _extractCharacterFilesIsolate,
+          [selectedPath, appDocDir.path],
+        );
       }
+
+      _updateProgress(l10n.backupRestoreProgressDb);
 
       // Close current DB, overwrite with backup, reopen
       final dbPath = await _db.getDatabaseFilePath();
@@ -361,7 +430,7 @@ class _BackupScreenState extends State<BackupScreen> {
         );
       }
     } finally {
-      if (mounted) setState(() => _isProcessing = false);
+      if (mounted) setState(() { _isProcessing = false; _progressText = ''; });
     }
   }
 
@@ -433,7 +502,7 @@ class _BackupScreenState extends State<BackupScreen> {
         );
       }
     } finally {
-      if (mounted) setState(() => _isProcessing = false);
+      if (mounted) setState(() { _isProcessing = false; _progressText = ''; });
     }
   }
 
@@ -549,7 +618,9 @@ class _BackupScreenState extends State<BackupScreen> {
                       children: [
                         const CircularProgressIndicator(),
                         const SizedBox(height: 16),
-                        Text(l10n.backupProcessing),
+                        Text(_progressText.isNotEmpty
+                            ? _progressText
+                            : l10n.backupProcessing),
                       ],
                     ),
                   ),

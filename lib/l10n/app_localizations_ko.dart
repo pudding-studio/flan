@@ -2140,6 +2140,28 @@ class AppLocalizationsKo extends AppLocalizations {
   String get backupProcessing => '처리 중...';
 
   @override
+  String get backupProgressDb => '데이터베이스 준비 중...';
+
+  @override
+  String backupProgressFiles(int current, int total) {
+    return '파일 압축 중... ($current/$total)';
+  }
+
+  @override
+  String get backupProgressSaving => '백업 파일 저장 중...';
+
+  @override
+  String get backupRestoreProgressReading => '백업 파일 읽는 중...';
+
+  @override
+  String backupRestoreProgressFiles(int current, int total) {
+    return '파일 복원 중... ($current/$total)';
+  }
+
+  @override
+  String get backupRestoreProgressDb => '데이터베이스 복원 중...';
+
+  @override
   String backupSuccessDownloads(String fileName) {
     return '백업 완료: Downloads/$fileName';
   }

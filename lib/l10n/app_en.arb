@@ -1047,6 +1047,24 @@
   "backupRestoreWarning": "Warning: All existing data will be erased. The app must be restarted after restore.",
   "backupRestoreButton": "Select Backup File",
   "backupProcessing": "Processing...",
+  "backupProgressDb": "Preparing database...",
+  "backupProgressFiles": "Compressing files... ({current}/{total})",
+  "@backupProgressFiles": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "backupProgressSaving": "Saving backup file...",
+  "backupRestoreProgressReading": "Reading backup file...",
+  "backupRestoreProgressFiles": "Restoring files... ({current}/{total})",
+  "@backupRestoreProgressFiles": {
+    "placeholders": {
+      "current": { "type": "int" },
+      "total": { "type": "int" }
+    }
+  },
+  "backupRestoreProgressDb": "Restoring database...",
   "backupSuccessDownloads": "Backup saved: Downloads/{fileName}",
   "@backupSuccessDownloads": {
     "placeholders": {

@@ -2140,6 +2140,28 @@ class AppLocalizationsJa extends AppLocalizations {
   String get backupProcessing => '処理中...';
 
   @override
+  String get backupProgressDb => 'データベース準備中...';
+
+  @override
+  String backupProgressFiles(int current, int total) {
+    return 'ファイル圧縮中... ($current/$total)';
+  }
+
+  @override
+  String get backupProgressSaving => 'バックアップファイル保存中...';
+
+  @override
+  String get backupRestoreProgressReading => 'バックアップファイル読み込み中...';
+
+  @override
+  String backupRestoreProgressFiles(int current, int total) {
+    return 'ファイル復元中... ($current/$total)';
+  }
+
+  @override
+  String get backupRestoreProgressDb => 'データベース復元中...';
+
+  @override
   String backupSuccessDownloads(String fileName) {
     return 'バックアップ完了: Downloads/$fileName';
   }
