@@ -15,17 +15,23 @@ class CharacterTag {
 }
 
 class MetadataParser {
-  static final _locationPattern = RegExp(r'【📍\|([^】]*)】');
-  static final _datePattern = RegExp(r'【📅\|([^】]*)】');
-  static final _timePattern = RegExp(r'【🕰\|([^】]*)】');
-  static final _pinPattern = RegExp(r'【📌\|([^】]*)】', caseSensitive: false);
-  static final _characterPattern = RegExp(r'【(👤|👥)\|([^】]*)】');
+  static final _locationPattern = RegExp(r'【📍\|?([^】]*)】');
+  static final _datePattern = RegExp(r'【📅\|?([^】]*)】');
+  static final _timePattern = RegExp(r'【🕰\|?([^】]*)】');
+  static final _pinPattern = RegExp(r'【📌\|?([^】]*)】', caseSensitive: false);
+  static final _characterPattern = RegExp(r'【(👤|👥)\|?([^】]*)】');
+
+  // Split by | or by lookahead on sub-field emoji markers (handles missing |)
+  static final _charFieldSplitter = RegExp(r'\|(?=👔:|📝:)|(?=👔:|📝:)|\|');
 
   static List<CharacterTag> parseCharacterTags(String content) {
     final matches = _characterPattern.allMatches(content);
     return matches.map((m) {
       final isMain = m.group(1) == '👤';
-      final parts = m.group(2)!.split('|');
+      final parts = m.group(2)!
+          .split(_charFieldSplitter)
+          .where((p) => p.isNotEmpty)
+          .toList();
       final name = parts[0];
       String? outfit;
       String? memo;

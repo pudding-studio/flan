@@ -230,9 +230,13 @@ class MarkdownText extends StatelessWidget {
       }
 
       // 2. 'text' → tertiary + bold (내부 ** * 중첩 지원)
+      // Skip apostrophes in contractions (e.g. you're, I'm, don't)
+      // Require tight quotes: no space after opening ' and no space before closing '
       if (text[i] == "'") {
+        final prevIsLetter = i > 0 && _letterPattern.hasMatch(text[i - 1]);
         final end = text.indexOf("'", i + 1);
-        if (end != -1) {
+        if (end != -1 && !prevIsLetter && end > i + 1
+            && text[i + 1] != ' ' && text[end - 1] != ' ') {
           flushBuffer();
           final quoteStyle = base.copyWith(color: tertiaryColor, fontWeight: FontWeight.bold);
           spans.add(TextSpan(text: "'", style: quoteStyle));
@@ -300,9 +304,13 @@ class MarkdownText extends StatelessWidget {
 
     while (i < text.length) {
       // 'text' → tertiary + bold
+      // Skip apostrophes in contractions (e.g. you're, I'm, don't)
+      // Require tight quotes: no space after opening ' and no space before closing '
       if (text[i] == "'") {
+        final prevIsLetter = i > 0 && _letterPattern.hasMatch(text[i - 1]);
         final end = text.indexOf("'", i + 1);
-        if (end != -1) {
+        if (end != -1 && !prevIsLetter && end > i + 1
+            && text[i + 1] != ' ' && text[end - 1] != ' ') {
           flushBuffer();
           final quoteStyle = parentStyle.copyWith(color: tertiaryColor, fontWeight: FontWeight.bold);
           spans.add(TextSpan(text: "'", style: quoteStyle));
@@ -351,6 +359,8 @@ class MarkdownText extends StatelessWidget {
     flushBuffer();
     return spans;
   }
+
+  static final _letterPattern = RegExp(r'[a-zA-Z]');
 
   static int _findSingleStar(String text, int start) {
     for (int i = start; i < text.length; i++) {
