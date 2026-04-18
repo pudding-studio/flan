@@ -148,7 +148,8 @@ class ChatMessageBubble extends StatelessWidget {
                 )
               else ...[
                 MarkdownText(
-                  text: displayContent,
+                  text: _ConversationContent.stripSpeakerPrefixes(
+                      displayContent),
                   baseStyle: theme.textTheme.bodyMedium?.copyWith(
                     fontSize: viewer.fontSize,
                     height: viewer.lineHeight,
@@ -447,6 +448,20 @@ class _ConversationContent extends StatelessWidget {
     if (speaker.isEmpty || rest.isEmpty) return null;
     if (!_openingQuotes.contains(rest.characters.first)) return null;
     return (speaker, rest);
+  }
+
+  /// Removes the `SpeakerName|` prefix from any dialogue lines in [text] so
+  /// the novel-mode renderer shows just the quoted line. Non-matching lines
+  /// are passed through unchanged, preserving indentation/leading whitespace.
+  static String stripSpeakerPrefixes(String text) {
+    final lines = text.split('\n');
+    for (var i = 0; i < lines.length; i++) {
+      final trimmed = lines[i].trim();
+      if (trimmed.isEmpty) continue;
+      final match = _parseSpeakerLine(trimmed);
+      if (match != null) lines[i] = match.$2;
+    }
+    return lines.join('\n');
   }
 
   static List<_ConvSegment> _splitSegments(String text) {
