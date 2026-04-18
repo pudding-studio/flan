@@ -160,11 +160,20 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       final messages = await _db.readChatMessagesByChatRoom(widget.chatRoomId);
       final coverImages = await _db.readCoverImages(chatRoom.characterId);
       final additionalImages = await _db.readAdditionalImages(chatRoom.characterId);
-      // Build name→path map for <img="name"> tag resolution
+      // Build name→path map for <img="name"> tag resolution.
+      // Register both the original name and the extension-stripped name so
+      // the tag matches regardless of whether either side carries ".png" etc.
       final imagePathMap = <String, String>{};
+      final imageExtPattern = RegExp(
+        r'\.(png|jpe?g|gif|webp|bmp|heic|avif)$',
+        caseSensitive: false,
+      );
       for (final img in [...coverImages, ...additionalImages]) {
-        if (img.path != null && img.name.isNotEmpty) {
-          imagePathMap[img.name] = img.path!;
+        if (img.path == null || img.name.isEmpty) continue;
+        imagePathMap.putIfAbsent(img.name, () => img.path!);
+        final stripped = img.name.replaceFirst(imageExtPattern, '');
+        if (stripped != img.name) {
+          imagePathMap.putIfAbsent(stripped, () => img.path!);
         }
       }
       final metadataList = await _db.readChatMessageMetadataByChatRoom(widget.chatRoomId);
