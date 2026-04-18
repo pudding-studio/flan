@@ -24,6 +24,7 @@ import 'providers/viewer_settings_provider.dart';
 import 'providers/community_model_provider.dart';
 import 'providers/diary_model_provider.dart';
 import 'providers/chat_background_provider.dart';
+import 'providers/message_send_key_provider.dart';
 import 'database/database_helper.dart';
 import 'services/default_seeder_service.dart';
 import 'screens/tutorial/tutorial_screen.dart';
@@ -72,6 +73,7 @@ void main() async {
           ChangeNotifierProvider(create: (_) => CommunityModelProvider()),
           ChangeNotifierProvider(create: (_) => DiaryModelProvider()),
           ChangeNotifierProvider(create: (_) => ChatBackgroundProvider()),
+          ChangeNotifierProvider(create: (_) => MessageSendKeyProvider()),
         ],
         child: const MyApp(),
       ),

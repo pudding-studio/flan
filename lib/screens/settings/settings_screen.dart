@@ -1,9 +1,13 @@
+import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/chat_background_provider.dart';
 import '../../providers/localization_provider.dart';
+import '../../providers/message_send_key_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../tutorial/tutorial_screen.dart';
@@ -263,6 +267,32 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
             },
           ),
+          if (!kIsWeb && Platform.isWindows) ...[
+            Consumer<MessageSendKeyProvider>(
+              builder: (context, provider, child) {
+                return _buildListTile(
+                  icon: Icons.keyboard_return,
+                  title: l10n.settingsSendOnEnter,
+                  trailing: Switch(
+                    value: provider.sendOnEnter,
+                    onChanged: provider.setSendOnEnter,
+                  ),
+                );
+              },
+            ),
+            Consumer<MessageSendKeyProvider>(
+              builder: (context, provider, child) {
+                return _buildListTile(
+                  icon: Icons.keyboard_capslock,
+                  title: l10n.settingsSendOnShiftEnter,
+                  trailing: Switch(
+                    value: provider.sendOnShiftEnter,
+                    onChanged: provider.setSendOnShiftEnter,
+                  ),
+                );
+              },
+            ),
+          ],
           const Divider(),
           _buildSectionHeader(l10n.settingsSectionChat),
           _buildListTile(

@@ -49,6 +49,8 @@
   "settingsAiResponseLanguage": "AI 응답 언어",
   "settingsAiResponseLanguageAuto": "앱 언어와 동일",
   "settingsBackgroundImage": "배경이미지",
+  "settingsSendOnEnter": "메시지 전송 Enter",
+  "settingsSendOnShiftEnter": "메시지 전송 Shift Enter",
   "languageKorean": "한국어",
   "languageEnglish": "English",
   "languageJapanese": "日本語",

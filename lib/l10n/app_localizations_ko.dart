@@ -134,6 +134,12 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsBackgroundImage => '배경이미지';
 
   @override
+  String get settingsSendOnEnter => '메시지 전송 Enter';
+
+  @override
+  String get settingsSendOnShiftEnter => '메시지 전송 Shift Enter';
+
+  @override
   String get languageKorean => '한국어';
 
   @override

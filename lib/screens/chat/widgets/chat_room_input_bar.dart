@@ -1,6 +1,11 @@
+import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../providers/message_send_key_provider.dart';
 import '../../../widgets/common/common_edit_text.dart';
 import '../chat_sending_phase.dart';
 
@@ -70,13 +75,22 @@ class ChatRoomInputBar extends StatelessWidget {
               Expanded(
                 child: Focus(
                   onKeyEvent: (node, event) {
-                    if (event is KeyDownEvent &&
-                        event.logicalKey == LogicalKeyboardKey.enter &&
-                        HardwareKeyboard.instance.isShiftPressed) {
-                      if (!_isSending) onSend();
-                      return KeyEventResult.handled;
+                    if (event is! KeyDownEvent ||
+                        event.logicalKey != LogicalKeyboardKey.enter) {
+                      return KeyEventResult.ignored;
                     }
-                    return KeyEventResult.ignored;
+                    if (kIsWeb || !Platform.isWindows) {
+                      return KeyEventResult.ignored;
+                    }
+                    final keys = context.read<MessageSendKeyProvider>();
+                    final shiftPressed =
+                        HardwareKeyboard.instance.isShiftPressed;
+                    final shouldSend = shiftPressed
+                        ? keys.sendOnShiftEnter
+                        : keys.sendOnEnter;
+                    if (!shouldSend) return KeyEventResult.ignored;
+                    if (!_isSending) onSend();
+                    return KeyEventResult.handled;
                   },
                   child: CommonEditText(
                     controller: controller,

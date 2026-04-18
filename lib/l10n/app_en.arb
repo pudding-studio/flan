@@ -49,6 +49,8 @@
   "settingsAiResponseLanguage": "AI Response",
   "settingsAiResponseLanguageAuto": "App Language",
   "settingsBackgroundImage": "Background Image",
+  "settingsSendOnEnter": "Send on Enter",
+  "settingsSendOnShiftEnter": "Send on Shift+Enter",
   "languageKorean": "한국어",
   "languageEnglish": "English",
   "languageJapanese": "日本語",

@@ -134,6 +134,12 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsBackgroundImage => '背景画像';
 
   @override
+  String get settingsSendOnEnter => 'Enterで送信';
+
+  @override
+  String get settingsSendOnShiftEnter => 'Shift+Enterで送信';
+
+  @override
   String get languageKorean => '한국어';
 
   @override

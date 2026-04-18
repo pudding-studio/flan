@@ -343,6 +343,18 @@ abstract class AppLocalizations {
   /// **'배경이미지'**
   String get settingsBackgroundImage;
 
+  /// No description provided for @settingsSendOnEnter.
+  ///
+  /// In ko, this message translates to:
+  /// **'메시지 전송 Enter'**
+  String get settingsSendOnEnter;
+
+  /// No description provided for @settingsSendOnShiftEnter.
+  ///
+  /// In ko, this message translates to:
+  /// **'메시지 전송 Shift Enter'**
+  String get settingsSendOnShiftEnter;
+
   /// No description provided for @languageKorean.
   ///
   /// In ko, this message translates to:
