@@ -1035,6 +1035,18 @@ class AppLocalizationsJa extends AppLocalizations {
   String get characterEditTabAdditionalImage => '追加画像';
 
   @override
+  String get characterEditWorldDateTitle => '世界開始日';
+
+  @override
+  String get characterEditWorldDateHelp => 'このキャラクターの世界の基準日です。プロンプトの[world_date]キーワードとして使用され、ニュース/SNS生成の基準時刻になります。';
+
+  @override
+  String get characterEditWorldDateHint => '日付を選択してください';
+
+  @override
+  String get characterEditWorldDateClear => '日付をリセット';
+
+  @override
   String get characterEditSnsHelp => 'このキャラクターのSNS掲示板設定を行います。';
 
   @override

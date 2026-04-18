@@ -1981,6 +1981,30 @@ abstract class AppLocalizations {
   /// **'추가이미지'**
   String get characterEditTabAdditionalImage;
 
+  /// No description provided for @characterEditWorldDateTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'세계 시작 날짜'**
+  String get characterEditWorldDateTitle;
+
+  /// No description provided for @characterEditWorldDateHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 캐릭터 세계의 기준 날짜입니다. 프롬프트의 [world_date] 키워드로 사용되며, 뉴스/SNS 생성 시 기준 시간으로 쓰입니다.'**
+  String get characterEditWorldDateHelp;
+
+  /// No description provided for @characterEditWorldDateHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'날짜를 선택해주세요'**
+  String get characterEditWorldDateHint;
+
+  /// No description provided for @characterEditWorldDateClear.
+  ///
+  /// In ko, this message translates to:
+  /// **'날짜 초기화'**
+  String get characterEditWorldDateClear;
+
   /// No description provided for @characterEditSnsHelp.
   ///
   /// In ko, this message translates to:

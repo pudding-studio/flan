@@ -14,7 +14,7 @@ class StoredImage {
 }
 
 class CharacterImageStorage {
-  /// Saves image bytes to {appDocDir}/characters/{characterName}/{imageName}.{ext}
+  /// Saves image bytes to {baseDir}/characters/{characterName}/{imageName}.{ext}
   /// Returns the absolute path of the saved file.
   static Future<String> saveImage(
     String characterName,
@@ -25,6 +25,15 @@ class CharacterImageStorage {
     final dir = await _characterDir(characterName);
     final filePath = await _resolvePath(dir, imageName, ext);
     final file = File(filePath);
+    // Re-assert parent exists right before write — guards against the dir
+    // being removed between _characterDir() and writeAsBytes(), and against
+    // platform-specific path quirks (OneDrive/Documents redirection on
+    // Windows, non-ASCII user profile paths) that can cause a
+    // PathNotFoundException at creation time.
+    final parent = file.parent;
+    if (!await parent.exists()) {
+      await parent.create(recursive: true);
+    }
     await file.writeAsBytes(bytes);
     return filePath;
   }
@@ -61,14 +70,28 @@ class CharacterImageStorage {
   }
 
   /// Returns the character-specific directory, creating it if necessary.
+  ///
+  /// On desktop (Windows/macOS/Linux) we use the application support directory
+  /// instead of the Documents folder to avoid OneDrive redirection, Korean/
+  /// non-ASCII user profile path issues on Windows, and Documents folder
+  /// permission quirks that surface as PathNotFoundException at file
+  /// creation time.
   static Future<String> _characterDir(String characterName) async {
-    final appDocDir = await getApplicationDocumentsDirectory();
+    final baseDir = await _baseStorageDir();
     final safeCharName = _sanitizeFileName(characterName);
-    final dir = Directory(p.join(appDocDir.path, 'characters', safeCharName));
+    final dir = Directory(p.join(baseDir.path, 'characters', safeCharName));
     if (!await dir.exists()) {
       await dir.create(recursive: true);
     }
     return dir.path;
+  }
+
+  static Future<Directory> _baseStorageDir() async {
+    if (!kIsWeb &&
+        (Platform.isWindows || Platform.isLinux || Platform.isMacOS)) {
+      return getApplicationSupportDirectory();
+    }
+    return getApplicationDocumentsDirectory();
   }
 
   /// Resolves a unique file path, appending _1, _2, ... suffix on collision.

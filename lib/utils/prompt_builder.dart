@@ -10,6 +10,7 @@ import '../models/prompt/chat_prompt.dart';
 import '../models/prompt/prompt_condition.dart';
 import '../models/prompt/prompt_item.dart';
 import '../providers/tokenizer_provider.dart';
+import 'date_formatter.dart';
 import 'metadata_parser.dart';
 import 'token_counter.dart';
 
@@ -23,6 +24,7 @@ class PromptBuilder {
     ChatRoom? chatRoom,
     List<ChatSummary>? summaries,
     Map<int, ChatMessageMetadata>? summaryMetadataMap,
+    ChatMessageMetadata? latestMetadata,
     List<PromptCondition>? conditions,
     Map<int, String>? conditionStates,
     String? agentContext,
@@ -36,6 +38,7 @@ class PromptBuilder {
       chatRoom: chatRoom,
       summaries: summaries,
       summaryMetadataMap: summaryMetadataMap,
+      latestMetadata: latestMetadata,
       agentContext: agentContext,
     );
 
@@ -78,6 +81,7 @@ class PromptBuilder {
     ChatRoom? chatRoom,
     List<ChatSummary>? summaries,
     Map<int, ChatMessageMetadata>? summaryMetadataMap,
+    ChatMessageMetadata? latestMetadata,
     List<PromptCondition>? conditions,
     Map<int, String>? conditionStates,
     String? agentContext,
@@ -91,6 +95,7 @@ class PromptBuilder {
       chatRoom: chatRoom,
       summaries: summaries,
       summaryMetadataMap: summaryMetadataMap,
+      latestMetadata: latestMetadata,
       agentContext: agentContext,
     );
 
@@ -276,6 +281,7 @@ class PromptBuilder {
     ChatRoom? chatRoom,
     List<ChatSummary>? summaries,
     Map<int, ChatMessageMetadata>? summaryMetadataMap,
+    ChatMessageMetadata? latestMetadata,
     String? agentContext,
   }) {
     // Phase 1: identity keywords that other values may reference
@@ -302,6 +308,7 @@ class PromptBuilder {
       'chat_memo': resolve(chatRoom?.memo ?? ''),
       'chat_historys': resolve(_buildChatHistorysText(summaries, summaryMetadataMap)),
       'agent_context': resolve(agentContext ?? ''),
+      'world_date': _formatWorldDate(character, latestMetadata),
     };
   }
 
@@ -334,6 +341,21 @@ class PromptBuilder {
       }
     }
     return buffer.toString().trim();
+  }
+
+  static String _formatWorldDate(
+    Character character,
+    ChatMessageMetadata? latestMetadata,
+  ) {
+    // Progressive world time from the latest chat metadata takes precedence
+    // over the character's configured start date.
+    final progressiveDate = DateFormatter.parseMetadataDateTime(
+      latestMetadata?.date,
+      latestMetadata?.time,
+    );
+    final date = progressiveDate ?? character.worldStartDate;
+    if (date == null) return '';
+    return '${date.year}년 ${date.month}월 ${date.day}일';
   }
 
   static String _buildCharacterBookText(List<CharacterBook>? books) {

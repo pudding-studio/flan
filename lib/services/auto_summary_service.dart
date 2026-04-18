@@ -280,6 +280,9 @@ class AutoSummaryService {
       }
     }
 
+    final latestMetadata =
+        await _db.readLatestChatMessageMetadata(chatRoomId);
+
     return PromptBuilder.buildKeywordMap(
       character: character,
       persona: persona,
@@ -288,6 +291,7 @@ class AutoSummaryService {
       chatRoom: chatRoom,
       summaries: summaries,
       summaryMetadataMap: summaryMetadataMap,
+      latestMetadata: latestMetadata,
     );
   }
 

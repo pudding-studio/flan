@@ -4,6 +4,7 @@ import '../../../models/character/character.dart';
 import '../../../models/character/persona.dart';
 import '../../../models/character/start_scenario.dart';
 import '../../../widgets/common/common_settings.dart';
+import '../../../widgets/common/markdown_text.dart';
 
 /// Top-of-list header rendered above the first message in the chat room.
 ///
@@ -18,12 +19,14 @@ class ChatRoomHeader extends StatelessWidget {
   final Character character;
   final Persona? selectedPersona;
   final StartScenario? startScenario;
+  final String Function(String)? displayContentBuilder;
 
   const ChatRoomHeader({
     super.key,
     required this.character,
     required this.selectedPersona,
     required this.startScenario,
+    this.displayContentBuilder,
   });
 
   String _replaceKeywords(String text) {
@@ -74,9 +77,12 @@ class ChatRoomHeader extends StatelessWidget {
                 color: Theme.of(context).colorScheme.surfaceContainerHighest,
                 borderRadius: BorderRadius.circular(16),
               ),
-              child: Text(
-                _replaceKeywords(startScenario!.startMessage!),
-                style: Theme.of(context).textTheme.bodyLarge,
+              child: MarkdownText(
+                text: () {
+                  final raw = _replaceKeywords(startScenario!.startMessage!);
+                  return displayContentBuilder?.call(raw) ?? raw;
+                }(),
+                baseStyle: Theme.of(context).textTheme.bodyLarge,
               ),
             ),
           ],

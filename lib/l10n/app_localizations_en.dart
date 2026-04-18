@@ -1035,6 +1035,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get characterEditTabAdditionalImage => 'Extra Images';
 
   @override
+  String get characterEditWorldDateTitle => 'World Start Date';
+
+  @override
+  String get characterEditWorldDateHelp => 'The reference date for this character\'s world. Used as the [world_date] keyword in prompts and as the base time for news/SNS generation.';
+
+  @override
+  String get characterEditWorldDateHint => 'Select a date';
+
+  @override
+  String get characterEditWorldDateClear => 'Clear date';
+
+  @override
   String get characterEditSnsHelp => 'Configure the SNS board settings for this character.';
 
   @override

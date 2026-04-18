@@ -64,6 +64,10 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   // 추가 이미지 상태
   final List<CoverImage> _additionalImages = [];
 
+  // 세계 날짜
+  DateTime? _worldStartDate;
+  DateTime? _originalWorldStartDate;
+
   // SNS 설정 컨트롤러
   final _communityNameController = TextEditingController();
   final _communityMoodController = TextEditingController();
@@ -148,6 +152,8 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         _originalCommunityName = character.communityName ?? '';
         _originalCommunityMood = character.communityMood ?? '';
         _originalCommunityLanguage = character.communityLanguage ?? '';
+        _worldStartDate = character.worldStartDate;
+        _originalWorldStartDate = character.worldStartDate;
       }
 
       // 로어북 폴더 및 로어북 로드
@@ -274,7 +280,8 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         _selectedCoverImageId != _originalSelectedCoverImageId ||
         _communityNameController.text != _originalCommunityName ||
         _communityMoodController.text != _originalCommunityMood ||
-        _communityLanguageController.text != _originalCommunityLanguage) {
+        _communityLanguageController.text != _originalCommunityLanguage ||
+        _worldStartDate != _originalWorldStartDate) {
       return true;
     }
 
@@ -444,6 +451,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         'communityName': _communityNameController.text,
         'communityMood': _communityMoodController.text,
         'communityLanguage': _communityLanguageController.text,
+        'worldStartDate': _worldStartDate?.toIso8601String(),
         'timestamp': DateTime.now().toIso8601String(),
       };
       await prefs.setString(_getAutoSaveKey(), jsonEncode(data));
@@ -547,6 +555,10 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           _communityNameController.text = data['communityName'] as String? ?? '';
           _communityMoodController.text = data['communityMood'] as String? ?? '';
           _communityLanguageController.text = data['communityLanguage'] as String? ?? '';
+
+          // 세계 날짜 복원
+          final wsd = data['worldStartDate'] as String?;
+          _worldStartDate = wsd != null ? DateTime.tryParse(wsd) : null;
         });
 
         // 복원한 데이터를 원본으로 설정 (편집 모드인 경우)
@@ -566,6 +578,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           _originalCommunityName = _communityNameController.text;
           _originalCommunityMood = _communityMoodController.text;
           _originalCommunityLanguage = _communityLanguageController.text;
+          _originalWorldStartDate = _worldStartDate;
         }
       } else if (shouldRestore == false) {
         // 사용자가 취소를 선택하면 자동 저장 데이터 삭제
@@ -642,6 +655,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           communityName: _communityNameController.text.isEmpty ? null : _communityNameController.text,
           communityMood: _communityMoodController.text.isEmpty ? null : _communityMoodController.text,
           communityLanguage: _communityLanguageController.text.isEmpty ? null : _communityLanguageController.text,
+          worldStartDate: _worldStartDate,
         );
         await _db.updateCharacter(character);
       } else {
@@ -661,6 +675,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           communityName: _communityNameController.text.isEmpty ? null : _communityNameController.text,
           communityMood: _communityMoodController.text.isEmpty ? null : _communityMoodController.text,
           communityLanguage: _communityLanguageController.text.isEmpty ? null : _communityLanguageController.text,
+          worldStartDate: _worldStartDate,
         );
         characterId = await _db.createCharacter(character);
       }
@@ -1060,6 +1075,19 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     );
   }
 
+  Future<void> _pickWorldStartDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _worldStartDate ?? DateTime.now(),
+      firstDate: DateTime(1),
+      lastDate: DateTime(9999, 12, 31),
+    );
+    if (picked != null && mounted) {
+      setState(() => _worldStartDate = picked);
+      _autoSave();
+    }
+  }
+
   Widget _buildOtherTab() {
     final l10n = AppLocalizations.of(context);
     return SingleChildScrollView(
@@ -1067,6 +1095,41 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          CommonTitleMedium(
+            text: l10n.characterEditWorldDateTitle,
+            helpMessage: l10n.characterEditWorldDateHelp,
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _pickWorldStartDate,
+                  icon: const Icon(Icons.calendar_today, size: 16),
+                  label: Text(
+                    _worldStartDate != null
+                        ? '${_worldStartDate!.year}년 ${_worldStartDate!.month}월 ${_worldStartDate!.day}일'
+                        : l10n.characterEditWorldDateHint,
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    alignment: Alignment.centerLeft,
+                  ),
+                ),
+              ),
+              if (_worldStartDate != null) ...[
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.clear),
+                  tooltip: l10n.characterEditWorldDateClear,
+                  onPressed: () {
+                    setState(() => _worldStartDate = null);
+                    _autoSave();
+                  },
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 24),
           CommonTitleMedium(
             text: 'SNS',
             helpMessage: l10n.characterEditSnsHelp,

@@ -1035,6 +1035,18 @@ class AppLocalizationsKo extends AppLocalizations {
   String get characterEditTabAdditionalImage => '추가이미지';
 
   @override
+  String get characterEditWorldDateTitle => '세계 시작 날짜';
+
+  @override
+  String get characterEditWorldDateHelp => '이 캐릭터 세계의 기준 날짜입니다. 프롬프트의 [world_date] 키워드로 사용되며, 뉴스/SNS 생성 시 기준 시간으로 쓰입니다.';
+
+  @override
+  String get characterEditWorldDateHint => '날짜를 선택해주세요';
+
+  @override
+  String get characterEditWorldDateClear => '날짜 초기화';
+
+  @override
   String get characterEditSnsHelp => '캐릭터의 SNS 게시판 설정을 구성합니다.';
 
   @override

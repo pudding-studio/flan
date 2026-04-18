@@ -1056,6 +1056,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                               .where((p) => p.id == _chatRoom?.selectedPersonaId)
                               .firstOrNull,
                           startScenario: _startScenario,
+                          displayContentBuilder: _buildDisplayContent,
                         );
                       }
                       final messageIndex = _messages.length - 1 - index;

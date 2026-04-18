@@ -9,6 +9,7 @@ import '../../models/character/character.dart';
 import '../../models/character/start_scenario.dart';
 import '../../models/chat/agent_entry.dart';
 import '../../models/chat/chat_message.dart';
+import '../../models/chat/chat_message_metadata.dart';
 import '../../models/chat/chat_room.dart';
 import '../../models/chat/chat_summary.dart';
 import '../../models/community/community_post.dart';
@@ -56,6 +57,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   List<AgentEntry> _agentEntries = [];
   List<NewsArticle> _newsArticles = [];
   List<CommunityPost> _posts = [];
+  ChatMessageMetadata? _latestMetadata;
   bool _isLoading = true;
   bool _isGenerating = false;
   bool _isSubmitting = false;
@@ -87,6 +89,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
       _db.readCommunityPosts(widget.chatRoomId),
       _db.getAgentEntries(widget.chatRoomId),
       _db.readNewsArticles(widget.chatRoomId),
+      _db.readLatestChatMessageMetadata(widget.chatRoomId),
     ]);
     if (!mounted) return;
     final chatRoom = results[1] as ChatRoom?;
@@ -105,6 +108,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
       _posts = results[4] as List<CommunityPost>;
       _agentEntries = results[5] as List<AgentEntry>;
       _newsArticles = results[6] as List<NewsArticle>;
+      _latestMetadata = results[7] as ChatMessageMetadata?;
       _isLoading = false;
     });
   }
@@ -186,7 +190,13 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
     try {
       final model = await _getModel();
-      final nowStr = DateFormatter.formatPromptDateTime(DateTime.now());
+      final worldNow = DateFormatter.parseMetadataDateTime(
+            _latestMetadata?.date,
+            _latestMetadata?.time,
+          ) ??
+          _character?.worldStartDate ??
+          DateTime.now();
+      final nowStr = DateFormatter.formatPromptDateTime(worldNow);
 
       var systemPrompt = await rootBundle.loadString(
         'assets/defaults/community_prompts/community_generate.txt',
