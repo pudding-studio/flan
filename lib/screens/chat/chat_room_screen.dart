@@ -78,6 +78,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   List<CoverImage> _additionalImages = [];
   List<CoverImage> _backgroundImages = [];
   Map<String, String> _imagePathMap = {}; // image name → file path
+  // Subset of _imagePathMap restricted to additional images. Used by the
+  // conversation-view renderer to look up per-speaker avatars of the form
+  // `${speakerName}_default` without falling back to cover images when no
+  // such additional image exists.
+  Map<String, String> _additionalImagePathMap = {};
   bool _isLoading = true;
   SendingPhase _sendingPhase = SendingPhase.none;
   int _retryAttempt = 0;
@@ -179,6 +184,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       // Register both the original name and the extension-stripped name so
       // the tag matches regardless of whether either side carries ".png" etc.
       final imagePathMap = <String, String>{};
+      final additionalImagePathMap = <String, String>{};
       final imageExtPattern = RegExp(
         r'\.(png|jpe?g|gif|webp|bmp|heic|avif)$',
         caseSensitive: false,
@@ -189,6 +195,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         final stripped = img.name.replaceFirst(imageExtPattern, '');
         if (stripped != img.name) {
           imagePathMap.putIfAbsent(stripped, () => img.path!);
+        }
+      }
+      for (final img in additionalImages) {
+        if (img.path == null || img.name.isEmpty) continue;
+        additionalImagePathMap.putIfAbsent(img.name, () => img.path!);
+        final stripped = img.name.replaceFirst(imageExtPattern, '');
+        if (stripped != img.name) {
+          additionalImagePathMap.putIfAbsent(stripped, () => img.path!);
         }
       }
       final metadataList = await _db.readChatMessageMetadataByChatRoom(widget.chatRoomId);
@@ -256,6 +270,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         _additionalImages = additionalImages;
         _backgroundImages = backgroundImages;
         _imagePathMap = imagePathMap;
+        _additionalImagePathMap = additionalImagePathMap;
         _metadataMap = metadataMap;
         _summaryThresholdIndex = summaryThresholdIndex;
         _summarizedMessageIds = summarizedIds;
@@ -961,6 +976,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       metadata: metadata,
       character: _character,
       coverImages: _coverImages,
+      additionalImagePathMap: _additionalImagePathMap,
       isEditing: _editController.isEditing(message),
       editController: _editController.controllerFor(message),
       isSummaryThreshold: isSummaryThreshold,
