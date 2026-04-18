@@ -571,7 +571,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
                 ),
               ),
             ),
-          if (kIsWeb)
+          if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows)
             IconButton(
               icon: Icon(Icons.refresh, color: onSecondary),
               tooltip: l10n.communityRefreshTooltip,

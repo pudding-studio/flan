@@ -311,7 +311,7 @@ class _NewsScreenState extends State<NewsScreen> {
           style: TextStyle(color: onSecondary),
         ),
         actions: [
-          if (kIsWeb)
+          if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows)
             IconButton(
               icon: Icon(Icons.refresh, color: onSecondary),
               tooltip: l10n.newsRefreshTooltip,
