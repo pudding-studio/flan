@@ -856,7 +856,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get chatRoomTextSettings => '텍스트 설정';
+  String get chatRoomTextSettings => '뷰어 설정';
 
   @override
   String get chatRoomBranchTitle => '분기 생성';
@@ -2571,6 +2571,18 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get chatBottomPanelAlignJustify => '양쪽';
+
+  @override
+  String get chatBottomPanelViewMode => '뷰어 모드';
+
+  @override
+  String get chatBottomPanelViewModeNovel => '소설형';
+
+  @override
+  String get chatBottomPanelViewModeConversation => '대화형';
+
+  @override
+  String get chatBottomPanelViewModeCombination => '조합형';
 
   @override
   String get tutorialStepGoogleAiAccess => 'Google AI Studio 접속';

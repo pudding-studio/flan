@@ -937,6 +937,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       isLastMessage: isLastMessage,
       displayContent: _buildDisplayContent(message.content),
       metadata: metadata,
+      character: _character,
+      coverImages: _coverImages,
       isEditing: _editController.isEditing(message),
       editController: _editController.controllerFor(message),
       isSummaryThreshold: isSummaryThreshold,

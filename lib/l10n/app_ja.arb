@@ -443,7 +443,7 @@
       "promptId": { "type": "String" }
     }
   },
-  "chatRoomTextSettings": "テキスト設定",
+  "chatRoomTextSettings": "ビューアー設定",
   "chatRoomBranchTitle": "分岐を作成",
   "chatRoomBranchContent": "このメッセージまでの内容で新しい分岐を作成しますか？",
   "chatRoomBranchConfirm": "作成",
@@ -1293,6 +1293,10 @@
   "chatBottomPanelParagraphAlign": "段落揃え",
   "chatBottomPanelAlignLeft": "左揃え",
   "chatBottomPanelAlignJustify": "両端揃え",
+  "chatBottomPanelViewMode": "ビューモード",
+  "chatBottomPanelViewModeNovel": "小説型",
+  "chatBottomPanelViewModeConversation": "会話型",
+  "chatBottomPanelViewModeCombination": "組み合わせ型",
 
   "tutorialStepGoogleAiAccess": "Google AI Studioにアクセス",
   "tutorialStepGoogleAiPayment": "支払いアカウントを作成 (有料モデル使用時に必要)",

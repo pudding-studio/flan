@@ -856,7 +856,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get chatRoomTextSettings => 'テキスト設定';
+  String get chatRoomTextSettings => 'ビューアー設定';
 
   @override
   String get chatRoomBranchTitle => '分岐を作成';
@@ -2571,6 +2571,18 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get chatBottomPanelAlignJustify => '両端揃え';
+
+  @override
+  String get chatBottomPanelViewMode => 'ビューモード';
+
+  @override
+  String get chatBottomPanelViewModeNovel => '小説型';
+
+  @override
+  String get chatBottomPanelViewModeConversation => '会話型';
+
+  @override
+  String get chatBottomPanelViewModeCombination => '組み合わせ型';
 
   @override
   String get tutorialStepGoogleAiAccess => 'Google AI Studioにアクセス';

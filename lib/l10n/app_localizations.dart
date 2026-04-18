@@ -1654,7 +1654,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatRoomTextSettings.
   ///
   /// In ko, this message translates to:
-  /// **'텍스트 설정'**
+  /// **'뷰어 설정'**
   String get chatRoomTextSettings;
 
   /// No description provided for @chatRoomBranchTitle.
@@ -4860,6 +4860,30 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'양쪽'**
   String get chatBottomPanelAlignJustify;
+
+  /// No description provided for @chatBottomPanelViewMode.
+  ///
+  /// In ko, this message translates to:
+  /// **'뷰어 모드'**
+  String get chatBottomPanelViewMode;
+
+  /// No description provided for @chatBottomPanelViewModeNovel.
+  ///
+  /// In ko, this message translates to:
+  /// **'소설형'**
+  String get chatBottomPanelViewModeNovel;
+
+  /// No description provided for @chatBottomPanelViewModeConversation.
+  ///
+  /// In ko, this message translates to:
+  /// **'대화형'**
+  String get chatBottomPanelViewModeConversation;
+
+  /// No description provided for @chatBottomPanelViewModeCombination.
+  ///
+  /// In ko, this message translates to:
+  /// **'조합형'**
+  String get chatBottomPanelViewModeCombination;
 
   /// No description provided for @tutorialStepGoogleAiAccess.
   ///

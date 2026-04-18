@@ -443,7 +443,7 @@
       "promptId": { "type": "String" }
     }
   },
-  "chatRoomTextSettings": "Text Settings",
+  "chatRoomTextSettings": "Viewer Settings",
   "chatRoomBranchTitle": "Create Branch",
   "chatRoomBranchContent": "Create a new branch up to this message?",
   "chatRoomBranchConfirm": "Create",
@@ -1293,6 +1293,10 @@
   "chatBottomPanelParagraphAlign": "Text Align",
   "chatBottomPanelAlignLeft": "Left",
   "chatBottomPanelAlignJustify": "Justify",
+  "chatBottomPanelViewMode": "View Mode",
+  "chatBottomPanelViewModeNovel": "Novel",
+  "chatBottomPanelViewModeConversation": "Chat",
+  "chatBottomPanelViewModeCombination": "Combined",
 
   "tutorialStepGoogleAiAccess": "Go to Google AI Studio",
   "tutorialStepGoogleAiPayment": "Create a billing account (required for paid models)",

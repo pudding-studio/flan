@@ -1,18 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+enum ChatViewMode { novel, conversation, combination }
+
 class ViewerSettingsProvider extends ChangeNotifier {
   static const String _fontSizeKey = 'viewer_font_size';
   static const String _lineHeightKey = 'viewer_line_height';
   static const String _paragraphSpacingKey = 'viewer_paragraph_spacing';
   static const String _paragraphWidthKey = 'viewer_paragraph_width';
   static const String _textAlignKey = 'viewer_text_align';
+  static const String _viewModeKey = 'viewer_view_mode';
 
   double _fontSize = 14.0;
   double _lineHeight = 1.4;
   double _paragraphSpacing = 8.0;
   double _paragraphWidth = 0.0;
   bool _isJustified = false;
+  ChatViewMode _viewMode = ChatViewMode.novel;
 
   double get fontSize => _fontSize;
   double get lineHeight => _lineHeight;
@@ -20,6 +24,7 @@ class ViewerSettingsProvider extends ChangeNotifier {
   double get paragraphWidth => _paragraphWidth;
   bool get isJustified => _isJustified;
   TextAlign get textAlign => _isJustified ? TextAlign.justify : TextAlign.left;
+  ChatViewMode get viewMode => _viewMode;
 
   ViewerSettingsProvider() {
     _loadSettings();
@@ -32,6 +37,11 @@ class ViewerSettingsProvider extends ChangeNotifier {
     _paragraphSpacing = prefs.getDouble(_paragraphSpacingKey) ?? 8.0;
     _paragraphWidth = prefs.getDouble(_paragraphWidthKey) ?? 0.0;
     _isJustified = prefs.getBool(_textAlignKey) ?? false;
+    final storedMode = prefs.getString(_viewModeKey);
+    _viewMode = ChatViewMode.values.firstWhere(
+      (m) => m.name == storedMode,
+      orElse: () => ChatViewMode.novel,
+    );
     notifyListeners();
   }
 
@@ -42,6 +52,7 @@ class ViewerSettingsProvider extends ChangeNotifier {
     await prefs.setDouble(_paragraphSpacingKey, _paragraphSpacing);
     await prefs.setDouble(_paragraphWidthKey, _paragraphWidth);
     await prefs.setBool(_textAlignKey, _isJustified);
+    await prefs.setString(_viewModeKey, _viewMode.name);
   }
 
   void adjustFontSize(double delta) {
@@ -70,6 +81,13 @@ class ViewerSettingsProvider extends ChangeNotifier {
 
   void toggleTextAlign() {
     _isJustified = !_isJustified;
+    notifyListeners();
+    _save();
+  }
+
+  void setViewMode(ChatViewMode mode) {
+    if (_viewMode == mode) return;
+    _viewMode = mode;
     notifyListeners();
     _save();
   }

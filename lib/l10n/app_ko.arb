@@ -443,7 +443,7 @@
       "promptId": { "type": "String" }
     }
   },
-  "chatRoomTextSettings": "텍스트 설정",
+  "chatRoomTextSettings": "뷰어 설정",
   "chatRoomBranchTitle": "분기 생성",
   "chatRoomBranchContent": "이 메시지까지의 내용으로 새 분기점을 생성하시겠습니까?",
   "chatRoomBranchConfirm": "생성",
@@ -1293,6 +1293,10 @@
   "chatBottomPanelParagraphAlign": "문단 정렬",
   "chatBottomPanelAlignLeft": "왼쪽",
   "chatBottomPanelAlignJustify": "양쪽",
+  "chatBottomPanelViewMode": "뷰어 모드",
+  "chatBottomPanelViewModeNovel": "소설형",
+  "chatBottomPanelViewModeConversation": "대화형",
+  "chatBottomPanelViewModeCombination": "조합형",
 
   "tutorialStepGoogleAiAccess": "Google AI Studio 접속",
   "tutorialStepGoogleAiPayment": "결제 계정 생성 (유료 모델 사용 시 필요)",

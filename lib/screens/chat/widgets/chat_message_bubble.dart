@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../models/character/character.dart';
+import '../../../models/character/cover_image.dart';
 import '../../../models/chat/chat_message.dart';
 import '../../../models/chat/chat_message_metadata.dart';
 import '../../../providers/viewer_settings_provider.dart';
@@ -9,6 +11,7 @@ import '../../../utils/metadata_parser.dart';
 import '../../../widgets/common/common_character_card.dart';
 import '../../../widgets/common/common_edit_text.dart';
 import '../../../widgets/common/markdown_text.dart';
+import 'chat_room_character_avatar.dart';
 
 /// Single message row in the chat room conversation list.
 ///
@@ -30,6 +33,12 @@ class ChatMessageBubble extends StatelessWidget {
   final String displayContent;
 
   final ChatMessageMetadata? metadata;
+
+  /// Character metadata used only for the conversation view mode to render
+  /// the avatar + name header above AI messages. Null in novel mode or when
+  /// the chat room data is still loading.
+  final Character? character;
+  final List<CoverImage> coverImages;
 
   final bool isEditing;
   final TextEditingController? editController;
@@ -59,6 +68,8 @@ class ChatMessageBubble extends StatelessWidget {
     required this.isLastMessage,
     required this.displayContent,
     required this.metadata,
+    required this.character,
+    required this.coverImages,
     required this.isEditing,
     required this.editController,
     required this.isSummaryThreshold,
@@ -111,6 +122,22 @@ class ChatMessageBubble extends StatelessWidget {
                   controller: editController,
                   size: CommonEditTextSize.small,
                   maxLines: null,
+                )
+              else if (viewer.viewMode == ChatViewMode.conversation ||
+                  viewer.viewMode == ChatViewMode.combination)
+                _ConversationContent(
+                  isUser: isUser,
+                  mode: viewer.viewMode,
+                  displayContent: displayContent,
+                  character: character,
+                  coverImages: coverImages,
+                  viewer: viewer,
+                  isSearchMatch: isSearchMatch,
+                  isCurrentSearchMatch: isCurrentSearchMatch,
+                  currentOccurrenceInMsg: currentOccurrenceInMsg,
+                  searchQuery: searchQuery,
+                  searchHighlightKey: searchHighlightKey,
+                  characterTags: characterTags,
                 )
               else ...[
                 MarkdownText(
@@ -342,6 +369,223 @@ class _CompactIconButton extends StatelessWidget {
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints(),
       visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+    );
+  }
+}
+
+enum _ConvSegmentType { dialogue, narrative }
+
+class _ConvSegment {
+  final _ConvSegmentType type;
+  final String text;
+  const _ConvSegment(this.type, this.text);
+}
+
+/// Conversation-mode renderer for a single chat message.
+///
+/// Splits the AI message body into alternating dialogue bubbles (lines
+/// beginning with a quote character) and narrative paragraphs, and prefixes
+/// the whole block with an avatar + character name header. User messages
+/// render as a single right-aligned bubble.
+class _ConversationContent extends StatelessWidget {
+  final bool isUser;
+  final ChatViewMode mode;
+  final String displayContent;
+  final Character? character;
+  final List<CoverImage> coverImages;
+  final ViewerSettingsProvider viewer;
+  final bool isSearchMatch;
+  final bool isCurrentSearchMatch;
+  final int currentOccurrenceInMsg;
+  final String? searchQuery;
+  final GlobalKey? searchHighlightKey;
+  final List<CharacterTag> characterTags;
+
+  const _ConversationContent({
+    required this.isUser,
+    required this.mode,
+    required this.displayContent,
+    required this.character,
+    required this.coverImages,
+    required this.viewer,
+    required this.isSearchMatch,
+    required this.isCurrentSearchMatch,
+    required this.currentOccurrenceInMsg,
+    required this.searchQuery,
+    required this.searchHighlightKey,
+    required this.characterTags,
+  });
+
+  static const Set<String> _openingQuotes = {
+    '"', '\u201C', '\u201F', '\u2033',
+    "'", '\u2018', '\u201B',
+    '\u300C', '\u300E', '\u300A', '\u3008',
+  };
+
+  static List<_ConvSegment> _splitSegments(String text) {
+    final lines = text.split('\n');
+    final segments = <_ConvSegment>[];
+    final buf = StringBuffer();
+    _ConvSegmentType? currentType;
+
+    void flush() {
+      final chunk = buf.toString().trim();
+      final type = currentType;
+      if (chunk.isNotEmpty && type != null) {
+        segments.add(_ConvSegment(type, chunk));
+      }
+      buf.clear();
+    }
+
+    for (final line in lines) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty) {
+        if (buf.isNotEmpty) buf.write('\n');
+        continue;
+      }
+      final firstChar = trimmed.characters.first;
+      final type = _openingQuotes.contains(firstChar)
+          ? _ConvSegmentType.dialogue
+          : _ConvSegmentType.narrative;
+      if (currentType != null && currentType != type) {
+        flush();
+      }
+      currentType = type;
+      if (buf.isNotEmpty) buf.write('\n');
+      buf.write(line);
+    }
+    flush();
+    return segments;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final baseStyle = theme.textTheme.bodyMedium?.copyWith(
+      fontSize: viewer.fontSize,
+      height: viewer.lineHeight,
+    );
+
+    if (isUser) {
+      return Align(
+        alignment: Alignment.centerRight,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.75,
+          ),
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: _buildMarkdown(
+              context,
+              displayContent,
+              baseStyle?.copyWith(color: theme.colorScheme.onPrimaryContainer),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final segments = _splitSegments(displayContent);
+    final name = character?.name ?? '';
+    final headerPerBubble = mode == ChatViewMode.conversation;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (!headerPerBubble)
+          Padding(
+            padding: const EdgeInsets.only(top: 4, bottom: 4),
+            child: _buildCharacterHeader(context, name),
+          ),
+        if (segments.isEmpty)
+          _buildMarkdown(context, displayContent, baseStyle),
+        for (final seg in segments)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 3),
+            child: seg.type == _ConvSegmentType.dialogue
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (headerPerBubble)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: _buildCharacterHeader(context, name),
+                        ),
+                      Padding(
+                        padding: EdgeInsets.only(
+                          left: headerPerBubble ? 40 : 0,
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: _buildMarkdown(
+                            context,
+                            seg.text,
+                            baseStyle?.copyWith(color: theme.colorScheme.onSurface),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : _buildMarkdown(
+                    context,
+                    seg.text,
+                    baseStyle?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+          ),
+        if (characterTags.isNotEmpty) const SizedBox(height: 4),
+        ...characterTags.map(
+          (tag) => CommonCharacterCard(tag: tag, fontSize: viewer.fontSize),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCharacterHeader(BuildContext context, String name) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        ChatRoomCharacterAvatar(coverImages: coverImages),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            name,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMarkdown(BuildContext context, String text, TextStyle? style) {
+    final theme = Theme.of(context);
+    return MarkdownText(
+      text: text,
+      baseStyle: style,
+      textAlign: viewer.textAlign,
+      paragraphSpacing: viewer.paragraphSpacing,
+      highlightQuery: isSearchMatch ? searchQuery : null,
+      highlightColor: isSearchMatch
+          ? theme.colorScheme.tertiary.withValues(alpha: 0.35)
+          : null,
+      currentHighlightColor: isCurrentSearchMatch
+          ? theme.colorScheme.tertiary.withValues(alpha: 0.7)
+          : null,
+      currentOccurrence: currentOccurrenceInMsg,
+      highlightKey: isCurrentSearchMatch ? searchHighlightKey : null,
     );
   }
 }
