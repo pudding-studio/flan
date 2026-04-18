@@ -599,13 +599,46 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   Future<void> _finishSending() async {
     final wasScrolledUp = _showScrollButtons;
+
+    // Capture the topmost visible item (highest index in reverse mode) so we
+    // can re-anchor after reload. Because items are rendered via
+    // `messageIndex = _messages.length - 1 - index`, adding new messages
+    // shifts every existing item's index up by `delta`, which otherwise lets
+    // ScrollablePositionedList drift the viewport toward newer content.
+    int? anchorIndex;
+    double? anchorLeadingEdge;
+    final prevMessageCount = _messages.length;
+    if (wasScrolledUp) {
+      final positions = _itemPositionsListener.itemPositions.value;
+      if (positions.isNotEmpty) {
+        final topPos = positions.reduce((a, b) => a.index > b.index ? a : b);
+        anchorIndex = topPos.index;
+        anchorLeadingEdge = topPos.itemLeadingEdge;
+      }
+    }
+
     await _loadChatData(showLoading: false);
-    if (mounted) {
-      setState(() {
-        _sendingPhase = SendingPhase.none;
-        _retryAttempt = 0;
-        if (wasScrolledUp) _hasNewMessage = true;
-      });
+    if (!mounted) return;
+
+    setState(() {
+      _sendingPhase = SendingPhase.none;
+      _retryAttempt = 0;
+      if (wasScrolledUp) _hasNewMessage = true;
+    });
+
+    if (anchorIndex != null && anchorLeadingEdge != null) {
+      final delta = _messages.length - prevMessageCount;
+      if (delta > 0) {
+        final targetIndex = anchorIndex + delta;
+        final targetAlignment = anchorLeadingEdge;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || !_itemScrollController.isAttached) return;
+          _itemScrollController.jumpTo(
+            index: targetIndex,
+            alignment: targetAlignment,
+          );
+        });
+      }
     }
   }
 
@@ -1144,7 +1177,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     return Positioned.fill(
       child: IgnorePointer(
         child: Opacity(
-          opacity: 0.2,
+          opacity: 0.05,
           child: FutureBuilder<Uint8List?>(
             future: image.resolveImageData(),
             builder: (context, snapshot) {
