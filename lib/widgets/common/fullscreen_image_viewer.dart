@@ -8,11 +8,18 @@ class FullscreenImageViewer extends StatefulWidget {
 
   const FullscreenImageViewer({super.key, required this.imageUrl});
 
-  bool get _isLocalFile =>
-      imageUrl.startsWith('/') || imageUrl.startsWith('file://');
+  static final _windowsPathPattern = RegExp(r'^[a-zA-Z]:[/\\]');
 
-  String get _filePath =>
-      imageUrl.startsWith('file://') ? imageUrl.substring(7) : imageUrl;
+  bool get _isLocalFile =>
+      imageUrl.startsWith('/') ||
+      imageUrl.startsWith('file://') ||
+      _windowsPathPattern.hasMatch(imageUrl);
+
+  String get _filePath {
+    if (imageUrl.startsWith('file:///')) return imageUrl.substring(8);
+    if (imageUrl.startsWith('file://')) return imageUrl.substring(7);
+    return imageUrl;
+  }
 
   static void show(BuildContext context, String imageUrl) {
     Navigator.of(context).push(
