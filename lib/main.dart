@@ -26,6 +26,15 @@ import 'database/database_helper.dart';
 import 'services/default_seeder_service.dart';
 import 'screens/tutorial/tutorial_screen.dart';
 
+// Firebase + Crashlytics are only wired up for mobile and web.
+// Desktop (Windows/Linux/macOS) has no firebase_options entry and
+// firebase_crashlytics does not support those platforms.
+bool get _isFirebaseSupported {
+  if (kIsWeb) return true;
+  return defaultTargetPlatform == TargetPlatform.android ||
+      defaultTargetPlatform == TargetPlatform.iOS;
+}
+
 void main() async {
   runZonedGuarded<Future<void>>(() async {
     WidgetsFlutterBinding.ensureInitialized();
@@ -33,12 +42,14 @@ void main() async {
     // Web uses sqflite_common_ffi_web (IndexedDB-backed SQLite WASM); native is no-op.
     initDatabaseFactoryForPlatform();
 
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    if (_isFirebaseSupported) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
 
-    // Crashlytics — native only (package does not support web).
-    if (!kIsWeb) {
+    // Crashlytics — mobile only (package does not support web/desktop).
+    if (_isFirebaseSupported && !kIsWeb) {
       FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
     }
 
@@ -63,10 +74,48 @@ void main() async {
       ),
     );
   }, (error, stack) {
-    if (!kIsWeb) {
+    if (_isFirebaseSupported && !kIsWeb) {
       FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
     }
   });
+}
+
+// On desktop, cap content width to window height so landscape windows
+// show a centered square with black letterboxing on the sides.
+class _DesktopAspectLock extends StatelessWidget {
+  const _DesktopAspectLock({required this.child});
+
+  final Widget? child;
+
+  bool get _isDesktop {
+    if (kIsWeb) return false;
+    return defaultTargetPlatform == TargetPlatform.windows ||
+        defaultTargetPlatform == TargetPlatform.linux ||
+        defaultTargetPlatform == TargetPlatform.macOS;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final content = child ?? const SizedBox.shrink();
+    if (!_isDesktop) return content;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Target content aspect ratio: width 4, height 6.
+        final targetWidth = constraints.maxHeight * 4 / 6;
+        if (constraints.maxWidth <= targetWidth) return content;
+        return ColoredBox(
+          color: Colors.white,
+          child: Center(
+            child: SizedBox(
+              width: targetWidth,
+              height: constraints.maxHeight,
+              child: content,
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -96,6 +145,7 @@ class MyApp extends StatelessWidget {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
+          builder: (context, child) => _DesktopAspectLock(child: child),
           home: const MainScreen(),
         );
       },

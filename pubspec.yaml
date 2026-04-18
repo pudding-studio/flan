@@ -41,6 +41,7 @@ dependencies:
   provider: ^6.1.1
   shared_preferences: ^2.2.2
   sqflite: ^2.3.0
+  sqflite_common_ffi: ^2.3.3
   sqflite_common_ffi_web: ^0.4.5+1
   universal_io: ^2.2.2
   web: ^1.1.0
