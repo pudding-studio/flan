@@ -57,4 +57,28 @@ class DateFormatter {
     }
     return DateTime(y, m, d, hour, minute);
   }
+
+  /// Returns a canonical "YYYY.MM.DD" date string for AI prompts. Never null:
+  /// falls back through metadata → [worldStartDate] → the current wall clock
+  /// so downstream tags always carry a date.
+  static String canonicalMetadataDate(String? rawDate, DateTime? worldStartDate) {
+    if (rawDate != null && rawDate.isNotEmpty) {
+      final parts = rawDate.split('.');
+      if (parts.length == 3) {
+        final y = int.tryParse(parts[0]);
+        final m = int.tryParse(parts[1]);
+        final d = int.tryParse(parts[2]);
+        if (y != null && m != null && d != null) {
+          return _formatYMD(y, m, d);
+        }
+      }
+    }
+    final fallback = worldStartDate ?? DateTime.now();
+    return _formatYMD(fallback.year, fallback.month, fallback.day);
+  }
+
+  static String _formatYMD(int y, int m, int d) =>
+      '${y.toString().padLeft(4, '0')}.'
+      '${m.toString().padLeft(2, '0')}.'
+      '${d.toString().padLeft(2, '0')}';
 }
