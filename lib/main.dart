@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
@@ -80,6 +81,21 @@ void main() async {
   });
 }
 
+// Enables mouse drag for scroll/swipe gestures so desktop behaves like touch.
+class _TouchLikeScrollBehavior extends MaterialScrollBehavior {
+  const _TouchLikeScrollBehavior();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.stylus,
+        PointerDeviceKind.trackpad,
+        PointerDeviceKind.invertedStylus,
+        PointerDeviceKind.unknown,
+      };
+}
+
 // On desktop, cap content width to window height so landscape windows
 // show a centered square with black letterboxing on the sides.
 class _DesktopAspectLock extends StatelessWidget {
@@ -128,6 +144,7 @@ class MyApp extends StatelessWidget {
         return MaterialApp(
           title: 'Flan',
           debugShowCheckedModeBanner: false,
+          scrollBehavior: const _TouchLikeScrollBehavior(),
           theme: AppTheme.getTheme(
             seedColor: themeProvider.seedColor,
             brightness: Brightness.light,

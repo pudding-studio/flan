@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../widgets/common/common_edit_text.dart';
 import '../chat_sending_phase.dart';
@@ -67,30 +68,41 @@ class ChatRoomInputBar extends StatelessWidget {
                 constraints: const BoxConstraints(),
               ),
               Expanded(
-                child: CommonEditText(
-                  controller: controller,
-                  focusNode: focusNode,
-                  enabled: !_isSending,
-                  hintText: _hintText(l10n),
-                  minLines: 1,
-                  maxLines: 5,
-                  textInputAction: TextInputAction.newline,
-                  suffixIcon: IconButton(
-                    icon: _isSending
-                        ? SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: sendingPhase == SendingPhase.preparing
-                                  ? theme.colorScheme.primary
-                                  : sendingPhase == SendingPhase.summarizing
-                                      ? theme.colorScheme.secondary
-                                      : null,
-                            ),
-                          )
-                        : const Icon(Icons.send),
-                    onPressed: _isSending ? null : onSend,
+                child: Focus(
+                  onKeyEvent: (node, event) {
+                    if (event is KeyDownEvent &&
+                        event.logicalKey == LogicalKeyboardKey.enter &&
+                        HardwareKeyboard.instance.isShiftPressed) {
+                      if (!_isSending) onSend();
+                      return KeyEventResult.handled;
+                    }
+                    return KeyEventResult.ignored;
+                  },
+                  child: CommonEditText(
+                    controller: controller,
+                    focusNode: focusNode,
+                    enabled: !_isSending,
+                    hintText: _hintText(l10n),
+                    minLines: 1,
+                    maxLines: 5,
+                    textInputAction: TextInputAction.newline,
+                    suffixIcon: IconButton(
+                      icon: _isSending
+                          ? SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: sendingPhase == SendingPhase.preparing
+                                    ? theme.colorScheme.primary
+                                    : sendingPhase == SendingPhase.summarizing
+                                        ? theme.colorScheme.secondary
+                                        : null,
+                              ),
+                            )
+                          : const Icon(Icons.send),
+                      onPressed: _isSending ? null : onSend,
+                    ),
                   ),
                 ),
               ),
