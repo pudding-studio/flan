@@ -131,6 +131,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsAiResponseLanguageAuto => '앱 언어와 동일';
 
   @override
+  String get settingsBackgroundImage => '배경이미지';
+
+  @override
+  String get settingsSendOnEnter => '메시지 전송 Enter';
+
+  @override
+  String get settingsSendOnShiftEnter => '메시지 전송 Shift Enter';
+
+  @override
   String get languageKorean => '한국어';
 
   @override
@@ -847,7 +856,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get chatRoomTextSettings => '텍스트 설정';
+  String get chatRoomTextSettings => '뷰어 설정';
 
   @override
   String get chatRoomBranchTitle => '분기 생성';
@@ -1032,7 +1041,22 @@ class AppLocalizationsKo extends AppLocalizations {
   String get characterEditTabCoverImage => '표지이미지';
 
   @override
+  String get characterEditTabBackgroundImage => '배경이미지';
+
+  @override
   String get characterEditTabAdditionalImage => '추가이미지';
+
+  @override
+  String get characterEditWorldDateTitle => '세계 시작 날짜';
+
+  @override
+  String get characterEditWorldDateHelp => '이 캐릭터 세계의 기준 날짜입니다. 프롬프트의 [world_date] 키워드로 사용되며, 뉴스/SNS 생성 시 기준 시간으로 쓰입니다.';
+
+  @override
+  String get characterEditWorldDateHint => '날짜를 선택해주세요';
+
+  @override
+  String get characterEditWorldDateClear => '날짜 초기화';
 
   @override
   String get characterEditSnsHelp => '캐릭터의 SNS 게시판 설정을 구성합니다.';
@@ -2494,6 +2518,28 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get backgroundImageTitle => '배경 이미지';
+
+  @override
+  String get backgroundImageTitleHelp => '채팅방에 워터마크로 표시할 배경 이미지를 추가할 수 있습니다.';
+
+  @override
+  String get backgroundImageEmpty => '배경 이미지가 없습니다';
+
+  @override
+  String get backgroundImageAddButton => '이미지 추가';
+
+  @override
+  String backgroundImageDefaultName(int index) {
+    return '배경 $index';
+  }
+
+  @override
+  String backgroundImageSaveError(String error) {
+    return '이미지 저장 중 오류가 발생했습니다: $error';
+  }
+
+  @override
   String get detailSettingsTitle => '세계관 설정';
 
   @override
@@ -2525,6 +2571,18 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get chatBottomPanelAlignJustify => '양쪽';
+
+  @override
+  String get chatBottomPanelViewMode => '뷰어 모드';
+
+  @override
+  String get chatBottomPanelViewModeNovel => '소설형';
+
+  @override
+  String get chatBottomPanelViewModeConversation => '대화형';
+
+  @override
+  String get chatBottomPanelViewModeCombination => '조합형';
 
   @override
   String get tutorialStepGoogleAiAccess => 'Google AI Studio 접속';

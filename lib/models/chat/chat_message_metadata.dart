@@ -1,3 +1,5 @@
+import '../../utils/date_formatter.dart';
+
 class ChatMessageMetadata {
   final int? id;
   final int chatMessageId;
@@ -45,11 +47,11 @@ class ChatMessageMetadata {
     };
   }
 
-  String toTagString() {
+  String toTagString({DateTime? worldStartDate}) {
     final tags = <String>[];
     if (location != null) tags.add('【📍|$location】');
-    if (date != null) tags.add('【📅|$date】');
-    if (time != null) tags.add('【🕰|$time】');
+    tags.add('【📅|${DateFormatter.canonicalMetadataDate(date, worldStartDate)}】');
+    if (time != null && time!.isNotEmpty) tags.add('【🕰|$time】');
     return tags.join('\n');
   }
 

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
@@ -27,6 +29,7 @@ import '../../models/chat/chat_message_metadata.dart';
 import '../../models/chat/unified_model.dart';
 import '../../utils/metadata_parser.dart';
 import '../../widgets/common/common_appbar.dart';
+import '../../providers/chat_background_provider.dart';
 import '../../providers/chat_model_provider.dart';
 import '../../providers/localization_provider.dart';
 import 'chat_send_errors.dart';
@@ -73,6 +76,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   List<ChatMessage> _messages = [];
   List<CoverImage> _coverImages = [];
   List<CoverImage> _additionalImages = [];
+  List<CoverImage> _backgroundImages = [];
   Map<String, String> _imagePathMap = {}; // image name → file path
   bool _isLoading = true;
   SendingPhase _sendingPhase = SendingPhase.none;
@@ -160,11 +164,21 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       final messages = await _db.readChatMessagesByChatRoom(widget.chatRoomId);
       final coverImages = await _db.readCoverImages(chatRoom.characterId);
       final additionalImages = await _db.readAdditionalImages(chatRoom.characterId);
-      // Build name→path map for <img="name"> tag resolution
+      final backgroundImages = await _db.readBackgroundImages(chatRoom.characterId);
+      // Build name→path map for <img="name"> tag resolution.
+      // Register both the original name and the extension-stripped name so
+      // the tag matches regardless of whether either side carries ".png" etc.
       final imagePathMap = <String, String>{};
+      final imageExtPattern = RegExp(
+        r'\.(png|jpe?g|gif|webp|bmp|heic|avif)$',
+        caseSensitive: false,
+      );
       for (final img in [...coverImages, ...additionalImages]) {
-        if (img.path != null && img.name.isNotEmpty) {
-          imagePathMap[img.name] = img.path!;
+        if (img.path == null || img.name.isEmpty) continue;
+        imagePathMap.putIfAbsent(img.name, () => img.path!);
+        final stripped = img.name.replaceFirst(imageExtPattern, '');
+        if (stripped != img.name) {
+          imagePathMap.putIfAbsent(stripped, () => img.path!);
         }
       }
       final metadataList = await _db.readChatMessageMetadataByChatRoom(widget.chatRoomId);
@@ -230,6 +244,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         _messages = messages;
         _coverImages = coverImages;
         _additionalImages = additionalImages;
+        _backgroundImages = backgroundImages;
         _imagePathMap = imagePathMap;
         _metadataMap = metadataMap;
         _summaryThresholdIndex = summaryThresholdIndex;
@@ -584,13 +599,46 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   Future<void> _finishSending() async {
     final wasScrolledUp = _showScrollButtons;
+
+    // Capture the topmost visible item (highest index in reverse mode) so we
+    // can re-anchor after reload. Because items are rendered via
+    // `messageIndex = _messages.length - 1 - index`, adding new messages
+    // shifts every existing item's index up by `delta`, which otherwise lets
+    // ScrollablePositionedList drift the viewport toward newer content.
+    int? anchorIndex;
+    double? anchorLeadingEdge;
+    final prevMessageCount = _messages.length;
+    if (wasScrolledUp) {
+      final positions = _itemPositionsListener.itemPositions.value;
+      if (positions.isNotEmpty) {
+        final topPos = positions.reduce((a, b) => a.index > b.index ? a : b);
+        anchorIndex = topPos.index;
+        anchorLeadingEdge = topPos.itemLeadingEdge;
+      }
+    }
+
     await _loadChatData(showLoading: false);
-    if (mounted) {
-      setState(() {
-        _sendingPhase = SendingPhase.none;
-        _retryAttempt = 0;
-        if (wasScrolledUp) _hasNewMessage = true;
-      });
+    if (!mounted) return;
+
+    setState(() {
+      _sendingPhase = SendingPhase.none;
+      _retryAttempt = 0;
+      if (wasScrolledUp) _hasNewMessage = true;
+    });
+
+    if (anchorIndex != null && anchorLeadingEdge != null) {
+      final delta = _messages.length - prevMessageCount;
+      if (delta > 0) {
+        final targetIndex = anchorIndex + delta;
+        final targetAlignment = anchorLeadingEdge;
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || !_itemScrollController.isAttached) return;
+          _itemScrollController.jumpTo(
+            index: targetIndex,
+            alignment: targetAlignment,
+          );
+        });
+      }
     }
   }
 
@@ -922,6 +970,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       isLastMessage: isLastMessage,
       displayContent: _buildDisplayContent(message.content),
       metadata: metadata,
+      character: _character,
+      coverImages: _coverImages,
       isEditing: _editController.isEditing(message),
       editController: _editController.controllerFor(message),
       isSummaryThreshold: isSummaryThreshold,
@@ -1034,7 +1084,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 ),
               ],
             ),
-      body: Column(
+      body: Stack(
+        children: [
+          _buildBackgroundWatermark(),
+          Column(
         children: [
           Expanded(
             child: Stack(
@@ -1056,6 +1109,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                               .where((p) => p.id == _chatRoom?.selectedPersonaId)
                               .firstOrNull,
                           startScenario: _startScenario,
+                          displayContentBuilder: _buildDisplayContent,
                         );
                       }
                       final messageIndex = _messages.length - 1 - index;
@@ -1108,6 +1162,35 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               onClose: () => setState(() => _showMorePanel = false),
             ),
         ],
+      ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBackgroundWatermark() {
+    final enabled = context.watch<ChatBackgroundProvider>().enabled;
+    if (!enabled || _backgroundImages.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    final image = _backgroundImages.first;
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: Opacity(
+          opacity: 0.05,
+          child: FutureBuilder<Uint8List?>(
+            future: image.resolveImageData(),
+            builder: (context, snapshot) {
+              final bytes = snapshot.data;
+              if (bytes == null) return const SizedBox.shrink();
+              return Image.memory(
+                bytes,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              );
+            },
+          ),
+        ),
       ),
     );
   }

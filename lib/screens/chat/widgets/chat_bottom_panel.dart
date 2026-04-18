@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import '../../../l10n/app_localizations.dart';
 import '../../../providers/viewer_settings_provider.dart';
 
+
 class ChatBottomPanel extends StatelessWidget {
   const ChatBottomPanel({super.key});
 
@@ -37,11 +38,12 @@ class ChatBottomPanel extends StatelessWidget {
               ),
             ),
             SizedBox(
-              height: 220,
+              height: 260,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 child: Column(
                   children: [
+                    _buildViewModeRow(context, viewer),
                     _buildAdjustRow(
                       context: context,
                       label: l10n.chatBottomPanelFontSize,
@@ -118,6 +120,55 @@ class ChatBottomPanel extends StatelessWidget {
             padding: EdgeInsets.zero,
             constraints: const BoxConstraints(minWidth: 32, minHeight: 32),
             visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildViewModeRow(BuildContext context, ViewerSettingsProvider viewer) {
+    final l10n = AppLocalizations.of(context);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 2),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 80,
+            child: Text(l10n.chatBottomPanelViewMode, style: Theme.of(context).textTheme.bodySmall),
+          ),
+          Expanded(
+            child: Align(
+              alignment: Alignment.centerRight,
+              child: SegmentedButton<ChatViewMode>(
+                segments: [
+                  ButtonSegment(
+                    value: ChatViewMode.novel,
+                    label: Text(l10n.chatBottomPanelViewModeNovel),
+                  ),
+                  ButtonSegment(
+                    value: ChatViewMode.conversation,
+                    label: Text(l10n.chatBottomPanelViewModeConversation),
+                  ),
+                  ButtonSegment(
+                    value: ChatViewMode.combination,
+                    label: Text(l10n.chatBottomPanelViewModeCombination),
+                  ),
+                ],
+                selected: {viewer.viewMode},
+                showSelectedIcon: false,
+                onSelectionChanged: (selection) => viewer.setViewMode(selection.first),
+                style: ButtonStyle(
+                  visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  padding: const WidgetStatePropertyAll(
+                    EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                  ),
+                  textStyle: WidgetStatePropertyAll(
+                    Theme.of(context).textTheme.bodySmall,
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
       ),

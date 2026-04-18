@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:universal_io/io.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
@@ -206,6 +207,20 @@ class CharacterExporter {
           message: AppLocalizations.of(context).characterExportSuccessIos(path),
         );
       }
+    } else if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      final savePath = await FilePicker.platform.saveFile(
+        dialogTitle: fileName,
+        fileName: fileName,
+        lockParentWindow: true,
+      );
+      if (savePath == null) return;
+      await File(savePath).writeAsString(content);
+      if (context.mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: AppLocalizations.of(context).characterExportSuccessIos(savePath),
+        );
+      }
     }
   }
 
@@ -241,6 +256,20 @@ class CharacterExporter {
           CommonDialog.showSnackBar(
             context: context,
             message: AppLocalizations.of(context).characterExportSuccessIos(path),
+          );
+        }
+      } else if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+        final savePath = await FilePicker.platform.saveFile(
+          dialogTitle: fileName,
+          fileName: fileName,
+          lockParentWindow: true,
+        );
+        if (savePath == null) return;
+        await tempFile.copy(savePath);
+        if (context.mounted) {
+          CommonDialog.showSnackBar(
+            context: context,
+            message: AppLocalizations.of(context).characterExportSuccessIos(savePath),
           );
         }
       }

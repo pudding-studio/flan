@@ -10,6 +10,11 @@ import 'regex_processor.dart';
 class ChatContentFormatter {
   static final RegExp imageMarkdownPattern = RegExp(r'!\[[^\]]*\]\([^)]+\)');
   static final RegExp _imgTagPattern = RegExp(r'<img="([^"]+)">');
+  static final RegExp _imageExtPattern =
+      RegExp(r'\.(png|jpe?g|gif|webp|bmp|heic|avif)$', caseSensitive: false);
+
+  static String _stripImageExt(String name) =>
+      name.replaceFirst(_imageExtPattern, '');
 
   /// Convert a stored message body into the text the user actually sees.
   ///
@@ -28,7 +33,7 @@ class ChatContentFormatter {
     text = text.replaceAllMapped(_imgTagPattern, (match) {
       if (chatRoom?.showImages == false) return '';
       final name = match.group(1)!;
-      final path = imagePathMap[name];
+      final path = imagePathMap[name] ?? imagePathMap[_stripImageExt(name)];
       if (path != null) {
         return '![$name]($path)';
       }

@@ -45,7 +45,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 53,
+      version: 54,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -90,6 +90,7 @@ class DatabaseHelper {
     (table: 'characters', column: 'community_name', def: 'TEXT'),
     (table: 'characters', column: 'community_mood', def: 'TEXT'),
     (table: 'characters', column: 'community_language', def: 'TEXT'),
+    (table: 'characters', column: 'world_start_date', def: 'TEXT'),
     (table: 'character_books', column: 'secondary_keys', def: 'TEXT'),
     (table: 'prompt_items', column: 'name', def: 'TEXT'),
     (table: 'prompt_items', column: 'folder_id', def: 'INTEGER'),
@@ -152,7 +153,8 @@ class DatabaseHelper {
         sort_order INTEGER,
         community_name $textTypeNullable,
         community_mood $textTypeNullable,
-        community_language $textTypeNullable
+        community_language $textTypeNullable,
+        world_start_date $textTypeNullable
       )
     ''');
 
@@ -1501,6 +1503,12 @@ class DatabaseHelper {
         await _ensureColumn(db, entry.table, entry.column, entry.def);
       }
     }
+
+    if (oldVersion < 54) {
+      await db.execute('''
+        ALTER TABLE characters ADD COLUMN world_start_date TEXT
+      ''');
+    }
   }
 
   // ==================== 캐릭터 CRUD ====================
@@ -1791,6 +1799,17 @@ class DatabaseHelper {
     final result = await db.query(
       'cover_images',
       where: "character_id = ? AND image_type = 'additional'",
+      whereArgs: [characterId],
+      orderBy: '`order` ASC',
+    );
+    return result.map((map) => CoverImage.fromMap(map)).toList();
+  }
+
+  Future<List<CoverImage>> readBackgroundImages(int characterId) async {
+    final db = await database;
+    final result = await db.query(
+      'cover_images',
+      where: "character_id = ? AND image_type = 'background'",
       whereArgs: [characterId],
       orderBy: '`order` ASC',
     );

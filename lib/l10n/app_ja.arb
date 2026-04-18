@@ -48,6 +48,9 @@
   "settingsLanguageSystem": "システム設定",
   "settingsAiResponseLanguage": "AI応答言語",
   "settingsAiResponseLanguageAuto": "アプリ言語と同じ",
+  "settingsBackgroundImage": "背景画像",
+  "settingsSendOnEnter": "Enterで送信",
+  "settingsSendOnShiftEnter": "Shift+Enterで送信",
   "languageKorean": "한국어",
   "languageEnglish": "English",
   "languageJapanese": "日本語",
@@ -440,7 +443,7 @@
       "promptId": { "type": "String" }
     }
   },
-  "chatRoomTextSettings": "テキスト設定",
+  "chatRoomTextSettings": "ビューアー設定",
   "chatRoomBranchTitle": "分岐を作成",
   "chatRoomBranchContent": "このメッセージまでの内容で新しい分岐を作成しますか？",
   "chatRoomBranchConfirm": "作成",
@@ -533,7 +536,12 @@
   "characterEditTabPersona": "ペルソナ",
   "characterEditTabStartSetting": "開始設定",
   "characterEditTabCoverImage": "カバー画像",
+  "characterEditTabBackgroundImage": "背景画像",
   "characterEditTabAdditionalImage": "追加画像",
+  "characterEditWorldDateTitle": "世界開始日",
+  "characterEditWorldDateHelp": "このキャラクターの世界の基準日です。プロンプトの[world_date]キーワードとして使用され、ニュース/SNS生成の基準時刻になります。",
+  "characterEditWorldDateHint": "日付を選択してください",
+  "characterEditWorldDateClear": "日付をリセット",
   "characterEditSnsHelp": "このキャラクターのSNS掲示板設定を行います。",
   "characterEditSnsBoardHint": "例: 自由掲示板、冒険者広場",
   "characterEditSnsToneHint": "例: ユーモラスで親しみやすい雰囲気",
@@ -1256,6 +1264,23 @@
     }
   },
 
+  "backgroundImageTitle": "背景画像",
+  "backgroundImageTitleHelp": "チャットルームに透かしとして表示する背景画像を追加できます。",
+  "backgroundImageEmpty": "背景画像がありません",
+  "backgroundImageAddButton": "画像を追加",
+  "backgroundImageDefaultName": "背景 {index}",
+  "@backgroundImageDefaultName": {
+    "placeholders": {
+      "index": { "type": "int" }
+    }
+  },
+  "backgroundImageSaveError": "画像の保存に失敗しました: {error}",
+  "@backgroundImageSaveError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+
   "detailSettingsTitle": "世界観設定",
   "detailSettingsTitleHelp": "このキャラクターが属する世界観や背景を自由に記述してください。",
   "detailSettingsHint": "世界観設定を入力してください。",
@@ -1268,6 +1293,10 @@
   "chatBottomPanelParagraphAlign": "段落揃え",
   "chatBottomPanelAlignLeft": "左揃え",
   "chatBottomPanelAlignJustify": "両端揃え",
+  "chatBottomPanelViewMode": "ビューモード",
+  "chatBottomPanelViewModeNovel": "小説型",
+  "chatBottomPanelViewModeConversation": "会話型",
+  "chatBottomPanelViewModeCombination": "組み合わせ型",
 
   "tutorialStepGoogleAiAccess": "Google AI Studioにアクセス",
   "tutorialStepGoogleAiPayment": "支払いアカウントを作成 (有料モデル使用時に必要)",

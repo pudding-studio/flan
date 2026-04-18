@@ -70,6 +70,28 @@ flutter build apk --debug
 ```
 출력: `build/app/outputs/flutter-apk/app-debug.apk`
 
+### 7. Windows 빌드 (데스크톱)
+
+#### 7-1. 실행 파일 빌드
+```bash
+flutter build windows --release
+```
+출력: `build/windows/x64/runner/Release/flan.exe` + 동일 폴더의 DLL·`data/`
+
+- 최초 1회에 한해 `flutter config --enable-windows-desktop` 실행 필요
+- 배포 시 `Release/` 폴더 전체가 필요 (단독 exe로는 실행 불가)
+- 배포 불필요 파일: `firebase_core_plugin.lib`, `flan.lib`, `flan.exp`
+
+#### 7-2. 인스톨러 빌드 (Inno Setup)
+```bash
+"/c/Program Files (x86)/Inno Setup 6/ISCC.exe" windows/installer/flan.iss
+```
+출력: `build/windows/installer/Flan-Setup-<version>.exe`
+
+- Inno Setup 6 필요 (`ISCC.exe`)
+- 스크립트: `windows/installer/flan.iss` — 버전 변경 시 `MyAppVersion` 수동 업데이트 필요
+- 한국어·영어·일본어 인스톨러, 관리자 권한 없이 설치, 데스크톱 바로가기 옵션 포함
+
 > 릴리즈 노트는 빌드 산출물과 함께 사용자에게 전달한다.
 
 > `build/debug-info` 폴더는 크래시 스택 트레이스 복원에 필요하므로 보관할 것

@@ -20,6 +20,7 @@ import '../../widgets/common/common_appbar.dart';
 import '../../widgets/common/common_edit_text.dart';
 import '../../widgets/common/common_title_medium.dart';
 import 'tabs/additional_image_tab.dart';
+import 'tabs/background_image_tab.dart';
 import 'tabs/cover_image_tab.dart';
 import 'tabs/character_book_tab.dart';
 import 'tabs/persona_tab.dart';
@@ -64,6 +65,13 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   // 추가 이미지 상태
   final List<CoverImage> _additionalImages = [];
 
+  // 배경 이미지 상태
+  final List<CoverImage> _backgroundImages = [];
+
+  // 세계 날짜
+  DateTime? _worldStartDate;
+  DateTime? _originalWorldStartDate;
+
   // SNS 설정 컨트롤러
   final _communityNameController = TextEditingController();
   final _communityMoodController = TextEditingController();
@@ -87,6 +95,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   List<StartScenario> _originalStartScenarios = [];
   List<CoverImage> _originalCoverImages = [];
   List<CoverImage> _originalAdditionalImages = [];
+  List<CoverImage> _originalBackgroundImages = [];
   String _originalCommunityName = '';
   String _originalCommunityMood = '';
   String _originalCommunityLanguage = '';
@@ -96,7 +105,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 8, vsync: this);
+    _tabController = TabController(length: 9, vsync: this);
 
     // 자동 저장 데이터 확인 및 복원
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -148,6 +157,8 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         _originalCommunityName = character.communityName ?? '';
         _originalCommunityMood = character.communityMood ?? '';
         _originalCommunityLanguage = character.communityLanguage ?? '';
+        _worldStartDate = character.worldStartDate;
+        _originalWorldStartDate = character.worldStartDate;
       }
 
       // 로어북 폴더 및 로어북 로드
@@ -183,6 +194,11 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       final additionalImages = await _db.readAdditionalImages(widget.characterId!);
       _additionalImages.addAll(additionalImages);
       _originalAdditionalImages = additionalImages.map((c) => _copyCoverImage(c)).toList();
+
+      // 배경 이미지 로드
+      final backgroundImages = await _db.readBackgroundImages(widget.characterId!);
+      _backgroundImages.addAll(backgroundImages);
+      _originalBackgroundImages = backgroundImages.map((c) => _copyCoverImage(c)).toList();
 
       setState(() {});
     } catch (e) {
@@ -274,7 +290,8 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         _selectedCoverImageId != _originalSelectedCoverImageId ||
         _communityNameController.text != _originalCommunityName ||
         _communityMoodController.text != _originalCommunityMood ||
-        _communityLanguageController.text != _originalCommunityLanguage) {
+        _communityLanguageController.text != _originalCommunityLanguage ||
+        _worldStartDate != _originalWorldStartDate) {
       return true;
     }
 
@@ -348,6 +365,15 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       }
     }
 
+    // 배경 이미지 변경 확인
+    if (_backgroundImages.length != _originalBackgroundImages.length) return true;
+    for (int i = 0; i < _backgroundImages.length; i++) {
+      if (_backgroundImages[i].name != _originalBackgroundImages[i].name ||
+          _backgroundImages[i].path != _originalBackgroundImages[i].path) {
+        return true;
+      }
+    }
+
     return false;
   }
 
@@ -370,7 +396,8 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         _personas.isNotEmpty ||
         _startScenarios.isNotEmpty ||
         _coverImages.isNotEmpty ||
-        _additionalImages.isNotEmpty) {
+        _additionalImages.isNotEmpty ||
+        _backgroundImages.isNotEmpty) {
       return true;
     }
 
@@ -441,9 +468,11 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         'startScenarios': _startScenarios.map((s) => s.toMap()).toList(),
         'coverImages': _coverImages.map((c) => c.toMap()).toList(),
         'additionalImages': _additionalImages.map((c) => c.toMap()).toList(),
+        'backgroundImages': _backgroundImages.map((c) => c.toMap()).toList(),
         'communityName': _communityNameController.text,
         'communityMood': _communityMoodController.text,
         'communityLanguage': _communityLanguageController.text,
+        'worldStartDate': _worldStartDate?.toIso8601String(),
         'timestamp': DateTime.now().toIso8601String(),
       };
       await prefs.setString(_getAutoSaveKey(), jsonEncode(data));
@@ -543,10 +572,22 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
             }
           }
 
+          // 배경 이미지 복원
+          _backgroundImages.clear();
+          if (data['backgroundImages'] != null) {
+            for (var cMap in data['backgroundImages'] as List) {
+              _backgroundImages.add(CoverImage.fromMap(cMap as Map<String, dynamic>));
+            }
+          }
+
           // SNS 설정 복원
           _communityNameController.text = data['communityName'] as String? ?? '';
           _communityMoodController.text = data['communityMood'] as String? ?? '';
           _communityLanguageController.text = data['communityLanguage'] as String? ?? '';
+
+          // 세계 날짜 복원
+          final wsd = data['worldStartDate'] as String?;
+          _worldStartDate = wsd != null ? DateTime.tryParse(wsd) : null;
         });
 
         // 복원한 데이터를 원본으로 설정 (편집 모드인 경우)
@@ -563,9 +604,11 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           _originalStartScenarios = _startScenarios.map((s) => _copyStartScenario(s)).toList();
           _originalCoverImages = _coverImages.map((c) => _copyCoverImage(c)).toList();
           _originalAdditionalImages = _additionalImages.map((c) => _copyCoverImage(c)).toList();
+          _originalBackgroundImages = _backgroundImages.map((c) => _copyCoverImage(c)).toList();
           _originalCommunityName = _communityNameController.text;
           _originalCommunityMood = _communityMoodController.text;
           _originalCommunityLanguage = _communityLanguageController.text;
+          _originalWorldStartDate = _worldStartDate;
         }
       } else if (shouldRestore == false) {
         // 사용자가 취소를 선택하면 자동 저장 데이터 삭제
@@ -642,6 +685,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           communityName: _communityNameController.text.isEmpty ? null : _communityNameController.text,
           communityMood: _communityMoodController.text.isEmpty ? null : _communityMoodController.text,
           communityLanguage: _communityLanguageController.text.isEmpty ? null : _communityLanguageController.text,
+          worldStartDate: _worldStartDate,
         );
         await _db.updateCharacter(character);
       } else {
@@ -661,6 +705,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           communityName: _communityNameController.text.isEmpty ? null : _communityNameController.text,
           communityMood: _communityMoodController.text.isEmpty ? null : _communityMoodController.text,
           communityLanguage: _communityLanguageController.text.isEmpty ? null : _communityLanguageController.text,
+          worldStartDate: _worldStartDate,
         );
         characterId = await _db.createCharacter(character);
       }
@@ -781,6 +826,19 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         if (!currentAdditionalIds.contains(existing.id)) {
           await _db.deleteCoverImage(existing.id!);
           debugPrint('추가 이미지 삭제: ${existing.id}');
+        }
+      }
+
+      // 배경 이미지 삭제 처리
+      final existingBackgroundImages = await _db.readBackgroundImages(characterId);
+      final currentBackgroundIds = _backgroundImages
+          .where((c) => c.id != null && c.id! > 0)
+          .map((c) => c.id!)
+          .toSet();
+      for (var existing in existingBackgroundImages) {
+        if (!currentBackgroundIds.contains(existing.id)) {
+          await _db.deleteCoverImage(existing.id!);
+          debugPrint('배경 이미지 삭제: ${existing.id}');
         }
       }
     }
@@ -959,6 +1017,27 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         ));
       }
     }
+
+    // 배경 이미지 저장
+    for (var image in _backgroundImages) {
+      if (image.id == null || image.id! < 0) {
+        await _db.createCoverImage(image.copyWith(
+          id: null,
+          characterId: characterId,
+          imageType: 'background',
+        ));
+      } else if (!_isEditMode || image.characterId != characterId) {
+        await _db.createCoverImage(image.copyWith(
+          id: null,
+          characterId: characterId,
+          imageType: 'background',
+        ));
+      } else {
+        await _db.updateCoverImage(image.copyWith(
+          characterId: characterId,
+        ));
+      }
+    }
   }
 
   @override
@@ -990,6 +1069,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
               Tab(text: l10n.characterEditTabPersona),
               Tab(text: l10n.characterEditTabStartSetting),
               Tab(text: l10n.characterEditTabCoverImage),
+              Tab(text: l10n.characterEditTabBackgroundImage),
               Tab(text: l10n.characterEditTabAdditionalImage),
               const Tab(text: 'SNS'),
             ],
@@ -1036,6 +1116,14 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
               _autoSave();
             },
           ),
+          BackgroundImageTab(
+            images: _backgroundImages,
+            characterName: _nameController.text,
+            onUpdate: () {
+              setState(() {});
+              _autoSave();
+            },
+          ),
           AdditionalImageTab(
             images: _additionalImages,
             characterName: _nameController.text,
@@ -1060,6 +1148,19 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     );
   }
 
+  Future<void> _pickWorldStartDate() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _worldStartDate ?? DateTime.now(),
+      firstDate: DateTime(1),
+      lastDate: DateTime(9999, 12, 31),
+    );
+    if (picked != null && mounted) {
+      setState(() => _worldStartDate = picked);
+      _autoSave();
+    }
+  }
+
   Widget _buildOtherTab() {
     final l10n = AppLocalizations.of(context);
     return SingleChildScrollView(
@@ -1067,6 +1168,41 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          CommonTitleMedium(
+            text: l10n.characterEditWorldDateTitle,
+            helpMessage: l10n.characterEditWorldDateHelp,
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _pickWorldStartDate,
+                  icon: const Icon(Icons.calendar_today, size: 16),
+                  label: Text(
+                    _worldStartDate != null
+                        ? '${_worldStartDate!.year}년 ${_worldStartDate!.month}월 ${_worldStartDate!.day}일'
+                        : l10n.characterEditWorldDateHint,
+                  ),
+                  style: OutlinedButton.styleFrom(
+                    alignment: Alignment.centerLeft,
+                  ),
+                ),
+              ),
+              if (_worldStartDate != null) ...[
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.clear),
+                  tooltip: l10n.characterEditWorldDateClear,
+                  onPressed: () {
+                    setState(() => _worldStartDate = null);
+                    _autoSave();
+                  },
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 24),
           CommonTitleMedium(
             text: 'SNS',
             helpMessage: l10n.characterEditSnsHelp,

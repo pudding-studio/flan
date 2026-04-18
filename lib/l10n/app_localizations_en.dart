@@ -131,6 +131,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAiResponseLanguageAuto => 'App Language';
 
   @override
+  String get settingsBackgroundImage => 'Background Image';
+
+  @override
+  String get settingsSendOnEnter => 'Send on Enter';
+
+  @override
+  String get settingsSendOnShiftEnter => 'Send on Shift+Enter';
+
+  @override
   String get languageKorean => '한국어';
 
   @override
@@ -847,7 +856,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get chatRoomTextSettings => 'Text Settings';
+  String get chatRoomTextSettings => 'Viewer Settings';
 
   @override
   String get chatRoomBranchTitle => 'Create Branch';
@@ -1032,7 +1041,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get characterEditTabCoverImage => 'Cover Image';
 
   @override
+  String get characterEditTabBackgroundImage => 'Background';
+
+  @override
   String get characterEditTabAdditionalImage => 'Extra Images';
+
+  @override
+  String get characterEditWorldDateTitle => 'World Start Date';
+
+  @override
+  String get characterEditWorldDateHelp => 'The reference date for this character\'s world. Used as the [world_date] keyword in prompts and as the base time for news/SNS generation.';
+
+  @override
+  String get characterEditWorldDateHint => 'Select a date';
+
+  @override
+  String get characterEditWorldDateClear => 'Clear date';
 
   @override
   String get characterEditSnsHelp => 'Configure the SNS board settings for this character.';
@@ -2494,6 +2518,28 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get backgroundImageTitle => 'Background Images';
+
+  @override
+  String get backgroundImageTitleHelp => 'Add background images to display as watermark in the chat room.';
+
+  @override
+  String get backgroundImageEmpty => 'No background images';
+
+  @override
+  String get backgroundImageAddButton => 'Add Image';
+
+  @override
+  String backgroundImageDefaultName(int index) {
+    return 'Background $index';
+  }
+
+  @override
+  String backgroundImageSaveError(String error) {
+    return 'Failed to save image: $error';
+  }
+
+  @override
   String get detailSettingsTitle => 'World Setting';
 
   @override
@@ -2525,6 +2571,18 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get chatBottomPanelAlignJustify => 'Justify';
+
+  @override
+  String get chatBottomPanelViewMode => 'View Mode';
+
+  @override
+  String get chatBottomPanelViewModeNovel => 'Novel';
+
+  @override
+  String get chatBottomPanelViewModeConversation => 'Chat';
+
+  @override
+  String get chatBottomPanelViewModeCombination => 'Combined';
 
   @override
   String get tutorialStepGoogleAiAccess => 'Go to Google AI Studio';

@@ -8,6 +8,7 @@ import '../../database/database_helper.dart';
 import '../../models/character/character.dart';
 import '../../models/character/start_scenario.dart';
 import '../../models/chat/chat_room.dart';
+import '../../models/chat/chat_message_metadata.dart';
 import '../../models/chat/chat_summary.dart';
 import '../../models/chat/agent_entry.dart';
 import '../../models/news/news_article.dart';
@@ -43,6 +44,7 @@ class _NewsScreenState extends State<NewsScreen> {
   StartScenario? _selectedScenario;
   List<ChatSummary> _chatSummaries = [];
   List<NewsArticle> _articles = [];
+  ChatMessageMetadata? _latestMetadata;
   bool _isLoading = true;
   bool _isGenerating = false;
 
@@ -72,6 +74,7 @@ class _NewsScreenState extends State<NewsScreen> {
       _db.readChatRoom(widget.chatRoomId),
       _db.getChatSummaries(widget.chatRoomId),
       _db.readNewsArticles(widget.chatRoomId),
+      _db.readLatestChatMessageMetadata(widget.chatRoomId),
     ]);
     if (!mounted) return;
     final chatRoom = results[1] as ChatRoom?;
@@ -87,6 +90,7 @@ class _NewsScreenState extends State<NewsScreen> {
       final allSummaries = results[2] as List<ChatSummary>;
       _chatSummaries = allSummaries.length > 5 ? allSummaries.sublist(allSummaries.length - 5) : allSummaries;
       _articles = results[3] as List<NewsArticle>;
+      _latestMetadata = results[4] as ChatMessageMetadata?;
       _isLoading = false;
     });
   }
@@ -141,7 +145,13 @@ class _NewsScreenState extends State<NewsScreen> {
 
     try {
       final model = await _getModel();
-      final nowStr = DateFormatter.formatPromptDateTime(DateTime.now());
+      final worldNow = DateFormatter.parseMetadataDateTime(
+            _latestMetadata?.date,
+            _latestMetadata?.time,
+          ) ??
+          _character?.worldStartDate ??
+          DateTime.now();
+      final nowStr = DateFormatter.formatPromptDateTime(worldNow);
 
       // Step 1: Generate general articles for 2 random topics
       final topics = List<String>.from(_allTopics)..shuffle();
@@ -301,7 +311,7 @@ class _NewsScreenState extends State<NewsScreen> {
           style: TextStyle(color: onSecondary),
         ),
         actions: [
-          if (kIsWeb)
+          if (kIsWeb || defaultTargetPlatform == TargetPlatform.windows)
             IconButton(
               icon: Icon(Icons.refresh, color: onSecondary),
               tooltip: l10n.newsRefreshTooltip,

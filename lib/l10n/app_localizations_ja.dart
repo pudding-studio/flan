@@ -131,6 +131,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsAiResponseLanguageAuto => 'アプリ言語と同じ';
 
   @override
+  String get settingsBackgroundImage => '背景画像';
+
+  @override
+  String get settingsSendOnEnter => 'Enterで送信';
+
+  @override
+  String get settingsSendOnShiftEnter => 'Shift+Enterで送信';
+
+  @override
   String get languageKorean => '한국어';
 
   @override
@@ -847,7 +856,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get chatRoomTextSettings => 'テキスト設定';
+  String get chatRoomTextSettings => 'ビューアー設定';
 
   @override
   String get chatRoomBranchTitle => '分岐を作成';
@@ -1032,7 +1041,22 @@ class AppLocalizationsJa extends AppLocalizations {
   String get characterEditTabCoverImage => 'カバー画像';
 
   @override
+  String get characterEditTabBackgroundImage => '背景画像';
+
+  @override
   String get characterEditTabAdditionalImage => '追加画像';
+
+  @override
+  String get characterEditWorldDateTitle => '世界開始日';
+
+  @override
+  String get characterEditWorldDateHelp => 'このキャラクターの世界の基準日です。プロンプトの[world_date]キーワードとして使用され、ニュース/SNS生成の基準時刻になります。';
+
+  @override
+  String get characterEditWorldDateHint => '日付を選択してください';
+
+  @override
+  String get characterEditWorldDateClear => '日付をリセット';
 
   @override
   String get characterEditSnsHelp => 'このキャラクターのSNS掲示板設定を行います。';
@@ -2494,6 +2518,28 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get backgroundImageTitle => '背景画像';
+
+  @override
+  String get backgroundImageTitleHelp => 'チャットルームに透かしとして表示する背景画像を追加できます。';
+
+  @override
+  String get backgroundImageEmpty => '背景画像がありません';
+
+  @override
+  String get backgroundImageAddButton => '画像を追加';
+
+  @override
+  String backgroundImageDefaultName(int index) {
+    return '背景 $index';
+  }
+
+  @override
+  String backgroundImageSaveError(String error) {
+    return '画像の保存に失敗しました: $error';
+  }
+
+  @override
   String get detailSettingsTitle => '世界観設定';
 
   @override
@@ -2525,6 +2571,18 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get chatBottomPanelAlignJustify => '両端揃え';
+
+  @override
+  String get chatBottomPanelViewMode => 'ビューモード';
+
+  @override
+  String get chatBottomPanelViewModeNovel => '小説型';
+
+  @override
+  String get chatBottomPanelViewModeConversation => '会話型';
+
+  @override
+  String get chatBottomPanelViewModeCombination => '組み合わせ型';
 
   @override
   String get tutorialStepGoogleAiAccess => 'Google AI Studioにアクセス';

@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
@@ -22,9 +23,20 @@ import 'providers/tokenizer_provider.dart';
 import 'providers/viewer_settings_provider.dart';
 import 'providers/community_model_provider.dart';
 import 'providers/diary_model_provider.dart';
+import 'providers/chat_background_provider.dart';
+import 'providers/message_send_key_provider.dart';
 import 'database/database_helper.dart';
 import 'services/default_seeder_service.dart';
 import 'screens/tutorial/tutorial_screen.dart';
+
+// Firebase + Crashlytics are only wired up for mobile and web.
+// Desktop (Windows/Linux/macOS) has no firebase_options entry and
+// firebase_crashlytics does not support those platforms.
+bool get _isFirebaseSupported {
+  if (kIsWeb) return true;
+  return defaultTargetPlatform == TargetPlatform.android ||
+      defaultTargetPlatform == TargetPlatform.iOS;
+}
 
 void main() async {
   runZonedGuarded<Future<void>>(() async {
@@ -33,12 +45,14 @@ void main() async {
     // Web uses sqflite_common_ffi_web (IndexedDB-backed SQLite WASM); native is no-op.
     initDatabaseFactoryForPlatform();
 
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    if (_isFirebaseSupported) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
 
-    // Crashlytics — native only (package does not support web).
-    if (!kIsWeb) {
+    // Crashlytics — mobile only (package does not support web/desktop).
+    if (_isFirebaseSupported && !kIsWeb) {
       FlutterError.onError = FirebaseCrashlytics.instance.recordFlutterFatalError;
     }
 
@@ -58,15 +72,70 @@ void main() async {
           ChangeNotifierProvider(create: (_) => ViewerSettingsProvider()),
           ChangeNotifierProvider(create: (_) => CommunityModelProvider()),
           ChangeNotifierProvider(create: (_) => DiaryModelProvider()),
+          ChangeNotifierProvider(create: (_) => ChatBackgroundProvider()),
+          ChangeNotifierProvider(create: (_) => MessageSendKeyProvider()),
         ],
         child: const MyApp(),
       ),
     );
   }, (error, stack) {
-    if (!kIsWeb) {
+    if (_isFirebaseSupported && !kIsWeb) {
       FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
     }
   });
+}
+
+// Enables mouse drag for scroll/swipe gestures so desktop behaves like touch.
+class _TouchLikeScrollBehavior extends MaterialScrollBehavior {
+  const _TouchLikeScrollBehavior();
+
+  @override
+  Set<PointerDeviceKind> get dragDevices => {
+        PointerDeviceKind.touch,
+        PointerDeviceKind.mouse,
+        PointerDeviceKind.stylus,
+        PointerDeviceKind.trackpad,
+        PointerDeviceKind.invertedStylus,
+        PointerDeviceKind.unknown,
+      };
+}
+
+// On desktop, cap content width to window height so landscape windows
+// show a centered square with black letterboxing on the sides.
+class _DesktopAspectLock extends StatelessWidget {
+  const _DesktopAspectLock({required this.child});
+
+  final Widget? child;
+
+  bool get _isDesktop {
+    if (kIsWeb) return false;
+    return defaultTargetPlatform == TargetPlatform.windows ||
+        defaultTargetPlatform == TargetPlatform.linux ||
+        defaultTargetPlatform == TargetPlatform.macOS;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final content = child ?? const SizedBox.shrink();
+    if (!_isDesktop) return content;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Target content aspect ratio: width 4, height 6.
+        final targetWidth = constraints.maxHeight * 4 / 6;
+        if (constraints.maxWidth <= targetWidth) return content;
+        return ColoredBox(
+          color: Colors.white,
+          child: Center(
+            child: SizedBox(
+              width: targetWidth,
+              height: constraints.maxHeight,
+              child: content,
+            ),
+          ),
+        );
+      },
+    );
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -79,6 +148,7 @@ class MyApp extends StatelessWidget {
         return MaterialApp(
           title: 'Flan',
           debugShowCheckedModeBanner: false,
+          scrollBehavior: const _TouchLikeScrollBehavior(),
           theme: AppTheme.getTheme(
             seedColor: themeProvider.seedColor,
             brightness: Brightness.light,
@@ -96,6 +166,7 @@ class MyApp extends StatelessWidget {
             GlobalWidgetsLocalizations.delegate,
             GlobalCupertinoLocalizations.delegate,
           ],
+          builder: (context, child) => _DesktopAspectLock(child: child),
           home: const MainScreen(),
         );
       },

@@ -337,6 +337,24 @@ abstract class AppLocalizations {
   /// **'앱 언어와 동일'**
   String get settingsAiResponseLanguageAuto;
 
+  /// No description provided for @settingsBackgroundImage.
+  ///
+  /// In ko, this message translates to:
+  /// **'배경이미지'**
+  String get settingsBackgroundImage;
+
+  /// No description provided for @settingsSendOnEnter.
+  ///
+  /// In ko, this message translates to:
+  /// **'메시지 전송 Enter'**
+  String get settingsSendOnEnter;
+
+  /// No description provided for @settingsSendOnShiftEnter.
+  ///
+  /// In ko, this message translates to:
+  /// **'메시지 전송 Shift Enter'**
+  String get settingsSendOnShiftEnter;
+
   /// No description provided for @languageKorean.
   ///
   /// In ko, this message translates to:
@@ -1636,7 +1654,7 @@ abstract class AppLocalizations {
   /// No description provided for @chatRoomTextSettings.
   ///
   /// In ko, this message translates to:
-  /// **'텍스트 설정'**
+  /// **'뷰어 설정'**
   String get chatRoomTextSettings;
 
   /// No description provided for @chatRoomBranchTitle.
@@ -1975,11 +1993,41 @@ abstract class AppLocalizations {
   /// **'표지이미지'**
   String get characterEditTabCoverImage;
 
+  /// No description provided for @characterEditTabBackgroundImage.
+  ///
+  /// In ko, this message translates to:
+  /// **'배경이미지'**
+  String get characterEditTabBackgroundImage;
+
   /// No description provided for @characterEditTabAdditionalImage.
   ///
   /// In ko, this message translates to:
   /// **'추가이미지'**
   String get characterEditTabAdditionalImage;
+
+  /// No description provided for @characterEditWorldDateTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'세계 시작 날짜'**
+  String get characterEditWorldDateTitle;
+
+  /// No description provided for @characterEditWorldDateHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 캐릭터 세계의 기준 날짜입니다. 프롬프트의 [world_date] 키워드로 사용되며, 뉴스/SNS 생성 시 기준 시간으로 쓰입니다.'**
+  String get characterEditWorldDateHelp;
+
+  /// No description provided for @characterEditWorldDateHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'날짜를 선택해주세요'**
+  String get characterEditWorldDateHint;
+
+  /// No description provided for @characterEditWorldDateClear.
+  ///
+  /// In ko, this message translates to:
+  /// **'날짜 초기화'**
+  String get characterEditWorldDateClear;
 
   /// No description provided for @characterEditSnsHelp.
   ///
@@ -4711,6 +4759,42 @@ abstract class AppLocalizations {
   /// **'이미지 저장 중 오류가 발생했습니다: {error}'**
   String additionalImageSaveError(String error);
 
+  /// No description provided for @backgroundImageTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'배경 이미지'**
+  String get backgroundImageTitle;
+
+  /// No description provided for @backgroundImageTitleHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅방에 워터마크로 표시할 배경 이미지를 추가할 수 있습니다.'**
+  String get backgroundImageTitleHelp;
+
+  /// No description provided for @backgroundImageEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'배경 이미지가 없습니다'**
+  String get backgroundImageEmpty;
+
+  /// No description provided for @backgroundImageAddButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'이미지 추가'**
+  String get backgroundImageAddButton;
+
+  /// No description provided for @backgroundImageDefaultName.
+  ///
+  /// In ko, this message translates to:
+  /// **'배경 {index}'**
+  String backgroundImageDefaultName(int index);
+
+  /// No description provided for @backgroundImageSaveError.
+  ///
+  /// In ko, this message translates to:
+  /// **'이미지 저장 중 오류가 발생했습니다: {error}'**
+  String backgroundImageSaveError(String error);
+
   /// No description provided for @detailSettingsTitle.
   ///
   /// In ko, this message translates to:
@@ -4776,6 +4860,30 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'양쪽'**
   String get chatBottomPanelAlignJustify;
+
+  /// No description provided for @chatBottomPanelViewMode.
+  ///
+  /// In ko, this message translates to:
+  /// **'뷰어 모드'**
+  String get chatBottomPanelViewMode;
+
+  /// No description provided for @chatBottomPanelViewModeNovel.
+  ///
+  /// In ko, this message translates to:
+  /// **'소설형'**
+  String get chatBottomPanelViewModeNovel;
+
+  /// No description provided for @chatBottomPanelViewModeConversation.
+  ///
+  /// In ko, this message translates to:
+  /// **'대화형'**
+  String get chatBottomPanelViewModeConversation;
+
+  /// No description provided for @chatBottomPanelViewModeCombination.
+  ///
+  /// In ko, this message translates to:
+  /// **'조합형'**
+  String get chatBottomPanelViewModeCombination;
 
   /// No description provided for @tutorialStepGoogleAiAccess.
   ///
