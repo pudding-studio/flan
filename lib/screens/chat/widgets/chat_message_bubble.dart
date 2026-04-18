@@ -241,7 +241,7 @@ class ChatMessageMetadataHeader extends StatelessWidget {
         if (year != null && month != null && day != null) {
           final dt = DateTime(year, month, day);
           final dayName = dayNames[dt.weekday - 1];
-          parts.add('$date($dayName)');
+          parts.add('$year.$month.$day($dayName)');
         } else {
           parts.add(date);
         }
