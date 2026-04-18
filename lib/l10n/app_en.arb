@@ -48,6 +48,7 @@
   "settingsLanguageSystem": "System Default",
   "settingsAiResponseLanguage": "AI Response",
   "settingsAiResponseLanguageAuto": "App Language",
+  "settingsBackgroundImage": "Background Image",
   "languageKorean": "한국어",
   "languageEnglish": "English",
   "languageJapanese": "日本語",
@@ -533,6 +534,7 @@
   "characterEditTabPersona": "Persona",
   "characterEditTabStartSetting": "Start Setting",
   "characterEditTabCoverImage": "Cover Image",
+  "characterEditTabBackgroundImage": "Background",
   "characterEditTabAdditionalImage": "Extra Images",
   "characterEditWorldDateTitle": "World Start Date",
   "characterEditWorldDateHelp": "The reference date for this character's world. Used as the [world_date] keyword in prompts and as the base time for news/SNS generation.",
@@ -1255,6 +1257,23 @@
   },
   "additionalImageSaveError": "Failed to save image: {error}",
   "@additionalImageSaveError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+
+  "backgroundImageTitle": "Background Images",
+  "backgroundImageTitleHelp": "Add background images to display as watermark in the chat room.",
+  "backgroundImageEmpty": "No background images",
+  "backgroundImageAddButton": "Add Image",
+  "backgroundImageDefaultName": "Background {index}",
+  "@backgroundImageDefaultName": {
+    "placeholders": {
+      "index": { "type": "int" }
+    }
+  },
+  "backgroundImageSaveError": "Failed to save image: {error}",
+  "@backgroundImageSaveError": {
     "placeholders": {
       "error": { "type": "String" }
     }

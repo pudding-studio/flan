@@ -48,6 +48,7 @@
   "settingsLanguageSystem": "システム設定",
   "settingsAiResponseLanguage": "AI応答言語",
   "settingsAiResponseLanguageAuto": "アプリ言語と同じ",
+  "settingsBackgroundImage": "背景画像",
   "languageKorean": "한국어",
   "languageEnglish": "English",
   "languageJapanese": "日本語",
@@ -533,6 +534,7 @@
   "characterEditTabPersona": "ペルソナ",
   "characterEditTabStartSetting": "開始設定",
   "characterEditTabCoverImage": "カバー画像",
+  "characterEditTabBackgroundImage": "背景画像",
   "characterEditTabAdditionalImage": "追加画像",
   "characterEditWorldDateTitle": "世界開始日",
   "characterEditWorldDateHelp": "このキャラクターの世界の基準日です。プロンプトの[world_date]キーワードとして使用され、ニュース/SNS生成の基準時刻になります。",
@@ -1255,6 +1257,23 @@
   },
   "additionalImageSaveError": "画像の保存に失敗しました: {error}",
   "@additionalImageSaveError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+
+  "backgroundImageTitle": "背景画像",
+  "backgroundImageTitleHelp": "チャットルームに透かしとして表示する背景画像を追加できます。",
+  "backgroundImageEmpty": "背景画像がありません",
+  "backgroundImageAddButton": "画像を追加",
+  "backgroundImageDefaultName": "背景 {index}",
+  "@backgroundImageDefaultName": {
+    "placeholders": {
+      "index": { "type": "int" }
+    }
+  },
+  "backgroundImageSaveError": "画像の保存に失敗しました: {error}",
+  "@backgroundImageSaveError": {
     "placeholders": {
       "error": { "type": "String" }
     }

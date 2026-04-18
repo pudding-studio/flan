@@ -20,6 +20,7 @@ import '../../widgets/common/common_appbar.dart';
 import '../../widgets/common/common_edit_text.dart';
 import '../../widgets/common/common_title_medium.dart';
 import 'tabs/additional_image_tab.dart';
+import 'tabs/background_image_tab.dart';
 import 'tabs/cover_image_tab.dart';
 import 'tabs/character_book_tab.dart';
 import 'tabs/persona_tab.dart';
@@ -64,6 +65,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   // 추가 이미지 상태
   final List<CoverImage> _additionalImages = [];
 
+  // 배경 이미지 상태
+  final List<CoverImage> _backgroundImages = [];
+
   // 세계 날짜
   DateTime? _worldStartDate;
   DateTime? _originalWorldStartDate;
@@ -91,6 +95,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   List<StartScenario> _originalStartScenarios = [];
   List<CoverImage> _originalCoverImages = [];
   List<CoverImage> _originalAdditionalImages = [];
+  List<CoverImage> _originalBackgroundImages = [];
   String _originalCommunityName = '';
   String _originalCommunityMood = '';
   String _originalCommunityLanguage = '';
@@ -100,7 +105,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 8, vsync: this);
+    _tabController = TabController(length: 9, vsync: this);
 
     // 자동 저장 데이터 확인 및 복원
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -189,6 +194,11 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       final additionalImages = await _db.readAdditionalImages(widget.characterId!);
       _additionalImages.addAll(additionalImages);
       _originalAdditionalImages = additionalImages.map((c) => _copyCoverImage(c)).toList();
+
+      // 배경 이미지 로드
+      final backgroundImages = await _db.readBackgroundImages(widget.characterId!);
+      _backgroundImages.addAll(backgroundImages);
+      _originalBackgroundImages = backgroundImages.map((c) => _copyCoverImage(c)).toList();
 
       setState(() {});
     } catch (e) {
@@ -355,6 +365,15 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       }
     }
 
+    // 배경 이미지 변경 확인
+    if (_backgroundImages.length != _originalBackgroundImages.length) return true;
+    for (int i = 0; i < _backgroundImages.length; i++) {
+      if (_backgroundImages[i].name != _originalBackgroundImages[i].name ||
+          _backgroundImages[i].path != _originalBackgroundImages[i].path) {
+        return true;
+      }
+    }
+
     return false;
   }
 
@@ -377,7 +396,8 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         _personas.isNotEmpty ||
         _startScenarios.isNotEmpty ||
         _coverImages.isNotEmpty ||
-        _additionalImages.isNotEmpty) {
+        _additionalImages.isNotEmpty ||
+        _backgroundImages.isNotEmpty) {
       return true;
     }
 
@@ -448,6 +468,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         'startScenarios': _startScenarios.map((s) => s.toMap()).toList(),
         'coverImages': _coverImages.map((c) => c.toMap()).toList(),
         'additionalImages': _additionalImages.map((c) => c.toMap()).toList(),
+        'backgroundImages': _backgroundImages.map((c) => c.toMap()).toList(),
         'communityName': _communityNameController.text,
         'communityMood': _communityMoodController.text,
         'communityLanguage': _communityLanguageController.text,
@@ -551,6 +572,14 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
             }
           }
 
+          // 배경 이미지 복원
+          _backgroundImages.clear();
+          if (data['backgroundImages'] != null) {
+            for (var cMap in data['backgroundImages'] as List) {
+              _backgroundImages.add(CoverImage.fromMap(cMap as Map<String, dynamic>));
+            }
+          }
+
           // SNS 설정 복원
           _communityNameController.text = data['communityName'] as String? ?? '';
           _communityMoodController.text = data['communityMood'] as String? ?? '';
@@ -575,6 +604,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           _originalStartScenarios = _startScenarios.map((s) => _copyStartScenario(s)).toList();
           _originalCoverImages = _coverImages.map((c) => _copyCoverImage(c)).toList();
           _originalAdditionalImages = _additionalImages.map((c) => _copyCoverImage(c)).toList();
+          _originalBackgroundImages = _backgroundImages.map((c) => _copyCoverImage(c)).toList();
           _originalCommunityName = _communityNameController.text;
           _originalCommunityMood = _communityMoodController.text;
           _originalCommunityLanguage = _communityLanguageController.text;
@@ -798,6 +828,19 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           debugPrint('추가 이미지 삭제: ${existing.id}');
         }
       }
+
+      // 배경 이미지 삭제 처리
+      final existingBackgroundImages = await _db.readBackgroundImages(characterId);
+      final currentBackgroundIds = _backgroundImages
+          .where((c) => c.id != null && c.id! > 0)
+          .map((c) => c.id!)
+          .toSet();
+      for (var existing in existingBackgroundImages) {
+        if (!currentBackgroundIds.contains(existing.id)) {
+          await _db.deleteCoverImage(existing.id!);
+          debugPrint('배경 이미지 삭제: ${existing.id}');
+        }
+      }
     }
 
     // 로어북 폴더 및 로어북 저장
@@ -974,6 +1017,27 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         ));
       }
     }
+
+    // 배경 이미지 저장
+    for (var image in _backgroundImages) {
+      if (image.id == null || image.id! < 0) {
+        await _db.createCoverImage(image.copyWith(
+          id: null,
+          characterId: characterId,
+          imageType: 'background',
+        ));
+      } else if (!_isEditMode || image.characterId != characterId) {
+        await _db.createCoverImage(image.copyWith(
+          id: null,
+          characterId: characterId,
+          imageType: 'background',
+        ));
+      } else {
+        await _db.updateCoverImage(image.copyWith(
+          characterId: characterId,
+        ));
+      }
+    }
   }
 
   @override
@@ -1005,6 +1069,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
               Tab(text: l10n.characterEditTabPersona),
               Tab(text: l10n.characterEditTabStartSetting),
               Tab(text: l10n.characterEditTabCoverImage),
+              Tab(text: l10n.characterEditTabBackgroundImage),
               Tab(text: l10n.characterEditTabAdditionalImage),
               const Tab(text: 'SNS'),
             ],
@@ -1046,6 +1111,14 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
               setState(() => _selectedCoverImageId = id);
               _autoSave();
             },
+            onUpdate: () {
+              setState(() {});
+              _autoSave();
+            },
+          ),
+          BackgroundImageTab(
+            images: _backgroundImages,
+            characterName: _nameController.text,
             onUpdate: () {
               setState(() {});
               _autoSave();

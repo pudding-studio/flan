@@ -337,6 +337,12 @@ abstract class AppLocalizations {
   /// **'앱 언어와 동일'**
   String get settingsAiResponseLanguageAuto;
 
+  /// No description provided for @settingsBackgroundImage.
+  ///
+  /// In ko, this message translates to:
+  /// **'배경이미지'**
+  String get settingsBackgroundImage;
+
   /// No description provided for @languageKorean.
   ///
   /// In ko, this message translates to:
@@ -1974,6 +1980,12 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'표지이미지'**
   String get characterEditTabCoverImage;
+
+  /// No description provided for @characterEditTabBackgroundImage.
+  ///
+  /// In ko, this message translates to:
+  /// **'배경이미지'**
+  String get characterEditTabBackgroundImage;
 
   /// No description provided for @characterEditTabAdditionalImage.
   ///
@@ -4734,6 +4746,42 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'이미지 저장 중 오류가 발생했습니다: {error}'**
   String additionalImageSaveError(String error);
+
+  /// No description provided for @backgroundImageTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'배경 이미지'**
+  String get backgroundImageTitle;
+
+  /// No description provided for @backgroundImageTitleHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅방에 워터마크로 표시할 배경 이미지를 추가할 수 있습니다.'**
+  String get backgroundImageTitleHelp;
+
+  /// No description provided for @backgroundImageEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'배경 이미지가 없습니다'**
+  String get backgroundImageEmpty;
+
+  /// No description provided for @backgroundImageAddButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'이미지 추가'**
+  String get backgroundImageAddButton;
+
+  /// No description provided for @backgroundImageDefaultName.
+  ///
+  /// In ko, this message translates to:
+  /// **'배경 {index}'**
+  String backgroundImageDefaultName(int index);
+
+  /// No description provided for @backgroundImageSaveError.
+  ///
+  /// In ko, this message translates to:
+  /// **'이미지 저장 중 오류가 발생했습니다: {error}'**
+  String backgroundImageSaveError(String error);
 
   /// No description provided for @detailSettingsTitle.
   ///

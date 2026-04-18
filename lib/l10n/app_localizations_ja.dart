@@ -131,6 +131,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsAiResponseLanguageAuto => 'アプリ言語と同じ';
 
   @override
+  String get settingsBackgroundImage => '背景画像';
+
+  @override
   String get languageKorean => '한국어';
 
   @override
@@ -1030,6 +1033,9 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get characterEditTabCoverImage => 'カバー画像';
+
+  @override
+  String get characterEditTabBackgroundImage => '背景画像';
 
   @override
   String get characterEditTabAdditionalImage => '追加画像';
@@ -2502,6 +2508,28 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String additionalImageSaveError(String error) {
+    return '画像の保存に失敗しました: $error';
+  }
+
+  @override
+  String get backgroundImageTitle => '背景画像';
+
+  @override
+  String get backgroundImageTitleHelp => 'チャットルームに透かしとして表示する背景画像を追加できます。';
+
+  @override
+  String get backgroundImageEmpty => '背景画像がありません';
+
+  @override
+  String get backgroundImageAddButton => '画像を追加';
+
+  @override
+  String backgroundImageDefaultName(int index) {
+    return '背景 $index';
+  }
+
+  @override
+  String backgroundImageSaveError(String error) {
     return '画像の保存に失敗しました: $error';
   }
 

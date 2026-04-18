@@ -1805,6 +1805,17 @@ class DatabaseHelper {
     return result.map((map) => CoverImage.fromMap(map)).toList();
   }
 
+  Future<List<CoverImage>> readBackgroundImages(int characterId) async {
+    final db = await database;
+    final result = await db.query(
+      'cover_images',
+      where: "character_id = ? AND image_type = 'background'",
+      whereArgs: [characterId],
+      orderBy: '`order` ASC',
+    );
+    return result.map((map) => CoverImage.fromMap(map)).toList();
+  }
+
   Future<int> updateCoverImage(CoverImage coverImage) async {
     final db = await database;
     return await db.update(

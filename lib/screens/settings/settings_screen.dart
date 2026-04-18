@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import '../../l10n/app_localizations.dart';
+import '../../providers/chat_background_provider.dart';
 import '../../providers/localization_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../widgets/common/common_appbar.dart';
@@ -246,6 +247,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
                           value == 'auto' ? null : value);
                     }
                   },
+                ),
+              );
+            },
+          ),
+          Consumer<ChatBackgroundProvider>(
+            builder: (context, provider, child) {
+              return _buildListTile(
+                icon: Icons.image_outlined,
+                title: l10n.settingsBackgroundImage,
+                trailing: Switch(
+                  value: provider.enabled,
+                  onChanged: provider.setEnabled,
                 ),
               );
             },

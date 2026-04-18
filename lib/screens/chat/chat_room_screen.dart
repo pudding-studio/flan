@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
@@ -27,6 +29,7 @@ import '../../models/chat/chat_message_metadata.dart';
 import '../../models/chat/unified_model.dart';
 import '../../utils/metadata_parser.dart';
 import '../../widgets/common/common_appbar.dart';
+import '../../providers/chat_background_provider.dart';
 import '../../providers/chat_model_provider.dart';
 import '../../providers/localization_provider.dart';
 import 'chat_send_errors.dart';
@@ -73,6 +76,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   List<ChatMessage> _messages = [];
   List<CoverImage> _coverImages = [];
   List<CoverImage> _additionalImages = [];
+  List<CoverImage> _backgroundImages = [];
   Map<String, String> _imagePathMap = {}; // image name → file path
   bool _isLoading = true;
   SendingPhase _sendingPhase = SendingPhase.none;
@@ -160,6 +164,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       final messages = await _db.readChatMessagesByChatRoom(widget.chatRoomId);
       final coverImages = await _db.readCoverImages(chatRoom.characterId);
       final additionalImages = await _db.readAdditionalImages(chatRoom.characterId);
+      final backgroundImages = await _db.readBackgroundImages(chatRoom.characterId);
       // Build name→path map for <img="name"> tag resolution.
       // Register both the original name and the extension-stripped name so
       // the tag matches regardless of whether either side carries ".png" etc.
@@ -239,6 +244,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         _messages = messages;
         _coverImages = coverImages;
         _additionalImages = additionalImages;
+        _backgroundImages = backgroundImages;
         _imagePathMap = imagePathMap;
         _metadataMap = metadataMap;
         _summaryThresholdIndex = summaryThresholdIndex;
@@ -1043,7 +1049,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                 ),
               ],
             ),
-      body: Column(
+      body: Stack(
+        children: [
+          _buildBackgroundWatermark(),
+          Column(
         children: [
           Expanded(
             child: Stack(
@@ -1118,6 +1127,35 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
               onClose: () => setState(() => _showMorePanel = false),
             ),
         ],
+      ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBackgroundWatermark() {
+    final enabled = context.watch<ChatBackgroundProvider>().enabled;
+    if (!enabled || _backgroundImages.isEmpty) {
+      return const SizedBox.shrink();
+    }
+    final image = _backgroundImages.first;
+    return Positioned.fill(
+      child: IgnorePointer(
+        child: Opacity(
+          opacity: 0.2,
+          child: FutureBuilder<Uint8List?>(
+            future: image.resolveImageData(),
+            builder: (context, snapshot) {
+              final bytes = snapshot.data;
+              if (bytes == null) return const SizedBox.shrink();
+              return Image.memory(
+                bytes,
+                fit: BoxFit.cover,
+                errorBuilder: (_, __, ___) => const SizedBox.shrink(),
+              );
+            },
+          ),
+        ),
       ),
     );
   }

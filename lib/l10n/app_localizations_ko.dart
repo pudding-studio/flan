@@ -131,6 +131,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsAiResponseLanguageAuto => '앱 언어와 동일';
 
   @override
+  String get settingsBackgroundImage => '배경이미지';
+
+  @override
   String get languageKorean => '한국어';
 
   @override
@@ -1030,6 +1033,9 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get characterEditTabCoverImage => '표지이미지';
+
+  @override
+  String get characterEditTabBackgroundImage => '배경이미지';
 
   @override
   String get characterEditTabAdditionalImage => '추가이미지';
@@ -2502,6 +2508,28 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String additionalImageSaveError(String error) {
+    return '이미지 저장 중 오류가 발생했습니다: $error';
+  }
+
+  @override
+  String get backgroundImageTitle => '배경 이미지';
+
+  @override
+  String get backgroundImageTitleHelp => '채팅방에 워터마크로 표시할 배경 이미지를 추가할 수 있습니다.';
+
+  @override
+  String get backgroundImageEmpty => '배경 이미지가 없습니다';
+
+  @override
+  String get backgroundImageAddButton => '이미지 추가';
+
+  @override
+  String backgroundImageDefaultName(int index) {
+    return '배경 $index';
+  }
+
+  @override
+  String backgroundImageSaveError(String error) {
     return '이미지 저장 중 오류가 발생했습니다: $error';
   }
 

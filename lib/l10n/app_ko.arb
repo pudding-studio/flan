@@ -48,6 +48,7 @@
   "settingsLanguageSystem": "시스템 설정",
   "settingsAiResponseLanguage": "AI 응답 언어",
   "settingsAiResponseLanguageAuto": "앱 언어와 동일",
+  "settingsBackgroundImage": "배경이미지",
   "languageKorean": "한국어",
   "languageEnglish": "English",
   "languageJapanese": "日本語",
@@ -533,6 +534,7 @@
   "characterEditTabPersona": "페르소나",
   "characterEditTabStartSetting": "시작설정",
   "characterEditTabCoverImage": "표지이미지",
+  "characterEditTabBackgroundImage": "배경이미지",
   "characterEditTabAdditionalImage": "추가이미지",
   "characterEditWorldDateTitle": "세계 시작 날짜",
   "characterEditWorldDateHelp": "이 캐릭터 세계의 기준 날짜입니다. 프롬프트의 [world_date] 키워드로 사용되며, 뉴스/SNS 생성 시 기준 시간으로 쓰입니다.",
@@ -1255,6 +1257,23 @@
   },
   "additionalImageSaveError": "이미지 저장 중 오류가 발생했습니다: {error}",
   "@additionalImageSaveError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+
+  "backgroundImageTitle": "배경 이미지",
+  "backgroundImageTitleHelp": "채팅방에 워터마크로 표시할 배경 이미지를 추가할 수 있습니다.",
+  "backgroundImageEmpty": "배경 이미지가 없습니다",
+  "backgroundImageAddButton": "이미지 추가",
+  "backgroundImageDefaultName": "배경 {index}",
+  "@backgroundImageDefaultName": {
+    "placeholders": {
+      "index": { "type": "int" }
+    }
+  },
+  "backgroundImageSaveError": "이미지 저장 중 오류가 발생했습니다: {error}",
+  "@backgroundImageSaveError": {
     "placeholders": {
       "error": { "type": "String" }
     }

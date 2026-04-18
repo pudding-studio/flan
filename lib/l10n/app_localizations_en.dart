@@ -131,6 +131,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAiResponseLanguageAuto => 'App Language';
 
   @override
+  String get settingsBackgroundImage => 'Background Image';
+
+  @override
   String get languageKorean => '한국어';
 
   @override
@@ -1030,6 +1033,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get characterEditTabCoverImage => 'Cover Image';
+
+  @override
+  String get characterEditTabBackgroundImage => 'Background';
 
   @override
   String get characterEditTabAdditionalImage => 'Extra Images';
@@ -2502,6 +2508,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String additionalImageSaveError(String error) {
+    return 'Failed to save image: $error';
+  }
+
+  @override
+  String get backgroundImageTitle => 'Background Images';
+
+  @override
+  String get backgroundImageTitleHelp => 'Add background images to display as watermark in the chat room.';
+
+  @override
+  String get backgroundImageEmpty => 'No background images';
+
+  @override
+  String get backgroundImageAddButton => 'Add Image';
+
+  @override
+  String backgroundImageDefaultName(int index) {
+    return 'Background $index';
+  }
+
+  @override
+  String backgroundImageSaveError(String error) {
     return 'Failed to save image: $error';
   }
 
