@@ -2,7 +2,7 @@
 ; Build with: ISCC.exe windows\installer\flan.iss
 
 #define MyAppName "Flan"
-#define MyAppVersion "1.0.4.27"
+#define MyAppVersion "1.0.4.28"
 #define MyAppPublisher "Pudding Studio"
 #define MyAppExeName "flan.exe"
 #define ReleaseDir "..\..\build\windows\x64\runner\Release"
