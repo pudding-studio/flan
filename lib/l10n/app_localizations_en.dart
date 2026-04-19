@@ -205,7 +205,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsPrivacyPolicy => 'Privacy Policy';
 
   @override
-  String get settingsAboutDescription => 'An app for chatting with AI characters.';
+  String get settingsAboutDescription =>
+      'An app for chatting with AI characters.';
 
   @override
   String get characterTitle => 'Characters';
@@ -230,7 +231,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get characterDeleteOneContent => 'Delete this character? All related data will be removed.';
+  String get characterDeleteOneContent =>
+      'Delete this character? All related data will be removed.';
 
   @override
   String get characterDeletedSelected => 'Selected characters deleted';
@@ -288,7 +290,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get characterFlanAgentTooltip => 'Flan Agent';
 
   @override
-  String get characterAgentHighlightTooltip => 'Tap here to create a character!';
+  String get characterAgentHighlightTooltip =>
+      'Tap here to create a character!';
 
   @override
   String characterSortLabel(String label) {
@@ -420,13 +423,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tutorialWelcomeTitle => 'Welcome to Flan';
 
   @override
-  String get tutorialWelcomeBody => 'Chat with AI characters and build your own world.\nLet\'s get you set up quickly.';
+  String get tutorialWelcomeBody =>
+      'Chat with AI characters and build your own world.\nLet\'s get you set up quickly.';
 
   @override
   String get tutorialApiKeyTitle => 'API Key Setup';
 
   @override
-  String get tutorialApiKeyDesc => 'An API key is required to use AI models.\nSelect a service and enter your key.';
+  String get tutorialApiKeyDesc =>
+      'An API key is required to use AI models.\nSelect a service and enter your key.';
 
   @override
   String get tutorialApiKeyHint => 'Enter your API key';
@@ -451,7 +456,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tutorialVertexImport => 'Import Service Account JSON';
 
   @override
-  String get tutorialVertexValidationFailed => 'Service account validation failed';
+  String get tutorialVertexValidationFailed =>
+      'Service account validation failed';
 
   @override
   String tutorialJsonReadFailed(String error) {
@@ -468,7 +474,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tutorialModelTitle => 'Model Setup';
 
   @override
-  String get tutorialModelDesc => 'Choose AI models for chat and assistant features.';
+  String get tutorialModelDesc =>
+      'Choose AI models for chat and assistant features.';
 
   @override
   String get tutorialMainModel => 'Main Model';
@@ -477,22 +484,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tutorialSubModel => 'Sub Model';
 
   @override
-  String get tutorialMainDescGemini => 'Used for chat. Gemini 3.1 Pro recommended.';
+  String get tutorialMainDescGemini =>
+      'Used for chat. Gemini 3.1 Pro recommended.';
 
   @override
-  String get tutorialSubDescGemini => 'Used for summaries, SNS, news, etc. Gemini 3 Flash recommended.';
+  String get tutorialSubDescGemini =>
+      'Used for summaries, SNS, news, etc. Gemini 3 Flash recommended.';
 
   @override
   String get tutorialMainDescOpenai => 'Used for chat. GPT-5.4 recommended.';
 
   @override
-  String get tutorialSubDescOpenai => 'Used for summaries, SNS, news, etc. GPT-5.4 Mini recommended.';
+  String get tutorialSubDescOpenai =>
+      'Used for summaries, SNS, news, etc. GPT-5.4 Mini recommended.';
 
   @override
-  String get tutorialMainDescAnthropic => 'Used for chat. Claude Sonnet 4.6 recommended.';
+  String get tutorialMainDescAnthropic =>
+      'Used for chat. Claude Sonnet 4.6 recommended.';
 
   @override
-  String get tutorialSubDescAnthropic => 'Used for summaries, SNS, news, etc. Claude Haiku 4.5 recommended.';
+  String get tutorialSubDescAnthropic =>
+      'Used for summaries, SNS, news, etc. Claude Haiku 4.5 recommended.';
 
   @override
   String get tutorialModelRecommended => 'Recommended';
@@ -501,16 +513,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tutorialCompleteTitle => 'You\'re all set!';
 
   @override
-  String get tutorialCompleteSubtitle => 'Ready to create your first character?';
+  String get tutorialCompleteSubtitle =>
+      'Ready to create your first character?';
 
   @override
   String get tutorialAgentBoxTitle => 'Flan Agent';
 
   @override
-  String get tutorialAgentBoxSubtitle => 'Tap the glowing icon at the top of the Characters tab';
+  String get tutorialAgentBoxSubtitle =>
+      'Tap the glowing icon at the top of the Characters tab';
 
   @override
-  String get tutorialAgentBoxBody => 'Ask the Agent to create any character you want!\nTry something like \"Create an elven mage from a fantasy world\".';
+  String get tutorialAgentBoxBody =>
+      'Ask the Agent to create any character you want!\nTry something like \"Create an elven mage from a fantasy world\".';
 
   @override
   String get tutorialHelpGoogleAi => 'Get a Google AI Studio API key';
@@ -624,7 +639,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get drawerBookKeysHint => 'Separate with commas';
 
   @override
-  String get drawerBookSecondaryKeysHint => 'Separate with commas (e.g. magic, battle)';
+  String get drawerBookSecondaryKeysHint =>
+      'Separate with commas (e.g. magic, battle)';
 
   @override
   String get drawerBookInsertionOrder => 'Insertion Order';
@@ -656,7 +672,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get drawerNoSummaries => 'No auto summaries.\nEnable auto summary in settings.';
+  String get drawerNoSummaries =>
+      'No auto summaries.\nEnable auto summary in settings.';
 
   @override
   String get drawerSummaryContentHint => 'Summary content';
@@ -785,7 +802,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get agentFieldRelatedEpisodes => 'Related Episodes';
 
   @override
-  String get agentFieldRelatedEpisodesList => 'Related Episodes (comma-separated)';
+  String get agentFieldRelatedEpisodesList =>
+      'Related Episodes (comma-separated)';
 
   @override
   String get agentFieldKeywords => 'Keywords';
@@ -877,7 +895,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatRoomWarningTitle => 'Notice';
 
   @override
-  String get chatRoomWarningDesc => 'All AI responses are auto-generated and may be biased or inaccurate.';
+  String get chatRoomWarningDesc =>
+      'All AI responses are auto-generated and may be biased or inaccurate.';
 
   @override
   String get chatRoomStartSetting => 'Start Setting';
@@ -1050,7 +1069,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get characterEditWorldDateTitle => 'World Start Date';
 
   @override
-  String get characterEditWorldDateHelp => 'The reference date for this character\'s world. Used as the [world_date] keyword in prompts and as the base time for news/SNS generation.';
+  String get characterEditWorldDateHelp =>
+      'The reference date for this character\'s world. Used as the [world_date] keyword in prompts and as the base time for news/SNS generation.';
 
   @override
   String get characterEditWorldDateHint => 'Select a date';
@@ -1059,10 +1079,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get characterEditWorldDateClear => 'Clear date';
 
   @override
-  String get characterEditSnsHelp => 'Configure the SNS board settings for this character.';
+  String get characterEditSnsHelp =>
+      'Configure the SNS board settings for this character.';
 
   @override
-  String get characterEditSnsBoardHint => 'e.g. Free Board, Adventurers\' Plaza';
+  String get characterEditSnsBoardHint =>
+      'e.g. Free Board, Adventurers\' Plaza';
 
   @override
   String get characterEditSnsToneHint => 'e.g. Humorous and friendly';
@@ -1083,7 +1105,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get characterEditNicknameLabel => 'Nickname';
 
   @override
-  String get characterEditNicknameHelp => 'Used instead of the char variable in prompts. If empty, the name is used.';
+  String get characterEditNicknameHelp =>
+      'Used instead of the char variable in prompts. If empty, the name is used.';
 
   @override
   String get characterEditNicknameHint => 'Enter the character\'s nickname.';
@@ -1092,16 +1115,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get characterEditTaglineLabel => 'Tagline';
 
   @override
-  String get characterEditTaglineHelp => 'Write a short sentence describing the character.';
+  String get characterEditTaglineHelp =>
+      'Write a short sentence describing the character.';
 
   @override
-  String get characterEditTaglineHint => 'Enter a brief intro for this character.';
+  String get characterEditTaglineHint =>
+      'Enter a brief intro for this character.';
 
   @override
   String get characterEditKeywordsLabel => 'Keywords';
 
   @override
-  String get characterEditKeywordsHelp => 'Enter keywords separated by commas (,).';
+  String get characterEditKeywordsHelp =>
+      'Enter keywords separated by commas (,).';
 
   @override
   String get characterEditKeywordsHint => 'e.g. fantasy, male';
@@ -1110,7 +1136,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get characterEditWorldSetting => 'World Setting';
 
   @override
-  String get characterEditWorldSettingHelp => 'Describe the world or background this character belongs to.';
+  String get characterEditWorldSettingHelp =>
+      'Describe the world or background this character belongs to.';
 
   @override
   String get characterEditWorldSettingHint => 'Enter world setting details.';
@@ -1122,7 +1149,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get characterExportFlanFormat => 'Flan Format';
 
   @override
-  String get characterExportFlanSubtitle => 'App-native JSON (includes images)';
+  String get characterExportFlanSubtitle => 'Image + app-native data';
 
   @override
   String get characterExportV2Card => 'Character Card v2';
@@ -1169,7 +1196,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get autoSummaryResetTitle => 'Reset';
 
   @override
-  String get autoSummaryResetContent => 'Reset the summary prompt to the latest default?';
+  String get autoSummaryResetContent =>
+      'Reset the summary prompt to the latest default?';
 
   @override
   String get autoSummaryResetConfirm => 'Reset';
@@ -1212,13 +1240,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get autoSummaryEnableTitle => 'Auto Summary';
 
   @override
-  String get autoSummaryEnableSubtitle => 'Automatically summarizes when token limit is exceeded';
+  String get autoSummaryEnableSubtitle =>
+      'Automatically summarizes when token limit is exceeded';
 
   @override
   String get autoSummaryAgentTitle => 'Agent Mode';
 
   @override
-  String get autoSummaryAgentSubtitle => 'Automatically manages structured world data';
+  String get autoSummaryAgentSubtitle =>
+      'Automatically manages structured world data';
 
   @override
   String get autoSummaryModelSection => 'Summary Model';
@@ -1227,7 +1257,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get autoSummaryUseSubModel => 'Use Sub Model';
 
   @override
-  String get autoSummaryUseSubModelSubtitle => 'Uses the sub model from chat model settings';
+  String get autoSummaryUseSubModelSubtitle =>
+      'Uses the sub model from chat model settings';
 
   @override
   String get autoSummaryStartCondition => 'Auto Summary Trigger';
@@ -1242,16 +1273,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get autoSummaryMaxResponseSize => 'Max Response Size';
 
   @override
-  String get autoSummaryMaxResponseHelp => 'Maximum tokens the model can generate.';
+  String get autoSummaryMaxResponseHelp =>
+      'Maximum tokens the model can generate.';
 
   @override
   String get autoSummaryTemperature => 'Temperature';
 
   @override
-  String get autoSummaryTemperatureHelp => 'Higher values produce more creative and varied responses.';
+  String get autoSummaryTemperatureHelp =>
+      'Higher values produce more creative and varied responses.';
 
   @override
-  String get autoSummaryTopPHelp => 'Cumulative probability threshold. Lower values produce more focused responses.';
+  String get autoSummaryTopPHelp =>
+      'Cumulative probability threshold. Lower values produce more focused responses.';
 
   @override
   String get autoSummaryTopKHelp => 'Number of top tokens to consider.';
@@ -1260,16 +1294,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get autoSummaryPresencePenalty => 'Presence Penalty';
 
   @override
-  String get autoSummaryPresencePenaltyHelp => 'Positive values encourage new topics; negative values focus on existing ones.';
+  String get autoSummaryPresencePenaltyHelp =>
+      'Positive values encourage new topics; negative values focus on existing ones.';
 
   @override
   String get autoSummaryFrequencyPenalty => 'Frequency Penalty';
 
   @override
-  String get autoSummaryFrequencyPenaltyHelp => 'Positive values reduce repetition; negative values increase it.';
+  String get autoSummaryFrequencyPenaltyHelp =>
+      'Positive values reduce repetition; negative values increase it.';
 
   @override
-  String get autoSummaryPromptHelp => 'Configure summary prompt items. Messages to summarize are inserted automatically at the \'Summary Target\' role position.\n\nLong-press to reorder.';
+  String get autoSummaryPromptHelp =>
+      'Configure summary prompt items. Messages to summarize are inserted automatically at the \'Summary Target\' role position.\n\nLong-press to reorder.';
 
   @override
   String get autoSummaryNoItems => 'No prompt items';
@@ -1293,7 +1330,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get autoSummaryItemRole => 'Role';
 
   @override
-  String get autoSummaryTargetMessageInfo => 'Messages to summarize will be inserted here automatically';
+  String get autoSummaryTargetMessageInfo =>
+      'Messages to summarize will be inserted here automatically';
 
   @override
   String get autoSummaryItemPrompt => 'Prompt';
@@ -1526,7 +1564,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatModelTabSub => 'Sub Model';
 
   @override
-  String get chatModelSubInfo => 'The sub model is used for SNS summaries and similar features.\nChanging it updates the default model for those features.';
+  String get chatModelSubInfo =>
+      'The sub model is used for SNS summaries and similar features.\nChanging it updates the default model for those features.';
 
   @override
   String get chatModelProviderSection => 'Provider';
@@ -1544,7 +1583,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatModelApiKeyDeleteContent => 'Delete this API key?';
 
   @override
-  String get chatModelVertexValidationFailed => 'Service account validation failed';
+  String get chatModelVertexValidationFailed =>
+      'Service account validation failed';
 
   @override
   String get chatModelNewApiKey => 'New API Key';
@@ -1559,7 +1599,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatModelNoApiKey => 'No API keys registered';
 
   @override
-  String get apiKeyMultiInfo => 'You can register multiple API keys per provider.';
+  String get apiKeyMultiInfo =>
+      'You can register multiple API keys per provider.';
 
   @override
   String chatPromptListLoadFailed(String error) {
@@ -1597,7 +1638,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get chatPromptResetTitle => 'Reset';
 
   @override
-  String get chatPromptResetContent => 'Reset all default prompts to their initial state?';
+  String get chatPromptResetContent =>
+      'Reset all default prompts to their initial state?';
 
   @override
   String get chatPromptResetSuccess => 'Default prompts reset';
@@ -1627,7 +1669,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communityAnonymous => 'Anonymous';
 
   @override
-  String get communityNeedDescription => 'Please write a character description or summary first.';
+  String get communityNeedDescription =>
+      'Please write a character description or summary first.';
 
   @override
   String communityGenerateFailed(String error) {
@@ -1759,13 +1802,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get agentChatResetTitle => 'Reset Conversation';
 
   @override
-  String get agentChatResetContent => 'All conversation history will be cleared. Continue?';
+  String get agentChatResetContent =>
+      'All conversation history will be cleared. Continue?';
 
   @override
   String get agentChatResetTooltip => 'Reset conversation';
 
   @override
-  String get agentChatIntro => 'I can help you create, edit, and refine characters';
+  String get agentChatIntro =>
+      'I can help you create, edit, and refine characters';
 
   @override
   String get agentChatUserLabel => 'Me';
@@ -1870,7 +1915,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get diaryAutoGenerate => 'Auto Generate';
 
   @override
-  String get diaryAutoGenerateDesc => 'Automatically generates a diary entry when the in-chat date changes.';
+  String get diaryAutoGenerateDesc =>
+      'Automatically generates a diary entry when the in-chat date changes.';
 
   @override
   String get characterBookInvalidFormat => 'Invalid lorebook format';
@@ -1907,7 +1953,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get characterBookSection => 'Lorebook';
 
   @override
-  String get characterBookSectionHelp => 'Add world-building information related to this character.\n\nLong-press to reorder.';
+  String get characterBookSectionHelp =>
+      'Add world-building information related to this character.\n\nLong-press to reorder.';
 
   @override
   String get characterBookAddItem => 'Add Entry';
@@ -1928,7 +1975,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get characterBookActivationKey => 'Activation Key';
 
   @override
-  String get characterBookKeysHint => 'Separate with commas (e.g. magic, battle)';
+  String get characterBookKeysHint =>
+      'Separate with commas (e.g. magic, battle)';
 
   @override
   String get characterBookSecondaryKey => 'Secondary Key';
@@ -1961,7 +2009,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get promptItemsTitle => 'Prompt Items';
 
   @override
-  String get promptItemsTitleHelp => 'Add prompt items to send to the AI. They are sent in order.\n\nLong-press to reorder.';
+  String get promptItemsTitleHelp =>
+      'Add prompt items to send to the AI. They are sent in order.\n\nLong-press to reorder.';
 
   @override
   String get promptItemsAddItem => 'Add Item';
@@ -1973,7 +2022,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get promptItemsEmpty => 'No prompt items';
 
   @override
-  String get promptItemsNameHint => 'Item name (e.g. System Prompt, Character Personality)';
+  String get promptItemsNameHint =>
+      'Item name (e.g. System Prompt, Character Personality)';
 
   @override
   String get promptItemsLabelEnable => 'Enable';
@@ -1985,7 +2035,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get promptItemsLabelPrompt => 'Prompt';
 
   @override
-  String get promptItemsPromptHint => 'Define the AI\'s role and response style';
+  String get promptItemsPromptHint =>
+      'Define the AI\'s role and response style';
 
   @override
   String get promptItemsConditionSelect => 'Select Condition';
@@ -2036,7 +2087,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get promptConditionsTitle => 'Prompt Conditions';
 
   @override
-  String get promptConditionsTitleHelp => 'Set conditions to apply to the prompt.\n\n• Toggle: ON/OFF switch\n• Single select: Choose one from multiple options\n• Variable substitution: Replaces a variable with the selected value';
+  String get promptConditionsTitleHelp =>
+      'Set conditions to apply to the prompt.\n\n• Toggle: ON/OFF switch\n• Single select: Choose one from multiple options\n• Variable substitution: Replaces a variable with the selected value';
 
   @override
   String get promptConditionsAddButton => 'Add Condition';
@@ -2069,7 +2121,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get promptPresetsTitle => 'Prompt Condition Presets';
 
   @override
-  String get promptPresetsTitleHelp => 'Presets with pre-configured condition values.\n\nSelecting a preset during chat applies all conditions at once.';
+  String get promptPresetsTitleHelp =>
+      'Presets with pre-configured condition values.\n\nSelecting a preset during chat applies all conditions at once.';
 
   @override
   String get promptPresetsAddButton => 'Add Preset';
@@ -2105,7 +2158,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get promptRegexTitle => 'Regex Rules';
 
   @override
-  String get promptRegexTitleHelp => 'Transform text using regular expressions (RegExp).\n\nApplication timing varies by property:\n• Modify Input: Applied to user input text\n• Modify Output: Applied to AI response text\n• Modify Send Data: Applied to API payload\n• Modify Display: Applied only when rendering on screen';
+  String get promptRegexTitleHelp =>
+      'Transform text using regular expressions (RegExp).\n\nApplication timing varies by property:\n• Modify Input: Applied to user input text\n• Modify Output: Applied to AI response text\n• Modify Send Data: Applied to API payload\n• Modify Display: Applied only when rendering on screen';
 
   @override
   String get promptRegexEmpty => 'No regex rules';
@@ -2116,7 +2170,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get promptRegexNameHint => 'Rule name (e.g. Remove OOC, Tag Transform)';
+  String get promptRegexNameHint =>
+      'Rule name (e.g. Remove OOC, Tag Transform)';
 
   @override
   String get promptRegexLabelTarget => 'Target';
@@ -2131,7 +2186,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get promptRegexLabelReplacement => 'Replacement';
 
   @override
-  String get promptRegexReplacementHint => 'Matched text will be replaced with this format\n\nCapture groups: \$1, \$2, ...';
+  String get promptRegexReplacementHint =>
+      'Matched text will be replaced with this format\n\nCapture groups: \$1, \$2, ...';
 
   @override
   String get promptRegexAddButton => 'Add Rule';
@@ -2143,7 +2199,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupSectionTitle => 'Create Backup';
 
   @override
-  String get backupSectionDesc => 'Export all data — characters (with images), chat history, prompts, custom models, and settings — into a single backup file.';
+  String get backupSectionDesc =>
+      'Export all data — characters (with images), chat history, prompts, custom models, and settings — into a single backup file.';
 
   @override
   String get backupCreateButton => 'Create Backup File';
@@ -2152,10 +2209,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupRestoreTitle => 'Restore Backup';
 
   @override
-  String get backupRestoreDesc => 'Select a .zip backup file to restore your data. (Legacy .db files also supported)';
+  String get backupRestoreDesc =>
+      'Select a .zip backup file to restore your data. (Legacy .db files also supported)';
 
   @override
-  String get backupRestoreWarning => 'Warning: All existing data will be erased. The app must be restarted after restore.';
+  String get backupRestoreWarning =>
+      'Warning: All existing data will be erased. The app must be restarted after restore.';
 
   @override
   String get backupRestoreButton => 'Select Backup File';
@@ -2224,7 +2283,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backupRestoreSuccessTitle => 'Restore Complete';
 
   @override
-  String get backupRestoreSuccessContent => 'Backup data restored.\nPlease restart the app to apply changes.';
+  String get backupRestoreSuccessContent =>
+      'Backup data restored.\nPlease restart the app to apply changes.';
 
   @override
   String backupRestoreFailed(String error) {
@@ -2241,7 +2301,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get logDeleteAllTooltip => 'Delete All';
 
   @override
-  String get logInfoMessage => 'View API request and response logs.\nLogs older than 7 days are automatically deleted.';
+  String get logInfoMessage =>
+      'View API request and response logs.\nLogs older than 7 days are automatically deleted.';
 
   @override
   String get logEmpty => 'No logs';
@@ -2375,7 +2436,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tokenizerLabel => 'Tokenizer';
 
   @override
-  String get tokenizerDescription => 'The tokenizer determines how text is converted to tokens. The best tokenizer may vary by model.';
+  String get tokenizerDescription =>
+      'The tokenizer determines how text is converted to tokens. The best tokenizer may vary by model.';
 
   @override
   String get profileTabLabelName => 'Name';
@@ -2393,7 +2455,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileTabLabelNickname => 'Nickname';
 
   @override
-  String get profileTabNicknameHelp => 'Used instead of the char variable in prompts. If empty, the name is used.';
+  String get profileTabNicknameHelp =>
+      'Used instead of the char variable in prompts. If empty, the name is used.';
 
   @override
   String get profileTabNicknameHint => 'Enter the character\'s nickname.';
@@ -2402,16 +2465,19 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profileTabLabelCreatorNotes => 'Tagline';
 
   @override
-  String get profileTabCreatorNotesHelp => 'Write a short sentence describing the character.';
+  String get profileTabCreatorNotesHelp =>
+      'Write a short sentence describing the character.';
 
   @override
-  String get profileTabCreatorNotesHint => 'Enter a brief intro for this character.';
+  String get profileTabCreatorNotesHint =>
+      'Enter a brief intro for this character.';
 
   @override
   String get profileTabLabelKeywords => 'Keywords';
 
   @override
-  String get profileTabKeywordsHelp => 'Enter keywords separated by commas (,).';
+  String get profileTabKeywordsHelp =>
+      'Enter keywords separated by commas (,).';
 
   @override
   String get profileTabKeywordsHint => 'e.g. fantasy, male';
@@ -2420,7 +2486,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get startScenarioTitle => 'Start Setting';
 
   @override
-  String get startScenarioTitleHelp => 'Add start setting information for the conversation.';
+  String get startScenarioTitleHelp =>
+      'Add start setting information for the conversation.';
 
   @override
   String get startScenarioEmpty => 'No start settings';
@@ -2438,7 +2505,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get startScenarioStartSettingLabel => 'Start Setting';
 
   @override
-  String get startScenarioStartSettingInfo => 'This content is inserted before the summary and will not be deleted.';
+  String get startScenarioStartSettingInfo =>
+      'This content is inserted before the summary and will not be deleted.';
 
   @override
   String get startScenarioStartSettingHint => 'Enter the start setting content';
@@ -2499,7 +2567,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get additionalImageTitle => 'Extra Images';
 
   @override
-  String get additionalImageTitleHelp => 'Add reference images related to the character.';
+  String get additionalImageTitleHelp =>
+      'Add reference images related to the character.';
 
   @override
   String get additionalImageEmpty => 'No extra images';
@@ -2521,7 +2590,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get backgroundImageTitle => 'Background Images';
 
   @override
-  String get backgroundImageTitleHelp => 'Add background images to display as watermark in the chat room.';
+  String get backgroundImageTitleHelp =>
+      'Add background images to display as watermark in the chat room.';
 
   @override
   String get backgroundImageEmpty => 'No background images';
@@ -2543,7 +2613,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get detailSettingsTitle => 'World Setting';
 
   @override
-  String get detailSettingsTitleHelp => 'Describe the world or background this character belongs to.';
+  String get detailSettingsTitleHelp =>
+      'Describe the world or background this character belongs to.';
 
   @override
   String get detailSettingsHint => 'Enter world setting details.';
@@ -2588,7 +2659,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tutorialStepGoogleAiAccess => 'Go to Google AI Studio';
 
   @override
-  String get tutorialStepGoogleAiPayment => 'Create a billing account (required for paid models)';
+  String get tutorialStepGoogleAiPayment =>
+      'Create a billing account (required for paid models)';
 
   @override
   String get tutorialStepGetApiKey => 'Click Get API Key';
@@ -2603,10 +2675,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tutorialStepVertexAccess => 'Go to Google Cloud Console';
 
   @override
-  String get tutorialStepVertexBilling => 'Create a billing account and link it to a project';
+  String get tutorialStepVertexBilling =>
+      'Create a billing account and link it to a project';
 
   @override
-  String get tutorialStepVertexServiceAccount => 'IAM → Service Accounts → Create Account';
+  String get tutorialStepVertexServiceAccount =>
+      'IAM → Service Accounts → Create Account';
 
   @override
   String get tutorialStepVertexRole => 'Grant the Vertex AI User role';
@@ -2721,7 +2795,8 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get agentChatDescription => 'Flan Agent can create and edit characters. Ask it to build or modify any character you have in mind.';
+  String get agentChatDescription =>
+      'Flan Agent can create and edit characters. Ask it to build or modify any character you have in mind.';
 
   @override
   String diaryTitle(String author) {
@@ -2765,7 +2840,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsAiResponseLanguageOthersTitle => 'AI Response Language';
 
   @override
-  String get settingsAiResponseLanguageOthersHint => 'Enter language name (e.g. French)';
+  String get settingsAiResponseLanguageOthersHint =>
+      'Enter language name (e.g. French)';
 
   @override
   String get settingsAiResponseLanguageOthersLabel => 'Language name';

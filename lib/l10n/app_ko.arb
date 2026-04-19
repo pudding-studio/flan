@@ -564,7 +564,7 @@
 
   "characterExportFormatTitle": "내보내기 형식 선택",
   "characterExportFlanFormat": "Flan 형식",
-  "characterExportFlanSubtitle": "앱 전용 JSON (이미지 포함)",
+  "characterExportFlanSubtitle": "이미지 + 앱 전용 데이터",
   "characterExportV2Card": "캐릭터카드 v2",
   "characterExportV2Subtitle": "PNG — 일부 데이터 잘릴 수 있음",
   "characterExportV3Card": "캐릭터카드 v3",

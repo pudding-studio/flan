@@ -564,7 +564,7 @@
 
   "characterExportFormatTitle": "Select Export Format",
   "characterExportFlanFormat": "Flan Format",
-  "characterExportFlanSubtitle": "App-native JSON (includes images)",
+  "characterExportFlanSubtitle": "Image + app-native data",
   "characterExportV2Card": "Character Card v2",
   "characterExportV2Subtitle": "PNG — some data may be truncated",
   "characterExportV3Card": "Character Card v3",

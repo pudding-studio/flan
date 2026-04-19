@@ -564,7 +564,7 @@
 
   "characterExportFormatTitle": "エクスポート形式を選択",
   "characterExportFlanFormat": "Flan形式",
-  "characterExportFlanSubtitle": "アプリ専用JSON (画像含む)",
+  "characterExportFlanSubtitle": "画像 + アプリ専用データ",
   "characterExportV2Card": "キャラクターカード v2",
   "characterExportV2Subtitle": "PNG — 一部データが切り捨てられる場合あり",
   "characterExportV3Card": "キャラクターカード v3",
