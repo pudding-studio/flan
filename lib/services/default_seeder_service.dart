@@ -136,9 +136,9 @@ class DefaultSeederService {
   }
 
   Future<List<String>> _listAssets(String directory) async {
-    final manifestContent = await rootBundle.loadString('AssetManifest.json');
-    final Map<String, dynamic> manifest = jsonDecode(manifestContent);
-    return manifest.keys
+    final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
+    return manifest
+        .listAssets()
         .where((key) => key.startsWith(directory) && key.endsWith('.json'))
         .toList();
   }
