@@ -19,6 +19,7 @@ class Character {
   final String? communityName;
   final String? communityMood;
   final String? communityLanguage;
+  final DateTime? worldStartDate;
 
   Character({
     this.id,
@@ -35,6 +36,7 @@ class Character {
     this.communityName,
     this.communityMood,
     this.communityLanguage,
+    this.worldStartDate,
   })  : tags = tags ?? [],
         createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now();
@@ -73,6 +75,9 @@ class Character {
       communityName: map['community_name'] as String?,
       communityMood: map['community_mood'] as String?,
       communityLanguage: map['community_language'] as String?,
+      worldStartDate: map['world_start_date'] != null
+          ? DateTime.tryParse(map['world_start_date'] as String)
+          : null,
     );
   }
 
@@ -92,6 +97,7 @@ class Character {
       'community_name': communityName,
       'community_mood': communityMood,
       'community_language': communityLanguage,
+      'world_start_date': worldStartDate?.toIso8601String(),
     };
   }
 
@@ -110,6 +116,7 @@ class Character {
     Object? communityName = _sentinel,
     Object? communityMood = _sentinel,
     Object? communityLanguage = _sentinel,
+    Object? worldStartDate = _sentinel,
   }) {
     return Character(
       id: id ?? this.id,
@@ -132,6 +139,9 @@ class Character {
       communityLanguage: communityLanguage == _sentinel
           ? this.communityLanguage
           : communityLanguage as String?,
+      worldStartDate: worldStartDate == _sentinel
+          ? this.worldStartDate
+          : worldStartDate as DateTime?,
     );
   }
 
@@ -159,6 +169,7 @@ class Character {
       'communityName': communityName,
       'communityMood': communityMood,
       'communityLanguage': communityLanguage,
+      'worldStartDate': worldStartDate?.toIso8601String(),
       'personas': personas?.map((p) => p.toJson()).toList(),
       'startScenarios': startScenarios?.map((s) => s.toJson()).toList(),
       'characterBookFolders': characterBookFolders?.map((f) => f.toJson()).toList(),
@@ -191,6 +202,9 @@ class Character {
       communityName: json['communityName'] as String?,
       communityMood: json['communityMood'] as String?,
       communityLanguage: json['communityLanguage'] as String?,
+      worldStartDate: json['worldStartDate'] != null
+          ? DateTime.tryParse(json['worldStartDate'] as String)
+          : null,
     );
   }
 }

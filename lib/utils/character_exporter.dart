@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:universal_io/io.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
@@ -206,6 +207,20 @@ class CharacterExporter {
           message: AppLocalizations.of(context).characterExportSuccessIos(path),
         );
       }
+    } else if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+      final savePath = await FilePicker.platform.saveFile(
+        dialogTitle: fileName,
+        fileName: fileName,
+        lockParentWindow: true,
+      );
+      if (savePath == null) return;
+      await File(savePath).writeAsString(content);
+      if (context.mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: AppLocalizations.of(context).characterExportSuccessIos(savePath),
+        );
+      }
     }
   }
 
@@ -243,6 +258,20 @@ class CharacterExporter {
             message: AppLocalizations.of(context).characterExportSuccessIos(path),
           );
         }
+      } else if (Platform.isWindows || Platform.isLinux || Platform.isMacOS) {
+        final savePath = await FilePicker.platform.saveFile(
+          dialogTitle: fileName,
+          fileName: fileName,
+          lockParentWindow: true,
+        );
+        if (savePath == null) return;
+        await tempFile.copy(savePath);
+        if (context.mounted) {
+          CommonDialog.showSnackBar(
+            context: context,
+            message: AppLocalizations.of(context).characterExportSuccessIos(savePath),
+          );
+        }
       }
     } finally {
       if (await tempFile.exists()) await tempFile.delete();
@@ -272,7 +301,7 @@ class CharacterExporter {
     }
   }
 
-  // ─── Flan format (ZIP: character.json + images/) ────────────────────────────
+  // ─── Flan format (PNG + ZIP polyglot: cover PNG followed by ZIP with character.json + images/) ─
 
   static Future<void> _exportFlan(CharacterExportData data, BuildContext context) async {
     // Build cover image entries WITHOUT imageData (references only)
@@ -306,7 +335,7 @@ class CharacterExporter {
     // Stream to ZIP: character.json + image files (one at a time)
     final tempDir = await getTemporaryDirectory();
     final fileName = '${data.character.name}.flan';
-    final tempZipPath = '${tempDir.path}/$fileName';
+    final tempZipPath = '${tempDir.path}/${data.character.name}.flan.zip';
 
     final zipWriter = await StreamingZipWriter.open(tempZipPath);
 
@@ -321,7 +350,13 @@ class CharacterExporter {
 
     await zipWriter.close();
 
-    await _saveBinaryFile(context, fileName, await File(tempZipPath).readAsBytes());
+    // Polyglot: cover PNG prefix + ZIP body. Image viewers render the PNG prefix;
+    // ZIP tools (and our importer) locate the archive via the PK\x03\x04 signature.
+    final coverPng = await _resolveCoverPng(data);
+    final zipBytes = await File(tempZipPath).readAsBytes();
+    final polyglot = <int>[...coverPng, ...zipBytes];
+
+    await _saveBinaryFile(context, fileName, polyglot);
     await File(tempZipPath).delete();
   }
 

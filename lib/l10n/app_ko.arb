@@ -48,6 +48,9 @@
   "settingsLanguageSystem": "시스템 설정",
   "settingsAiResponseLanguage": "AI 응답 언어",
   "settingsAiResponseLanguageAuto": "앱 언어와 동일",
+  "settingsBackgroundImage": "배경이미지",
+  "settingsSendOnEnter": "메시지 전송 Enter",
+  "settingsSendOnShiftEnter": "메시지 전송 Shift Enter",
   "languageKorean": "한국어",
   "languageEnglish": "English",
   "languageJapanese": "日本語",
@@ -440,7 +443,7 @@
       "promptId": { "type": "String" }
     }
   },
-  "chatRoomTextSettings": "텍스트 설정",
+  "chatRoomTextSettings": "뷰어 설정",
   "chatRoomBranchTitle": "분기 생성",
   "chatRoomBranchContent": "이 메시지까지의 내용으로 새 분기점을 생성하시겠습니까?",
   "chatRoomBranchConfirm": "생성",
@@ -533,7 +536,12 @@
   "characterEditTabPersona": "페르소나",
   "characterEditTabStartSetting": "시작설정",
   "characterEditTabCoverImage": "표지이미지",
+  "characterEditTabBackgroundImage": "배경이미지",
   "characterEditTabAdditionalImage": "추가이미지",
+  "characterEditWorldDateTitle": "세계 시작 날짜",
+  "characterEditWorldDateHelp": "이 캐릭터 세계의 기준 날짜입니다. 프롬프트의 [world_date] 키워드로 사용되며, 뉴스/SNS 생성 시 기준 시간으로 쓰입니다.",
+  "characterEditWorldDateHint": "날짜를 선택해주세요",
+  "characterEditWorldDateClear": "날짜 초기화",
   "characterEditSnsHelp": "캐릭터의 SNS 게시판 설정을 구성합니다.",
   "characterEditSnsBoardHint": "예: 자유게시판, 모험가 광장 등",
   "characterEditSnsToneHint": "예: 유머러스하고 친근한 분위기",
@@ -556,7 +564,7 @@
 
   "characterExportFormatTitle": "내보내기 형식 선택",
   "characterExportFlanFormat": "Flan 형식",
-  "characterExportFlanSubtitle": "앱 전용 JSON (이미지 포함)",
+  "characterExportFlanSubtitle": "이미지 + 앱 전용 데이터",
   "characterExportV2Card": "캐릭터카드 v2",
   "characterExportV2Subtitle": "PNG — 일부 데이터 잘릴 수 있음",
   "characterExportV3Card": "캐릭터카드 v3",
@@ -1256,6 +1264,23 @@
     }
   },
 
+  "backgroundImageTitle": "배경 이미지",
+  "backgroundImageTitleHelp": "채팅방에 워터마크로 표시할 배경 이미지를 추가할 수 있습니다.",
+  "backgroundImageEmpty": "배경 이미지가 없습니다",
+  "backgroundImageAddButton": "이미지 추가",
+  "backgroundImageDefaultName": "배경 {index}",
+  "@backgroundImageDefaultName": {
+    "placeholders": {
+      "index": { "type": "int" }
+    }
+  },
+  "backgroundImageSaveError": "이미지 저장 중 오류가 발생했습니다: {error}",
+  "@backgroundImageSaveError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+
   "detailSettingsTitle": "세계관 설정",
   "detailSettingsTitleHelp": "캐릭터가 속한 세계관이나 배경 설정을 자유롭게 작성해주세요.",
   "detailSettingsHint": "세계관 설정을 입력해주세요.",
@@ -1268,6 +1293,10 @@
   "chatBottomPanelParagraphAlign": "문단 정렬",
   "chatBottomPanelAlignLeft": "왼쪽",
   "chatBottomPanelAlignJustify": "양쪽",
+  "chatBottomPanelViewMode": "뷰어 모드",
+  "chatBottomPanelViewModeNovel": "소설형",
+  "chatBottomPanelViewModeConversation": "대화형",
+  "chatBottomPanelViewModeCombination": "조합형",
 
   "tutorialStepGoogleAiAccess": "Google AI Studio 접속",
   "tutorialStepGoogleAiPayment": "결제 계정 생성 (유료 모델 사용 시 필요)",

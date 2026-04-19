@@ -197,6 +197,15 @@ Win32Window::MessageHandler(HWND hwnd,
 
       return 0;
     }
+    case WM_GETMINMAXINFO: {
+      // Enforce a messenger-style minimum window size (DPI-aware).
+      UINT dpi = GetDpiForWindow(hwnd);
+      double scale = dpi > 0 ? dpi / 96.0 : 1.0;
+      auto* info = reinterpret_cast<MINMAXINFO*>(lparam);
+      info->ptMinTrackSize.x = static_cast<LONG>(400 * scale);
+      info->ptMinTrackSize.y = static_cast<LONG>(720 * scale);
+      return 0;
+    }
     case WM_SIZE: {
       RECT rect = GetClientArea();
       if (child_content_ != nullptr) {

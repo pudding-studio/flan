@@ -16,6 +16,7 @@ import '../../../models/prompt/prompt_condition_preset.dart';
 import '../../../models/prompt/prompt_condition_preset_value.dart';
 import '../../../models/chat/chat_model.dart';
 import '../../../models/chat/model_preset.dart';
+import '../../../providers/chat_background_provider.dart';
 import '../../../providers/chat_model_provider.dart';
 import '../../../models/chat/agent_entry.dart';
 import '../../../widgets/common/common_dropdown_button.dart';
@@ -665,6 +666,24 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
               ),
             ),
           ],
+        ),
+        Consumer<ChatBackgroundProvider>(
+          builder: (context, provider, _) => Row(
+            children: [
+              Text(l10n.settingsBackgroundImage, style: _fieldLabelStyle),
+              const Spacer(),
+              SizedBox(
+                height: 28,
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Switch(
+                    value: provider.enabled,
+                    onChanged: provider.setEnabled,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ],
     );

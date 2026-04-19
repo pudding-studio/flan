@@ -273,6 +273,22 @@ class ChatApiDataBuilder {
 
     // Stage 1+2: Build frame and apply keyword substitution
     final outputLanguageKeywords = {'output_language': outputLanguage};
+
+    // Derive the progressive world time from the most recent message that
+    // has a resolved date tag, falling back to earlier messages so the
+    // `{{world_date}}` keyword reflects chat progression even when the last
+    // message hasn't re-emitted a date tag.
+    ChatMessageMetadata? latestMetadata;
+    for (var i = messages.length - 1; i >= 0; i--) {
+      final id = messages[i].id;
+      if (id == null) continue;
+      final md = metadataMap[id];
+      if (md != null && md.date != null && md.date!.isNotEmpty) {
+        latestMetadata = md;
+        break;
+      }
+    }
+
     String rawSystemPrompt = PromptBuilder.buildSystemPrompt(
       chatPrompt: chatPrompt,
       character: character,
@@ -282,6 +298,7 @@ class ChatApiDataBuilder {
       chatRoom: chatRoom,
       summaries: summaries,
       summaryMetadataMap: summaryMetadataMap,
+      latestMetadata: latestMetadata,
       conditions: conditions,
       conditionStates: conditionStates,
       agentContext: agentContext,
@@ -342,6 +359,7 @@ class ChatApiDataBuilder {
       chatRoom: chatRoom,
       summaries: summaries,
       summaryMetadataMap: summaryMetadataMap,
+      latestMetadata: latestMetadata,
       conditions: conditions,
       conditionStates: conditionStates,
       agentContext: agentContext,

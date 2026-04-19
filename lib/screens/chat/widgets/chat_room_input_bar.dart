@@ -1,5 +1,11 @@
+import 'dart:io' show Platform;
+
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../providers/message_send_key_provider.dart';
 import '../../../widgets/common/common_edit_text.dart';
 import '../chat_sending_phase.dart';
 
@@ -67,30 +73,50 @@ class ChatRoomInputBar extends StatelessWidget {
                 constraints: const BoxConstraints(),
               ),
               Expanded(
-                child: CommonEditText(
-                  controller: controller,
-                  focusNode: focusNode,
-                  enabled: !_isSending,
-                  hintText: _hintText(l10n),
-                  minLines: 1,
-                  maxLines: 5,
-                  textInputAction: TextInputAction.newline,
-                  suffixIcon: IconButton(
-                    icon: _isSending
-                        ? SizedBox(
-                            width: 24,
-                            height: 24,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: sendingPhase == SendingPhase.preparing
-                                  ? theme.colorScheme.primary
-                                  : sendingPhase == SendingPhase.summarizing
-                                      ? theme.colorScheme.secondary
-                                      : null,
-                            ),
-                          )
-                        : const Icon(Icons.send),
-                    onPressed: _isSending ? null : onSend,
+                child: Focus(
+                  onKeyEvent: (node, event) {
+                    if (event is! KeyDownEvent ||
+                        event.logicalKey != LogicalKeyboardKey.enter) {
+                      return KeyEventResult.ignored;
+                    }
+                    if (kIsWeb || !Platform.isWindows) {
+                      return KeyEventResult.ignored;
+                    }
+                    final keys = context.read<MessageSendKeyProvider>();
+                    final shiftPressed =
+                        HardwareKeyboard.instance.isShiftPressed;
+                    final shouldSend = shiftPressed
+                        ? keys.sendOnShiftEnter
+                        : keys.sendOnEnter;
+                    if (!shouldSend) return KeyEventResult.ignored;
+                    if (!_isSending) onSend();
+                    return KeyEventResult.handled;
+                  },
+                  child: CommonEditText(
+                    controller: controller,
+                    focusNode: focusNode,
+                    enabled: !_isSending,
+                    hintText: _hintText(l10n),
+                    minLines: 1,
+                    maxLines: 5,
+                    textInputAction: TextInputAction.newline,
+                    suffixIcon: IconButton(
+                      icon: _isSending
+                          ? SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: sendingPhase == SendingPhase.preparing
+                                    ? theme.colorScheme.primary
+                                    : sendingPhase == SendingPhase.summarizing
+                                        ? theme.colorScheme.secondary
+                                        : null,
+                              ),
+                            )
+                          : const Icon(Icons.send),
+                      onPressed: _isSending ? null : onSend,
+                    ),
                   ),
                 ),
               ),

@@ -10,6 +10,7 @@ import '../models/prompt/chat_prompt.dart';
 import '../models/prompt/prompt_condition.dart';
 import '../models/prompt/prompt_item.dart';
 import '../providers/tokenizer_provider.dart';
+import 'date_formatter.dart';
 import 'metadata_parser.dart';
 import 'token_counter.dart';
 
@@ -23,6 +24,7 @@ class PromptBuilder {
     ChatRoom? chatRoom,
     List<ChatSummary>? summaries,
     Map<int, ChatMessageMetadata>? summaryMetadataMap,
+    ChatMessageMetadata? latestMetadata,
     List<PromptCondition>? conditions,
     Map<int, String>? conditionStates,
     String? agentContext,
@@ -36,6 +38,7 @@ class PromptBuilder {
       chatRoom: chatRoom,
       summaries: summaries,
       summaryMetadataMap: summaryMetadataMap,
+      latestMetadata: latestMetadata,
       agentContext: agentContext,
     );
 
@@ -78,6 +81,7 @@ class PromptBuilder {
     ChatRoom? chatRoom,
     List<ChatSummary>? summaries,
     Map<int, ChatMessageMetadata>? summaryMetadataMap,
+    ChatMessageMetadata? latestMetadata,
     List<PromptCondition>? conditions,
     Map<int, String>? conditionStates,
     String? agentContext,
@@ -91,6 +95,7 @@ class PromptBuilder {
       chatRoom: chatRoom,
       summaries: summaries,
       summaryMetadataMap: summaryMetadataMap,
+      latestMetadata: latestMetadata,
       agentContext: agentContext,
     );
 
@@ -117,7 +122,6 @@ class PromptBuilder {
     );
 
     final contents = <Map<String, dynamic>>[];
-    bool startMessageInserted = false;
 
     if (chatPrompt != null && chatPrompt.items.isNotEmpty) {
       for (final item in chatPrompt.items) {
@@ -125,15 +129,6 @@ class PromptBuilder {
 
         if (item.role == PromptRole.chat) {
           final messages = adjustedChatHistoryMap[item] ?? [];
-          // Insert start message as model turn right before first chat message
-          if (!startMessageInserted &&
-              startScenario?.startMessage != null &&
-              startScenario!.startMessage!.isNotEmpty &&
-              messages.isNotEmpty) {
-            final resolvedStartMessage = replaceKeywords(startScenario.startMessage!, keywords);
-            _addContent(contents, 'model', resolvedStartMessage);
-            startMessageInserted = true;
-          }
           for (final msg in messages) {
             var content = msg.content;
             if (metadataMap != null &&
@@ -141,7 +136,8 @@ class PromptBuilder {
                 msg.id != null) {
               final metadata = metadataMap[msg.id!];
               if (metadata != null) {
-                final tagString = metadata.toTagString();
+                final tagString =
+                    metadata.toTagString(worldStartDate: character.worldStartDate);
                 if (tagString.isNotEmpty) {
                   content = '$content\n$tagString';
                 }
@@ -157,7 +153,23 @@ class PromptBuilder {
       }
     }
 
-    _addContent(contents, 'user', replaceKeywords(userMessage, keywords));
+    // Attach `Start Date + start message` in front of the user's first message
+    // on the very first send (no prior chat history after exclusions) so the
+    // whole bundle — Start Date / start message / user input — arrives as a
+    // single user turn.
+    final hasChatHistory =
+        adjustedChatHistoryMap.values.any((list) => list.isNotEmpty);
+    var resolvedUserMessage = replaceKeywords(userMessage, keywords);
+    if (!hasChatHistory &&
+        startScenario?.startMessage != null &&
+        startScenario!.startMessage!.isNotEmpty) {
+      final resolvedStartMessage =
+          replaceKeywords(startScenario.startMessage!, keywords);
+      final bundle =
+          _prefixStartDate(resolvedStartMessage, character.worldStartDate);
+      resolvedUserMessage = '$bundle\n$resolvedUserMessage';
+    }
+    _addContent(contents, 'user', resolvedUserMessage);
 
     return contents;
   }
@@ -276,6 +288,7 @@ class PromptBuilder {
     ChatRoom? chatRoom,
     List<ChatSummary>? summaries,
     Map<int, ChatMessageMetadata>? summaryMetadataMap,
+    ChatMessageMetadata? latestMetadata,
     String? agentContext,
   }) {
     // Phase 1: identity keywords that other values may reference
@@ -298,16 +311,25 @@ class PromptBuilder {
       'char_description': resolve(character.description ?? ''),
       'user_description': resolve(persona?.content ?? ''),
       'character_book': resolve(_buildCharacterBookText(activeCharacterBooks)),
-      'start_setting': resolve(startScenario?.startSetting ?? ''),
+      'start_setting': _prefixStartDate(
+        resolve(startScenario?.startSetting ?? ''),
+        character.worldStartDate,
+      ),
       'chat_memo': resolve(chatRoom?.memo ?? ''),
-      'chat_historys': resolve(_buildChatHistorysText(summaries, summaryMetadataMap)),
+      'chat_historys': resolve(_buildChatHistorysText(
+        summaries,
+        summaryMetadataMap,
+        character.worldStartDate,
+      )),
       'agent_context': resolve(agentContext ?? ''),
+      'world_date': _formatWorldDate(character, latestMetadata),
     };
   }
 
   static String _buildChatHistorysText(
     List<ChatSummary>? summaries,
     Map<int, ChatMessageMetadata>? summaryMetadataMap,
+    DateTime? worldStartDate,
   ) {
     if (summaries == null || summaries.isEmpty) return '';
 
@@ -321,6 +343,7 @@ class PromptBuilder {
         buffer.writeln(MetadataParser.buildSceneOpenTag(
           sceneNumber: sceneNumber,
           metadata: metadata,
+          worldStartDate: worldStartDate,
         ));
       } else {
         buffer.writeln('<$sceneNumber>');
@@ -334,6 +357,30 @@ class PromptBuilder {
       }
     }
     return buffer.toString().trim();
+  }
+
+  /// Prepends `Start Date : YYYY.MM.DD\n` to [body], using the character's
+  /// configured world start date (or today when unset) so the AI always sees
+  /// a concrete anchor date before the start setting / start message.
+  static String _prefixStartDate(String body, DateTime? worldStartDate) {
+    final dateStr = DateFormatter.canonicalMetadataDate(null, worldStartDate);
+    final header = 'Start Date : $dateStr';
+    return body.isEmpty ? header : '$header\n$body';
+  }
+
+  static String _formatWorldDate(
+    Character character,
+    ChatMessageMetadata? latestMetadata,
+  ) {
+    // Progressive world time from the latest chat metadata takes precedence
+    // over the character's configured start date.
+    final progressiveDate = DateFormatter.parseMetadataDateTime(
+      latestMetadata?.date,
+      latestMetadata?.time,
+    );
+    final date = progressiveDate ?? character.worldStartDate;
+    if (date == null) return '';
+    return '${date.year}년 ${date.month}월 ${date.day}일';
   }
 
   static String _buildCharacterBookText(List<CharacterBook>? books) {

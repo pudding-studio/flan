@@ -22,11 +22,20 @@ class DefaultSeederService {
     final currentVersion = '${packageInfo.version}+${packageInfo.buildNumber}';
     final seededVersion = prefs.getString(_seededAppVersionKey);
 
-    if (seededVersion == currentVersion) return;
+    // Always ensure at least one default chat prompt exists — even if the
+    // seeded version matches, a prior failed/partial seed can leave the DB
+    // empty, and the app must never run without a default prompt.
+    final hasDefaults = await _db.hasDefaultChatPrompts();
+    if (seededVersion == currentVersion && hasDefaults) return;
 
     await seedDefaultChatPrompts();
 
-    await prefs.setString(_seededAppVersionKey, currentVersion);
+    // Only persist the seeded-version marker once defaults actually exist.
+    // If seeding silently produced zero rows (e.g. missing asset manifest),
+    // leave the marker unset so the next launch retries.
+    if (await _db.hasDefaultChatPrompts()) {
+      await prefs.setString(_seededAppVersionKey, currentVersion);
+    }
   }
 
   Future<void> seedDefaultChatPrompts() async {
@@ -45,7 +54,7 @@ class DefaultSeederService {
       final jsonString = await rootBundle.loadString(assetPath);
       final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
       final isDefaultSelected =
-          !hasUserSelection && assetPath.contains('[Gemini] Flan');
+          !hasUserSelection && assetPath.contains('gemini_flan');
       await _seedSingleChatPrompt(jsonData, isDefaultSelected);
     }
   }
@@ -127,9 +136,9 @@ class DefaultSeederService {
   }
 
   Future<List<String>> _listAssets(String directory) async {
-    final manifestContent = await rootBundle.loadString('AssetManifest.json');
-    final Map<String, dynamic> manifest = jsonDecode(manifestContent);
-    return manifest.keys
+    final manifest = await AssetManifest.loadFromAssetBundle(rootBundle);
+    return manifest
+        .listAssets()
         .where((key) => key.startsWith(directory) && key.endsWith('.json'))
         .toList();
   }

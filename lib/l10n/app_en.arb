@@ -48,6 +48,9 @@
   "settingsLanguageSystem": "System Default",
   "settingsAiResponseLanguage": "AI Response",
   "settingsAiResponseLanguageAuto": "App Language",
+  "settingsBackgroundImage": "Background Image",
+  "settingsSendOnEnter": "Send on Enter",
+  "settingsSendOnShiftEnter": "Send on Shift+Enter",
   "languageKorean": "한국어",
   "languageEnglish": "English",
   "languageJapanese": "日本語",
@@ -440,7 +443,7 @@
       "promptId": { "type": "String" }
     }
   },
-  "chatRoomTextSettings": "Text Settings",
+  "chatRoomTextSettings": "Viewer Settings",
   "chatRoomBranchTitle": "Create Branch",
   "chatRoomBranchContent": "Create a new branch up to this message?",
   "chatRoomBranchConfirm": "Create",
@@ -533,7 +536,12 @@
   "characterEditTabPersona": "Persona",
   "characterEditTabStartSetting": "Start Setting",
   "characterEditTabCoverImage": "Cover Image",
+  "characterEditTabBackgroundImage": "Background",
   "characterEditTabAdditionalImage": "Extra Images",
+  "characterEditWorldDateTitle": "World Start Date",
+  "characterEditWorldDateHelp": "The reference date for this character's world. Used as the [world_date] keyword in prompts and as the base time for news/SNS generation.",
+  "characterEditWorldDateHint": "Select a date",
+  "characterEditWorldDateClear": "Clear date",
   "characterEditSnsHelp": "Configure the SNS board settings for this character.",
   "characterEditSnsBoardHint": "e.g. Free Board, Adventurers' Plaza",
   "characterEditSnsToneHint": "e.g. Humorous and friendly",
@@ -556,7 +564,7 @@
 
   "characterExportFormatTitle": "Select Export Format",
   "characterExportFlanFormat": "Flan Format",
-  "characterExportFlanSubtitle": "App-native JSON (includes images)",
+  "characterExportFlanSubtitle": "Image + app-native data",
   "characterExportV2Card": "Character Card v2",
   "characterExportV2Subtitle": "PNG — some data may be truncated",
   "characterExportV3Card": "Character Card v3",
@@ -1256,6 +1264,23 @@
     }
   },
 
+  "backgroundImageTitle": "Background Images",
+  "backgroundImageTitleHelp": "Add background images to display as watermark in the chat room.",
+  "backgroundImageEmpty": "No background images",
+  "backgroundImageAddButton": "Add Image",
+  "backgroundImageDefaultName": "Background {index}",
+  "@backgroundImageDefaultName": {
+    "placeholders": {
+      "index": { "type": "int" }
+    }
+  },
+  "backgroundImageSaveError": "Failed to save image: {error}",
+  "@backgroundImageSaveError": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+
   "detailSettingsTitle": "World Setting",
   "detailSettingsTitleHelp": "Describe the world or background this character belongs to.",
   "detailSettingsHint": "Enter world setting details.",
@@ -1268,6 +1293,10 @@
   "chatBottomPanelParagraphAlign": "Text Align",
   "chatBottomPanelAlignLeft": "Left",
   "chatBottomPanelAlignJustify": "Justify",
+  "chatBottomPanelViewMode": "View Mode",
+  "chatBottomPanelViewModeNovel": "Novel",
+  "chatBottomPanelViewModeConversation": "Chat",
+  "chatBottomPanelViewModeCombination": "Combined",
 
   "tutorialStepGoogleAiAccess": "Go to Google AI Studio",
   "tutorialStepGoogleAiPayment": "Create a billing account (required for paid models)",

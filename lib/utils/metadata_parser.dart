@@ -1,4 +1,5 @@
 import '../models/chat/chat_message_metadata.dart';
+import 'date_formatter.dart';
 
 class CharacterTag {
   final bool isMain; // 👤 = main, 👥 = sub
@@ -213,13 +214,14 @@ class MetadataParser {
   static String buildSceneOpenTag({
     required int sceneNumber,
     required ChatMessageMetadata metadata,
+    DateTime? worldStartDate,
   }) {
     final infoParts = <String>[];
     if (metadata.location != null) infoParts.add(metadata.location!);
-    if (metadata.date != null) {
-      infoParts.add('Date=${_formatDateForScene(metadata.date!)}');
-    }
-    if (metadata.time != null) {
+    final resolvedDate =
+        DateFormatter.canonicalMetadataDate(metadata.date, worldStartDate);
+    infoParts.add('Date=${_formatDateForScene(resolvedDate)}');
+    if (metadata.time != null && metadata.time!.isNotEmpty) {
       infoParts.add('Time=${_formatTimeForScene(metadata.time!)}');
     }
     final infoStr = infoParts.join('|');
@@ -235,17 +237,23 @@ class MetadataParser {
     required int sceneNumber,
     required ChatMessageMetadata startMetadata,
     required ChatMessageMetadata endMetadata,
+    DateTime? worldStartDate,
   }) {
     final infoParts = <String>[];
     if (startMetadata.location != null) infoParts.add(startMetadata.location!);
-    if (startMetadata.date != null) {
-      infoParts.add('Date=${_formatDateForScene(startMetadata.date!)}');
-    }
-    if (startMetadata.time != null && endMetadata.time != null) {
+    final resolvedDate = DateFormatter.canonicalMetadataDate(
+      startMetadata.date,
+      worldStartDate,
+    );
+    infoParts.add('Date=${_formatDateForScene(resolvedDate)}');
+    final hasStartTime =
+        startMetadata.time != null && startMetadata.time!.isNotEmpty;
+    final hasEndTime = endMetadata.time != null && endMetadata.time!.isNotEmpty;
+    if (hasStartTime && hasEndTime) {
       infoParts.add(
         'Time=${_formatTimeForScene(startMetadata.time!)}~${_formatTimeForScene(endMetadata.time!)}',
       );
-    } else if (startMetadata.time != null) {
+    } else if (hasStartTime) {
       infoParts.add('Time=${_formatTimeForScene(startMetadata.time!)}');
     }
     final infoStr = infoParts.join('|');

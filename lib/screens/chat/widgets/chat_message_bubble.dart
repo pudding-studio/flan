@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../../l10n/app_localizations.dart';
+import '../../../models/character/character.dart';
+import '../../../models/character/cover_image.dart';
 import '../../../models/chat/chat_message.dart';
 import '../../../models/chat/chat_message_metadata.dart';
 import '../../../providers/viewer_settings_provider.dart';
+import '../../../utils/character_image_storage.dart';
 import '../../../utils/metadata_parser.dart';
 import '../../../widgets/common/common_character_card.dart';
 import '../../../widgets/common/common_edit_text.dart';
@@ -30,6 +33,17 @@ class ChatMessageBubble extends StatelessWidget {
   final String displayContent;
 
   final ChatMessageMetadata? metadata;
+
+  /// Character metadata used only for the conversation view mode to render
+  /// the avatar + name header above AI messages. Null in novel mode or when
+  /// the chat room data is still loading.
+  final Character? character;
+  final List<CoverImage> coverImages;
+
+  /// Map of additional-image name (and extension-stripped name) to absolute
+  /// file path. Used by the conversation-mode renderer to find per-speaker
+  /// avatars of the form `${speakerName}_default`.
+  final Map<String, String> additionalImagePathMap;
 
   final bool isEditing;
   final TextEditingController? editController;
@@ -59,6 +73,9 @@ class ChatMessageBubble extends StatelessWidget {
     required this.isLastMessage,
     required this.displayContent,
     required this.metadata,
+    required this.character,
+    required this.coverImages,
+    required this.additionalImagePathMap,
     required this.isEditing,
     required this.editController,
     required this.isSummaryThreshold,
@@ -112,9 +129,27 @@ class ChatMessageBubble extends StatelessWidget {
                   size: CommonEditTextSize.small,
                   maxLines: null,
                 )
+              else if (viewer.viewMode == ChatViewMode.conversation ||
+                  viewer.viewMode == ChatViewMode.combination)
+                _ConversationContent(
+                  isUser: isUser,
+                  mode: viewer.viewMode,
+                  displayContent: displayContent,
+                  character: character,
+                  coverImages: coverImages,
+                  additionalImagePathMap: additionalImagePathMap,
+                  viewer: viewer,
+                  isSearchMatch: isSearchMatch,
+                  isCurrentSearchMatch: isCurrentSearchMatch,
+                  currentOccurrenceInMsg: currentOccurrenceInMsg,
+                  searchQuery: searchQuery,
+                  searchHighlightKey: searchHighlightKey,
+                  characterTags: characterTags,
+                )
               else ...[
                 MarkdownText(
-                  text: displayContent,
+                  text: _ConversationContent.stripSpeakerPrefixes(
+                      displayContent),
                   baseStyle: theme.textTheme.bodyMedium?.copyWith(
                     fontSize: viewer.fontSize,
                     height: viewer.lineHeight,
@@ -241,7 +276,7 @@ class ChatMessageMetadataHeader extends StatelessWidget {
         if (year != null && month != null && day != null) {
           final dt = DateTime(year, month, day);
           final dayName = dayNames[dt.weekday - 1];
-          parts.add('$date($dayName)');
+          parts.add('$year.$month.$day($dayName)');
         } else {
           parts.add(date);
         }
@@ -342,6 +377,406 @@ class _CompactIconButton extends StatelessWidget {
       padding: EdgeInsets.zero,
       constraints: const BoxConstraints(),
       visualDensity: const VisualDensity(horizontal: -4, vertical: -4),
+    );
+  }
+}
+
+enum _ConvSegmentType { dialogue, narrative }
+
+class _ConvSegment {
+  final _ConvSegmentType type;
+  final String text;
+  final String? speaker;
+  const _ConvSegment(this.type, this.text, [this.speaker]);
+}
+
+/// Conversation-mode renderer for a single chat message.
+///
+/// Splits the AI message body into alternating dialogue bubbles (lines
+/// beginning with a quote character) and narrative paragraphs, and prefixes
+/// the whole block with an avatar + character name header. User messages
+/// render as a single right-aligned bubble.
+class _ConversationContent extends StatelessWidget {
+  final bool isUser;
+  final ChatViewMode mode;
+  final String displayContent;
+  final Character? character;
+  final List<CoverImage> coverImages;
+  final Map<String, String> additionalImagePathMap;
+  final ViewerSettingsProvider viewer;
+  final bool isSearchMatch;
+  final bool isCurrentSearchMatch;
+  final int currentOccurrenceInMsg;
+  final String? searchQuery;
+  final GlobalKey? searchHighlightKey;
+  final List<CharacterTag> characterTags;
+
+  const _ConversationContent({
+    required this.isUser,
+    required this.mode,
+    required this.displayContent,
+    required this.character,
+    required this.coverImages,
+    required this.additionalImagePathMap,
+    required this.viewer,
+    required this.isSearchMatch,
+    required this.isCurrentSearchMatch,
+    required this.currentOccurrenceInMsg,
+    required this.searchQuery,
+    required this.searchHighlightKey,
+    required this.characterTags,
+  });
+
+  static const Set<String> _openingQuotes = {
+    '"', '\u201C', '\u201F', '\u2033',
+    "'", '\u2018', '\u201B',
+    '\u300C', '\u300E', '\u300A', '\u3008',
+  };
+
+  /// Tries to split a line formatted as `SpeakerName|"dialogue"` into its
+  /// (speaker, body) parts. Returns null when the line doesn't match.
+  ///
+  /// The speaker portion must be non-empty, contain no pipe, and be ≤ 30
+  /// characters so narrative prose containing a stray `|` is not mistaken for
+  /// a speaker prefix. The body portion must begin with an opening-quote
+  /// character.
+  static (String speaker, String body)? _parseSpeakerLine(String trimmed) {
+    final pipeIndex = trimmed.indexOf('|');
+    if (pipeIndex <= 0 || pipeIndex > 30) return null;
+    final speaker = trimmed.substring(0, pipeIndex).trim();
+    final rest = trimmed.substring(pipeIndex + 1).trim();
+    if (speaker.isEmpty || rest.isEmpty) return null;
+    if (!_openingQuotes.contains(rest.characters.first)) return null;
+    return (speaker, rest);
+  }
+
+  /// Removes the `SpeakerName|` prefix from any dialogue lines in [text] so
+  /// the novel-mode renderer shows just the quoted line. Non-matching lines
+  /// are passed through unchanged, preserving indentation/leading whitespace.
+  static String stripSpeakerPrefixes(String text) {
+    final lines = text.split('\n');
+    for (var i = 0; i < lines.length; i++) {
+      final trimmed = lines[i].trim();
+      if (trimmed.isEmpty) continue;
+      final match = _parseSpeakerLine(trimmed);
+      if (match != null) lines[i] = match.$2;
+    }
+    return lines.join('\n');
+  }
+
+  static List<_ConvSegment> _splitSegments(String text) {
+    final lines = text.split('\n');
+    final segments = <_ConvSegment>[];
+    final buf = StringBuffer();
+    _ConvSegmentType? currentType;
+    String? currentSpeaker;
+
+    void flush() {
+      final chunk = buf.toString().trim();
+      final type = currentType;
+      if (chunk.isNotEmpty && type != null) {
+        segments.add(_ConvSegment(type, chunk, currentSpeaker));
+      }
+      buf.clear();
+      currentSpeaker = null;
+    }
+
+    for (final line in lines) {
+      final trimmed = line.trim();
+      if (trimmed.isEmpty) {
+        if (buf.isNotEmpty) buf.write('\n');
+        continue;
+      }
+      final speakerMatch = _parseSpeakerLine(trimmed);
+      final firstChar = trimmed.characters.first;
+      final type = (speakerMatch != null || _openingQuotes.contains(firstChar))
+          ? _ConvSegmentType.dialogue
+          : _ConvSegmentType.narrative;
+      final lineSpeaker = speakerMatch?.$1;
+      final lineBody = speakerMatch?.$2 ?? line;
+
+      final speakerChanged = type == _ConvSegmentType.dialogue &&
+          currentType == _ConvSegmentType.dialogue &&
+          currentSpeaker != lineSpeaker;
+      if ((currentType != null && currentType != type) || speakerChanged) {
+        flush();
+      }
+      currentType = type;
+      if (type == _ConvSegmentType.dialogue) {
+        currentSpeaker = lineSpeaker;
+      }
+      if (buf.isNotEmpty) buf.write('\n');
+      buf.write(lineBody);
+    }
+    flush();
+    return segments;
+  }
+
+  String? _resolveSpeakerImagePath(String? speaker) {
+    if (speaker == null || speaker.isEmpty) return null;
+    final key = '${speaker}_default';
+    return additionalImagePathMap[key];
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final baseStyle = theme.textTheme.bodyMedium?.copyWith(
+      fontSize: viewer.fontSize,
+      height: viewer.lineHeight,
+    );
+
+    if (isUser) {
+      return Align(
+        alignment: Alignment.centerRight,
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxWidth: MediaQuery.of(context).size.width * 0.75,
+          ),
+          child: Container(
+            margin: const EdgeInsets.symmetric(vertical: 4),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primaryContainer,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: _buildMarkdown(
+              context,
+              displayContent,
+              baseStyle?.copyWith(color: theme.colorScheme.onPrimaryContainer),
+            ),
+          ),
+        ),
+      );
+    }
+
+    final segments = _splitSegments(displayContent);
+    final defaultName = character?.name ?? '';
+    final headerPerBubble = mode == ChatViewMode.conversation;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        if (!headerPerBubble)
+          Padding(
+            padding: const EdgeInsets.only(top: 4, bottom: 4),
+            child: _buildCharacterHeader(
+              context,
+              name: defaultName,
+              speakerImagePath: null,
+            ),
+          ),
+        if (segments.isEmpty)
+          _buildMarkdown(context, displayContent, baseStyle),
+        for (final seg in segments)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 3),
+            child: seg.type == _ConvSegmentType.dialogue
+                ? Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      if (headerPerBubble)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 4),
+                          child: _buildCharacterHeader(
+                            context,
+                            name: (seg.speaker != null && seg.speaker!.isNotEmpty)
+                                ? seg.speaker!
+                                : defaultName,
+                            speakerImagePath:
+                                _resolveSpeakerImagePath(seg.speaker),
+                          ),
+                        ),
+                      Padding(
+                        padding: EdgeInsets.only(
+                          left: headerPerBubble ? 40 : 0,
+                        ),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: theme.colorScheme.surfaceContainerHighest,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: _buildMarkdown(
+                            context,
+                            seg.text,
+                            baseStyle?.copyWith(color: theme.colorScheme.onSurface),
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                : _buildMarkdown(
+                    context,
+                    seg.text,
+                    baseStyle?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+          ),
+        if (characterTags.isNotEmpty) const SizedBox(height: 4),
+        ...characterTags.map(
+          (tag) => CommonCharacterCard(tag: tag, fontSize: viewer.fontSize),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildCharacterHeader(
+    BuildContext context, {
+    required String name,
+    required String? speakerImagePath,
+  }) {
+    final theme = Theme.of(context);
+    return Row(
+      children: [
+        _SpeakerAvatar(
+          speakerName: name,
+          speakerImagePath: speakerImagePath,
+          fallbackCoverImages: coverImages,
+        ),
+        const SizedBox(width: 8),
+        Flexible(
+          child: Text(
+            name,
+            style: theme.textTheme.bodyMedium?.copyWith(
+              fontWeight: FontWeight.bold,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMarkdown(BuildContext context, String text, TextStyle? style) {
+    final theme = Theme.of(context);
+    return MarkdownText(
+      text: text,
+      baseStyle: style,
+      textAlign: viewer.textAlign,
+      paragraphSpacing: viewer.paragraphSpacing,
+      highlightQuery: isSearchMatch ? searchQuery : null,
+      highlightColor: isSearchMatch
+          ? theme.colorScheme.tertiary.withValues(alpha: 0.35)
+          : null,
+      currentHighlightColor: isCurrentSearchMatch
+          ? theme.colorScheme.tertiary.withValues(alpha: 0.7)
+          : null,
+      currentOccurrence: currentOccurrenceInMsg,
+      highlightKey: isCurrentSearchMatch ? searchHighlightKey : null,
+    );
+  }
+}
+
+/// Circular avatar for a dialogue bubble.
+///
+/// Resolution order:
+/// 1. `speakerImagePath` — the resolved path of `${speakerName}_default` in
+///    the character's additional images (when present).
+/// 2. The character's first cover image with the speaker name overlaid in
+///    the center — used when an additional image for this speaker doesn't
+///    exist but we still want to distinguish speakers visually.
+/// 3. A neutral person icon when no cover image is available.
+class _SpeakerAvatar extends StatelessWidget {
+  final String? speakerName;
+  final String? speakerImagePath;
+  final List<CoverImage> fallbackCoverImages;
+
+  const _SpeakerAvatar({
+    required this.speakerName,
+    required this.speakerImagePath,
+    required this.fallbackCoverImages,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    if (speakerImagePath != null) {
+      return FutureBuilder<Uint8List?>(
+        future: CharacterImageStorage.loadImage(speakerImagePath!),
+        builder: (context, snapshot) {
+          final bytes = snapshot.data;
+          if (bytes == null) return _buildFallback(context);
+          return CircleAvatar(
+            radius: 16,
+            backgroundImage: MemoryImage(bytes),
+          );
+        },
+      );
+    }
+    return _buildFallback(context);
+  }
+
+  Widget _buildFallback(BuildContext context) {
+    final cover = fallbackCoverImages.isNotEmpty ? fallbackCoverImages.first : null;
+    final overlay = (speakerName != null && speakerName!.isNotEmpty)
+        ? _NameOverlay(name: speakerName!)
+        : null;
+    if (cover == null) {
+      return CircleAvatar(
+        radius: 16,
+        backgroundColor: const Color(0xFFE0E0E0),
+        child: overlay ??
+            const Icon(
+              Icons.person_outline,
+              size: 16,
+              color: Color(0xFF757575),
+            ),
+      );
+    }
+    return FutureBuilder<Uint8List?>(
+      future: cover.resolveImageData(),
+      builder: (context, snapshot) {
+        final bytes = snapshot.data;
+        if (bytes == null) {
+          return CircleAvatar(
+            radius: 16,
+            backgroundColor: const Color(0xFFE0E0E0),
+            child: overlay ??
+                const Icon(
+                  Icons.person_outline,
+                  size: 16,
+                  color: Color(0xFF757575),
+                ),
+          );
+        }
+        return CircleAvatar(
+          radius: 16,
+          backgroundImage: MemoryImage(bytes),
+          child: overlay,
+        );
+      },
+    );
+  }
+}
+
+class _NameOverlay extends StatelessWidget {
+  final String name;
+
+  const _NameOverlay({required this.name});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: Colors.black.withValues(alpha: 0.45),
+      ),
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 2),
+      child: Text(
+        name,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: Colors.white,
+          fontSize: 9,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
     );
   }
 }

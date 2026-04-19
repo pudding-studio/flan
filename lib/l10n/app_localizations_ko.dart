@@ -131,6 +131,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsAiResponseLanguageAuto => '앱 언어와 동일';
 
   @override
+  String get settingsBackgroundImage => '배경이미지';
+
+  @override
+  String get settingsSendOnEnter => '메시지 전송 Enter';
+
+  @override
+  String get settingsSendOnShiftEnter => '메시지 전송 Shift Enter';
+
+  @override
   String get languageKorean => '한국어';
 
   @override
@@ -411,13 +420,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get tutorialWelcomeTitle => 'Flan에 오신 것을 환영합니다';
 
   @override
-  String get tutorialWelcomeBody => 'AI 캐릭터와 대화하고, 나만의 세계를 만들어보세요.\n간단한 초기 설정을 진행하겠습니다.';
+  String get tutorialWelcomeBody =>
+      'AI 캐릭터와 대화하고, 나만의 세계를 만들어보세요.\n간단한 초기 설정을 진행하겠습니다.';
 
   @override
   String get tutorialApiKeyTitle => 'API 키 등록';
 
   @override
-  String get tutorialApiKeyDesc => 'AI 모델을 사용하기 위해 API 키가 필요합니다.\n사용할 서비스를 선택하고 키를 등록해주세요.';
+  String get tutorialApiKeyDesc =>
+      'AI 모델을 사용하기 위해 API 키가 필요합니다.\n사용할 서비스를 선택하고 키를 등록해주세요.';
 
   @override
   String get tutorialApiKeyHint => 'API 키를 입력해주세요';
@@ -471,19 +482,23 @@ class AppLocalizationsKo extends AppLocalizations {
   String get tutorialMainDescGemini => '채팅에 사용되는 모델입니다. Gemini 3.1 Pro 추천';
 
   @override
-  String get tutorialSubDescGemini => '요약, SNS, 뉴스 기능 등에 사용됩니다. Gemini 3 Flash 추천';
+  String get tutorialSubDescGemini =>
+      '요약, SNS, 뉴스 기능 등에 사용됩니다. Gemini 3 Flash 추천';
 
   @override
   String get tutorialMainDescOpenai => '채팅에 사용되는 모델입니다. GPT-5.4 추천';
 
   @override
-  String get tutorialSubDescOpenai => '요약, SNS, 뉴스 기능 등에 사용됩니다. GPT-5.4 Mini 추천';
+  String get tutorialSubDescOpenai =>
+      '요약, SNS, 뉴스 기능 등에 사용됩니다. GPT-5.4 Mini 추천';
 
   @override
-  String get tutorialMainDescAnthropic => '채팅에 사용되는 모델입니다. Claude Sonnet 4.6 추천';
+  String get tutorialMainDescAnthropic =>
+      '채팅에 사용되는 모델입니다. Claude Sonnet 4.6 추천';
 
   @override
-  String get tutorialSubDescAnthropic => '요약, SNS, 뉴스 기능 등에 사용됩니다. Claude Haiku 4.5 추천';
+  String get tutorialSubDescAnthropic =>
+      '요약, SNS, 뉴스 기능 등에 사용됩니다. Claude Haiku 4.5 추천';
 
   @override
   String get tutorialModelRecommended => '추천';
@@ -501,7 +516,8 @@ class AppLocalizationsKo extends AppLocalizations {
   String get tutorialAgentBoxSubtitle => '캐릭터 탭 상단의 빛나는 아이콘을 눌러보세요';
 
   @override
-  String get tutorialAgentBoxBody => 'Agent에게 원하는 캐릭터를 만들어달라고 말해보세요!\n\"판타지 세계의 엘프 마법사를 만들어줘\" 같이 자유롭게 요청하면 됩니다.';
+  String get tutorialAgentBoxBody =>
+      'Agent에게 원하는 캐릭터를 만들어달라고 말해보세요!\n\"판타지 세계의 엘프 마법사를 만들어줘\" 같이 자유롭게 요청하면 됩니다.';
 
   @override
   String get tutorialHelpGoogleAi => 'Google AI Studio API 키 발급';
@@ -847,7 +863,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get chatRoomTextSettings => '텍스트 설정';
+  String get chatRoomTextSettings => '뷰어 설정';
 
   @override
   String get chatRoomBranchTitle => '분기 생성';
@@ -1032,7 +1048,23 @@ class AppLocalizationsKo extends AppLocalizations {
   String get characterEditTabCoverImage => '표지이미지';
 
   @override
+  String get characterEditTabBackgroundImage => '배경이미지';
+
+  @override
   String get characterEditTabAdditionalImage => '추가이미지';
+
+  @override
+  String get characterEditWorldDateTitle => '세계 시작 날짜';
+
+  @override
+  String get characterEditWorldDateHelp =>
+      '이 캐릭터 세계의 기준 날짜입니다. 프롬프트의 [world_date] 키워드로 사용되며, 뉴스/SNS 생성 시 기준 시간으로 쓰입니다.';
+
+  @override
+  String get characterEditWorldDateHint => '날짜를 선택해주세요';
+
+  @override
+  String get characterEditWorldDateClear => '날짜 초기화';
 
   @override
   String get characterEditSnsHelp => '캐릭터의 SNS 게시판 설정을 구성합니다.';
@@ -1059,7 +1091,8 @@ class AppLocalizationsKo extends AppLocalizations {
   String get characterEditNicknameLabel => '닉네임';
 
   @override
-  String get characterEditNicknameHelp => '프롬프트에서 char 변수 대신 사용할 호칭입니다. 비워두면 이름이 사용됩니다.';
+  String get characterEditNicknameHelp =>
+      '프롬프트에서 char 변수 대신 사용할 호칭입니다. 비워두면 이름이 사용됩니다.';
 
   @override
   String get characterEditNicknameHint => '캐릭터의 닉네임을 입력해주세요.';
@@ -1086,7 +1119,8 @@ class AppLocalizationsKo extends AppLocalizations {
   String get characterEditWorldSetting => '세계관 설정';
 
   @override
-  String get characterEditWorldSettingHelp => '캐릭터가 속한 세계관이나 배경 설정을 자유롭게 작성해주세요.';
+  String get characterEditWorldSettingHelp =>
+      '캐릭터가 속한 세계관이나 배경 설정을 자유롭게 작성해주세요.';
 
   @override
   String get characterEditWorldSettingHint => '세계관 설정을 입력해주세요.';
@@ -1098,7 +1132,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get characterExportFlanFormat => 'Flan 형식';
 
   @override
-  String get characterExportFlanSubtitle => '앱 전용 JSON (이미지 포함)';
+  String get characterExportFlanSubtitle => '이미지 + 앱 전용 데이터';
 
   @override
   String get characterExportV2Card => '캐릭터카드 v2';
@@ -1236,16 +1270,19 @@ class AppLocalizationsKo extends AppLocalizations {
   String get autoSummaryPresencePenalty => '프리센스 패널티';
 
   @override
-  String get autoSummaryPresencePenaltyHelp => '양수 값은 새로운 주제를 장려하고, 음수 값은 기존 주제에 집중합니다.';
+  String get autoSummaryPresencePenaltyHelp =>
+      '양수 값은 새로운 주제를 장려하고, 음수 값은 기존 주제에 집중합니다.';
 
   @override
   String get autoSummaryFrequencyPenalty => '빈도 패널티';
 
   @override
-  String get autoSummaryFrequencyPenaltyHelp => '양수 값은 반복을 줄이고, 음수 값은 반복을 증가시킵니다.';
+  String get autoSummaryFrequencyPenaltyHelp =>
+      '양수 값은 반복을 줄이고, 음수 값은 반복을 증가시킵니다.';
 
   @override
-  String get autoSummaryPromptHelp => '요약 프롬프트 항목을 구성합니다. \"요약대상\" 역할 위치에 요약할 메시지가 자동으로 삽입됩니다.\n\n길게 눌러 순서를 변경할 수 있습니다.';
+  String get autoSummaryPromptHelp =>
+      '요약 프롬프트 항목을 구성합니다. \"요약대상\" 역할 위치에 요약할 메시지가 자동으로 삽입됩니다.\n\n길게 눌러 순서를 변경할 수 있습니다.';
 
   @override
   String get autoSummaryNoItems => '프롬프트 항목이 없습니다';
@@ -1502,7 +1539,8 @@ class AppLocalizationsKo extends AppLocalizations {
   String get chatModelTabSub => '보조 모델';
 
   @override
-  String get chatModelSubInfo => '보조 모델은 SNS 요약 등에 사용됩니다.\n설정 시 해당 기능들의 기본 모델이 변경됩니다.';
+  String get chatModelSubInfo =>
+      '보조 모델은 SNS 요약 등에 사용됩니다.\n설정 시 해당 기능들의 기본 모델이 변경됩니다.';
 
   @override
   String get chatModelProviderSection => '제조사';
@@ -1883,7 +1921,8 @@ class AppLocalizationsKo extends AppLocalizations {
   String get characterBookSection => '설정집';
 
   @override
-  String get characterBookSectionHelp => '캐릭터의 세계관과 관련된 정보를 설정집에 추가할 수 있습니다.\n\n길게 눌러 순서를 변경할 수 있습니다.';
+  String get characterBookSectionHelp =>
+      '캐릭터의 세계관과 관련된 정보를 설정집에 추가할 수 있습니다.\n\n길게 눌러 순서를 변경할 수 있습니다.';
 
   @override
   String get characterBookAddItem => '설정 추가';
@@ -1937,7 +1976,8 @@ class AppLocalizationsKo extends AppLocalizations {
   String get promptItemsTitle => '프롬프트 항목';
 
   @override
-  String get promptItemsTitleHelp => 'AI에게 전달될 프롬프트 항목들을 추가하세요. 순서대로 전달됩니다.\n\n길게 눌러 순서를 변경할 수 있습니다.';
+  String get promptItemsTitleHelp =>
+      'AI에게 전달될 프롬프트 항목들을 추가하세요. 순서대로 전달됩니다.\n\n길게 눌러 순서를 변경할 수 있습니다.';
 
   @override
   String get promptItemsAddItem => '항목 추가';
@@ -2012,7 +2052,8 @@ class AppLocalizationsKo extends AppLocalizations {
   String get promptConditionsTitle => '프롬프트 조건';
 
   @override
-  String get promptConditionsTitleHelp => '프롬프트에 적용할 조건을 설정합니다.\n\n• 토글: ON/OFF 스위치\n• 하나만 선택: 여러 항목 중 하나를 선택\n• 변수 치환: 변수명을 선택한 항목으로 치환';
+  String get promptConditionsTitleHelp =>
+      '프롬프트에 적용할 조건을 설정합니다.\n\n• 토글: ON/OFF 스위치\n• 하나만 선택: 여러 항목 중 하나를 선택\n• 변수 치환: 변수명을 선택한 항목으로 치환';
 
   @override
   String get promptConditionsAddButton => '조건 추가';
@@ -2045,7 +2086,8 @@ class AppLocalizationsKo extends AppLocalizations {
   String get promptPresetsTitle => '프롬프트 조건 프리셋';
 
   @override
-  String get promptPresetsTitleHelp => '프롬프트 조건의 값을 미리 설정해둔 프리셋입니다.\n\n채팅 시 프리셋을 선택하면 조건 값이 일괄 적용됩니다.';
+  String get promptPresetsTitleHelp =>
+      '프롬프트 조건의 값을 미리 설정해둔 프리셋입니다.\n\n채팅 시 프리셋을 선택하면 조건 값이 일괄 적용됩니다.';
 
   @override
   String get promptPresetsAddButton => '프리셋 추가';
@@ -2081,7 +2123,8 @@ class AppLocalizationsKo extends AppLocalizations {
   String get promptRegexTitle => '정규식 규칙';
 
   @override
-  String get promptRegexTitleHelp => '정규식(RegExp)을 사용하여 텍스트를 변환합니다.\n\n속성에 따라 적용 시점이 달라집니다:\n• 입력문 수정: 사용자 입력 텍스트에 적용\n• 출력문 수정: AI 응답 텍스트에 적용\n• 전송데이터 수정: API 전송 데이터에 적용\n• 출력화면 수정: 화면 표시 시에만 적용';
+  String get promptRegexTitleHelp =>
+      '정규식(RegExp)을 사용하여 텍스트를 변환합니다.\n\n속성에 따라 적용 시점이 달라집니다:\n• 입력문 수정: 사용자 입력 텍스트에 적용\n• 출력문 수정: AI 응답 텍스트에 적용\n• 전송데이터 수정: API 전송 데이터에 적용\n• 출력화면 수정: 화면 표시 시에만 적용';
 
   @override
   String get promptRegexEmpty => '정규식 규칙이 없습니다';
@@ -2107,7 +2150,8 @@ class AppLocalizationsKo extends AppLocalizations {
   String get promptRegexLabelReplacement => '변환 형식';
 
   @override
-  String get promptRegexReplacementHint => '정규식에 매칭된 텍스트가 이 형식으로 변환됩니다\n\n캡처 그룹: \$1, \$2, ...';
+  String get promptRegexReplacementHint =>
+      '정규식에 매칭된 텍스트가 이 형식으로 변환됩니다\n\n캡처 그룹: \$1, \$2, ...';
 
   @override
   String get promptRegexAddButton => '규칙 추가';
@@ -2119,7 +2163,8 @@ class AppLocalizationsKo extends AppLocalizations {
   String get backupSectionTitle => '백업 생성';
 
   @override
-  String get backupSectionDesc => '캐릭터(이미지 포함), 채팅 기록, 프롬프트, 커스텀 모델, 설정 등 모든 데이터를 하나의 백업 파일로 내보냅니다.';
+  String get backupSectionDesc =>
+      '캐릭터(이미지 포함), 채팅 기록, 프롬프트, 커스텀 모델, 설정 등 모든 데이터를 하나의 백업 파일로 내보냅니다.';
 
   @override
   String get backupCreateButton => '백업 파일 생성';
@@ -2128,7 +2173,8 @@ class AppLocalizationsKo extends AppLocalizations {
   String get backupRestoreTitle => '백업 복구';
 
   @override
-  String get backupRestoreDesc => '백업 .zip 파일을 선택하여 데이터를 복원합니다. (기존 .db 파일도 지원)';
+  String get backupRestoreDesc =>
+      '백업 .zip 파일을 선택하여 데이터를 복원합니다. (기존 .db 파일도 지원)';
 
   @override
   String get backupRestoreWarning => '주의: 기존 데이터가 모두 삭제됩니다. 복구 후 앱 재시작이 필요합니다.';
@@ -2200,7 +2246,8 @@ class AppLocalizationsKo extends AppLocalizations {
   String get backupRestoreSuccessTitle => '복구 완료';
 
   @override
-  String get backupRestoreSuccessContent => '백업 데이터가 복구되었습니다.\n변경사항을 완전히 적용하려면 앱을 재시작해주세요.';
+  String get backupRestoreSuccessContent =>
+      '백업 데이터가 복구되었습니다.\n변경사항을 완전히 적용하려면 앱을 재시작해주세요.';
 
   @override
   String backupRestoreFailed(String error) {
@@ -2217,7 +2264,8 @@ class AppLocalizationsKo extends AppLocalizations {
   String get logDeleteAllTooltip => '전체 삭제';
 
   @override
-  String get logInfoMessage => 'API 요청/응답 로그를 확인할 수 있습니다.\n7일이 지난 로그는 자동으로 삭제됩니다.';
+  String get logInfoMessage =>
+      'API 요청/응답 로그를 확인할 수 있습니다.\n7일이 지난 로그는 자동으로 삭제됩니다.';
 
   @override
   String get logEmpty => '로그가 없습니다';
@@ -2351,7 +2399,8 @@ class AppLocalizationsKo extends AppLocalizations {
   String get tokenizerLabel => '토크나이저';
 
   @override
-  String get tokenizerDescription => '토크나이저는 텍스트를 토큰으로 변환하는 방식을 결정합니다. 모델에 따라 적합한 토크나이저가 다를 수 있습니다.';
+  String get tokenizerDescription =>
+      '토크나이저는 텍스트를 토큰으로 변환하는 방식을 결정합니다. 모델에 따라 적합한 토크나이저가 다를 수 있습니다.';
 
   @override
   String get profileTabLabelName => '이름';
@@ -2369,7 +2418,8 @@ class AppLocalizationsKo extends AppLocalizations {
   String get profileTabLabelNickname => '닉네임';
 
   @override
-  String get profileTabNicknameHelp => '프롬프트에서 char 변수 대신 사용할 호칭입니다. 비워두면 이름이 사용됩니다.';
+  String get profileTabNicknameHelp =>
+      '프롬프트에서 char 변수 대신 사용할 호칭입니다. 비워두면 이름이 사용됩니다.';
 
   @override
   String get profileTabNicknameHint => '캐릭터의 닉네임을 입력해주세요.';
@@ -2494,6 +2544,28 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get backgroundImageTitle => '배경 이미지';
+
+  @override
+  String get backgroundImageTitleHelp => '채팅방에 워터마크로 표시할 배경 이미지를 추가할 수 있습니다.';
+
+  @override
+  String get backgroundImageEmpty => '배경 이미지가 없습니다';
+
+  @override
+  String get backgroundImageAddButton => '이미지 추가';
+
+  @override
+  String backgroundImageDefaultName(int index) {
+    return '배경 $index';
+  }
+
+  @override
+  String backgroundImageSaveError(String error) {
+    return '이미지 저장 중 오류가 발생했습니다: $error';
+  }
+
+  @override
   String get detailSettingsTitle => '세계관 설정';
 
   @override
@@ -2525,6 +2597,18 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get chatBottomPanelAlignJustify => '양쪽';
+
+  @override
+  String get chatBottomPanelViewMode => '뷰어 모드';
+
+  @override
+  String get chatBottomPanelViewModeNovel => '소설형';
+
+  @override
+  String get chatBottomPanelViewModeConversation => '대화형';
+
+  @override
+  String get chatBottomPanelViewModeCombination => '조합형';
 
   @override
   String get tutorialStepGoogleAiAccess => 'Google AI Studio 접속';
@@ -2663,7 +2747,8 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get agentChatDescription => 'Flan Agent는 캐릭터를 생성하거나 편집할 수 있습니다. 원하는 캐릭터 제작 및 수정을 요청해 보세요.';
+  String get agentChatDescription =>
+      'Flan Agent는 캐릭터를 생성하거나 편집할 수 있습니다. 원하는 캐릭터 제작 및 수정을 요청해 보세요.';
 
   @override
   String diaryTitle(String author) {

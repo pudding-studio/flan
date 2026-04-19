@@ -391,11 +391,18 @@ class _ImageBlock extends StatelessWidget {
 
   const _ImageBlock({required this.url, this.alt});
 
-  bool get _isLocalFile =>
-      url.startsWith('/') || url.startsWith('file://');
+  static final _windowsPathPattern = RegExp(r'^[a-zA-Z]:[/\\]');
 
-  String get _filePath =>
-      url.startsWith('file://') ? url.substring(7) : url;
+  bool get _isLocalFile =>
+      url.startsWith('/') ||
+      url.startsWith('file://') ||
+      _windowsPathPattern.hasMatch(url);
+
+  String get _filePath {
+    if (url.startsWith('file:///')) return url.substring(8);
+    if (url.startsWith('file://')) return url.substring(7);
+    return url;
+  }
 
   @override
   Widget build(BuildContext context) {

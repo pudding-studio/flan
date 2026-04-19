@@ -131,6 +131,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsAiResponseLanguageAuto => 'アプリ言語と同じ';
 
   @override
+  String get settingsBackgroundImage => '背景画像';
+
+  @override
+  String get settingsSendOnEnter => 'Enterで送信';
+
+  @override
+  String get settingsSendOnShiftEnter => 'Shift+Enterで送信';
+
+  @override
   String get languageKorean => '한국어';
 
   @override
@@ -417,7 +426,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get tutorialApiKeyTitle => 'APIキー登録';
 
   @override
-  String get tutorialApiKeyDesc => 'AIモデルを使うにはAPIキーが必要です。\n使うサービスを選んでキーを登録してください。';
+  String get tutorialApiKeyDesc =>
+      'AIモデルを使うにはAPIキーが必要です。\n使うサービスを選んでキーを登録してください。';
 
   @override
   String get tutorialApiKeyHint => 'APIキーを入力してください';
@@ -483,7 +493,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get tutorialMainDescAnthropic => 'チャットに使うモデルです。Claude Sonnet 4.6推奨。';
 
   @override
-  String get tutorialSubDescAnthropic => '要約・SNS・ニュースなどに使います。Claude Haiku 4.5推奨。';
+  String get tutorialSubDescAnthropic =>
+      '要約・SNS・ニュースなどに使います。Claude Haiku 4.5推奨。';
 
   @override
   String get tutorialModelRecommended => 'おすすめ';
@@ -501,7 +512,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get tutorialAgentBoxSubtitle => 'キャラクタータブ上部の光るアイコンをタップしてみて';
 
   @override
-  String get tutorialAgentBoxBody => 'Agentに作りたいキャラクターを伝えてみよう！\n「ファンタジー世界のエルフの魔法使いを作って」のように自由にリクエストできます。';
+  String get tutorialAgentBoxBody =>
+      'Agentに作りたいキャラクターを伝えてみよう！\n「ファンタジー世界のエルフの魔法使いを作って」のように自由にリクエストできます。';
 
   @override
   String get tutorialHelpGoogleAi => 'Google AI Studio APIキーを取得';
@@ -847,7 +859,7 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get chatRoomTextSettings => 'テキスト設定';
+  String get chatRoomTextSettings => 'ビューアー設定';
 
   @override
   String get chatRoomBranchTitle => '分岐を作成';
@@ -1032,7 +1044,23 @@ class AppLocalizationsJa extends AppLocalizations {
   String get characterEditTabCoverImage => 'カバー画像';
 
   @override
+  String get characterEditTabBackgroundImage => '背景画像';
+
+  @override
   String get characterEditTabAdditionalImage => '追加画像';
+
+  @override
+  String get characterEditWorldDateTitle => '世界開始日';
+
+  @override
+  String get characterEditWorldDateHelp =>
+      'このキャラクターの世界の基準日です。プロンプトの[world_date]キーワードとして使用され、ニュース/SNS生成の基準時刻になります。';
+
+  @override
+  String get characterEditWorldDateHint => '日付を選択してください';
+
+  @override
+  String get characterEditWorldDateClear => '日付をリセット';
 
   @override
   String get characterEditSnsHelp => 'このキャラクターのSNS掲示板設定を行います。';
@@ -1059,7 +1087,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get characterEditNicknameLabel => 'ニックネーム';
 
   @override
-  String get characterEditNicknameHelp => 'プロンプトのchar変数の代わりに使う呼称です。空白の場合は名前が使われます。';
+  String get characterEditNicknameHelp =>
+      'プロンプトのchar変数の代わりに使う呼称です。空白の場合は名前が使われます。';
 
   @override
   String get characterEditNicknameHint => 'キャラクターのニックネームを入力してください。';
@@ -1098,7 +1127,7 @@ class AppLocalizationsJa extends AppLocalizations {
   String get characterExportFlanFormat => 'Flan形式';
 
   @override
-  String get characterExportFlanSubtitle => 'アプリ専用JSON (画像含む)';
+  String get characterExportFlanSubtitle => '画像 + アプリ専用データ';
 
   @override
   String get characterExportV2Card => 'キャラクターカード v2';
@@ -1236,7 +1265,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get autoSummaryPresencePenalty => 'プレゼンスペナルティ';
 
   @override
-  String get autoSummaryPresencePenaltyHelp => '正の値は新しいトピックを促し、負の値は既存のトピックに集中します。';
+  String get autoSummaryPresencePenaltyHelp =>
+      '正の値は新しいトピックを促し、負の値は既存のトピックに集中します。';
 
   @override
   String get autoSummaryFrequencyPenalty => '頻度ペナルティ';
@@ -1245,7 +1275,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get autoSummaryFrequencyPenaltyHelp => '正の値は繰り返しを減らし、負の値は繰り返しを増やします。';
 
   @override
-  String get autoSummaryPromptHelp => '要約プロンプトの項目を設定します。「要約対象」の役割位置に要約するメッセージが自動で挿入されます。\n\n長押しで順番を変更できます。';
+  String get autoSummaryPromptHelp =>
+      '要約プロンプトの項目を設定します。「要約対象」の役割位置に要約するメッセージが自動で挿入されます。\n\n長押しで順番を変更できます。';
 
   @override
   String get autoSummaryNoItems => 'プロンプト項目がありません';
@@ -1502,7 +1533,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get chatModelTabSub => 'サブモデル';
 
   @override
-  String get chatModelSubInfo => 'サブモデルはSNS要約などに使われます。\n設定するとそれらの機能のデフォルトモデルが変更されます。';
+  String get chatModelSubInfo =>
+      'サブモデルはSNS要約などに使われます。\n設定するとそれらの機能のデフォルトモデルが変更されます。';
 
   @override
   String get chatModelProviderSection => 'プロバイダー';
@@ -1883,7 +1915,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get characterBookSection => '設定集';
 
   @override
-  String get characterBookSectionHelp => 'このキャラクターの世界観に関する情報を設定集に追加できます。\n\n長押しで順番を変更できます。';
+  String get characterBookSectionHelp =>
+      'このキャラクターの世界観に関する情報を設定集に追加できます。\n\n長押しで順番を変更できます。';
 
   @override
   String get characterBookAddItem => '設定を追加';
@@ -1937,7 +1970,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get promptItemsTitle => 'プロンプト項目';
 
   @override
-  String get promptItemsTitleHelp => 'AIに送るプロンプト項目を追加してください。順番通りに送信されます。\n\n長押しで順番を変更できます。';
+  String get promptItemsTitleHelp =>
+      'AIに送るプロンプト項目を追加してください。順番通りに送信されます。\n\n長押しで順番を変更できます。';
 
   @override
   String get promptItemsAddItem => '項目を追加';
@@ -2012,7 +2046,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get promptConditionsTitle => 'プロンプト条件';
 
   @override
-  String get promptConditionsTitleHelp => 'プロンプトに適用する条件を設定します。\n\n• トグル: ON/OFFスイッチ\n• 一択選択: 複数の項目から一つを選択\n• 変数置換: 変数名を選択した項目に置き換える';
+  String get promptConditionsTitleHelp =>
+      'プロンプトに適用する条件を設定します。\n\n• トグル: ON/OFFスイッチ\n• 一択選択: 複数の項目から一つを選択\n• 変数置換: 変数名を選択した項目に置き換える';
 
   @override
   String get promptConditionsAddButton => '条件を追加';
@@ -2045,7 +2080,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get promptPresetsTitle => 'プロンプト条件プリセット';
 
   @override
-  String get promptPresetsTitleHelp => 'プロンプト条件の値をあらかじめ設定したプリセットです。\n\nチャット中にプリセットを選ぶと条件値が一括適用されます。';
+  String get promptPresetsTitleHelp =>
+      'プロンプト条件の値をあらかじめ設定したプリセットです。\n\nチャット中にプリセットを選ぶと条件値が一括適用されます。';
 
   @override
   String get promptPresetsAddButton => 'プリセットを追加';
@@ -2081,7 +2117,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get promptRegexTitle => '正規表現ルール';
 
   @override
-  String get promptRegexTitleHelp => '正規表現(RegExp)を使ってテキストを変換します。\n\nプロパティによって適用タイミングが異なります:\n• 入力文の修正: ユーザー入力テキストに適用\n• 出力文の修正: AI応答テキストに適用\n• 送信データの修正: API送信データに適用\n• 表示画面の修正: 画面表示時のみ適用';
+  String get promptRegexTitleHelp =>
+      '正規表現(RegExp)を使ってテキストを変換します。\n\nプロパティによって適用タイミングが異なります:\n• 入力文の修正: ユーザー入力テキストに適用\n• 出力文の修正: AI応答テキストに適用\n• 送信データの修正: API送信データに適用\n• 表示画面の修正: 画面表示時のみ適用';
 
   @override
   String get promptRegexEmpty => '正規表現ルールがありません';
@@ -2107,7 +2144,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get promptRegexLabelReplacement => '変換形式';
 
   @override
-  String get promptRegexReplacementHint => 'マッチしたテキストがこの形式に変換されます\n\nキャプチャグループ: \$1, \$2, ...';
+  String get promptRegexReplacementHint =>
+      'マッチしたテキストがこの形式に変換されます\n\nキャプチャグループ: \$1, \$2, ...';
 
   @override
   String get promptRegexAddButton => 'ルールを追加';
@@ -2119,7 +2157,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get backupSectionTitle => 'バックアップを作成';
 
   @override
-  String get backupSectionDesc => 'キャラクター(画像含む)、チャット履歴、プロンプト、カスタムモデル、設定など、すべてのデータを一つのファイルにエクスポートします。';
+  String get backupSectionDesc =>
+      'キャラクター(画像含む)、チャット履歴、プロンプト、カスタムモデル、設定など、すべてのデータを一つのファイルにエクスポートします。';
 
   @override
   String get backupCreateButton => 'バックアップファイルを作成';
@@ -2200,7 +2239,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get backupRestoreSuccessTitle => '復元完了';
 
   @override
-  String get backupRestoreSuccessContent => 'バックアップデータを復元しました。\n変更を完全に反映するにはアプリを再起動してください。';
+  String get backupRestoreSuccessContent =>
+      'バックアップデータを復元しました。\n変更を完全に反映するにはアプリを再起動してください。';
 
   @override
   String backupRestoreFailed(String error) {
@@ -2217,7 +2257,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get logDeleteAllTooltip => 'すべて削除';
 
   @override
-  String get logInfoMessage => 'APIリクエストとレスポンスのログを確認できます。\n7日以上経過したログは自動削除されます。';
+  String get logInfoMessage =>
+      'APIリクエストとレスポンスのログを確認できます。\n7日以上経過したログは自動削除されます。';
 
   @override
   String get logEmpty => 'ログがありません';
@@ -2351,7 +2392,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get tokenizerLabel => 'トークナイザー';
 
   @override
-  String get tokenizerDescription => 'トークナイザーはテキストをトークンに変換する方式を決定します。モデルによって適切なトークナイザーが異なる場合があります。';
+  String get tokenizerDescription =>
+      'トークナイザーはテキストをトークンに変換する方式を決定します。モデルによって適切なトークナイザーが異なる場合があります。';
 
   @override
   String get profileTabLabelName => '名前';
@@ -2369,7 +2411,8 @@ class AppLocalizationsJa extends AppLocalizations {
   String get profileTabLabelNickname => 'ニックネーム';
 
   @override
-  String get profileTabNicknameHelp => 'プロンプトのchar変数の代わりに使う呼称です。空白の場合は名前が使われます。';
+  String get profileTabNicknameHelp =>
+      'プロンプトのchar変数の代わりに使う呼称です。空白の場合は名前が使われます。';
 
   @override
   String get profileTabNicknameHint => 'キャラクターのニックネームを入力してください。';
@@ -2494,6 +2537,28 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get backgroundImageTitle => '背景画像';
+
+  @override
+  String get backgroundImageTitleHelp => 'チャットルームに透かしとして表示する背景画像を追加できます。';
+
+  @override
+  String get backgroundImageEmpty => '背景画像がありません';
+
+  @override
+  String get backgroundImageAddButton => '画像を追加';
+
+  @override
+  String backgroundImageDefaultName(int index) {
+    return '背景 $index';
+  }
+
+  @override
+  String backgroundImageSaveError(String error) {
+    return '画像の保存に失敗しました: $error';
+  }
+
+  @override
   String get detailSettingsTitle => '世界観設定';
 
   @override
@@ -2525,6 +2590,18 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get chatBottomPanelAlignJustify => '両端揃え';
+
+  @override
+  String get chatBottomPanelViewMode => 'ビューモード';
+
+  @override
+  String get chatBottomPanelViewModeNovel => '小説型';
+
+  @override
+  String get chatBottomPanelViewModeConversation => '会話型';
+
+  @override
+  String get chatBottomPanelViewModeCombination => '組み合わせ型';
 
   @override
   String get tutorialStepGoogleAiAccess => 'Google AI Studioにアクセス';
@@ -2663,7 +2740,8 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
-  String get agentChatDescription => 'Flan Agentはキャラクターの作成・編集ができます。作りたいキャラクターや修正したい内容をリクエストしてみてください。';
+  String get agentChatDescription =>
+      'Flan Agentはキャラクターの作成・編集ができます。作りたいキャラクターや修正したい内容をリクエストしてみてください。';
 
   @override
   String diaryTitle(String author) {

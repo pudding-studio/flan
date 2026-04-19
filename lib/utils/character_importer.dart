@@ -194,9 +194,28 @@ class CharacterImporter {
         coverImages = allAssets.where((i) => i.imageType == 'cover').toList();
         additionalImages = allAssets.where((i) => i.imageType == 'additional').toList();
       } else if (extension == 'flan') {
-        // Flan ZIP 형식: character.json + images/
+        // Flan 형식: 이미지+ZIP 폴리글롯(신규) 또는 순수 ZIP(레거시).
+        // 파일이 PK 시그니처로 시작하지 않으면 앞쪽 이미지 바이트를 건너뛰기 위해
+        // PK\x03\x04 시그니처를 스캔한다 (charx 처리와 동일 전략).
         final rawBytes = await file.readAsBytes();
-        final archive = ZipDecoder().decodeBytes(rawBytes, verify: false);
+        Uint8List archiveBytes = rawBytes;
+        if (rawBytes.length >= 4 &&
+            !(rawBytes[0] == 0x50 && rawBytes[1] == 0x4B)) {
+          int zipStart = -1;
+          for (int i = 0; i < rawBytes.length - 4; i++) {
+            if (rawBytes[i] == 0x50 &&
+                rawBytes[i + 1] == 0x4B &&
+                rawBytes[i + 2] == 0x03 &&
+                rawBytes[i + 3] == 0x04) {
+              zipStart = i;
+              break;
+            }
+          }
+          if (zipStart > 0) {
+            archiveBytes = Uint8List.sublistView(rawBytes, zipStart);
+          }
+        }
+        final archive = ZipDecoder().decodeBytes(archiveBytes, verify: false);
 
         final charJsonFile = archive.findFile('character.json');
         if (charJsonFile == null) {
