@@ -81,5 +81,3 @@ jobs:
           releaseFiles: build/app/outputs/bundle/release/app-release.aab
           track: alpha
           status: completed
-          mappingFile: build/app/outputs/mapping/release/mapping.txt
-          debugSymbols: build/debug-info
