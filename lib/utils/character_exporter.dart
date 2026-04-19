@@ -230,13 +230,23 @@ class CharacterExporter {
     List<int> bytes,
   ) async {
     final tempDir = await getTemporaryDirectory();
-    final tempFile = File('${tempDir.path}/$fileName');
-    await tempFile.writeAsBytes(bytes);
+    final sourceFile = File('${tempDir.path}/$fileName');
+    await sourceFile.writeAsBytes(bytes);
+    await _saveExistingFile(context, fileName, sourceFile);
+  }
+
+  /// Save a file that already exists on disk (avoids re-buffering bytes in memory).
+  /// The [sourceFile] is consumed (deleted) after save.
+  static Future<void> _saveExistingFile(
+    BuildContext context,
+    String fileName,
+    File sourceFile,
+  ) async {
     try {
       if (Platform.isAndroid) {
         const platform = MethodChannel('com.flanapp.flan/file_saver');
         final ok = await platform.invokeMethod<bool>('copyFileToDownloads', {
-          'sourcePath': tempFile.path,
+          'sourcePath': sourceFile.path,
           'fileName': fileName,
         });
         if (context.mounted) {
@@ -251,7 +261,7 @@ class CharacterExporter {
       } else if (Platform.isIOS) {
         final dir = await getApplicationDocumentsDirectory();
         final path = '${dir.path}/$fileName';
-        await tempFile.copy(path);
+        await sourceFile.copy(path);
         if (context.mounted) {
           CommonDialog.showSnackBar(
             context: context,
@@ -265,7 +275,7 @@ class CharacterExporter {
           lockParentWindow: true,
         );
         if (savePath == null) return;
-        await tempFile.copy(savePath);
+        await sourceFile.copy(savePath);
         if (context.mounted) {
           CommonDialog.showSnackBar(
             context: context,
@@ -274,7 +284,7 @@ class CharacterExporter {
         }
       }
     } finally {
-      if (await tempFile.exists()) await tempFile.delete();
+      if (await sourceFile.exists()) await sourceFile.delete();
     }
   }
 
@@ -332,13 +342,15 @@ class CharacterExporter {
       coverImages: imageEntries,
     );
 
-    // Stream to ZIP: character.json + image files (one at a time)
+    // Build polyglot (PNG prefix + ZIP body) directly on disk to avoid OOM.
+    // Image viewers render the PNG prefix; ZIP tools (and our importer) locate
+    // the archive via the PK\x03\x04 signature.
     final tempDir = await getTemporaryDirectory();
     final fileName = '${data.character.name}.flan';
     final tempZipPath = '${tempDir.path}/${data.character.name}.flan.zip';
+    final polyglotPath = '${tempDir.path}/$fileName';
 
     final zipWriter = await StreamingZipWriter.open(tempZipPath);
-
     final jsonBytes = utf8.encode(const JsonEncoder.withIndent('  ').convert(jsonData));
     await zipWriter.addFile('character.json', jsonBytes);
 
@@ -347,17 +359,18 @@ class CharacterExporter {
       if (bytes == null) continue;
       await zipWriter.addFile(entry.zipPath, bytes);
     }
-
     await zipWriter.close();
 
-    // Polyglot: cover PNG prefix + ZIP body. Image viewers render the PNG prefix;
-    // ZIP tools (and our importer) locate the archive via the PK\x03\x04 signature.
     final coverPng = await _resolveCoverPng(data);
-    final zipBytes = await File(tempZipPath).readAsBytes();
-    final polyglot = <int>[...coverPng, ...zipBytes];
-
-    await _saveBinaryFile(context, fileName, polyglot);
+    final polyglotFile = File(polyglotPath);
+    final out = polyglotFile.openWrite();
+    out.add(coverPng);
+    await out.addStream(File(tempZipPath).openRead());
+    await out.flush();
+    await out.close();
     await File(tempZipPath).delete();
+
+    await _saveExistingFile(context, fileName, polyglotFile);
   }
 
   // ─── Character Card V2 PNG ─────────────────────────────────────────────────
@@ -446,10 +459,14 @@ class CharacterExporter {
       assetFiles: assetFiles,
     );
 
-    // Polyglot: JPEG cover + ZIP concatenated
-    final List<int> polyglot;
+    // Polyglot: JPEG cover + ZIP concatenated. Use BytesBuilder to avoid the
+    // List<int> boxing blow-up that [...a, ...b] would cause with large buffers.
+    final Uint8List polyglot;
     if (assetFiles.isNotEmpty) {
-      polyglot = [...assetFiles.first.bytes, ...charxBytes];
+      final bb = BytesBuilder(copy: false);
+      bb.add(assetFiles.first.bytes);
+      bb.add(charxBytes);
+      polyglot = bb.takeBytes();
     } else {
       polyglot = charxBytes;
     }
