@@ -10,6 +10,7 @@ import '../../models/prompt/chat_prompt.dart';
 import '../../models/prompt/prompt_item.dart';
 import '../../models/prompt/prompt_item_folder.dart';
 import '../../models/prompt/prompt_parameters.dart';
+import '../../services/prompt_translation_service.dart';
 import '../../utils/common_dialog.dart';
 import '../../widgets/common/common_custom_text_field.dart';
 import '../../widgets/common/common_appbar.dart';
@@ -51,6 +52,15 @@ class _PromptEditScreenState extends State<PromptEditScreen>
   final List<PromptItemFolder> _folders = [];
   final List<PromptItem> _standaloneItems = [];
   final Map<int, TextEditingController> _contentControllers = {};
+  final Map<int, TextEditingController> _contentEnglishControllers = {};
+  // Snapshot of native-language content at the time each item's English
+  // translation was last generated. Used for diff-only re-translation — only
+  // items whose current native text differs from this snapshot (or whose
+  // English is still empty) get re-sent to the auxiliary model.
+  final Map<int, String> _lastTranslatedNative = {};
+  PromptLanguageTab _selectedPromptLang = PromptLanguageTab.native;
+  bool _useEnglishPrompt = false;
+  bool _isTranslating = false;
   int _nextTempId = -1;
   int _getNextTempId() => _nextTempId--;
   int _nextFolderTempId = -1;
@@ -122,6 +132,8 @@ class _PromptEditScreenState extends State<PromptEditScreen>
         final newItem = item.copyWith(id: tempId, folderId: folderId);
         items.add(newItem);
         _contentControllers[tempId] = TextEditingController(text: newItem.content);
+        _contentEnglishControllers[tempId] =
+            TextEditingController(text: newItem.contentEnglish ?? '');
       }
       _folders.add(PromptItemFolder(
         id: folderId,
@@ -138,6 +150,8 @@ class _PromptEditScreenState extends State<PromptEditScreen>
       final newItem = item.copyWith(id: tempId);
       _standaloneItems.add(newItem);
       _contentControllers[tempId] = TextEditingController(text: newItem.content);
+      _contentEnglishControllers[tempId] =
+          TextEditingController(text: newItem.contentEnglish ?? '');
     }
 
     if (mounted) setState(() {});
@@ -149,6 +163,10 @@ class _PromptEditScreenState extends State<PromptEditScreen>
     _descriptionController.text = prompt.description ?? '';
     _selectedModel = prompt.supportedModel;
     _parameters = prompt.parameters ?? const PromptParameters();
+    _useEnglishPrompt = prompt.useEnglishPrompt;
+    _selectedPromptLang = _useEnglishPrompt
+        ? PromptLanguageTab.english
+        : PromptLanguageTab.native;
 
     // Load parameter values to controllers
     _maxInputTokensController.text = _parameters.maxInputTokens?.toString() ?? '';
@@ -163,6 +181,11 @@ class _PromptEditScreenState extends State<PromptEditScreen>
       folder.items.addAll(folderItems);
       for (var item in folderItems) {
         _contentControllers[item.id!] = TextEditingController(text: item.content);
+        _contentEnglishControllers[item.id!] =
+            TextEditingController(text: item.contentEnglish ?? '');
+        if ((item.contentEnglish ?? '').isNotEmpty) {
+          _lastTranslatedNative[item.id!] = item.content;
+        }
       }
     }
     _folders.addAll(folders);
@@ -172,6 +195,11 @@ class _PromptEditScreenState extends State<PromptEditScreen>
     _standaloneItems.addAll(standaloneItems);
     for (var item in standaloneItems) {
       _contentControllers[item.id!] = TextEditingController(text: item.content);
+      _contentEnglishControllers[item.id!] =
+          TextEditingController(text: item.contentEnglish ?? '');
+      if ((item.contentEnglish ?? '').isNotEmpty) {
+        _lastTranslatedNative[item.id!] = item.content;
+      }
     }
 
     // Load regex rules
@@ -219,6 +247,9 @@ class _PromptEditScreenState extends State<PromptEditScreen>
     _nameController.dispose();
     _descriptionController.dispose();
     for (var controller in _contentControllers.values) {
+      controller.dispose();
+    }
+    for (var controller in _contentEnglishControllers.values) {
       controller.dispose();
     }
     _maxInputTokensController.dispose();
@@ -282,6 +313,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
               : _descriptionController.text.trim(),
           supportedModel: _selectedModel,
           parameters: _parameters,
+          useEnglishPrompt: _useEnglishPrompt,
           updatedAt: DateTime.now(),
         );
         await _db.updateChatPrompt(updated);
@@ -299,6 +331,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
               : _descriptionController.text.trim(),
           supportedModel: _selectedModel,
           parameters: _parameters,
+          useEnglishPrompt: _useEnglishPrompt,
         );
         promptId = await _db.createChatPrompt(prompt);
       }
@@ -377,6 +410,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
         for (int j = 0; j < folder.items.length; j++) {
           final item = folder.items[j];
           final controller = _contentControllers[item.id]!;
+          final englishCtrl = _contentEnglishControllers[item.id];
 
           await _db.createPromptItem(
             item.copyWithNullableFolderId(
@@ -384,6 +418,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
               chatPromptId: promptId,
               folderId: folderId,
               content: controller.text.trim(),
+              contentEnglish: englishCtrl?.text.trim() ?? '',
               order: j,
               conditionId: remapConditionId(item.conditionId),
             ),
@@ -394,6 +429,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
       // Save standalone items
       for (final item in _standaloneItems) {
         final controller = _contentControllers[item.id]!;
+        final englishCtrl = _contentEnglishControllers[item.id];
 
         await _db.createPromptItem(
           item.copyWithNullableFolderId(
@@ -401,6 +437,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
             chatPromptId: promptId,
             folderId: null,
             content: controller.text.trim(),
+            contentEnglish: englishCtrl?.text.trim() ?? '',
             conditionId: remapConditionId(item.conditionId),
           ),
         );
@@ -467,6 +504,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
         isExpanded: true,
       );
       _contentControllers[newItem.id!] = TextEditingController();
+      _contentEnglishControllers[newItem.id!] = TextEditingController();
 
       if (folder != null) {
         final folderIndex = _folders.indexOf(folder);
@@ -503,6 +541,8 @@ class _PromptEditScreenState extends State<PromptEditScreen>
         // Check in standalone items
         if (_standaloneItems.remove(item)) {
           _contentControllers.remove(item.id)?.dispose();
+          _contentEnglishControllers.remove(item.id)?.dispose();
+          _lastTranslatedNative.remove(item.id);
           return;
         }
 
@@ -510,6 +550,8 @@ class _PromptEditScreenState extends State<PromptEditScreen>
         for (var folder in _folders) {
           if (folder.items.remove(item)) {
             _contentControllers.remove(item.id)?.dispose();
+            _contentEnglishControllers.remove(item.id)?.dispose();
+            _lastTranslatedNative.remove(item.id);
             return;
           }
         }
@@ -683,6 +725,83 @@ class _PromptEditScreenState extends State<PromptEditScreen>
     }
   }
 
+  Future<void> _translateToEnglish() async {
+    if (_isTranslating) return;
+    final l10n = AppLocalizations.of(context);
+
+    // Snapshot current controller contents by item id across both folders and
+    // standalone items. We translate by id so results map back to controllers
+    // regardless of where the item lives.
+    final currentNative = <int, String>{};
+    final currentEnglish = <int, String>{};
+    for (final folder in _folders) {
+      for (final item in folder.items) {
+        final id = item.id;
+        if (id == null) continue;
+        if (item.role == PromptRole.chat) continue;
+        currentNative[id] = _contentControllers[id]?.text ?? '';
+        currentEnglish[id] = _contentEnglishControllers[id]?.text ?? '';
+      }
+    }
+    for (final item in _standaloneItems) {
+      final id = item.id;
+      if (id == null) continue;
+      if (item.role == PromptRole.chat) continue;
+      currentNative[id] = _contentControllers[id]?.text ?? '';
+      currentEnglish[id] = _contentEnglishControllers[id]?.text ?? '';
+    }
+
+    final hasAnyContent =
+        currentNative.values.any((s) => s.trim().isNotEmpty);
+    if (!hasAnyContent) {
+      CommonDialog.showSnackBar(
+        context: context,
+        message: l10n.promptItemsTranslateEmpty,
+      );
+      return;
+    }
+
+    setState(() => _isTranslating = true);
+    try {
+      final translations = await PromptTranslationService().translateChanged(
+        currentNative: currentNative,
+        previousNative: _lastTranslatedNative,
+        currentEnglish: currentEnglish,
+      );
+
+      if (translations.isEmpty) {
+        if (mounted) {
+          CommonDialog.showSnackBar(
+            context: context,
+            message: l10n.promptItemsTranslateSkipped,
+          );
+        }
+        return;
+      }
+
+      translations.forEach((id, english) {
+        _contentEnglishControllers[id]?.text = english;
+        _lastTranslatedNative[id] = currentNative[id] ?? '';
+      });
+
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: l10n.promptItemsTranslateSuccess,
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: l10n.promptItemsTranslateFailed(e.toString()),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isTranslating = false);
+    }
+  }
+
   Future<void> _deleteCondition(PromptCondition condition) async {
     final l10n = AppLocalizations.of(context);
     final confirmed = await CommonDialog.showDeleteConfirmation(
@@ -752,6 +871,17 @@ class _PromptEditScreenState extends State<PromptEditScreen>
               folders: _folders,
               standaloneItems: _standaloneItems,
               contentControllers: _contentControllers,
+              contentEnglishControllers: _contentEnglishControllers,
+              selectedLanguage: _selectedPromptLang,
+              useEnglishPrompt: _useEnglishPrompt,
+              isTranslating: _isTranslating,
+              onLanguageChanged: (lang) {
+                setState(() => _selectedPromptLang = lang);
+              },
+              onUseEnglishPromptChanged: (value) {
+                setState(() => _useEnglishPrompt = value);
+              },
+              onTranslateToEnglish: _translateToEnglish,
               readOnly: _isReadOnly,
               onUpdate: () => setState(() {}),
               onDeleteItem: _deleteItem,

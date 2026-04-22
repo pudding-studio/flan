@@ -400,6 +400,18 @@ abstract class AppLocalizations {
   /// **'채팅 프롬프트'**
   String get settingsChatPrompt;
 
+  /// No description provided for @settingsAuxiliaryPrompts.
+  ///
+  /// In ko, this message translates to:
+  /// **'보조 프롬프트'**
+  String get settingsAuxiliaryPrompts;
+
+  /// No description provided for @settingsAuxiliaryPromptsSubtitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'에이전트/요약/SNS 등 기능별 시스템 프롬프트 편집'**
+  String get settingsAuxiliaryPromptsSubtitle;
+
   /// No description provided for @settingsAutoSummary.
   ///
   /// In ko, this message translates to:
@@ -411,6 +423,252 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'전역 자동 요약 설정'**
   String get settingsAutoSummarySubtitle;
+
+  /// No description provided for @auxSectionCharacter.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터 생성 및 관리'**
+  String get auxSectionCharacter;
+
+  /// No description provided for @auxSectionPromptManagement.
+  ///
+  /// In ko, this message translates to:
+  /// **'프롬프트 관리'**
+  String get auxSectionPromptManagement;
+
+  /// No description provided for @auxSectionAutoSummary.
+  ///
+  /// In ko, this message translates to:
+  /// **'자동 요약'**
+  String get auxSectionAutoSummary;
+
+  /// No description provided for @auxSectionChatContent.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅 보조 컨텐츠'**
+  String get auxSectionChatContent;
+
+  /// No description provided for @auxPromptFlanAgentTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'Flan 에이전트 프롬프트'**
+  String get auxPromptFlanAgentTitle;
+
+  /// No description provided for @auxPromptFlanAgentSubtitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'캐릭터 탭의 캐릭터 생성용 시스템 프롬프트'**
+  String get auxPromptFlanAgentSubtitle;
+
+  /// No description provided for @auxPromptChatTranslationTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅 프롬프트 번역'**
+  String get auxPromptChatTranslationTitle;
+
+  /// No description provided for @auxPromptChatTranslationSubtitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅 프롬프트 자국어 → 영어 번역 시 사용되는 지시'**
+  String get auxPromptChatTranslationSubtitle;
+
+  /// No description provided for @auxPromptDefaultSummaryTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'기본 요약'**
+  String get auxPromptDefaultSummaryTitle;
+
+  /// No description provided for @auxPromptDefaultSummarySubtitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'전역 자동 요약 설정'**
+  String get auxPromptDefaultSummarySubtitle;
+
+  /// No description provided for @auxPromptAgentSummaryTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'에이전트 요약'**
+  String get auxPromptAgentSummaryTitle;
+
+  /// No description provided for @auxPromptAgentSummarySubtitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'설정집(캐릭터/장소/사건) 자동 추출 프롬프트'**
+  String get auxPromptAgentSummarySubtitle;
+
+  /// No description provided for @auxPromptSnsTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'SNS'**
+  String get auxPromptSnsTitle;
+
+  /// No description provided for @auxPromptSnsSubtitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'커뮤니티 생성 · 게시글 댓글 · 댓글의 댓글'**
+  String get auxPromptSnsSubtitle;
+
+  /// No description provided for @auxPromptDiaryTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'일기'**
+  String get auxPromptDiaryTitle;
+
+  /// No description provided for @auxPromptDiarySubtitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'일기 자동 생성 프롬프트'**
+  String get auxPromptDiarySubtitle;
+
+  /// No description provided for @auxPromptNewsTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'뉴스'**
+  String get auxPromptNewsTitle;
+
+  /// No description provided for @auxPromptNewsSubtitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'뉴스 기사 · 이벤트 생성 프롬프트'**
+  String get auxPromptNewsSubtitle;
+
+  /// No description provided for @auxTabSnsGenerate.
+  ///
+  /// In ko, this message translates to:
+  /// **'생성'**
+  String get auxTabSnsGenerate;
+
+  /// No description provided for @auxTabSnsPostReplies.
+  ///
+  /// In ko, this message translates to:
+  /// **'게시글 댓글'**
+  String get auxTabSnsPostReplies;
+
+  /// No description provided for @auxTabSnsCommentReplies.
+  ///
+  /// In ko, this message translates to:
+  /// **'댓글의 댓글'**
+  String get auxTabSnsCommentReplies;
+
+  /// No description provided for @auxTabNewsGenerate.
+  ///
+  /// In ko, this message translates to:
+  /// **'기사'**
+  String get auxTabNewsGenerate;
+
+  /// No description provided for @auxTabNewsEventGenerate.
+  ///
+  /// In ko, this message translates to:
+  /// **'이벤트'**
+  String get auxTabNewsEventGenerate;
+
+  /// No description provided for @auxLanguageNative.
+  ///
+  /// In ko, this message translates to:
+  /// **'자국어'**
+  String get auxLanguageNative;
+
+  /// No description provided for @auxLanguageEnglish.
+  ///
+  /// In ko, this message translates to:
+  /// **'영어'**
+  String get auxLanguageEnglish;
+
+  /// No description provided for @auxUseEnglish.
+  ///
+  /// In ko, this message translates to:
+  /// **'영어 프롬프트 사용'**
+  String get auxUseEnglish;
+
+  /// No description provided for @auxTranslateButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'자국어 → 영어 번역'**
+  String get auxTranslateButton;
+
+  /// No description provided for @auxTranslating.
+  ///
+  /// In ko, this message translates to:
+  /// **'번역 중...'**
+  String get auxTranslating;
+
+  /// No description provided for @auxTranslateSuccess.
+  ///
+  /// In ko, this message translates to:
+  /// **'번역이 완료되었습니다'**
+  String get auxTranslateSuccess;
+
+  /// No description provided for @auxTranslateFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'번역 실패: {error}'**
+  String auxTranslateFailed(String error);
+
+  /// No description provided for @auxResetToDefaults.
+  ///
+  /// In ko, this message translates to:
+  /// **'기본값으로 초기화'**
+  String get auxResetToDefaults;
+
+  /// No description provided for @auxResetConfirmTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'기본값으로 초기화'**
+  String get auxResetConfirmTitle;
+
+  /// No description provided for @auxResetConfirmContent.
+  ///
+  /// In ko, this message translates to:
+  /// **'이 프롬프트의 수정 내용을 모두 버리고 기본값으로 되돌립니다. 계속할까요?'**
+  String get auxResetConfirmContent;
+
+  /// No description provided for @auxResetAllTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'전체 초기화'**
+  String get auxResetAllTitle;
+
+  /// No description provided for @auxResetAllContent.
+  ///
+  /// In ko, this message translates to:
+  /// **'모든 보조 프롬프트의 수정 내용을 버리고 기본값으로 되돌립니다. 계속할까요?'**
+  String get auxResetAllContent;
+
+  /// No description provided for @auxResetAllSuccess.
+  ///
+  /// In ko, this message translates to:
+  /// **'모든 보조 프롬프트를 초기화했습니다'**
+  String get auxResetAllSuccess;
+
+  /// No description provided for @auxSaveSuccess.
+  ///
+  /// In ko, this message translates to:
+  /// **'저장되었습니다'**
+  String get auxSaveSuccess;
+
+  /// No description provided for @auxSaveFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'저장 실패: {error}'**
+  String auxSaveFailed(String error);
+
+  /// No description provided for @auxUnsavedChangesTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'저장하지 않은 변경사항'**
+  String get auxUnsavedChangesTitle;
+
+  /// No description provided for @auxUnsavedChangesContent.
+  ///
+  /// In ko, this message translates to:
+  /// **'변경사항이 있습니다. 저장하지 않고 나가시겠습니까?'**
+  String get auxUnsavedChangesContent;
+
+  /// No description provided for @auxDiscardChanges.
+  ///
+  /// In ko, this message translates to:
+  /// **'버리기'**
+  String get auxDiscardChanges;
 
   /// No description provided for @settingsBackup.
   ///
@@ -5457,6 +5715,78 @@ abstract class AppLocalizations {
   /// In ko, this message translates to:
   /// **'언어 이름'**
   String get settingsAiResponseLanguageOthersLabel;
+
+  /// No description provided for @promptItemsLangNativeKorean.
+  ///
+  /// In ko, this message translates to:
+  /// **'한국어'**
+  String get promptItemsLangNativeKorean;
+
+  /// No description provided for @promptItemsLangNativeJapanese.
+  ///
+  /// In ko, this message translates to:
+  /// **'일본어'**
+  String get promptItemsLangNativeJapanese;
+
+  /// No description provided for @promptItemsLangNativeOther.
+  ///
+  /// In ko, this message translates to:
+  /// **'다른 언어'**
+  String get promptItemsLangNativeOther;
+
+  /// No description provided for @promptItemsLangEnglish.
+  ///
+  /// In ko, this message translates to:
+  /// **'영어'**
+  String get promptItemsLangEnglish;
+
+  /// No description provided for @promptItemsUseNativePrompt.
+  ///
+  /// In ko, this message translates to:
+  /// **'자국어 프롬프트 사용'**
+  String get promptItemsUseNativePrompt;
+
+  /// No description provided for @promptItemsUseEnglishPrompt.
+  ///
+  /// In ko, this message translates to:
+  /// **'영어 프롬프트 사용'**
+  String get promptItemsUseEnglishPrompt;
+
+  /// No description provided for @promptItemsTranslateToEnglish.
+  ///
+  /// In ko, this message translates to:
+  /// **'영어로 자동번역'**
+  String get promptItemsTranslateToEnglish;
+
+  /// No description provided for @promptItemsTranslating.
+  ///
+  /// In ko, this message translates to:
+  /// **'번역 중...'**
+  String get promptItemsTranslating;
+
+  /// No description provided for @promptItemsTranslateSuccess.
+  ///
+  /// In ko, this message translates to:
+  /// **'영어 프롬프트가 업데이트되었습니다'**
+  String get promptItemsTranslateSuccess;
+
+  /// No description provided for @promptItemsTranslateSkipped.
+  ///
+  /// In ko, this message translates to:
+  /// **'변경된 항목이 없습니다'**
+  String get promptItemsTranslateSkipped;
+
+  /// No description provided for @promptItemsTranslateFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'번역에 실패했습니다: {error}'**
+  String promptItemsTranslateFailed(String error);
+
+  /// No description provided for @promptItemsTranslateEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'번역할 프롬프트 내용이 없습니다'**
+  String get promptItemsTranslateEmpty;
 }
 
 class _AppLocalizationsDelegate

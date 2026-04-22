@@ -72,6 +72,7 @@ class PromptItem {
   final int? folderId;
   final PromptRole role;
   final String content;
+  final String? contentEnglish;
   final String? name;
   final int order;
   final bool enabled;
@@ -96,6 +97,7 @@ class PromptItem {
     this.folderId,
     required this.role,
     required this.content,
+    this.contentEnglish,
     this.name,
     this.order = 0,
     this.enabled = true,
@@ -121,6 +123,7 @@ class PromptItem {
         orElse: () => PromptRole.system,
       ),
       content: map['content'] as String? ?? '',
+      contentEnglish: map['content_english'] as String?,
       name: map['name'] as String?,
       order: map['order'] as int? ?? 0,
       enabled: (map['enabled'] as int? ?? 1) == 1,
@@ -154,6 +157,7 @@ class PromptItem {
       'folder_id': folderId,
       'role': role.name,
       'content': content,
+      'content_english': contentEnglish,
       'name': name,
       'order': order,
       'enabled': enabled ? 1 : 0,
@@ -176,6 +180,7 @@ class PromptItem {
       'folderId': folderId,
       'role': role.name,
       'content': content,
+      'contentEnglish': contentEnglish,
       'name': name,
       'order': order,
       'enabled': enabled,
@@ -202,6 +207,7 @@ class PromptItem {
         orElse: () => PromptRole.system,
       ),
       content: json['content'] as String? ?? '',
+      contentEnglish: json['contentEnglish'] as String?,
       name: json['name'] as String?,
       order: json['order'] as int? ?? 0,
       enabled: json['enabled'] as bool? ?? true,
@@ -235,6 +241,7 @@ class PromptItem {
     int? folderId,
     PromptRole? role,
     String? content,
+    String? contentEnglish,
     String? name,
     int? order,
     bool? enabled,
@@ -255,6 +262,7 @@ class PromptItem {
       folderId: folderId ?? this.folderId,
       role: role ?? this.role,
       content: content ?? this.content,
+      contentEnglish: contentEnglish ?? this.contentEnglish,
       name: name ?? this.name,
       order: order ?? this.order,
       enabled: enabled ?? this.enabled,
@@ -282,6 +290,7 @@ class PromptItem {
       folderId: folderId,
       role: role,
       content: content,
+      contentEnglish: contentEnglish,
       name: name,
       order: order,
       enabled: enabled,
@@ -304,6 +313,7 @@ class PromptItem {
     required int? folderId,
     PromptRole? role,
     String? content,
+    String? contentEnglish,
     String? name,
     int? order,
     bool? enabled,
@@ -324,6 +334,7 @@ class PromptItem {
       folderId: folderId,
       role: role ?? this.role,
       content: content ?? this.content,
+      contentEnglish: contentEnglish ?? this.contentEnglish,
       name: name ?? this.name,
       order: order ?? this.order,
       enabled: enabled ?? this.enabled,

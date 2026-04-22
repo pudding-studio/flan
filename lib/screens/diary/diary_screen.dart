@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../l10n/app_localizations.dart';
 import '../../database/database_helper.dart';
+import '../../models/prompt/auxiliary_prompt.dart';
+import '../../services/auxiliary_prompt_service.dart';
 import '../../models/character/character.dart';
 import '../../models/character/start_scenario.dart';
 import '../../models/chat/chat_message.dart';
@@ -217,9 +218,12 @@ class _DiaryScreenState extends State<DiaryScreen> {
       final summaryText = relevantSummaries.map((s) => s.summaryContent).join('\n\n');
 
       final model = await _getModel();
-      final systemPrompt = (await rootBundle.loadString(
-        'assets/defaults/diary_prompts/diary_generate.txt',
-      )).replaceAll('{{output_language}}', outputLanguage);
+      final diaryTemplate = await AuxiliaryPromptService.instance
+          .getEffectiveContent(AuxiliaryPromptKey.diaryGenerate);
+      final systemPrompt = diaryTemplate.replaceAll(
+        '{{output_language}}',
+        outputLanguage,
+      );
 
       final userMessage = 'Target date: $date\n\n'
           '${worldview.isNotEmpty ? '$worldview\n\n' : ''}'

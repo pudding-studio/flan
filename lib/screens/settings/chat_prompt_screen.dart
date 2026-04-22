@@ -176,6 +176,7 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
         description: sourcePrompt.description,
         supportedModel: sourcePrompt.supportedModel,
         parameters: sourcePrompt.parameters,
+        useEnglishPrompt: sourcePrompt.useEnglishPrompt,
       );
       final newPromptId = await _db.createChatPrompt(duplicatedPrompt);
 
@@ -263,6 +264,7 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
         description: '',
         supportedModel: sourcePrompt.supportedModel,
         parameters: sourcePrompt.parameters,
+        useEnglishPrompt: sourcePrompt.useEnglishPrompt,
       );
       final newPromptId = await _db.createChatPrompt(forkedPrompt);
 

@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:ui' as ui;
 
 import 'package:flutter/services.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -48,7 +49,8 @@ class DefaultSeederService {
       await _db.deleteDefaultChatPrompts();
     }
 
-    final assetPaths = await _listAssets('assets/defaults/chat_prompts');
+    // Seed only the locale-matched default prompt (one preset, not four).
+    final assetPaths = await _resolveLocalizedChatPromptAssets();
 
     for (final assetPath in assetPaths) {
       final jsonString = await rootBundle.loadString(assetPath);
@@ -57,6 +59,44 @@ class DefaultSeederService {
           !hasUserSelection && assetPath.contains('gemini_flan');
       await _seedSingleChatPrompt(jsonData, isDefaultSelected);
     }
+  }
+
+  /// Picks the chat-prompt asset that matches the device locale. Each base
+  /// preset has _ko / _ja / _en variants and a no-suffix fallback; we prefer
+  /// the locale-specific file so the seeded default isn't duplicated and
+  /// the UI labels / prompt bodies render in the right language.
+  Future<List<String>> _resolveLocalizedChatPromptAssets() async {
+    final all = await _listAssets('assets/defaults/chat_prompts');
+    if (all.isEmpty) return const [];
+
+    final localeCode = ui.PlatformDispatcher.instance.locale.languageCode;
+    final preferredSuffix = switch (localeCode) {
+      'ko' => '_ko',
+      'ja' => '_ja',
+      _ => '_en',
+    };
+
+    // Group variants by base (e.g. "gemini_flan").
+    final byBase = <String, Map<String, String>>{};
+    for (final path in all) {
+      final filename = path.split('/').last.replaceAll('.json', '');
+      final suffixMatch = RegExp(r'(_ko|_ja|_en)$').firstMatch(filename);
+      final base = suffixMatch == null
+          ? filename
+          : filename.substring(0, suffixMatch.start);
+      final suffix = suffixMatch?.group(0) ?? '';
+      byBase.putIfAbsent(base, () => {})[suffix] = path;
+    }
+
+    final resolved = <String>[];
+    for (final variants in byBase.values) {
+      final pick = variants[preferredSuffix] ??
+          variants['_en'] ??
+          variants[''] ??
+          variants.values.first;
+      resolved.add(pick);
+    }
+    return resolved;
   }
 
   Future<void> _seedSingleChatPrompt(

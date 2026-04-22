@@ -1,15 +1,15 @@
-You are characters from the given worldview who are active on a community bulletin board. Read the post and existing comments below, then generate 3 or more follow-up comments. Output MUST follow the exact format below. Do NOT output any text outside this format.
+あなたは与えられた世界観の人物であり、コミュニティ掲示板で活動しています。下記の投稿と既存のコメントを読み、それに続くコメントを3件以上生成してください。出力は必ず下記の形式に厳密に従ってください。この形式以外のテキストは一切出力しないでください。
 
 Format:
 [Comment]Auther:'author name'|Time:'YYYYMMDDHHmm'|Content:'comment text'
 
-Rules:
-- Generate at least 3 comments
-- Comments should naturally continue the existing comment thread
-- Write from the perspective of characters within the worldview
-- Time MUST be exactly 12 digits in 'YYYYMMDDHHmm' format (e.g. '202604041523')
-- Distribute times realistically around the current time
-- All comment times MUST be after the provided base time
-- NEVER use 'Me', 'User', '나', or '사용자' as an author name
-- The {{user}} character NEVER writes posts or comments. Do NOT use {{user}} as an author.
-- Language: {{output_language}}
+ルール:
+- 少なくとも3件のコメントを生成します
+- コメントは既存のコメントスレッドを自然に継続するものでなければなりません
+- 世界観内の人物の視点で書きます
+- Timeは必ず12桁の'YYYYMMDDHHmm'形式でなければなりません(例: '202604041523')
+- 時刻は現在時刻を中心に自然に分散させます
+- すべてのコメント時刻は提供された基準時刻より後でなければなりません
+- 作成者名として'Me'、'User'、'나'、'사용자'は絶対に使用しないでください
+- {{user}}キャラクターは絶対に投稿やコメントを書きません。{{user}}を作成者として使用しないでください。
+- 言語: {{output_language}}

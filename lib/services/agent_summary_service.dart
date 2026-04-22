@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
-import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database_helper.dart';
 import '../models/character/character_book_folder.dart';
@@ -10,10 +9,12 @@ import '../models/chat/chat_message.dart';
 import '../models/chat/custom_model.dart';
 import '../models/chat/custom_provider.dart';
 import '../models/chat/unified_model.dart';
+import '../models/prompt/auxiliary_prompt.dart';
 import '../models/prompt/prompt_parameters.dart';
 import '../providers/tokenizer_provider.dart';
 import '../utils/token_counter.dart';
 import 'ai_service.dart';
+import 'auxiliary_prompt_service.dart';
 
 class AgentSummaryService {
   final DatabaseHelper _db = DatabaseHelper.instance;
@@ -285,12 +286,13 @@ class AgentSummaryService {
     return text;
   }
 
-  /// Load the extraction system prompt from assets
+  /// Load the extraction system prompt (user-editable via Auxiliary Prompts)
   Future<String> _loadExtractionPrompt() async {
     try {
-      return await rootBundle.loadString(
-        'assets/defaults/agent_summary_prompts/extraction_prompt.txt',
-      );
+      final content = await AuxiliaryPromptService.instance
+          .getEffectiveContent(AuxiliaryPromptKey.agentSummary);
+      if (content.trim().isEmpty) return _fallbackExtractionPrompt;
+      return content;
     } catch (e) {
       _logError('Failed to load extraction prompt: $e');
       return _fallbackExtractionPrompt;

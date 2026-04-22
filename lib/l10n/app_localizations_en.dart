@@ -161,10 +161,151 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsChatPrompt => 'Chat Prompt';
 
   @override
+  String get settingsAuxiliaryPrompts => 'Auxiliary Prompts';
+
+  @override
+  String get settingsAuxiliaryPromptsSubtitle =>
+      'Edit per-feature system prompts (agent, summary, SNS, etc.)';
+
+  @override
   String get settingsAutoSummary => 'Auto Summary';
 
   @override
   String get settingsAutoSummarySubtitle => 'Global auto summary settings';
+
+  @override
+  String get auxSectionCharacter => 'Character Creation & Management';
+
+  @override
+  String get auxSectionPromptManagement => 'Prompt Management';
+
+  @override
+  String get auxSectionAutoSummary => 'Auto Summary';
+
+  @override
+  String get auxSectionChatContent => 'Chat Side Content';
+
+  @override
+  String get auxPromptFlanAgentTitle => 'Flan Agent Prompt';
+
+  @override
+  String get auxPromptFlanAgentSubtitle =>
+      'System prompt for character generation in the Character tab';
+
+  @override
+  String get auxPromptChatTranslationTitle => 'Chat Prompt Translation';
+
+  @override
+  String get auxPromptChatTranslationSubtitle =>
+      'Instructions used when translating chat prompts to English';
+
+  @override
+  String get auxPromptDefaultSummaryTitle => 'Default Summary';
+
+  @override
+  String get auxPromptDefaultSummarySubtitle => 'Global auto summary settings';
+
+  @override
+  String get auxPromptAgentSummaryTitle => 'Agent Summary';
+
+  @override
+  String get auxPromptAgentSummarySubtitle =>
+      'Prompt for auto-extracting character book entries';
+
+  @override
+  String get auxPromptSnsTitle => 'SNS';
+
+  @override
+  String get auxPromptSnsSubtitle =>
+      'Community generation · post replies · comment replies';
+
+  @override
+  String get auxPromptDiaryTitle => 'Diary';
+
+  @override
+  String get auxPromptDiarySubtitle => 'Diary auto-generation prompt';
+
+  @override
+  String get auxPromptNewsTitle => 'News';
+
+  @override
+  String get auxPromptNewsSubtitle => 'News article & event generation prompts';
+
+  @override
+  String get auxTabSnsGenerate => 'Generate';
+
+  @override
+  String get auxTabSnsPostReplies => 'Post Replies';
+
+  @override
+  String get auxTabSnsCommentReplies => 'Comment Replies';
+
+  @override
+  String get auxTabNewsGenerate => 'Article';
+
+  @override
+  String get auxTabNewsEventGenerate => 'Event';
+
+  @override
+  String get auxLanguageNative => 'Native';
+
+  @override
+  String get auxLanguageEnglish => 'English';
+
+  @override
+  String get auxUseEnglish => 'Use English Prompt';
+
+  @override
+  String get auxTranslateButton => 'Translate Native → English';
+
+  @override
+  String get auxTranslating => 'Translating...';
+
+  @override
+  String get auxTranslateSuccess => 'Translation completed';
+
+  @override
+  String auxTranslateFailed(String error) {
+    return 'Translation failed: $error';
+  }
+
+  @override
+  String get auxResetToDefaults => 'Reset to Defaults';
+
+  @override
+  String get auxResetConfirmTitle => 'Reset to Defaults';
+
+  @override
+  String get auxResetConfirmContent =>
+      'This discards your edits to this prompt and restores the default. Continue?';
+
+  @override
+  String get auxResetAllTitle => 'Reset All';
+
+  @override
+  String get auxResetAllContent =>
+      'This discards all edits across every auxiliary prompt and restores defaults. Continue?';
+
+  @override
+  String get auxResetAllSuccess => 'All auxiliary prompts have been reset';
+
+  @override
+  String get auxSaveSuccess => 'Saved';
+
+  @override
+  String auxSaveFailed(String error) {
+    return 'Save failed: $error';
+  }
+
+  @override
+  String get auxUnsavedChangesTitle => 'Unsaved Changes';
+
+  @override
+  String get auxUnsavedChangesContent =>
+      'You have unsaved changes. Leave without saving?';
+
+  @override
+  String get auxDiscardChanges => 'Discard';
 
   @override
   String get settingsBackup => 'Backup & Restore';
@@ -2960,4 +3101,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsAiResponseLanguageOthersLabel => 'Language name';
+
+  @override
+  String get promptItemsLangNativeKorean => 'Korean';
+
+  @override
+  String get promptItemsLangNativeJapanese => 'Japanese';
+
+  @override
+  String get promptItemsLangNativeOther => 'Other language';
+
+  @override
+  String get promptItemsLangEnglish => 'English';
+
+  @override
+  String get promptItemsUseNativePrompt => 'Use native-language prompt';
+
+  @override
+  String get promptItemsUseEnglishPrompt => 'Use English prompt';
+
+  @override
+  String get promptItemsTranslateToEnglish => 'Auto-translate to English';
+
+  @override
+  String get promptItemsTranslating => 'Translating...';
+
+  @override
+  String get promptItemsTranslateSuccess => 'English prompt has been updated';
+
+  @override
+  String get promptItemsTranslateSkipped => 'No changes to translate';
+
+  @override
+  String promptItemsTranslateFailed(String error) {
+    return 'Translation failed: $error';
+  }
+
+  @override
+  String get promptItemsTranslateEmpty =>
+      'There is no prompt content to translate';
 }
