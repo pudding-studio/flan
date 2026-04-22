@@ -1991,6 +1991,93 @@ class AppLocalizationsEn extends AppLocalizations {
   String get characterBookContentHint => 'Enter entry content';
 
   @override
+  String get characterBookCategoryCharacter => 'Characters';
+
+  @override
+  String get characterBookCategoryLocation => 'Locations';
+
+  @override
+  String get characterBookCategoryEvent => 'Events';
+
+  @override
+  String get characterBookCategoryOther => 'Other';
+
+  @override
+  String get characterBookAutoSummaryInsert => 'Auto-summary insert';
+
+  @override
+  String get characterBookAutoSummaryInsertHelp =>
+      'When enabled, this entry is copied into the agent on the first message so the auto-summary can track it.';
+
+  @override
+  String get characterBookAutoSummaryInsertOn => 'Insert';
+
+  @override
+  String get characterBookAutoSummaryInsertOff => 'Skip';
+
+  @override
+  String get characterBookOneLineDescription => 'One-line description';
+
+  @override
+  String get characterBookOneLineDescriptionHelp =>
+      'One-line descriptions are always sent to the model. Format: name|description (e.g. Hong Gil-dong|25, male, black hair, righteous bandit).';
+
+  @override
+  String get characterBookOneLineHintCharacter =>
+      '25, male, black hair, righteous bandit';
+
+  @override
+  String get characterBookOneLineHintLocation => 'Former name of Korea';
+
+  @override
+  String get characterBookOneLineHintEvent => 'Founding of Joseon';
+
+  @override
+  String get characterBookOneLineHintOther => 'One-line description';
+
+  @override
+  String get characterBookFieldAppearance => 'Appearance';
+
+  @override
+  String get characterBookFieldGender => 'Gender';
+
+  @override
+  String get characterBookFieldGenderOther => 'Gender (custom)';
+
+  @override
+  String get characterBookFieldGenderMale => 'Male';
+
+  @override
+  String get characterBookFieldGenderFemale => 'Female';
+
+  @override
+  String get characterBookFieldAge => 'Age';
+
+  @override
+  String get characterBookFieldPersonality => 'Personality';
+
+  @override
+  String get characterBookFieldPast => 'Background';
+
+  @override
+  String get characterBookFieldAbilities => 'Abilities';
+
+  @override
+  String get characterBookFieldDialogueStyle => 'Dialogue style';
+
+  @override
+  String get characterBookFieldSetting => 'Setting';
+
+  @override
+  String get characterBookFieldDatetime => 'Date/Time';
+
+  @override
+  String get characterBookFieldEventContent => 'Content';
+
+  @override
+  String get characterBookFieldResult => 'Result';
+
+  @override
   String get newsArticleDeleteTitle => 'Delete Article';
 
   @override

@@ -1952,6 +1952,92 @@ class AppLocalizationsJa extends AppLocalizations {
   String get characterBookContentHint => '設定内容を入力してください';
 
   @override
+  String get characterBookCategoryCharacter => '登場人物';
+
+  @override
+  String get characterBookCategoryLocation => '地域/場所';
+
+  @override
+  String get characterBookCategoryEvent => '歴史/事件';
+
+  @override
+  String get characterBookCategoryOther => 'その他';
+
+  @override
+  String get characterBookAutoSummaryInsert => '自動要約挿入';
+
+  @override
+  String get characterBookAutoSummaryInsertHelp =>
+      '自動要約挿入を有効にすると、最初のメッセージ進行時にエージェントへ自動でコピーされます。';
+
+  @override
+  String get characterBookAutoSummaryInsertOn => '挿入';
+
+  @override
+  String get characterBookAutoSummaryInsertOff => '未挿入';
+
+  @override
+  String get characterBookOneLineDescription => '一行説明';
+
+  @override
+  String get characterBookOneLineDescriptionHelp =>
+      '一行説明は常時モデルに送信されます。形式: 名前|一行説明 (例: 洪吉童|25歳、男性、黒髪黒目、義賊)';
+
+  @override
+  String get characterBookOneLineHintCharacter => '25歳、男性、黒髪黒目、義賊';
+
+  @override
+  String get characterBookOneLineHintLocation => '韓国の古名';
+
+  @override
+  String get characterBookOneLineHintEvent => '朝鮮建国';
+
+  @override
+  String get characterBookOneLineHintOther => '一行説明';
+
+  @override
+  String get characterBookFieldAppearance => '外見';
+
+  @override
+  String get characterBookFieldGender => '性別';
+
+  @override
+  String get characterBookFieldGenderOther => '性別（その他）';
+
+  @override
+  String get characterBookFieldGenderMale => '男性';
+
+  @override
+  String get characterBookFieldGenderFemale => '女性';
+
+  @override
+  String get characterBookFieldAge => '年齢';
+
+  @override
+  String get characterBookFieldPersonality => '性格';
+
+  @override
+  String get characterBookFieldPast => '過去';
+
+  @override
+  String get characterBookFieldAbilities => '能力';
+
+  @override
+  String get characterBookFieldDialogueStyle => '台詞スタイル';
+
+  @override
+  String get characterBookFieldSetting => '設定';
+
+  @override
+  String get characterBookFieldDatetime => '日時';
+
+  @override
+  String get characterBookFieldEventContent => '内容';
+
+  @override
+  String get characterBookFieldResult => '結果';
+
+  @override
   String get newsArticleDeleteTitle => '記事を削除';
 
   @override

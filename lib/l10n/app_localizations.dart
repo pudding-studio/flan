@@ -3688,6 +3688,174 @@ abstract class AppLocalizations {
   /// **'설정 내용을 입력해주세요'**
   String get characterBookContentHint;
 
+  /// No description provided for @characterBookCategoryCharacter.
+  ///
+  /// In ko, this message translates to:
+  /// **'등장인물'**
+  String get characterBookCategoryCharacter;
+
+  /// No description provided for @characterBookCategoryLocation.
+  ///
+  /// In ko, this message translates to:
+  /// **'지역/장소'**
+  String get characterBookCategoryLocation;
+
+  /// No description provided for @characterBookCategoryEvent.
+  ///
+  /// In ko, this message translates to:
+  /// **'역사/사건'**
+  String get characterBookCategoryEvent;
+
+  /// No description provided for @characterBookCategoryOther.
+  ///
+  /// In ko, this message translates to:
+  /// **'기타'**
+  String get characterBookCategoryOther;
+
+  /// No description provided for @characterBookAutoSummaryInsert.
+  ///
+  /// In ko, this message translates to:
+  /// **'자동요약 삽입'**
+  String get characterBookAutoSummaryInsert;
+
+  /// No description provided for @characterBookAutoSummaryInsertHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'자동요약 삽입시, 최초 메시지 진행시 에이전트에 자동으로 내용이 카피되어 들어갑니다.'**
+  String get characterBookAutoSummaryInsertHelp;
+
+  /// No description provided for @characterBookAutoSummaryInsertOn.
+  ///
+  /// In ko, this message translates to:
+  /// **'삽입'**
+  String get characterBookAutoSummaryInsertOn;
+
+  /// No description provided for @characterBookAutoSummaryInsertOff.
+  ///
+  /// In ko, this message translates to:
+  /// **'미삽입'**
+  String get characterBookAutoSummaryInsertOff;
+
+  /// No description provided for @characterBookOneLineDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'한줄 설명'**
+  String get characterBookOneLineDescription;
+
+  /// No description provided for @characterBookOneLineDescriptionHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'한줄설명은 상시 모델에게 전송되는 내역입니다. 삽입예시) 이름|한줄설명, 홍길동|25세, 남성, 검은머리 검은눈, 의적'**
+  String get characterBookOneLineDescriptionHelp;
+
+  /// No description provided for @characterBookOneLineHintCharacter.
+  ///
+  /// In ko, this message translates to:
+  /// **'25세, 남성, 검은머리 검은눈, 의적'**
+  String get characterBookOneLineHintCharacter;
+
+  /// No description provided for @characterBookOneLineHintLocation.
+  ///
+  /// In ko, this message translates to:
+  /// **'대한민국의 옛지명'**
+  String get characterBookOneLineHintLocation;
+
+  /// No description provided for @characterBookOneLineHintEvent.
+  ///
+  /// In ko, this message translates to:
+  /// **'조선 건국'**
+  String get characterBookOneLineHintEvent;
+
+  /// No description provided for @characterBookOneLineHintOther.
+  ///
+  /// In ko, this message translates to:
+  /// **'한줄 설명'**
+  String get characterBookOneLineHintOther;
+
+  /// No description provided for @characterBookFieldAppearance.
+  ///
+  /// In ko, this message translates to:
+  /// **'외형'**
+  String get characterBookFieldAppearance;
+
+  /// No description provided for @characterBookFieldGender.
+  ///
+  /// In ko, this message translates to:
+  /// **'성별'**
+  String get characterBookFieldGender;
+
+  /// No description provided for @characterBookFieldGenderOther.
+  ///
+  /// In ko, this message translates to:
+  /// **'성별 (직접 입력)'**
+  String get characterBookFieldGenderOther;
+
+  /// No description provided for @characterBookFieldGenderMale.
+  ///
+  /// In ko, this message translates to:
+  /// **'남성'**
+  String get characterBookFieldGenderMale;
+
+  /// No description provided for @characterBookFieldGenderFemale.
+  ///
+  /// In ko, this message translates to:
+  /// **'여성'**
+  String get characterBookFieldGenderFemale;
+
+  /// No description provided for @characterBookFieldAge.
+  ///
+  /// In ko, this message translates to:
+  /// **'나이'**
+  String get characterBookFieldAge;
+
+  /// No description provided for @characterBookFieldPersonality.
+  ///
+  /// In ko, this message translates to:
+  /// **'성격'**
+  String get characterBookFieldPersonality;
+
+  /// No description provided for @characterBookFieldPast.
+  ///
+  /// In ko, this message translates to:
+  /// **'과거'**
+  String get characterBookFieldPast;
+
+  /// No description provided for @characterBookFieldAbilities.
+  ///
+  /// In ko, this message translates to:
+  /// **'능력'**
+  String get characterBookFieldAbilities;
+
+  /// No description provided for @characterBookFieldDialogueStyle.
+  ///
+  /// In ko, this message translates to:
+  /// **'대사 스타일'**
+  String get characterBookFieldDialogueStyle;
+
+  /// No description provided for @characterBookFieldSetting.
+  ///
+  /// In ko, this message translates to:
+  /// **'설정'**
+  String get characterBookFieldSetting;
+
+  /// No description provided for @characterBookFieldDatetime.
+  ///
+  /// In ko, this message translates to:
+  /// **'일시'**
+  String get characterBookFieldDatetime;
+
+  /// No description provided for @characterBookFieldEventContent.
+  ///
+  /// In ko, this message translates to:
+  /// **'내용'**
+  String get characterBookFieldEventContent;
+
+  /// No description provided for @characterBookFieldResult.
+  ///
+  /// In ko, this message translates to:
+  /// **'결과'**
+  String get characterBookFieldResult;
+
   /// No description provided for @newsArticleDeleteTitle.
   ///
   /// In ko, this message translates to:

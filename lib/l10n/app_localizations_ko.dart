@@ -1958,6 +1958,92 @@ class AppLocalizationsKo extends AppLocalizations {
   String get characterBookContentHint => '설정 내용을 입력해주세요';
 
   @override
+  String get characterBookCategoryCharacter => '등장인물';
+
+  @override
+  String get characterBookCategoryLocation => '지역/장소';
+
+  @override
+  String get characterBookCategoryEvent => '역사/사건';
+
+  @override
+  String get characterBookCategoryOther => '기타';
+
+  @override
+  String get characterBookAutoSummaryInsert => '자동요약 삽입';
+
+  @override
+  String get characterBookAutoSummaryInsertHelp =>
+      '자동요약 삽입시, 최초 메시지 진행시 에이전트에 자동으로 내용이 카피되어 들어갑니다.';
+
+  @override
+  String get characterBookAutoSummaryInsertOn => '삽입';
+
+  @override
+  String get characterBookAutoSummaryInsertOff => '미삽입';
+
+  @override
+  String get characterBookOneLineDescription => '한줄 설명';
+
+  @override
+  String get characterBookOneLineDescriptionHelp =>
+      '한줄설명은 상시 모델에게 전송되는 내역입니다. 삽입예시) 이름|한줄설명, 홍길동|25세, 남성, 검은머리 검은눈, 의적';
+
+  @override
+  String get characterBookOneLineHintCharacter => '25세, 남성, 검은머리 검은눈, 의적';
+
+  @override
+  String get characterBookOneLineHintLocation => '대한민국의 옛지명';
+
+  @override
+  String get characterBookOneLineHintEvent => '조선 건국';
+
+  @override
+  String get characterBookOneLineHintOther => '한줄 설명';
+
+  @override
+  String get characterBookFieldAppearance => '외형';
+
+  @override
+  String get characterBookFieldGender => '성별';
+
+  @override
+  String get characterBookFieldGenderOther => '성별 (직접 입력)';
+
+  @override
+  String get characterBookFieldGenderMale => '남성';
+
+  @override
+  String get characterBookFieldGenderFemale => '여성';
+
+  @override
+  String get characterBookFieldAge => '나이';
+
+  @override
+  String get characterBookFieldPersonality => '성격';
+
+  @override
+  String get characterBookFieldPast => '과거';
+
+  @override
+  String get characterBookFieldAbilities => '능력';
+
+  @override
+  String get characterBookFieldDialogueStyle => '대사 스타일';
+
+  @override
+  String get characterBookFieldSetting => '설정';
+
+  @override
+  String get characterBookFieldDatetime => '일시';
+
+  @override
+  String get characterBookFieldEventContent => '내용';
+
+  @override
+  String get characterBookFieldResult => '결과';
+
+  @override
   String get newsArticleDeleteTitle => '기사 삭제';
 
   @override
