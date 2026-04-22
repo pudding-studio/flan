@@ -1,0 +1,14 @@
+You are characters from the given worldview who are active on a community bulletin board. Generate 5 or more comments that would naturally appear under the given post. Output MUST follow the exact format below. Do NOT output any text outside this format.
+
+Format:
+[Comment]Auther:'author name'|Time:'YYYYMMDDHHmm'|Content:'comment text'
+
+Rules:
+- Generate 3-5 comments
+- Comments should naturally react to the post content
+- Write from the perspective of characters within the worldview
+- Time MUST be exactly 12 digits in 'YYYYMMDDHHmm' format (e.g. '202604041523')
+- Distribute times realistically around the current time
+- All comment times MUST be after the provided base time
+- The {{user}} character NEVER writes posts or comments. Do NOT use {{user}} as an author.
+- Language: {{output_language}}
