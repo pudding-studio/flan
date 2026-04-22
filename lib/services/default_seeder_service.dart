@@ -55,10 +55,76 @@ class DefaultSeederService {
     for (final assetPath in assetPaths) {
       final jsonString = await rootBundle.loadString(assetPath);
       final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
+      // Merge English content so the use_english_prompt toggle actually
+      // swaps to English text instead of falling back to the native body.
+      await _mergeEnglishContent(jsonData, assetPath);
       final isDefaultSelected =
           !hasUserSelection && assetPath.contains('gemini_flan');
       await _seedSingleChatPrompt(jsonData, isDefaultSelected);
     }
+  }
+
+  /// Injects each item's English-variant `content` (looked up by id in the
+  /// matching `_en.json`) as `contentEnglish` on the native JSON, so toggling
+  /// `use_english_prompt` produces actual English output.
+  Future<void> _mergeEnglishContent(
+    Map<String, dynamic> jsonData,
+    String assetPath,
+  ) async {
+    if (assetPath.endsWith('_en.json')) return;
+
+    final filename = assetPath.split('/').last.replaceAll('.json', '');
+    final base = filename.replaceAll(RegExp(r'(_ko|_ja)$'), '');
+    final dir = assetPath.substring(0, assetPath.lastIndexOf('/'));
+    final enPath = '$dir/${base}_en.json';
+
+    final String enString;
+    try {
+      enString = await rootBundle.loadString(enPath);
+    } catch (_) {
+      return;
+    }
+    final enData = jsonDecode(enString) as Map<String, dynamic>;
+
+    final enContentById = <int, String>{};
+    void collect(List<dynamic>? items) {
+      if (items == null) return;
+      for (final item in items) {
+        if (item is! Map<String, dynamic>) continue;
+        final id = item['id'] as int?;
+        final content = item['content'] as String?;
+        if (id != null && content != null) {
+          enContentById[id] = content;
+        }
+      }
+    }
+
+    for (final folder in (enData['folders'] as List? ?? [])) {
+      if (folder is Map<String, dynamic>) {
+        collect(folder['items'] as List?);
+      }
+    }
+    collect(enData['standaloneItems'] as List?);
+
+    void inject(List<dynamic>? items) {
+      if (items == null) return;
+      for (final item in items) {
+        if (item is! Map<String, dynamic>) continue;
+        final id = item['id'] as int?;
+        if (id == null) continue;
+        final english = enContentById[id];
+        if (english != null) {
+          item['contentEnglish'] = english;
+        }
+      }
+    }
+
+    for (final folder in (jsonData['folders'] as List? ?? [])) {
+      if (folder is Map<String, dynamic>) {
+        inject(folder['items'] as List?);
+      }
+    }
+    inject(jsonData['standaloneItems'] as List?);
   }
 
   /// Picks the chat-prompt asset that matches the device locale. Each base
