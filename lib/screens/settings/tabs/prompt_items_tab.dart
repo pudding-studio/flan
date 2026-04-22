@@ -14,10 +14,19 @@ import '../../../widgets/common/common_segmented_button.dart';
 import '../../../widgets/common/common_title_medium.dart';
 import 'prompt_conditions_section.dart';
 
+enum PromptLanguageTab { native, english }
+
 class PromptItemsTab extends StatefulWidget {
   final List<PromptItemFolder> folders;
   final List<PromptItem> standaloneItems;
   final Map<int, TextEditingController> contentControllers;
+  final Map<int, TextEditingController> contentEnglishControllers;
+  final PromptLanguageTab selectedLanguage;
+  final bool useEnglishPrompt;
+  final bool isTranslating;
+  final ValueChanged<PromptLanguageTab> onLanguageChanged;
+  final ValueChanged<bool> onUseEnglishPromptChanged;
+  final Future<void> Function() onTranslateToEnglish;
   final VoidCallback onUpdate;
   final void Function(PromptItem) onDeleteItem;
   final void Function(PromptItemFolder) onDeleteFolder;
@@ -43,6 +52,13 @@ class PromptItemsTab extends StatefulWidget {
     required this.folders,
     required this.standaloneItems,
     required this.contentControllers,
+    required this.contentEnglishControllers,
+    required this.selectedLanguage,
+    required this.useEnglishPrompt,
+    required this.isTranslating,
+    required this.onLanguageChanged,
+    required this.onUseEnglishPromptChanged,
+    required this.onTranslateToEnglish,
     this.readOnly = false,
     required this.onUpdate,
     required this.onDeleteItem,
@@ -74,6 +90,8 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
       padding: const EdgeInsets.all(UIConstants.spacing20),
       child: ListView(
         children: [
+          _buildLanguageSection(context, l10n),
+          const SizedBox(height: 16),
           PromptConditionsSection(
             conditions: widget.conditions,
             isExpanded: widget.conditionsSectionExpanded,
@@ -275,7 +293,9 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
             ),
             const SizedBox(height: 6),
             CommonEditText(
-              controller: widget.contentControllers[item.id],
+              controller: widget.selectedLanguage == PromptLanguageTab.english
+                  ? widget.contentEnglishControllers[item.id]
+                  : widget.contentControllers[item.id],
               hintText: l10n.promptItemsPromptHint,
               size: CommonEditTextSize.small,
               maxLines: null,
@@ -482,6 +502,101 @@ class _PromptItemsTabState extends State<PromptItemsTab> {
               },
             ),
           ],
+        ],
+      ],
+    );
+  }
+
+  Widget _buildLanguageSection(BuildContext context, AppLocalizations l10n) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final locale = Localizations.localeOf(context).languageCode;
+    final nativeLabel = switch (locale) {
+      'ko' => l10n.promptItemsLangNativeKorean,
+      'ja' => l10n.promptItemsLangNativeJapanese,
+      _ => l10n.promptItemsLangNativeOther,
+    };
+
+    final isEnglishTab = widget.selectedLanguage == PromptLanguageTab.english;
+    final toggleLabel = isEnglishTab
+        ? l10n.promptItemsUseEnglishPrompt
+        : l10n.promptItemsUseNativePrompt;
+    // The toggle reflects "is this language's prompt the active one?". Native
+    // is active when useEnglishPrompt is false; English is active when true.
+    final toggleValue = isEnglishTab
+        ? widget.useEnglishPrompt
+        : !widget.useEnglishPrompt;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CommonSegmentedButton<PromptLanguageTab>(
+          values: PromptLanguageTab.values,
+          selected: widget.selectedLanguage,
+          onSelectionChanged: widget.readOnly
+              ? (_) {}
+              : widget.onLanguageChanged,
+          labelBuilder: (v) => switch (v) {
+            PromptLanguageTab.native => nativeLabel,
+            PromptLanguageTab.english => l10n.promptItemsLangEnglish,
+          },
+        ),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                toggleLabel,
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
+              ),
+            ),
+            SizedBox(
+              height: 28,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Switch(
+                  value: toggleValue,
+                  onChanged: widget.readOnly
+                      ? null
+                      : (value) {
+                          // Exclusive: turning this side on means the opposite
+                          // side is off. Turning this side off means the
+                          // opposite side is on.
+                          final willUseEnglish =
+                              isEnglishTab ? value : !value;
+                          widget.onUseEnglishPromptChanged(willUseEnglish);
+                        },
+                ),
+              ),
+            ),
+          ],
+        ),
+        if (widget.selectedLanguage == PromptLanguageTab.native) ...[
+          const SizedBox(height: 8),
+          Align(
+            alignment: Alignment.centerRight,
+            child: OutlinedButton.icon(
+              onPressed: (widget.readOnly || widget.isTranslating)
+                  ? null
+                  : widget.onTranslateToEnglish,
+              icon: widget.isTranslating
+                  ? SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: colorScheme.primary,
+                      ),
+                    )
+                  : const Icon(Icons.translate, size: 18),
+              label: Text(
+                widget.isTranslating
+                    ? l10n.promptItemsTranslating
+                    : l10n.promptItemsTranslateToEnglish,
+              ),
+            ),
+          ),
         ],
       ],
     );

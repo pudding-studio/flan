@@ -15,6 +15,7 @@ class ChatPrompt {
   final PromptParameters? parameters;
   final bool isSelected;
   final bool isDefault;
+  final bool useEnglishPrompt;
   final int order;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -28,6 +29,7 @@ class ChatPrompt {
     this.parameters,
     this.isSelected = false,
     this.isDefault = false,
+    this.useEnglishPrompt = false,
     this.order = 0,
     List<PromptItem>? items,
     DateTime? createdAt,
@@ -48,6 +50,7 @@ class ChatPrompt {
           : null,
       isSelected: (map['is_selected'] as int? ?? 0) == 1,
       isDefault: (map['is_default'] as int? ?? 0) == 1,
+      useEnglishPrompt: (map['use_english_prompt'] as int? ?? 0) == 1,
       order: map['order'] as int? ?? 0,
       createdAt: DateTime.parse(map['created_at'] as String),
       updatedAt: DateTime.parse(map['updated_at'] as String),
@@ -63,6 +66,7 @@ class ChatPrompt {
       'parameters': parameters != null ? jsonEncode(parameters!.toJson()) : null,
       'is_selected': isSelected ? 1 : 0,
       'is_default': isDefault ? 1 : 0,
+      'use_english_prompt': useEnglishPrompt ? 1 : 0,
       'order': order,
       'created_at': createdAt.toIso8601String(),
       'updated_at': updatedAt.toIso8601String(),
@@ -77,6 +81,7 @@ class ChatPrompt {
     PromptParameters? parameters,
     bool? isSelected,
     bool? isDefault,
+    bool? useEnglishPrompt,
     int? order,
     List<PromptItem>? items,
     DateTime? createdAt,
@@ -90,6 +95,7 @@ class ChatPrompt {
       parameters: parameters ?? this.parameters,
       isSelected: isSelected ?? this.isSelected,
       isDefault: isDefault ?? this.isDefault,
+      useEnglishPrompt: useEnglishPrompt ?? this.useEnglishPrompt,
       order: order ?? this.order,
       items: items ?? this.items,
       createdAt: createdAt ?? this.createdAt,
@@ -108,6 +114,7 @@ class ChatPrompt {
       'name': name,
       'description': description,
       'supportedModel': supportedModel,
+      'useEnglishPrompt': useEnglishPrompt,
       'parameters': parameters?.toJson(),
       'folders': folders?.map((f) => f.toJson()).toList(),
       'standaloneItems': standaloneItems?.map((item) => item.toJson()).toList(),
@@ -122,6 +129,7 @@ class ChatPrompt {
       name: json['name'] as String,
       description: json['description'] as String?,
       supportedModel: json['supportedModel'] as String?,
+      useEnglishPrompt: json['useEnglishPrompt'] as bool? ?? false,
       parameters: json['parameters'] != null
           ? PromptParameters.fromJson(json['parameters'] as Map<String, dynamic>)
           : null,

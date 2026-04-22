@@ -161,10 +161,151 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsChatPrompt => 'Chat Prompt';
 
   @override
+  String get settingsAuxiliaryPrompts => 'Auxiliary Prompts';
+
+  @override
+  String get settingsAuxiliaryPromptsSubtitle =>
+      'Edit per-feature system prompts (agent, summary, SNS, etc.)';
+
+  @override
   String get settingsAutoSummary => 'Auto Summary';
 
   @override
   String get settingsAutoSummarySubtitle => 'Global auto summary settings';
+
+  @override
+  String get auxSectionCharacter => 'Character Creation & Management';
+
+  @override
+  String get auxSectionPromptManagement => 'Prompt Management';
+
+  @override
+  String get auxSectionAutoSummary => 'Auto Summary';
+
+  @override
+  String get auxSectionChatContent => 'Chat Side Content';
+
+  @override
+  String get auxPromptFlanAgentTitle => 'Flan Agent Prompt';
+
+  @override
+  String get auxPromptFlanAgentSubtitle =>
+      'System prompt for character generation in the Character tab';
+
+  @override
+  String get auxPromptChatTranslationTitle => 'Chat Prompt Translation';
+
+  @override
+  String get auxPromptChatTranslationSubtitle =>
+      'Instructions used when translating chat prompts to English';
+
+  @override
+  String get auxPromptDefaultSummaryTitle => 'Default Summary';
+
+  @override
+  String get auxPromptDefaultSummarySubtitle => 'Global auto summary settings';
+
+  @override
+  String get auxPromptAgentSummaryTitle => 'Agent Summary';
+
+  @override
+  String get auxPromptAgentSummarySubtitle =>
+      'Prompt for auto-extracting character book entries';
+
+  @override
+  String get auxPromptSnsTitle => 'SNS';
+
+  @override
+  String get auxPromptSnsSubtitle =>
+      'Community generation · post replies · comment replies';
+
+  @override
+  String get auxPromptDiaryTitle => 'Diary';
+
+  @override
+  String get auxPromptDiarySubtitle => 'Diary auto-generation prompt';
+
+  @override
+  String get auxPromptNewsTitle => 'News';
+
+  @override
+  String get auxPromptNewsSubtitle => 'News article & event generation prompts';
+
+  @override
+  String get auxTabSnsGenerate => 'Generate';
+
+  @override
+  String get auxTabSnsPostReplies => 'Post Replies';
+
+  @override
+  String get auxTabSnsCommentReplies => 'Comment Replies';
+
+  @override
+  String get auxTabNewsGenerate => 'Article';
+
+  @override
+  String get auxTabNewsEventGenerate => 'Event';
+
+  @override
+  String get auxLanguageNative => 'Native';
+
+  @override
+  String get auxLanguageEnglish => 'English';
+
+  @override
+  String get auxUseEnglish => 'Use English Prompt';
+
+  @override
+  String get auxTranslateButton => 'Translate Native → English';
+
+  @override
+  String get auxTranslating => 'Translating...';
+
+  @override
+  String get auxTranslateSuccess => 'Translation completed';
+
+  @override
+  String auxTranslateFailed(String error) {
+    return 'Translation failed: $error';
+  }
+
+  @override
+  String get auxResetToDefaults => 'Reset to Defaults';
+
+  @override
+  String get auxResetConfirmTitle => 'Reset to Defaults';
+
+  @override
+  String get auxResetConfirmContent =>
+      'This discards your edits to this prompt and restores the default. Continue?';
+
+  @override
+  String get auxResetAllTitle => 'Reset All';
+
+  @override
+  String get auxResetAllContent =>
+      'This discards all edits across every auxiliary prompt and restores defaults. Continue?';
+
+  @override
+  String get auxResetAllSuccess => 'All auxiliary prompts have been reset';
+
+  @override
+  String get auxSaveSuccess => 'Saved';
+
+  @override
+  String auxSaveFailed(String error) {
+    return 'Save failed: $error';
+  }
+
+  @override
+  String get auxUnsavedChangesTitle => 'Unsaved Changes';
+
+  @override
+  String get auxUnsavedChangesContent =>
+      'You have unsaved changes. Leave without saving?';
+
+  @override
+  String get auxDiscardChanges => 'Discard';
 
   @override
   String get settingsBackup => 'Backup & Restore';
@@ -1083,6 +1224,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Configure the SNS board settings for this character.';
 
   @override
+  String get characterEditSnsBoardNameLabel => 'Board Name';
+
+  @override
+  String get characterEditSnsBoardMoodLabel => 'Board Mood';
+
+  @override
+  String get characterEditSnsBoardLanguageLabel => 'Language';
+
+  @override
   String get characterEditSnsBoardHint =>
       'e.g. Free Board, Adventurers\' Plaza';
 
@@ -1991,6 +2141,112 @@ class AppLocalizationsEn extends AppLocalizations {
   String get characterBookContentHint => 'Enter entry content';
 
   @override
+  String get characterBookCategoryCharacter => 'Characters';
+
+  @override
+  String get characterBookCategoryLocation => 'Locations';
+
+  @override
+  String get characterBookCategoryEvent => 'Events';
+
+  @override
+  String get characterBookCategoryOther => 'Other';
+
+  @override
+  String get characterBookAutoSummaryInsert => 'Auto-summary insert';
+
+  @override
+  String get characterBookAutoSummaryInsertHelp =>
+      'When enabled, this entry is copied into the agent on the first message so the auto-summary can track it.';
+
+  @override
+  String get characterBookAutoSummaryInsertOn => 'Insert';
+
+  @override
+  String get characterBookAutoSummaryInsertOff => 'Skip';
+
+  @override
+  String get characterBookOneLineDescription => 'One-line description';
+
+  @override
+  String get characterBookOneLineDescriptionHelp =>
+      'One-line descriptions are always sent to the model. Format: name|description (e.g. Hong Gil-dong|25, male, black hair, righteous bandit).';
+
+  @override
+  String get characterBookOneLineHintCharacter =>
+      '25, male, black hair, righteous bandit';
+
+  @override
+  String get characterBookOneLineHintLocation => 'Former name of Korea';
+
+  @override
+  String get characterBookOneLineHintEvent => 'Founding of Joseon';
+
+  @override
+  String get characterBookOneLineHintOther => 'One-line description';
+
+  @override
+  String get characterBookFieldAppearance => 'Appearance';
+
+  @override
+  String get characterBookFieldGender => 'Gender';
+
+  @override
+  String get characterBookFieldGenderOther => 'Gender (custom)';
+
+  @override
+  String get characterBookFieldGenderMale => 'Male';
+
+  @override
+  String get characterBookFieldGenderFemale => 'Female';
+
+  @override
+  String get characterBookFieldAge => 'Age';
+
+  @override
+  String get characterBookFieldPersonality => 'Personality';
+
+  @override
+  String get characterBookFieldPast => 'Background';
+
+  @override
+  String get characterBookFieldAbilities => 'Abilities';
+
+  @override
+  String get characterBookFieldDialogueStyle => 'Dialogue style';
+
+  @override
+  String get characterBookFieldSetting => 'Setting';
+
+  @override
+  String get characterBookFieldDatetime => 'Date/Time';
+
+  @override
+  String get characterBookFieldEventContent => 'Content';
+
+  @override
+  String get characterBookFieldResult => 'Result';
+
+  @override
+  String get characterBookFieldImages => 'Images';
+
+  @override
+  String get characterBookImagesEmpty => 'No images registered';
+
+  @override
+  String get characterBookImagesEmptyReadOnly => 'No images';
+
+  @override
+  String get characterBookImagesAddButton => 'Add image';
+
+  @override
+  String get characterBookFieldSubNames => 'Sub names';
+
+  @override
+  String get characterBookFieldSubNamesHint =>
+      'Comma separated (e.g. Alice, alice)';
+
+  @override
   String get newsArticleDeleteTitle => 'Delete Article';
 
   @override
@@ -2845,4 +3101,43 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsAiResponseLanguageOthersLabel => 'Language name';
+
+  @override
+  String get promptItemsLangNativeKorean => 'Korean';
+
+  @override
+  String get promptItemsLangNativeJapanese => 'Japanese';
+
+  @override
+  String get promptItemsLangNativeOther => 'Other language';
+
+  @override
+  String get promptItemsLangEnglish => 'English';
+
+  @override
+  String get promptItemsUseNativePrompt => 'Use native-language prompt';
+
+  @override
+  String get promptItemsUseEnglishPrompt => 'Use English prompt';
+
+  @override
+  String get promptItemsTranslateToEnglish => 'Auto-translate to English';
+
+  @override
+  String get promptItemsTranslating => 'Translating...';
+
+  @override
+  String get promptItemsTranslateSuccess => 'English prompt has been updated';
+
+  @override
+  String get promptItemsTranslateSkipped => 'No changes to translate';
+
+  @override
+  String promptItemsTranslateFailed(String error) {
+    return 'Translation failed: $error';
+  }
+
+  @override
+  String get promptItemsTranslateEmpty =>
+      'There is no prompt content to translate';
 }

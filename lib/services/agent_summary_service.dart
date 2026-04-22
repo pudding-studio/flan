@@ -1,18 +1,20 @@
 import 'dart:convert';
 import 'dart:developer' as developer;
-import 'package:flutter/services.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database_helper.dart';
+import '../models/character/character_book_folder.dart';
 import '../models/chat/agent_entry.dart';
 import '../models/chat/chat_model.dart';
 import '../models/chat/chat_message.dart';
 import '../models/chat/custom_model.dart';
 import '../models/chat/custom_provider.dart';
 import '../models/chat/unified_model.dart';
+import '../models/prompt/auxiliary_prompt.dart';
 import '../models/prompt/prompt_parameters.dart';
 import '../providers/tokenizer_provider.dart';
 import '../utils/token_counter.dart';
 import 'ai_service.dart';
+import 'auxiliary_prompt_service.dart';
 
 class AgentSummaryService {
   final DatabaseHelper _db = DatabaseHelper.instance;
@@ -40,6 +42,111 @@ class AgentSummaryService {
       '\x1B[32m[$_logTag]\x1B[0m $message',
       name: _logTag,
     );
+  }
+
+  /// Copies CharacterBook entries flagged with `autoSummaryInsert == true`
+  /// into the agent_entries table for [chatRoomId]. No-op if entries for the
+  /// same (name, type) already exist — so calling this repeatedly is safe and
+  /// idempotent.
+  ///
+  /// Category → AgentEntryType mapping follows the redesigned 설정집:
+  ///  - character → character
+  ///  - location  → location
+  ///  - event     → event
+  ///  - other     → item  (per spec: '기타 (요약의 물품이 이곳으로 통합)')
+  ///
+  /// Invoked on the first user message of a chat so the auto-summary pipeline
+  /// already has the user-authored seed data to build on.
+  Future<void> seedFromCharacterBooks({
+    required int chatRoomId,
+    required int characterId,
+  }) async {
+    try {
+      final books = await _db.readCharacterBooks(characterId);
+      final seedable = books.where((b) => b.autoSummaryInsert).toList();
+      if (seedable.isEmpty) return;
+
+      int created = 0;
+      for (final book in seedable) {
+        final type = _agentTypeForCategory(book.category);
+        final existing = await _db.getAgentEntryByName(chatRoomId, book.name, type);
+        if (existing != null) continue;
+
+        final data = _seedDataForBook(book);
+        final entry = AgentEntry(
+          chatRoomId: chatRoomId,
+          entryType: type,
+          name: book.name,
+          data: data,
+          isActive: true,
+        );
+        await _db.createAgentEntry(entry);
+        created++;
+      }
+      _log('Seeded $created agent_entries from character_books (chatRoom=$chatRoomId)');
+    } catch (e) {
+      _logError('seedFromCharacterBooks failed: $e');
+    }
+  }
+
+  AgentEntryType _agentTypeForCategory(CharacterBookCategory category) {
+    switch (category) {
+      case CharacterBookCategory.character:
+        return AgentEntryType.character;
+      case CharacterBookCategory.location:
+        return AgentEntryType.location;
+      case CharacterBookCategory.event:
+        return AgentEntryType.event;
+      case CharacterBookCategory.other:
+        return AgentEntryType.item;
+    }
+  }
+
+  /// Maps CharacterBook structured fields onto the AgentEntry.data schema
+  /// that [AgentEntry.toReadableText] already knows how to render. Fields that
+  /// are empty on the source book are omitted so they don't appear as blank
+  /// headers in the rendered prompt body.
+  Map<String, dynamic> _seedDataForBook(CharacterBook book) {
+    final data = <String, dynamic>{};
+    void putIfNotEmpty(String key, String value) {
+      if (value.trim().isNotEmpty) data[key] = value;
+    }
+
+    switch (book.category) {
+      case CharacterBookCategory.character:
+        putIfNotEmpty('appearance', book.appearance);
+        putIfNotEmpty('personality', book.personality);
+        putIfNotEmpty('past', book.past);
+        putIfNotEmpty('abilities', book.abilities);
+        putIfNotEmpty('dialogue_style', book.dialogueStyle);
+        // Gender / age aren't first-class AgentEntry.character fields today,
+        // but surface them via 'appearance' as a fallback if set — keeps the
+        // info visible in the prompt without requiring a schema change.
+        final age = book.age.trim();
+        final gender = book.gender;
+        if (gender != null || age.isNotEmpty) {
+          final parts = <String>[];
+          if (age.isNotEmpty) parts.add(age);
+          if (gender != null) {
+            parts.add(gender == CharacterBookGender.other
+                ? (book.genderOther.isNotEmpty ? book.genderOther : gender.displayName)
+                : gender.displayName);
+          }
+          final appearance = book.appearance.trim();
+          final prefix = parts.join(', ');
+          data['appearance'] =
+              appearance.isEmpty ? prefix : '$prefix\n$appearance';
+        }
+      case CharacterBookCategory.location:
+        putIfNotEmpty('features', book.setting);
+      case CharacterBookCategory.event:
+        putIfNotEmpty('datetime', book.eventDatetime);
+        putIfNotEmpty('overview', book.eventContent);
+        putIfNotEmpty('result', book.eventResult);
+      case CharacterBookCategory.other:
+        putIfNotEmpty('features', book.setting);
+    }
+    return data;
   }
 
   /// Main entry point: process agent summary for a chat room
@@ -179,12 +286,13 @@ class AgentSummaryService {
     return text;
   }
 
-  /// Load the extraction system prompt from assets
+  /// Load the extraction system prompt (user-editable via Auxiliary Prompts)
   Future<String> _loadExtractionPrompt() async {
     try {
-      return await rootBundle.loadString(
-        'assets/defaults/agent_summary_prompts/extraction_prompt.txt',
-      );
+      final content = await AuxiliaryPromptService.instance
+          .getEffectiveContent(AuxiliaryPromptKey.agentSummary);
+      if (content.trim().isEmpty) return _fallbackExtractionPrompt;
+      return content;
     } catch (e) {
       _logError('Failed to load extraction prompt: $e');
       return _fallbackExtractionPrompt;

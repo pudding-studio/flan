@@ -1,10 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../l10n/app_localizations.dart';
 import '../../database/database_helper.dart';
+import '../../models/prompt/auxiliary_prompt.dart';
+import '../../services/auxiliary_prompt_service.dart';
 import '../../models/character/character.dart';
 import '../../models/character/start_scenario.dart';
 import '../../models/chat/agent_entry.dart';
@@ -198,9 +199,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
           DateTime.now();
       final nowStr = DateFormatter.formatPromptDateTime(worldNow);
 
-      var systemPrompt = await rootBundle.loadString(
-        'assets/defaults/community_prompts/community_generate.txt',
-      );
+      var systemPrompt = await AuxiliaryPromptService.instance
+          .getEffectiveContent(AuxiliaryPromptKey.snsGenerate);
       systemPrompt = _appendCommunitySettings(systemPrompt, outputLanguage);
 
       String latestPostInfo = '';
@@ -407,9 +407,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }) async {
     final outputLanguage = context.read<LocalizationProvider>().effectiveAiLanguageName;
     final model = await _getModel();
-    var systemPrompt = await rootBundle.loadString(
-      'assets/defaults/community_prompts/post_replies.txt',
-    );
+    var systemPrompt = await AuxiliaryPromptService.instance
+        .getEffectiveContent(AuxiliaryPromptKey.snsPostReplies);
     systemPrompt = _appendCommunitySettings(systemPrompt, outputLanguage);
     final now = DateTime.now();
     final nowStr = DateFormatter.formatPromptDateTime(now);
@@ -437,9 +436,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
   Future<List<CommunityComment>> _generateCommentReplies({required CommunityPost post}) async {
     final outputLanguage = context.read<LocalizationProvider>().effectiveAiLanguageName;
     final model = await _getModel();
-    var systemPrompt = await rootBundle.loadString(
-      'assets/defaults/community_prompts/comment_replies.txt',
-    );
+    var systemPrompt = await AuxiliaryPromptService.instance
+        .getEffectiveContent(AuxiliaryPromptKey.snsCommentReplies);
     systemPrompt = _appendCommunitySettings(systemPrompt, outputLanguage);
     final now = DateTime.now();
     final nowStr = DateFormatter.formatPromptDateTime(now);

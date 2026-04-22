@@ -14,7 +14,7 @@ import '../tutorial/tutorial_screen.dart';
 import 'api_key_screen.dart';
 import 'chat_model_screen.dart';
 import 'chat_prompt_screen.dart';
-import 'auto_summary_screen.dart';
+import 'auxiliary_prompts_screen.dart';
 import 'tokenizer_screen.dart';
 import 'backup_screen.dart';
 import 'log_screen.dart';
@@ -336,16 +336,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
             },
           ),
           _buildListTile(
-            icon: Icons.auto_awesome,
-            title: l10n.settingsAutoSummary,
-            subtitle: l10n.settingsAutoSummarySubtitle,
+            icon: Icons.extension_outlined,
+            title: l10n.settingsAuxiliaryPrompts,
+            subtitle: l10n.settingsAuxiliaryPromptsSubtitle,
             onTap: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const AutoSummaryScreen(
-                    chatRoomId: 0,
-                  ),
+                  builder: (context) => const AuxiliaryPromptsScreen(),
                 ),
               );
             },

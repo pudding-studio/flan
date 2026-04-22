@@ -161,10 +161,144 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsChatPrompt => 'チャットプロンプト';
 
   @override
+  String get settingsAuxiliaryPrompts => '補助プロンプト';
+
+  @override
+  String get settingsAuxiliaryPromptsSubtitle =>
+      'エージェント／要約／SNS など機能別システムプロンプトの編集';
+
+  @override
   String get settingsAutoSummary => '自動要約';
 
   @override
   String get settingsAutoSummarySubtitle => 'グローバル自動要約設定';
+
+  @override
+  String get auxSectionCharacter => 'キャラクター生成と管理';
+
+  @override
+  String get auxSectionPromptManagement => 'プロンプト管理';
+
+  @override
+  String get auxSectionAutoSummary => '自動要約';
+
+  @override
+  String get auxSectionChatContent => 'チャット補助コンテンツ';
+
+  @override
+  String get auxPromptFlanAgentTitle => 'Flan エージェントプロンプト';
+
+  @override
+  String get auxPromptFlanAgentSubtitle => 'キャラクタータブのキャラ生成用システムプロンプト';
+
+  @override
+  String get auxPromptChatTranslationTitle => 'チャットプロンプト翻訳';
+
+  @override
+  String get auxPromptChatTranslationSubtitle => 'チャットプロンプトを英語に翻訳する際の指示';
+
+  @override
+  String get auxPromptDefaultSummaryTitle => '基本要約';
+
+  @override
+  String get auxPromptDefaultSummarySubtitle => 'グローバル自動要約設定';
+
+  @override
+  String get auxPromptAgentSummaryTitle => 'エージェント要約';
+
+  @override
+  String get auxPromptAgentSummarySubtitle => '設定集（キャラ／場所／出来事）の自動抽出プロンプト';
+
+  @override
+  String get auxPromptSnsTitle => 'SNS';
+
+  @override
+  String get auxPromptSnsSubtitle => 'コミュニティ生成 · 投稿返信 · コメント返信';
+
+  @override
+  String get auxPromptDiaryTitle => '日記';
+
+  @override
+  String get auxPromptDiarySubtitle => '日記の自動生成プロンプト';
+
+  @override
+  String get auxPromptNewsTitle => 'ニュース';
+
+  @override
+  String get auxPromptNewsSubtitle => 'ニュース記事・イベント生成プロンプト';
+
+  @override
+  String get auxTabSnsGenerate => '生成';
+
+  @override
+  String get auxTabSnsPostReplies => '投稿返信';
+
+  @override
+  String get auxTabSnsCommentReplies => 'コメント返信';
+
+  @override
+  String get auxTabNewsGenerate => '記事';
+
+  @override
+  String get auxTabNewsEventGenerate => 'イベント';
+
+  @override
+  String get auxLanguageNative => '自国語';
+
+  @override
+  String get auxLanguageEnglish => '英語';
+
+  @override
+  String get auxUseEnglish => '英語プロンプトを使用';
+
+  @override
+  String get auxTranslateButton => '自国語 → 英語に翻訳';
+
+  @override
+  String get auxTranslating => '翻訳中...';
+
+  @override
+  String get auxTranslateSuccess => '翻訳が完了しました';
+
+  @override
+  String auxTranslateFailed(String error) {
+    return '翻訳失敗: $error';
+  }
+
+  @override
+  String get auxResetToDefaults => '既定値に戻す';
+
+  @override
+  String get auxResetConfirmTitle => '既定値に戻す';
+
+  @override
+  String get auxResetConfirmContent => 'このプロンプトの編集内容を破棄し、既定値に戻します。続行しますか？';
+
+  @override
+  String get auxResetAllTitle => '全体初期化';
+
+  @override
+  String get auxResetAllContent => 'すべての補助プロンプトの編集内容を破棄し、既定値に戻します。続行しますか？';
+
+  @override
+  String get auxResetAllSuccess => 'すべての補助プロンプトを初期化しました';
+
+  @override
+  String get auxSaveSuccess => '保存しました';
+
+  @override
+  String auxSaveFailed(String error) {
+    return '保存失敗: $error';
+  }
+
+  @override
+  String get auxUnsavedChangesTitle => '未保存の変更';
+
+  @override
+  String get auxUnsavedChangesContent => '未保存の変更があります。保存せずに離れますか？';
+
+  @override
+  String get auxDiscardChanges => '破棄';
 
   @override
   String get settingsBackup => 'バックアップと復元';
@@ -1066,6 +1200,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get characterEditSnsHelp => 'このキャラクターのSNS掲示板設定を行います。';
 
   @override
+  String get characterEditSnsBoardNameLabel => '掲示板の名前';
+
+  @override
+  String get characterEditSnsBoardMoodLabel => '掲示板の雰囲気';
+
+  @override
+  String get characterEditSnsBoardLanguageLabel => '使用言語';
+
+  @override
   String get characterEditSnsBoardHint => '例: 自由掲示板、冒険者広場';
 
   @override
@@ -1952,6 +2095,110 @@ class AppLocalizationsJa extends AppLocalizations {
   String get characterBookContentHint => '設定内容を入力してください';
 
   @override
+  String get characterBookCategoryCharacter => '登場人物';
+
+  @override
+  String get characterBookCategoryLocation => '地域/場所';
+
+  @override
+  String get characterBookCategoryEvent => '歴史/事件';
+
+  @override
+  String get characterBookCategoryOther => 'その他';
+
+  @override
+  String get characterBookAutoSummaryInsert => '自動要約挿入';
+
+  @override
+  String get characterBookAutoSummaryInsertHelp =>
+      '自動要約挿入を有効にすると、最初のメッセージ進行時にエージェントへ自動でコピーされます。';
+
+  @override
+  String get characterBookAutoSummaryInsertOn => '挿入';
+
+  @override
+  String get characterBookAutoSummaryInsertOff => '未挿入';
+
+  @override
+  String get characterBookOneLineDescription => '一行説明';
+
+  @override
+  String get characterBookOneLineDescriptionHelp =>
+      '一行説明は常時モデルに送信されます。形式: 名前|一行説明 (例: 洪吉童|25歳、男性、黒髪黒目、義賊)';
+
+  @override
+  String get characterBookOneLineHintCharacter => '25歳、男性、黒髪黒目、義賊';
+
+  @override
+  String get characterBookOneLineHintLocation => '韓国の古名';
+
+  @override
+  String get characterBookOneLineHintEvent => '朝鮮建国';
+
+  @override
+  String get characterBookOneLineHintOther => '一行説明';
+
+  @override
+  String get characterBookFieldAppearance => '外見';
+
+  @override
+  String get characterBookFieldGender => '性別';
+
+  @override
+  String get characterBookFieldGenderOther => '性別（その他）';
+
+  @override
+  String get characterBookFieldGenderMale => '男性';
+
+  @override
+  String get characterBookFieldGenderFemale => '女性';
+
+  @override
+  String get characterBookFieldAge => '年齢';
+
+  @override
+  String get characterBookFieldPersonality => '性格';
+
+  @override
+  String get characterBookFieldPast => '過去';
+
+  @override
+  String get characterBookFieldAbilities => '能力';
+
+  @override
+  String get characterBookFieldDialogueStyle => '台詞スタイル';
+
+  @override
+  String get characterBookFieldSetting => '設定';
+
+  @override
+  String get characterBookFieldDatetime => '日時';
+
+  @override
+  String get characterBookFieldEventContent => '内容';
+
+  @override
+  String get characterBookFieldResult => '結果';
+
+  @override
+  String get characterBookFieldImages => '画像';
+
+  @override
+  String get characterBookImagesEmpty => '登録された画像がありません';
+
+  @override
+  String get characterBookImagesEmptyReadOnly => '画像なし';
+
+  @override
+  String get characterBookImagesAddButton => '画像を追加';
+
+  @override
+  String get characterBookFieldSubNames => 'サブ名';
+
+  @override
+  String get characterBookFieldSubNamesHint => 'カンマ区切り（例: Alice, alice）';
+
+  @override
   String get newsArticleDeleteTitle => '記事を削除';
 
   @override
@@ -2789,4 +3036,42 @@ class AppLocalizationsJa extends AppLocalizations {
 
   @override
   String get settingsAiResponseLanguageOthersLabel => '言語名';
+
+  @override
+  String get promptItemsLangNativeKorean => '韓国語';
+
+  @override
+  String get promptItemsLangNativeJapanese => '日本語';
+
+  @override
+  String get promptItemsLangNativeOther => '他の言語';
+
+  @override
+  String get promptItemsLangEnglish => '英語';
+
+  @override
+  String get promptItemsUseNativePrompt => '母国語プロンプトを使用';
+
+  @override
+  String get promptItemsUseEnglishPrompt => '英語プロンプトを使用';
+
+  @override
+  String get promptItemsTranslateToEnglish => '英語に自動翻訳';
+
+  @override
+  String get promptItemsTranslating => '翻訳中...';
+
+  @override
+  String get promptItemsTranslateSuccess => '英語プロンプトが更新されました';
+
+  @override
+  String get promptItemsTranslateSkipped => '変更された項目がありません';
+
+  @override
+  String promptItemsTranslateFailed(String error) {
+    return '翻訳に失敗しました: $error';
+  }
+
+  @override
+  String get promptItemsTranslateEmpty => '翻訳するプロンプト内容がありません';
 }

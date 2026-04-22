@@ -1,10 +1,11 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import '../../l10n/app_localizations.dart';
 import '../../database/database_helper.dart';
+import '../../models/prompt/auxiliary_prompt.dart';
+import '../../services/auxiliary_prompt_service.dart';
 import '../../models/character/character.dart';
 import '../../models/character/start_scenario.dart';
 import '../../models/chat/chat_room.dart';
@@ -157,9 +158,12 @@ class _NewsScreenState extends State<NewsScreen> {
       final topics = List<String>.from(_allTopics)..shuffle();
       final selectedTopics = topics.take(2).toList();
 
-      var systemPrompt = (await rootBundle.loadString(
-        'assets/defaults/news_prompts/news_generate.txt',
-      )).replaceAll('{{output_language}}', outputLanguage);
+      final newsTemplate = await AuxiliaryPromptService.instance
+          .getEffectiveContent(AuxiliaryPromptKey.newsGenerate);
+      var systemPrompt = newsTemplate.replaceAll(
+        '{{output_language}}',
+        outputLanguage,
+      );
 
       String latestArticleInfo = '';
       if (_articles.isNotEmpty) {
@@ -234,9 +238,12 @@ class _NewsScreenState extends State<NewsScreen> {
     // Limit to 3 most recent uncovered events
     final toProcess = uncovered.length > 3 ? uncovered.sublist(uncovered.length - 3) : uncovered;
 
-    final eventSystemPrompt = (await rootBundle.loadString(
-      'assets/defaults/news_prompts/news_event_generate.txt',
-    )).replaceAll('{{output_language}}', outputLanguage);
+    final eventTemplate = await AuxiliaryPromptService.instance
+        .getEffectiveContent(AuxiliaryPromptKey.newsEventGenerate);
+    final eventSystemPrompt = eventTemplate.replaceAll(
+      '{{output_language}}',
+      outputLanguage,
+    );
 
     for (final event in toProcess) {
       final tones = List<String>.from(_allTones)..shuffle();

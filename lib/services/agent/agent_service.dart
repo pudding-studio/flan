@@ -1,10 +1,11 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 
 import '../../database/database_helper.dart';
 import '../../models/chat/chat_message.dart';
 import '../../models/chat/unified_model.dart';
+import '../../models/prompt/auxiliary_prompt.dart';
 import '../ai_service.dart';
+import '../auxiliary_prompt_service.dart';
 import 'agent_executor.dart';
 import 'agent_tool.dart';
 
@@ -22,17 +23,15 @@ class AgentMessage {
 
 class AgentService {
   static const int maxToolIterations = 5;
-  static const String _promptAssetPath =
-      'assets/defaults/agent_prompts/system_prompt.txt';
 
   final AiService _aiService = AiService();
   final AgentExecutor _executor;
-  String? _cachedPromptTemplate;
 
   AgentService(DatabaseHelper db) : _executor = AgentExecutor(db);
 
   Future<String> buildSystemPrompt(String outputLanguage) async {
-    _cachedPromptTemplate ??= await rootBundle.loadString(_promptAssetPath);
+    final template = await AuxiliaryPromptService.instance
+        .getEffectiveContent(AuxiliaryPromptKey.flanAgentSystem);
 
     final toolDescriptions = _executor.toolSchemas.map((schema) {
       final params = (schema['parameters'] as List)
@@ -45,7 +44,7 @@ class AgentService {
       return '- ${schema['name']}: ${schema['description']}$paramSection';
     }).join('\n\n');
 
-    return _cachedPromptTemplate!
+    return template
         .replaceAll('{{tools}}', toolDescriptions)
         .replaceAll('{{output_language}}', outputLanguage);
   }

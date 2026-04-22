@@ -161,10 +161,146 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsChatPrompt => '채팅 프롬프트';
 
   @override
+  String get settingsAuxiliaryPrompts => '보조 프롬프트';
+
+  @override
+  String get settingsAuxiliaryPromptsSubtitle =>
+      '에이전트/요약/SNS 등 기능별 시스템 프롬프트 편집';
+
+  @override
   String get settingsAutoSummary => '자동 요약';
 
   @override
   String get settingsAutoSummarySubtitle => '전역 자동 요약 설정';
+
+  @override
+  String get auxSectionCharacter => '캐릭터 생성 및 관리';
+
+  @override
+  String get auxSectionPromptManagement => '프롬프트 관리';
+
+  @override
+  String get auxSectionAutoSummary => '자동 요약';
+
+  @override
+  String get auxSectionChatContent => '채팅 보조 컨텐츠';
+
+  @override
+  String get auxPromptFlanAgentTitle => 'Flan 에이전트 프롬프트';
+
+  @override
+  String get auxPromptFlanAgentSubtitle => '캐릭터 탭의 캐릭터 생성용 시스템 프롬프트';
+
+  @override
+  String get auxPromptChatTranslationTitle => '채팅 프롬프트 번역';
+
+  @override
+  String get auxPromptChatTranslationSubtitle =>
+      '채팅 프롬프트 자국어 → 영어 번역 시 사용되는 지시';
+
+  @override
+  String get auxPromptDefaultSummaryTitle => '기본 요약';
+
+  @override
+  String get auxPromptDefaultSummarySubtitle => '전역 자동 요약 설정';
+
+  @override
+  String get auxPromptAgentSummaryTitle => '에이전트 요약';
+
+  @override
+  String get auxPromptAgentSummarySubtitle => '설정집(캐릭터/장소/사건) 자동 추출 프롬프트';
+
+  @override
+  String get auxPromptSnsTitle => 'SNS';
+
+  @override
+  String get auxPromptSnsSubtitle => '커뮤니티 생성 · 게시글 댓글 · 댓글의 댓글';
+
+  @override
+  String get auxPromptDiaryTitle => '일기';
+
+  @override
+  String get auxPromptDiarySubtitle => '일기 자동 생성 프롬프트';
+
+  @override
+  String get auxPromptNewsTitle => '뉴스';
+
+  @override
+  String get auxPromptNewsSubtitle => '뉴스 기사 · 이벤트 생성 프롬프트';
+
+  @override
+  String get auxTabSnsGenerate => '생성';
+
+  @override
+  String get auxTabSnsPostReplies => '게시글 댓글';
+
+  @override
+  String get auxTabSnsCommentReplies => '댓글의 댓글';
+
+  @override
+  String get auxTabNewsGenerate => '기사';
+
+  @override
+  String get auxTabNewsEventGenerate => '이벤트';
+
+  @override
+  String get auxLanguageNative => '자국어';
+
+  @override
+  String get auxLanguageEnglish => '영어';
+
+  @override
+  String get auxUseEnglish => '영어 프롬프트 사용';
+
+  @override
+  String get auxTranslateButton => '자국어 → 영어 번역';
+
+  @override
+  String get auxTranslating => '번역 중...';
+
+  @override
+  String get auxTranslateSuccess => '번역이 완료되었습니다';
+
+  @override
+  String auxTranslateFailed(String error) {
+    return '번역 실패: $error';
+  }
+
+  @override
+  String get auxResetToDefaults => '기본값으로 초기화';
+
+  @override
+  String get auxResetConfirmTitle => '기본값으로 초기화';
+
+  @override
+  String get auxResetConfirmContent =>
+      '이 프롬프트의 수정 내용을 모두 버리고 기본값으로 되돌립니다. 계속할까요?';
+
+  @override
+  String get auxResetAllTitle => '전체 초기화';
+
+  @override
+  String get auxResetAllContent => '모든 보조 프롬프트의 수정 내용을 버리고 기본값으로 되돌립니다. 계속할까요?';
+
+  @override
+  String get auxResetAllSuccess => '모든 보조 프롬프트를 초기화했습니다';
+
+  @override
+  String get auxSaveSuccess => '저장되었습니다';
+
+  @override
+  String auxSaveFailed(String error) {
+    return '저장 실패: $error';
+  }
+
+  @override
+  String get auxUnsavedChangesTitle => '저장하지 않은 변경사항';
+
+  @override
+  String get auxUnsavedChangesContent => '변경사항이 있습니다. 저장하지 않고 나가시겠습니까?';
+
+  @override
+  String get auxDiscardChanges => '버리기';
 
   @override
   String get settingsBackup => '백업 및 복구';
@@ -1070,6 +1206,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get characterEditSnsHelp => '캐릭터의 SNS 게시판 설정을 구성합니다.';
 
   @override
+  String get characterEditSnsBoardNameLabel => '게시판 이름';
+
+  @override
+  String get characterEditSnsBoardMoodLabel => '게시판 분위기';
+
+  @override
+  String get characterEditSnsBoardLanguageLabel => '사용 언어';
+
+  @override
   String get characterEditSnsBoardHint => '예: 자유게시판, 모험가 광장 등';
 
   @override
@@ -1958,6 +2103,110 @@ class AppLocalizationsKo extends AppLocalizations {
   String get characterBookContentHint => '설정 내용을 입력해주세요';
 
   @override
+  String get characterBookCategoryCharacter => '등장인물';
+
+  @override
+  String get characterBookCategoryLocation => '지역/장소';
+
+  @override
+  String get characterBookCategoryEvent => '역사/사건';
+
+  @override
+  String get characterBookCategoryOther => '기타';
+
+  @override
+  String get characterBookAutoSummaryInsert => '자동요약 삽입';
+
+  @override
+  String get characterBookAutoSummaryInsertHelp =>
+      '자동요약 삽입시, 최초 메시지 진행시 에이전트에 자동으로 내용이 카피되어 들어갑니다.';
+
+  @override
+  String get characterBookAutoSummaryInsertOn => '삽입';
+
+  @override
+  String get characterBookAutoSummaryInsertOff => '미삽입';
+
+  @override
+  String get characterBookOneLineDescription => '한줄 설명';
+
+  @override
+  String get characterBookOneLineDescriptionHelp =>
+      '한줄설명은 상시 모델에게 전송되는 내역입니다. 삽입예시) 이름|한줄설명, 홍길동|25세, 남성, 검은머리 검은눈, 의적';
+
+  @override
+  String get characterBookOneLineHintCharacter => '25세, 남성, 검은머리 검은눈, 의적';
+
+  @override
+  String get characterBookOneLineHintLocation => '대한민국의 옛지명';
+
+  @override
+  String get characterBookOneLineHintEvent => '조선 건국';
+
+  @override
+  String get characterBookOneLineHintOther => '한줄 설명';
+
+  @override
+  String get characterBookFieldAppearance => '외형';
+
+  @override
+  String get characterBookFieldGender => '성별';
+
+  @override
+  String get characterBookFieldGenderOther => '성별 (직접 입력)';
+
+  @override
+  String get characterBookFieldGenderMale => '남성';
+
+  @override
+  String get characterBookFieldGenderFemale => '여성';
+
+  @override
+  String get characterBookFieldAge => '나이';
+
+  @override
+  String get characterBookFieldPersonality => '성격';
+
+  @override
+  String get characterBookFieldPast => '과거';
+
+  @override
+  String get characterBookFieldAbilities => '능력';
+
+  @override
+  String get characterBookFieldDialogueStyle => '대사 스타일';
+
+  @override
+  String get characterBookFieldSetting => '설정';
+
+  @override
+  String get characterBookFieldDatetime => '일시';
+
+  @override
+  String get characterBookFieldEventContent => '내용';
+
+  @override
+  String get characterBookFieldResult => '결과';
+
+  @override
+  String get characterBookFieldImages => '이미지';
+
+  @override
+  String get characterBookImagesEmpty => '등록된 이미지가 없습니다';
+
+  @override
+  String get characterBookImagesEmptyReadOnly => '이미지 없음';
+
+  @override
+  String get characterBookImagesAddButton => '이미지 추가';
+
+  @override
+  String get characterBookFieldSubNames => '서브이름';
+
+  @override
+  String get characterBookFieldSubNamesHint => '쉼표로 구분 (예: Alice, alice)';
+
+  @override
   String get newsArticleDeleteTitle => '기사 삭제';
 
   @override
@@ -2796,4 +3045,42 @@ class AppLocalizationsKo extends AppLocalizations {
 
   @override
   String get settingsAiResponseLanguageOthersLabel => '언어 이름';
+
+  @override
+  String get promptItemsLangNativeKorean => '한국어';
+
+  @override
+  String get promptItemsLangNativeJapanese => '일본어';
+
+  @override
+  String get promptItemsLangNativeOther => '다른 언어';
+
+  @override
+  String get promptItemsLangEnglish => '영어';
+
+  @override
+  String get promptItemsUseNativePrompt => '자국어 프롬프트 사용';
+
+  @override
+  String get promptItemsUseEnglishPrompt => '영어 프롬프트 사용';
+
+  @override
+  String get promptItemsTranslateToEnglish => '영어로 자동번역';
+
+  @override
+  String get promptItemsTranslating => '번역 중...';
+
+  @override
+  String get promptItemsTranslateSuccess => '영어 프롬프트가 업데이트되었습니다';
+
+  @override
+  String get promptItemsTranslateSkipped => '변경된 항목이 없습니다';
+
+  @override
+  String promptItemsTranslateFailed(String error) {
+    return '번역에 실패했습니다: $error';
+  }
+
+  @override
+  String get promptItemsTranslateEmpty => '번역할 프롬프트 내용이 없습니다';
 }

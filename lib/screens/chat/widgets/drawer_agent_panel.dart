@@ -177,10 +177,13 @@ class DrawerAgentPanelState extends State<DrawerAgentPanel> {
                                   ),
                         ),
                         const Spacer(),
-                        Switch(
-                          value: entry.isActive,
-                          onChanged: (value) =>
-                              _toggleAgentEntryActive(entry, value),
+                        Transform.scale(
+                          scale: 0.7,
+                          child: Switch(
+                            value: entry.isActive,
+                            onChanged: (value) =>
+                                _toggleAgentEntryActive(entry, value),
+                          ),
                         ),
                       ],
                     ),

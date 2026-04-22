@@ -13,6 +13,7 @@ import '../models/prompt/prompt_condition_option.dart';
 import '../models/prompt/prompt_condition_preset.dart';
 import '../models/prompt/prompt_condition_preset_value.dart';
 import '../models/prompt/prompt_regex_rule.dart';
+import '../models/prompt/auxiliary_prompt.dart';
 import '../models/chat/chat_room.dart';
 import '../models/chat/chat_message.dart';
 import '../models/chat/chat_log.dart';
@@ -45,7 +46,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 54,
+      version: 58,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -85,6 +86,7 @@ class DatabaseHelper {
     (table: 'chat_prompts', column: 'supported_model', def: "TEXT NOT NULL DEFAULT 'ALL'"),
     (table: 'chat_prompts', column: 'parameters', def: 'TEXT'),
     (table: 'chat_prompts', column: 'is_default', def: 'INTEGER NOT NULL DEFAULT 0'),
+    (table: 'chat_prompts', column: 'use_english_prompt', def: 'INTEGER NOT NULL DEFAULT 0'),
     (table: 'characters', column: 'sort_order', def: 'INTEGER'),
     (table: 'characters', column: 'nickname', def: 'TEXT'),
     (table: 'characters', column: 'community_name', def: 'TEXT'),
@@ -92,6 +94,9 @@ class DatabaseHelper {
     (table: 'characters', column: 'community_language', def: 'TEXT'),
     (table: 'characters', column: 'world_start_date', def: 'TEXT'),
     (table: 'character_books', column: 'secondary_keys', def: 'TEXT'),
+    (table: 'character_books', column: 'category', def: "TEXT NOT NULL DEFAULT 'other'"),
+    (table: 'character_books', column: 'one_line_description', def: 'TEXT'),
+    (table: 'character_books', column: 'auto_summary_insert', def: 'INTEGER NOT NULL DEFAULT 1'),
     (table: 'prompt_items', column: 'name', def: 'TEXT'),
     (table: 'prompt_items', column: 'folder_id', def: 'INTEGER'),
     (table: 'prompt_items', column: 'enabled', def: 'INTEGER NOT NULL DEFAULT 1'),
@@ -104,6 +109,7 @@ class DatabaseHelper {
     (table: 'prompt_items', column: 'enable_mode', def: "TEXT NOT NULL DEFAULT 'enabled'"),
     (table: 'prompt_items', column: 'condition_id', def: 'INTEGER'),
     (table: 'prompt_items', column: 'condition_value', def: 'TEXT'),
+    (table: 'prompt_items', column: 'content_english', def: 'TEXT'),
     (table: 'chat_messages', column: 'token_count', def: 'INTEGER NOT NULL DEFAULT 0'),
     (table: 'chat_messages', column: 'usage_metadata', def: 'TEXT'),
     (table: 'chat_messages', column: 'model_id', def: 'TEXT'),
@@ -127,6 +133,7 @@ class DatabaseHelper {
     (table: 'auto_summary_settings', column: 'is_agent_enabled', def: 'INTEGER NOT NULL DEFAULT 0'),
     (table: 'cover_images', column: 'path', def: 'TEXT'),
     (table: 'cover_images', column: 'image_type', def: "TEXT DEFAULT 'cover'"),
+    (table: 'cover_images', column: 'character_book_id', def: 'INTEGER'),
     (table: 'community_posts', column: 'is_favorited', def: 'INTEGER NOT NULL DEFAULT 0'),
     (table: 'community_posts', column: 'favorite_used', def: 'INTEGER NOT NULL DEFAULT 0'),
   ];
@@ -185,6 +192,9 @@ class DatabaseHelper {
         secondary_keys $textTypeNullable,
         insertion_order $intType,
         content $textTypeNullable,
+        category TEXT NOT NULL DEFAULT 'other',
+        one_line_description TEXT,
+        auto_summary_insert INTEGER NOT NULL DEFAULT 1,
         FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE,
         FOREIGN KEY (folder_id) REFERENCES character_book_folders (id) ON DELETE CASCADE
       )
@@ -228,7 +238,9 @@ class DatabaseHelper {
         image_data BLOB,
         path TEXT,
         image_type TEXT DEFAULT 'cover',
-        FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE
+        character_book_id INTEGER,
+        FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE,
+        FOREIGN KEY (character_book_id) REFERENCES character_books (id) ON DELETE CASCADE
       )
     ''');
 
@@ -268,6 +280,7 @@ class DatabaseHelper {
         parameters $textTypeNullable,
         is_selected $boolType,
         is_default $boolType,
+        use_english_prompt $boolType,
         `order` $intType DEFAULT 0,
         created_at $textType,
         updated_at $textType
@@ -294,6 +307,7 @@ class DatabaseHelper {
         folder_id INTEGER,
         role $textType DEFAULT 'system',
         content $textTypeNullable,
+        content_english $textTypeNullable,
         name $textTypeNullable,
         `order` $intType DEFAULT 0,
         enabled $intType DEFAULT 1,
@@ -683,6 +697,19 @@ class DatabaseHelper {
     await db.execute('''
       CREATE INDEX idx_news_articles_agent_entry
       ON news_articles (agent_entry_id)
+    ''');
+
+    // Auxiliary (non-chat) system prompts. One row per prompt_key; seeded
+    // lazily from bundled text assets on first read.
+    await db.execute('''
+      CREATE TABLE auxiliary_prompts (
+        id $idType,
+        prompt_key TEXT NOT NULL UNIQUE,
+        content_native TEXT NOT NULL DEFAULT '',
+        content_english TEXT NOT NULL DEFAULT '',
+        use_english INTEGER NOT NULL DEFAULT 0,
+        updated_at $textType
+      )
     ''');
   }
 
@@ -1509,6 +1536,76 @@ class DatabaseHelper {
         ALTER TABLE characters ADD COLUMN world_start_date TEXT
       ''');
     }
+
+    if (oldVersion < 55) {
+      // 설정집(character_books) 카테고리 체계 도입.
+      // 기존 항목은 모두 '기타'(other)로 분류되고, content는 레거시 평문으로
+      // 남아 있다가 모델 레이어에서 other-category 'setting' 필드로 해석된다.
+      await _ensureColumn(
+        db,
+        'character_books',
+        'category',
+        "TEXT NOT NULL DEFAULT 'other'",
+      );
+      await _ensureColumn(
+        db,
+        'character_books',
+        'one_line_description',
+        'TEXT',
+      );
+      await _ensureColumn(
+        db,
+        'character_books',
+        'auto_summary_insert',
+        'INTEGER NOT NULL DEFAULT 1',
+      );
+    }
+
+    if (oldVersion < 56) {
+      // 설정집 등장인물별 이미지 지원. cover_images 레코드가 특정
+      // character_books 항목에 속하도록 nullable FK를 추가한다.
+      // image_type='characterBook'인 행만 이 FK를 사용한다.
+      await _ensureColumn(
+        db,
+        'cover_images',
+        'character_book_id',
+        'INTEGER',
+      );
+    }
+
+    if (oldVersion < 57) {
+      // 프롬프트의 자국어/영어 이중 저장 지원. chat_prompts에 플래그,
+      // prompt_items에 영어 원문을 덧붙인다. 플래그 off일 때는 기존
+      // content가 그대로 사용된다.
+      await _ensureColumn(
+        db,
+        'chat_prompts',
+        'use_english_prompt',
+        'INTEGER NOT NULL DEFAULT 0',
+      );
+      await _ensureColumn(
+        db,
+        'prompt_items',
+        'content_english',
+        'TEXT',
+      );
+    }
+
+    if (oldVersion < 58) {
+      // 보조(비채팅) 시스템 프롬프트를 사용자 편집 가능하게 전환.
+      // 기존에 에셋 .txt에서 직접 읽던 Flan 에이전트, 에이전트 요약,
+      // SNS/일기/뉴스/번역 프롬프트를 이 테이블에 저장한다.
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS auxiliary_prompts (
+          id $idType,
+          prompt_key TEXT NOT NULL UNIQUE,
+          content_native TEXT NOT NULL DEFAULT '',
+          content_english TEXT NOT NULL DEFAULT '',
+          use_english INTEGER NOT NULL DEFAULT 0,
+          updated_at $textType
+        )
+      ''');
+    }
   }
 
   // ==================== 캐릭터 CRUD ====================
@@ -1816,6 +1913,19 @@ class DatabaseHelper {
     return result.map((map) => CoverImage.fromMap(map)).toList();
   }
 
+  /// 설정집(등장인물) 항목에 귀속된 이미지 목록.
+  /// `<img="characterName_imageName">` 태그 렌더링 시 참조된다.
+  Future<List<CoverImage>> readCharacterBookImages(int characterBookId) async {
+    final db = await database;
+    final result = await db.query(
+      'cover_images',
+      where: "image_type = 'characterBook' AND character_book_id = ?",
+      whereArgs: [characterBookId],
+      orderBy: '`order` ASC',
+    );
+    return result.map((map) => CoverImage.fromMap(map)).toList();
+  }
+
   Future<int> updateCoverImage(CoverImage coverImage) async {
     final db = await database;
     return await db.update(
@@ -1855,9 +1965,26 @@ class DatabaseHelper {
     if (maps.isNotEmpty) {
       final prompt = ChatPrompt.fromMap(maps.first);
       final items = await readOrderedPromptItems(id);
-      return prompt.copyWith(items: items);
+      return prompt.copyWith(items: _applyEnglishContentIfEnabled(prompt, items));
     }
     return null;
+  }
+
+  // When the prompt's useEnglishPrompt flag is on, swap each item's `content`
+  // with its `contentEnglish` so that every downstream consumer (prompt
+  // builder, token counting, agent context, etc.) sees the English text
+  // without needing to know about the flag. Falls through to native content
+  // when the English field is empty or null.
+  List<PromptItem> _applyEnglishContentIfEnabled(
+    ChatPrompt prompt,
+    List<PromptItem> items,
+  ) {
+    if (!prompt.useEnglishPrompt) return items;
+    return items.map((item) {
+      final en = item.contentEnglish;
+      if (en == null || en.isEmpty) return item;
+      return item.copyWith(content: en);
+    }).toList();
   }
 
   Future<List<ChatPrompt>> readAllChatPrompts() async {
@@ -1868,7 +1995,7 @@ class DatabaseHelper {
 
     for (var prompt in prompts) {
       final items = await readOrderedPromptItems(prompt.id!);
-      prompt.items.addAll(items);
+      prompt.items.addAll(_applyEnglishContentIfEnabled(prompt, items));
     }
 
     return prompts;
@@ -3363,6 +3490,52 @@ class DatabaseHelper {
   Future<void> deleteNewsArticles(int chatRoomId) async {
     final db = await database;
     await db.delete('news_articles', where: 'chat_room_id = ?', whereArgs: [chatRoomId]);
+  }
+
+  // ==================== 보조 프롬프트 ====================
+
+  Future<AuxiliaryPrompt?> readAuxiliaryPromptByKey(String promptKey) async {
+    final db = await database;
+    final rows = await db.query(
+      'auxiliary_prompts',
+      where: 'prompt_key = ?',
+      whereArgs: [promptKey],
+      limit: 1,
+    );
+    if (rows.isEmpty) return null;
+    return AuxiliaryPrompt.fromMap(rows.first);
+  }
+
+  Future<int> upsertAuxiliaryPrompt(AuxiliaryPrompt prompt) async {
+    final db = await database;
+    final existing = await db.query(
+      'auxiliary_prompts',
+      where: 'prompt_key = ?',
+      whereArgs: [prompt.key.storageKey],
+      limit: 1,
+    );
+    final map = prompt.toMap();
+    map.remove('id');
+    if (existing.isEmpty) {
+      return await db.insert('auxiliary_prompts', map);
+    }
+    final existingId = existing.first['id'] as int;
+    await db.update(
+      'auxiliary_prompts',
+      map,
+      where: 'id = ?',
+      whereArgs: [existingId],
+    );
+    return existingId;
+  }
+
+  Future<void> deleteAuxiliaryPromptByKey(String promptKey) async {
+    final db = await database;
+    await db.delete(
+      'auxiliary_prompts',
+      where: 'prompt_key = ?',
+      whereArgs: [promptKey],
+    );
   }
 
   // ==================== 유틸리티 ====================

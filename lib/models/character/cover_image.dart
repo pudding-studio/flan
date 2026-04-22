@@ -11,7 +11,8 @@ class CoverImage {
   bool isExpanded;
   Uint8List? imageData; // legacy BLOB data (backward compat)
   String? path; // absolute file path (file-based storage)
-  String imageType; // 'cover' or 'additional'
+  String imageType; // 'cover' | 'additional' | 'background' | 'characterBook'
+  int? characterBookId; // set only when imageType == 'characterBook'
 
   CoverImage({
     this.id,
@@ -22,6 +23,7 @@ class CoverImage {
     this.imageData,
     this.path,
     this.imageType = 'cover',
+    this.characterBookId,
   });
 
   // DB에서 읽어올 때 사용
@@ -35,6 +37,7 @@ class CoverImage {
       imageData: map['image_data'] as Uint8List?,
       path: map['path'] as String?,
       imageType: (map['image_type'] as String?) ?? 'cover',
+      characterBookId: map['character_book_id'] as int?,
     );
   }
 
@@ -49,6 +52,7 @@ class CoverImage {
       'image_data': imageData,
       'path': path,
       'image_type': imageType,
+      'character_book_id': characterBookId,
     };
   }
 
@@ -61,6 +65,7 @@ class CoverImage {
     Uint8List? imageData,
     String? path,
     String? imageType,
+    int? characterBookId,
   }) {
     return CoverImage(
       id: id ?? this.id,
@@ -71,6 +76,7 @@ class CoverImage {
       imageData: imageData ?? this.imageData,
       path: path ?? this.path,
       imageType: imageType ?? this.imageType,
+      characterBookId: characterBookId ?? this.characterBookId,
     );
   }
 
@@ -91,6 +97,7 @@ class CoverImage {
       'imageData': imageData != null ? base64.encode(imageData!) : null,
       'path': path,
       'imageType': imageType,
+      'characterBookId': characterBookId,
     };
   }
 
@@ -114,6 +121,7 @@ class CoverImage {
       imageData: parsedImageData,
       path: json['path'] as String?,
       imageType: (json['imageType'] as String?) ?? 'cover',
+      characterBookId: json['characterBookId'] as int?,
     );
   }
 }

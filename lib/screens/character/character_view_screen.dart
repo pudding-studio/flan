@@ -7,6 +7,7 @@ import '../../models/character/cover_image.dart';
 import '../../models/character/persona.dart';
 import '../../models/character/start_scenario.dart';
 import '../../models/chat/chat_room.dart';
+import '../../services/agent_summary_service.dart';
 import '../../utils/chat_room_dialogs.dart';
 import '../chat/chat_room_screen.dart';
 import 'character_edit_screen.dart';
@@ -130,6 +131,11 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
       );
 
       final chatRoomId = await paginationDb.createChatRoom(chatRoom);
+
+      await AgentSummaryService().seedFromCharacterBooks(
+        chatRoomId: chatRoomId,
+        characterId: widget.characterId,
+      );
 
       if (!mounted) return;
 
