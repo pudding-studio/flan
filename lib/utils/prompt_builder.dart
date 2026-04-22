@@ -383,19 +383,41 @@ class PromptBuilder {
     return '${date.year}년 ${date.month}월 ${date.day}일';
   }
 
+  /// Produces the `{{character_book}}` template body. Active entries are grouped
+  /// by [CharacterBookCategory] and rendered as `이름|한줄설명` lines, with
+  /// `### <category>` headers. Entries whose one-line description is empty are
+  /// emitted as `이름` (no pipe). Within each category entries are ordered by
+  /// `insertionOrder` so higher-priority lines surface first.
+  ///
+  /// Categories are emitted in a fixed order: 등장인물 → 지역/장소 → 역사/사건 → 기타,
+  /// matching the redesigned 설정집 UI.
   static String _buildCharacterBookText(List<CharacterBook>? books) {
     if (books == null || books.isEmpty) return '';
 
-    // Sort by insertionOrder so higher-priority entries appear first
-    final sorted = [...books]
-      ..sort((a, b) => a.insertionOrder.compareTo(b.insertionOrder));
+    final grouped = <CharacterBookCategory, List<CharacterBook>>{
+      for (final c in CharacterBookCategory.values) c: <CharacterBook>[],
+    };
+    for (final book in books) {
+      grouped[book.category]!.add(book);
+    }
 
     final buffer = StringBuffer();
-    for (final book in sorted) {
-      if (book.content != null && book.content!.isNotEmpty) {
-        buffer.writeln('### ${book.name}');
-        buffer.writeln(book.content);
+    for (final category in CharacterBookCategory.values) {
+      final entries = grouped[category]!;
+      if (entries.isEmpty) continue;
+
+      entries.sort((a, b) => a.insertionOrder.compareTo(b.insertionOrder));
+
+      buffer.writeln('### ${category.promptHeader}');
+      for (final book in entries) {
+        final desc = book.oneLineDescription.trim();
+        if (desc.isEmpty) {
+          buffer.writeln(book.name);
+        } else {
+          buffer.writeln('${book.name}|$desc');
+        }
       }
+      buffer.writeln();
     }
     return buffer.toString().trim();
   }

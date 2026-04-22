@@ -17,6 +17,11 @@ import '../../../widgets/common/common_field_section.dart';
 import '../../../widgets/common/common_segmented_button.dart';
 import '../../../widgets/common/common_title_medium.dart';
 
+/// 설정집 탭.
+///
+/// 상단 SelectChip으로 카테고리(등장인물·지역/장소·역사/사건·기타)를 필터링하고,
+/// 각 카테고리별로 서로 다른 세부 필드를 편집할 수 있다. 폴더 구조는 '기타'
+/// 카테고리에서만 활성화된다 — 등장인물·지역/장소·역사/사건은 플랫 리스트다.
 class CharacterBookTab extends StatefulWidget {
   final List<CharacterBookFolder> folders;
   final List<CharacterBook> standaloneCharacterBooks;
@@ -38,6 +43,9 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
 
   int _nextTempId = -1;
   int _getNextTempId() => _nextTempId--;
+
+  /// 현재 필터/작성 중인 카테고리. 신규 항목은 이 값으로 생성된다.
+  CharacterBookCategory _selectedCategory = CharacterBookCategory.character;
 
   @override
   void dispose() {
@@ -70,6 +78,22 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
       if (item.order > maxOrder) maxOrder = item.order;
     }
     return maxOrder + 1;
+  }
+
+  /// Flat standalone list filtered to the currently selected category.
+  /// Non-other categories never use folders, so folder-contained items are
+  /// excluded from non-other views.
+  List<CharacterBook> _visibleStandalone() {
+    return widget.standaloneCharacterBooks
+        .where((b) => b.category == _selectedCategory)
+        .toList();
+  }
+
+  /// Folders are only surfaced in the '기타' category view. Returns an empty
+  /// list otherwise so the drag-drop widget hides the folder UI entirely.
+  List<CharacterBookFolder> _visibleFolders() {
+    if (_selectedCategory != CharacterBookCategory.other) return [];
+    return widget.folders;
   }
 
   /// SillyTavern / RisuAI character_book JSON에서 가져오기
@@ -121,6 +145,10 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
       }
 
       setState(() {
+        // Imported SillyTavern / RisuAI entries don't carry our category,
+        // so they all land in '기타' which also makes them visible regardless
+        // of which category chip the user currently has selected.
+        _selectedCategory = CharacterBookCategory.other;
         widget.standaloneCharacterBooks.addAll(parsed);
       });
       _notifyUpdate();
@@ -183,6 +211,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
         secondaryKeys: secondaryKeys,
         insertionOrder: item['insertion_order'] as int? ?? 0,
         content: item['content'] as String?,
+        category: CharacterBookCategory.other,
       ));
     }
     return result;
@@ -236,6 +265,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
         secondaryKeys: secondaryKeys,
         insertionOrder: item['insertorder'] as int? ?? 0,
         content: item['content'] as String?,
+        category: CharacterBookCategory.other,
       ));
     }
     return result;
@@ -249,7 +279,8 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
         .toList();
   }
 
-  /// SillyTavern character_book JSON으로 내보내기
+  /// SillyTavern character_book JSON으로 내보내기.
+  /// 카테고리·한줄설명 등 신규 필드는 'extensions'에 실어서 내보낸다.
   Future<void> _exportCharacterBooks() async {
     try {
       final allBooks = <CharacterBook>[];
@@ -272,7 +303,11 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
             'keys': cb.keys,
             'secondary_keys': cb.secondaryKeys,
             'content': cb.content ?? '',
-            'extensions': <String, dynamic>{},
+            'extensions': <String, dynamic>{
+              'flan_category': cb.category.name,
+              'flan_one_line_description': cb.oneLineDescription,
+              'flan_auto_summary_insert': cb.autoSummaryInsert,
+            },
             'enabled': cb.enabled != CharacterBookActivationCondition.disabled,
             'insertion_order': cb.insertionOrder,
             'case_sensitive': false,
@@ -340,6 +375,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
         name: newName,
         order: folder != null ? folder.characterBooks.length : _getNextMixedOrder(),
         isExpanded: true,
+        category: _selectedCategory,
       );
 
       if (folder != null) {
@@ -479,10 +515,16 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
             ),
           ),
           const SizedBox(height: 8),
+          _buildCategoryChips(),
+          const SizedBox(height: 8),
           Expanded(
             child: CommonDraggableFolderList<CharacterBookFolder, CharacterBook>(
-              folders: widget.folders,
-              standaloneItems: widget.standaloneCharacterBooks,
+              // ValueKey tied to category forces the drag/drop widget to fully
+              // rebuild when the user switches categories — without this it
+              // holds onto stale order/index state from the previous filter.
+              key: ValueKey('characterBookList_${_selectedCategory.name}'),
+              folders: _visibleFolders(),
+              standaloneItems: _visibleStandalone(),
               getFolderId: (folder) => folder.id,
               getFolderName: (folder) => folder.name,
               getFolderExpanded: (folder) => folder.isExpanded,
@@ -491,7 +533,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
               getItemId: (item) => item.id,
               getItemOrder: (item) => item.order,
               itemContentBuilder: _buildCharacterBookCard,
-              getItemIcon: (item) => Icons.description_outlined,
+              getItemIcon: (item) => _iconForCategory(item.category),
               getItemName: (item) => item.name,
               onReorderItem: _reorderCharacterBook,
               onMoveItemToFolder: _moveCharacterBookToFolder,
@@ -521,7 +563,12 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
               ],
               itemTypeKey: 'characterBook',
               addItemLabel: l10n.characterBookAddItem,
-              addFolderLabel: l10n.characterBookAddFolder,
+              // Folders only apply to the '기타' category; hide the add-folder
+              // button label for other categories so the UI doesn't advertise
+              // an option that wouldn't persist in context.
+              addFolderLabel: _selectedCategory == CharacterBookCategory.other
+                  ? l10n.characterBookAddFolder
+                  : null,
               emptyWidget: CommonEmptyState(
                 message: l10n.characterBookEmpty,
               ),
@@ -530,6 +577,43 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
         ],
       ),
     );
+  }
+
+  Widget _buildCategoryChips() {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 5),
+      child: Row(
+        children: [
+          for (final category in CharacterBookCategory.values) ...[
+            ChoiceChip(
+              label: Text(category.displayName),
+              selected: _selectedCategory == category,
+              onSelected: (selected) {
+                if (!selected) return;
+                setState(() {
+                  _selectedCategory = category;
+                });
+              },
+            ),
+            const SizedBox(width: 8),
+          ],
+        ],
+      ),
+    );
+  }
+
+  IconData _iconForCategory(CharacterBookCategory category) {
+    switch (category) {
+      case CharacterBookCategory.character:
+        return Icons.person_outline;
+      case CharacterBookCategory.location:
+        return Icons.place_outlined;
+      case CharacterBookCategory.event:
+        return Icons.event_note_outlined;
+      case CharacterBookCategory.other:
+        return Icons.description_outlined;
+    }
   }
 
   Widget _buildSquareIconButton({
@@ -552,56 +636,60 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
     );
   }
 
-  Widget _buildCharacterBookCard(BuildContext context, CharacterBook characterBook, CharacterBookFolder? folder) {
+  Widget _buildCharacterBookCard(BuildContext context, CharacterBook book, CharacterBookFolder? folder) {
     return CommonEditableExpandableItem(
-      key: ValueKey(characterBook.id),
+      key: ValueKey(book.id),
       icon: Icon(
-        Icons.description_outlined,
+        _iconForCategory(book.category),
         size: UIConstants.iconSizeMedium,
         color: Theme.of(context).colorScheme.secondary,
       ),
-      name: characterBook.name,
-      isExpanded: characterBook.isExpanded,
+      name: book.name,
+      isExpanded: book.isExpanded,
       onToggleExpanded: () {
-        if (characterBook.isExpanded) {
+        if (book.isExpanded) {
           FocusScope.of(context).unfocus();
         }
         setState(() {
-          characterBook.isExpanded = !characterBook.isExpanded;
+          book.isExpanded = !book.isExpanded;
         });
       },
-      onDelete: () => _deleteCharacterBook(characterBook, folder),
+      onDelete: () => _deleteCharacterBook(book, folder),
       nameHint: AppLocalizations.of(context).characterBookNameHint,
       onNameChanged: (value) {
-        characterBook.name = value;
+        book.name = value;
         _notifyUpdate();
       },
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          _buildActivationConditionField(characterBook),
-          if (characterBook.enabled == CharacterBookActivationCondition.keyBased) ...[
-            _buildActivationKeysField(characterBook),
-            _buildSecondaryKeyUsageField(characterBook),
-            if (characterBook.secondaryKeyUsage == CharacterBookSecondaryKeyUsage.enabled)
-              _buildSecondaryKeysField(characterBook),
+          _buildActivationConditionField(book),
+          if (book.enabled == CharacterBookActivationCondition.keyBased) ...[
+            _buildActivationKeysField(book),
+            _buildSecondaryKeyUsageField(book),
+            if (book.secondaryKeyUsage == CharacterBookSecondaryKeyUsage.enabled)
+              _buildSecondaryKeysField(book),
           ],
-          _buildDeploymentOrderField(characterBook),
-          _buildContentField(characterBook),
+          // 배치순서는 '기타' 카테고리에서만 사용
+          if (book.category == CharacterBookCategory.other)
+            _buildDeploymentOrderField(book),
+          _buildAutoSummaryInsertField(book),
+          _buildOneLineDescriptionField(book),
+          ..._buildCategorySpecificFields(book),
         ],
       ),
     );
   }
 
-  Widget _buildActivationConditionField(CharacterBook characterBook) {
+  Widget _buildActivationConditionField(CharacterBook book) {
     return CommonFieldSection(
       label: AppLocalizations.of(context).characterBookActivationCondition,
       child: CommonSegmentedButton<CharacterBookActivationCondition>(
         values: CharacterBookActivationCondition.values,
-        selected: characterBook.enabled,
+        selected: book.enabled,
         onSelectionChanged: (selected) {
           setState(() {
-            characterBook.enabled = selected;
+            book.enabled = selected;
           });
           _notifyUpdate();
         },
@@ -610,10 +698,10 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
     );
   }
 
-  Widget _buildActivationKeysField(CharacterBook characterBook) {
+  Widget _buildActivationKeysField(CharacterBook book) {
     final l10n = AppLocalizations.of(context);
-    final key = 'characterBook_${characterBook.id}_keys';
-    final controller = _getFieldController(key, characterBook.keys.join(', '));
+    final key = 'characterBook_${book.id}_keys';
+    final controller = _getFieldController(key, book.keys.join(', '));
 
     return CommonFieldSection(
       label: l10n.characterBookActivationKey,
@@ -622,7 +710,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
         hintText: l10n.characterBookKeysHint,
         size: CommonEditTextSize.small,
         onFocusLost: (value) {
-          characterBook.keys = value
+          book.keys = value
               .split(',')
               .map((e) => e.trim())
               .where((e) => e.isNotEmpty)
@@ -633,15 +721,15 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
     );
   }
 
-  Widget _buildSecondaryKeyUsageField(CharacterBook characterBook) {
+  Widget _buildSecondaryKeyUsageField(CharacterBook book) {
     return CommonFieldSection(
       label: AppLocalizations.of(context).characterBookSecondaryKey,
       child: CommonSegmentedButton<CharacterBookSecondaryKeyUsage>(
         values: CharacterBookSecondaryKeyUsage.values,
-        selected: characterBook.secondaryKeyUsage,
+        selected: book.secondaryKeyUsage,
         onSelectionChanged: (selected) {
           setState(() {
-            characterBook.secondaryKeyUsage = selected;
+            book.secondaryKeyUsage = selected;
           });
           _notifyUpdate();
         },
@@ -650,10 +738,10 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
     );
   }
 
-  Widget _buildSecondaryKeysField(CharacterBook characterBook) {
+  Widget _buildSecondaryKeysField(CharacterBook book) {
     final l10n = AppLocalizations.of(context);
-    final key = 'characterBook_${characterBook.id}_secondaryKeys';
-    final controller = _getFieldController(key, characterBook.secondaryKeys.join(', '));
+    final key = 'characterBook_${book.id}_secondaryKeys';
+    final controller = _getFieldController(key, book.secondaryKeys.join(', '));
 
     return CommonFieldSection(
       label: l10n.characterBookSecondaryKey,
@@ -662,7 +750,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
         hintText: l10n.characterBookKeysHint,
         size: CommonEditTextSize.small,
         onFocusLost: (value) {
-          characterBook.secondaryKeys = value
+          book.secondaryKeys = value
               .split(',')
               .map((e) => e.trim())
               .where((e) => e.isNotEmpty)
@@ -673,9 +761,9 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
     );
   }
 
-  Widget _buildDeploymentOrderField(CharacterBook characterBook) {
-    final key = 'characterBook_${characterBook.id}_insertionOrder';
-    final controller = _getFieldController(key, characterBook.insertionOrder.toString());
+  Widget _buildDeploymentOrderField(CharacterBook book) {
+    final key = 'characterBook_${book.id}_insertionOrder';
+    final controller = _getFieldController(key, book.insertionOrder.toString());
 
     return CommonFieldSection(
       label: AppLocalizations.of(context).characterBookInsertionOrder,
@@ -687,7 +775,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
         onFocusLost: (value) {
           final intValue = int.tryParse(value);
           if (intValue != null) {
-            characterBook.insertionOrder = intValue;
+            book.insertionOrder = intValue;
             _notifyUpdate(rebuildUI: false);
           }
         },
@@ -695,25 +783,234 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
     );
   }
 
-  Widget _buildContentField(CharacterBook characterBook) {
+  Widget _buildAutoSummaryInsertField(CharacterBook book) {
     final l10n = AppLocalizations.of(context);
-    final key = 'characterBook_${characterBook.id}_content';
-    final controller = _getFieldController(key, characterBook.content ?? '');
+    return CommonFieldSection(
+      label: l10n.characterBookAutoSummaryInsert,
+      child: CommonSegmentedButton<bool>(
+        values: const [true, false],
+        selected: book.autoSummaryInsert,
+        onSelectionChanged: (selected) {
+          setState(() {
+            book.autoSummaryInsert = selected;
+          });
+          _notifyUpdate();
+        },
+        labelBuilder: (v) =>
+            v ? l10n.characterBookAutoSummaryInsertOn : l10n.characterBookAutoSummaryInsertOff,
+      ),
+    );
+  }
+
+  Widget _buildOneLineDescriptionField(CharacterBook book) {
+    final l10n = AppLocalizations.of(context);
+    final key = 'characterBook_${book.id}_oneLineDescription';
+    final controller = _getFieldController(key, book.oneLineDescription);
 
     return CommonFieldSection(
-      label: l10n.characterBookContent,
-      bottomSpacing: 0,
+      label: l10n.characterBookOneLineDescription,
       child: CommonEditText(
         controller: controller,
-        hintText: l10n.characterBookContentHint,
+        hintText: _oneLineHintForCategory(book.category, l10n),
         size: CommonEditTextSize.small,
-        maxLines: null,
-        minLines: 5,
         onFocusLost: (value) {
-          characterBook.content = value;
+          book.oneLineDescription = value;
           _notifyUpdate(rebuildUI: false);
         },
       ),
+    );
+  }
+
+  String _oneLineHintForCategory(CharacterBookCategory category, AppLocalizations l10n) {
+    switch (category) {
+      case CharacterBookCategory.character:
+        return l10n.characterBookOneLineHintCharacter;
+      case CharacterBookCategory.location:
+        return l10n.characterBookOneLineHintLocation;
+      case CharacterBookCategory.event:
+        return l10n.characterBookOneLineHintEvent;
+      case CharacterBookCategory.other:
+        return l10n.characterBookOneLineHintOther;
+    }
+  }
+
+  // ==================== Category-specific fields ====================
+
+  List<Widget> _buildCategorySpecificFields(CharacterBook book) {
+    switch (book.category) {
+      case CharacterBookCategory.character:
+        return _buildCharacterFields(book);
+      case CharacterBookCategory.location:
+        return _buildLocationFields(book);
+      case CharacterBookCategory.event:
+        return _buildEventFields(book);
+      case CharacterBookCategory.other:
+        return _buildOtherFields(book);
+    }
+  }
+
+  List<Widget> _buildCharacterFields(CharacterBook book) {
+    final l10n = AppLocalizations.of(context);
+    return [
+      _buildStructuredTextField(
+        book: book,
+        fieldKey: 'appearance',
+        label: l10n.characterBookFieldAppearance,
+        minLines: 2,
+        multiline: true,
+      ),
+      _buildGenderField(book),
+      _buildStructuredTextField(
+        book: book,
+        fieldKey: 'age',
+        label: l10n.characterBookFieldAge,
+      ),
+      _buildStructuredTextField(
+        book: book,
+        fieldKey: 'personality',
+        label: l10n.characterBookFieldPersonality,
+        minLines: 2,
+        multiline: true,
+      ),
+      _buildStructuredTextField(
+        book: book,
+        fieldKey: 'past',
+        label: l10n.characterBookFieldPast,
+        minLines: 2,
+        multiline: true,
+      ),
+      _buildStructuredTextField(
+        book: book,
+        fieldKey: 'abilities',
+        label: l10n.characterBookFieldAbilities,
+        minLines: 2,
+        multiline: true,
+      ),
+      _buildStructuredTextField(
+        book: book,
+        fieldKey: 'dialogue_style',
+        label: l10n.characterBookFieldDialogueStyle,
+        minLines: 2,
+        multiline: true,
+        bottomSpacing: 0,
+      ),
+    ];
+  }
+
+  List<Widget> _buildLocationFields(CharacterBook book) {
+    final l10n = AppLocalizations.of(context);
+    return [
+      _buildStructuredTextField(
+        book: book,
+        fieldKey: 'setting',
+        label: l10n.characterBookFieldSetting,
+        minLines: 5,
+        multiline: true,
+        bottomSpacing: 0,
+      ),
+    ];
+  }
+
+  List<Widget> _buildEventFields(CharacterBook book) {
+    final l10n = AppLocalizations.of(context);
+    return [
+      _buildStructuredTextField(
+        book: book,
+        fieldKey: 'datetime',
+        label: l10n.characterBookFieldDatetime,
+      ),
+      _buildStructuredTextField(
+        book: book,
+        fieldKey: 'event_content',
+        label: l10n.characterBookFieldEventContent,
+        minLines: 3,
+        multiline: true,
+      ),
+      _buildStructuredTextField(
+        book: book,
+        fieldKey: 'result',
+        label: l10n.characterBookFieldResult,
+        minLines: 2,
+        multiline: true,
+        bottomSpacing: 0,
+      ),
+    ];
+  }
+
+  List<Widget> _buildOtherFields(CharacterBook book) {
+    final l10n = AppLocalizations.of(context);
+    return [
+      _buildStructuredTextField(
+        book: book,
+        fieldKey: 'setting',
+        label: l10n.characterBookFieldSetting,
+        minLines: 5,
+        multiline: true,
+        bottomSpacing: 0,
+      ),
+    ];
+  }
+
+  /// Unified builder for a single structured-data text field. All edits flow
+  /// through [CharacterBook.setStructuredString] so the underlying JSON stays
+  /// consistent even for entries migrated from legacy plain-text content.
+  Widget _buildStructuredTextField({
+    required CharacterBook book,
+    required String fieldKey,
+    required String label,
+    int minLines = 1,
+    bool multiline = false,
+    double bottomSpacing = 12.0,
+  }) {
+    final key = 'characterBook_${book.id}_$fieldKey';
+    final initialValue = book.getStructuredString(fieldKey);
+    final controller = _getFieldController(key, initialValue);
+
+    return CommonFieldSection(
+      label: label,
+      bottomSpacing: bottomSpacing,
+      child: CommonEditText(
+        controller: controller,
+        size: CommonEditTextSize.small,
+        maxLines: multiline ? null : 1,
+        minLines: multiline ? minLines : null,
+        onFocusLost: (value) {
+          book.setStructuredString(fieldKey, value);
+          _notifyUpdate(rebuildUI: false);
+        },
+      ),
+    );
+  }
+
+  Widget _buildGenderField(CharacterBook book) {
+    final l10n = AppLocalizations.of(context);
+    final selectedGender = book.gender;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CommonFieldSection(
+          label: l10n.characterBookFieldGender,
+          bottomSpacing: selectedGender == CharacterBookGender.other ? 8 : 12,
+          child: CommonSegmentedButton<CharacterBookGender>(
+            values: CharacterBookGender.values,
+            selected: selectedGender ?? CharacterBookGender.male,
+            onSelectionChanged: (selected) {
+              setState(() {
+                book.gender = selected;
+              });
+              _notifyUpdate();
+            },
+            labelBuilder: (g) => g.displayName,
+          ),
+        ),
+        if (selectedGender == CharacterBookGender.other)
+          _buildStructuredTextField(
+            book: book,
+            fieldKey: 'gender_other',
+            label: l10n.characterBookFieldGenderOther,
+          ),
+      ],
     );
   }
 }
