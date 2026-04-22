@@ -84,9 +84,15 @@ class DrawerLorebookPanelState extends State<DrawerLorebookPanel> {
   }
 
   void _syncBookFromController(CharacterBook book) {
-    final contentKey = 'book_${book.id}_content';
-    if (_bookFieldControllers.containsKey(contentKey)) {
-      book.content = _bookFieldControllers[contentKey]!.text;
+    final settingKey = 'book_${book.id}_content';
+    if (_bookFieldControllers.containsKey(settingKey)) {
+      // Drawer edits map to the 'setting' structured field so they don't
+      // overwrite JSON-encoded category-specific data stored in content.
+      book.setStructuredString('setting', _bookFieldControllers[settingKey]!.text);
+    }
+    final oneLineKey = 'book_${book.id}_oneLineDescription';
+    if (_bookFieldControllers.containsKey(oneLineKey)) {
+      book.oneLineDescription = _bookFieldControllers[oneLineKey]!.text;
     }
     final keysKey = 'book_${book.id}_keys';
     if (_bookFieldControllers.containsKey(keysKey)) {
@@ -245,9 +251,25 @@ class DrawerLorebookPanelState extends State<DrawerLorebookPanel> {
             if (book.secondaryKeyUsage == CharacterBookSecondaryKeyUsage.enabled)
               _buildBookSecondaryKeysField(book),
           ],
-          _buildBookInsertionOrderField(book),
+          if (book.category == CharacterBookCategory.other)
+            _buildBookInsertionOrderField(book),
+          _buildBookOneLineDescriptionField(book),
           _buildBookContentField(book),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBookOneLineDescriptionField(CharacterBook book) {
+    final l10n = AppLocalizations.of(context);
+    final key = 'book_${book.id}_oneLineDescription';
+    final controller = _getBookFieldController(key, book.oneLineDescription);
+    return CommonFieldSection(
+      label: l10n.characterBookOneLineDescription,
+      child: CommonEditText(
+        controller: controller,
+        size: CommonEditTextSize.small,
+        onFocusLost: (value) => book.oneLineDescription = value,
       ),
     );
   }
@@ -307,7 +329,11 @@ class DrawerLorebookPanelState extends State<DrawerLorebookPanel> {
   Widget _buildBookContentField(CharacterBook book) {
     final l10n = AppLocalizations.of(context);
     final key = 'book_${book.id}_content';
-    final controller = _getBookFieldController(key, book.content ?? '');
+    // Drawer always edits the 'setting' structured field — for 'other' and
+    // '지역/장소' this is the primary text, and for 등장인물/사건 it's an auxiliary
+    // scratch field that the prompt builder ignores. This keeps the drawer
+    // from wiping JSON-encoded category data.
+    final controller = _getBookFieldController(key, book.getStructuredString('setting'));
     return CommonFieldSection(
       label: l10n.drawerBookContent,
       bottomSpacing: 0,
@@ -317,7 +343,7 @@ class DrawerLorebookPanelState extends State<DrawerLorebookPanel> {
         size: CommonEditTextSize.small,
         maxLines: null,
         minLines: 5,
-        onFocusLost: (value) => book.content = value,
+        onFocusLost: (value) => book.setStructuredString('setting', value),
       ),
     );
   }

@@ -214,41 +214,36 @@ class MarkdownText extends StatelessWidget {
     }
 
     while (i < text.length) {
-      // 1. "text" → primary + bold (최우선, 내부 ' ** * 중첩 지원)
-      if (text[i] == '"') {
-        final end = text.indexOf('"', i + 1);
-        if (end != -1) {
-          flushBuffer();
-          final quoteStyle = base.copyWith(color: primaryColor, fontWeight: FontWeight.bold);
-          spans.add(TextSpan(text: '"', style: quoteStyle));
-          final inner = text.substring(i + 1, end);
-          spans.addAll(_parseInner(inner, quoteStyle, tertiaryColor));
-          spans.add(TextSpan(text: '"', style: quoteStyle));
-          i = end + 1;
-          continue;
+      // 1. Quoted spans: "..." / "..." / 「...」 / 『...』 / «...» / 《...》 → primary + bold,
+      //    '...' / '...' / 〈...〉 → tertiary + bold.
+      //    Inner styling runs through _parseInner so ** / * / nested tertiary
+      //    quotes still apply.
+      final pair = _matchQuoteOpen(text, i);
+      if (pair != null) {
+        final end = text.indexOf(pair.close, i + pair.open.length);
+        if (end != -1 && end > i + pair.open.length) {
+          final inner = text.substring(i + pair.open.length, end);
+          // Apostrophe/tight-quote guard only applies to bare ASCII single quote
+          // — it ambiguates with contractions and stray quotes in dialogue.
+          if (pair.requireTightGuard &&
+              !_allowAsciiSingleQuote(text, i, inner)) {
+            // fall through to plain text handling
+          } else {
+            flushBuffer();
+            final quoteStyle = base.copyWith(
+              color: pair.isPrimary ? primaryColor : tertiaryColor,
+              fontWeight: FontWeight.bold,
+            );
+            spans.add(TextSpan(text: pair.open, style: quoteStyle));
+            spans.addAll(_parseInner(inner, quoteStyle, tertiaryColor));
+            spans.add(TextSpan(text: pair.close, style: quoteStyle));
+            i = end + pair.close.length;
+            continue;
+          }
         }
       }
 
-      // 2. 'text' → tertiary + bold (내부 ** * 중첩 지원)
-      // Skip apostrophes in contractions (e.g. you're, I'm, don't)
-      // Require tight quotes: no space after opening ' and no space before closing '
-      if (text[i] == "'") {
-        final prevIsLetter = i > 0 && _letterPattern.hasMatch(text[i - 1]);
-        final end = text.indexOf("'", i + 1);
-        if (end != -1 && !prevIsLetter && end > i + 1
-            && text[i + 1] != ' ' && text[end - 1] != ' ') {
-          flushBuffer();
-          final quoteStyle = base.copyWith(color: tertiaryColor, fontWeight: FontWeight.bold);
-          spans.add(TextSpan(text: "'", style: quoteStyle));
-          final inner = text.substring(i + 1, end);
-          spans.addAll(_parseInner(inner, quoteStyle, tertiaryColor));
-          spans.add(TextSpan(text: "'", style: quoteStyle));
-          i = end + 1;
-          continue;
-        }
-      }
-
-      // 3. **text** → 기본 색상 + bold
+      // 2. **text** → 기본 색상 + bold
       if (i + 1 < text.length && text[i] == '*' && text[i + 1] == '*') {
         final end = text.indexOf('**', i + 2);
         if (end != -1) {
@@ -263,7 +258,7 @@ class MarkdownText extends StatelessWidget {
         }
       }
 
-      // 4. *text* → tertiary + bold
+      // 3. *text* → tertiary + bold
       if (text[i] == '*' && !(i + 1 < text.length && text[i + 1] == '*')) {
         final end = _findSingleStar(text, i + 1);
         if (end != -1) {
@@ -303,22 +298,26 @@ class MarkdownText extends StatelessWidget {
     }
 
     while (i < text.length) {
-      // 'text' → tertiary + bold
-      // Skip apostrophes in contractions (e.g. you're, I'm, don't)
-      // Require tight quotes: no space after opening ' and no space before closing '
-      if (text[i] == "'") {
-        final prevIsLetter = i > 0 && _letterPattern.hasMatch(text[i - 1]);
-        final end = text.indexOf("'", i + 1);
-        if (end != -1 && !prevIsLetter && end > i + 1
-            && text[i + 1] != ' ' && text[end - 1] != ' ') {
-          flushBuffer();
-          final quoteStyle = parentStyle.copyWith(color: tertiaryColor, fontWeight: FontWeight.bold);
-          spans.add(TextSpan(text: "'", style: quoteStyle));
-          final inner = text.substring(i + 1, end);
-          spans.add(TextSpan(text: inner, style: quoteStyle));
-          spans.add(TextSpan(text: "'", style: quoteStyle));
-          i = end + 1;
-          continue;
+      // Nested tertiary-style quotes: ' / ' / 〈 stay tertiary-bold even inside
+      // an outer primary quote so 대사 속 강조 문구가 여전히 구분된다.
+      final pair = _matchQuoteOpen(text, i);
+      if (pair != null && !pair.isPrimary) {
+        final end = text.indexOf(pair.close, i + pair.open.length);
+        if (end != -1 && end > i + pair.open.length) {
+          final inner = text.substring(i + pair.open.length, end);
+          if (!pair.requireTightGuard ||
+              _allowAsciiSingleQuote(text, i, inner)) {
+            flushBuffer();
+            final quoteStyle = parentStyle.copyWith(
+              color: tertiaryColor,
+              fontWeight: FontWeight.bold,
+            );
+            spans.add(TextSpan(text: pair.open, style: quoteStyle));
+            spans.add(TextSpan(text: inner, style: quoteStyle));
+            spans.add(TextSpan(text: pair.close, style: quoteStyle));
+            i = end + pair.close.length;
+            continue;
+          }
         }
       }
 
@@ -360,6 +359,52 @@ class MarkdownText extends StatelessWidget {
     return spans;
   }
 
+  /// Ordered list of supported quote pairs. Multi-codepoint opens are matched
+  /// longest-first by [_matchQuoteOpen]; single-character ASCII pairs come last
+  /// so smart-quote variants are preferred when present.
+  static const List<_QuotePair> _quotePairs = [
+    // Primary (대사 스타일)
+    _QuotePair(open: '“', close: '”', isPrimary: true),   // "..."
+    _QuotePair(open: '「', close: '」', isPrimary: true),   // 「...」
+    _QuotePair(open: '『', close: '』', isPrimary: true),   // 『...』
+    _QuotePair(open: '«', close: '»', isPrimary: true),   // «...»
+    _QuotePair(open: '《', close: '》', isPrimary: true),   // 《...》
+    _QuotePair(open: '"',      close: '"',      isPrimary: true),
+    // Tertiary (생각·강조)
+    _QuotePair(open: '‘', close: '’', isPrimary: false),  // '...'
+    _QuotePair(open: '〈', close: '〉', isPrimary: false),  // 〈...〉
+    _QuotePair(open: "'",      close: "'",      isPrimary: false,
+        requireTightGuard: true),
+  ];
+
+  /// Returns the first [_QuotePair] whose `open` matches at [i] in [text].
+  static _QuotePair? _matchQuoteOpen(String text, int i) {
+    for (final pair in _quotePairs) {
+      if (_startsWithAt(text, i, pair.open)) return pair;
+    }
+    return null;
+  }
+
+  static bool _startsWithAt(String text, int i, String needle) {
+    if (i + needle.length > text.length) return false;
+    for (int k = 0; k < needle.length; k++) {
+      if (text[i + k] != needle[k]) return false;
+    }
+    return true;
+  }
+
+  /// ASCII `'...'` is ambiguous with contractions (you're, I'm) and stray
+  /// apostrophes. Only treat it as a styled quote when:
+  /// - the char before the opening `'` is not a letter
+  /// - opening isn't followed by a space, closing isn't preceded by a space
+  static bool _allowAsciiSingleQuote(String text, int openIdx, String inner) {
+    if (inner.isEmpty) return false;
+    final prevIsLetter = openIdx > 0 && _letterPattern.hasMatch(text[openIdx - 1]);
+    if (prevIsLetter) return false;
+    if (inner[0] == ' ' || inner[inner.length - 1] == ' ') return false;
+    return true;
+  }
+
   static final _letterPattern = RegExp(r'[a-zA-Z]');
 
   static int _findSingleStar(String text, int start) {
@@ -373,6 +418,24 @@ class MarkdownText extends StatelessWidget {
     }
     return -1;
   }
+}
+
+/// Paired delimiter used by the markdown parser to style quoted spans.
+/// [isPrimary] picks primary-color vs tertiary-color. [requireTightGuard]
+/// gates the ambiguous ASCII `'` so contractions and stray apostrophes don't
+/// get treated as open quotes.
+class _QuotePair {
+  final String open;
+  final String close;
+  final bool isPrimary;
+  final bool requireTightGuard;
+
+  const _QuotePair({
+    required this.open,
+    required this.close,
+    required this.isPrimary,
+    this.requireTightGuard = false,
+  });
 }
 
 enum _SegmentType { text, image }

@@ -45,7 +45,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 54,
+      version: 55,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -92,6 +92,9 @@ class DatabaseHelper {
     (table: 'characters', column: 'community_language', def: 'TEXT'),
     (table: 'characters', column: 'world_start_date', def: 'TEXT'),
     (table: 'character_books', column: 'secondary_keys', def: 'TEXT'),
+    (table: 'character_books', column: 'category', def: "TEXT NOT NULL DEFAULT 'other'"),
+    (table: 'character_books', column: 'one_line_description', def: 'TEXT'),
+    (table: 'character_books', column: 'auto_summary_insert', def: 'INTEGER NOT NULL DEFAULT 1'),
     (table: 'prompt_items', column: 'name', def: 'TEXT'),
     (table: 'prompt_items', column: 'folder_id', def: 'INTEGER'),
     (table: 'prompt_items', column: 'enabled', def: 'INTEGER NOT NULL DEFAULT 1'),
@@ -185,6 +188,9 @@ class DatabaseHelper {
         secondary_keys $textTypeNullable,
         insertion_order $intType,
         content $textTypeNullable,
+        category TEXT NOT NULL DEFAULT 'other',
+        one_line_description TEXT,
+        auto_summary_insert INTEGER NOT NULL DEFAULT 1,
         FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE,
         FOREIGN KEY (folder_id) REFERENCES character_book_folders (id) ON DELETE CASCADE
       )
@@ -1508,6 +1514,30 @@ class DatabaseHelper {
       await db.execute('''
         ALTER TABLE characters ADD COLUMN world_start_date TEXT
       ''');
+    }
+
+    if (oldVersion < 55) {
+      // 설정집(character_books) 카테고리 체계 도입.
+      // 기존 항목은 모두 '기타'(other)로 분류되고, content는 레거시 평문으로
+      // 남아 있다가 모델 레이어에서 other-category 'setting' 필드로 해석된다.
+      await _ensureColumn(
+        db,
+        'character_books',
+        'category',
+        "TEXT NOT NULL DEFAULT 'other'",
+      );
+      await _ensureColumn(
+        db,
+        'character_books',
+        'one_line_description',
+        'TEXT',
+      );
+      await _ensureColumn(
+        db,
+        'character_books',
+        'auto_summary_insert',
+        'INTEGER NOT NULL DEFAULT 1',
+      );
     }
   }
 
