@@ -343,10 +343,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       String combinedUserMessage;
       int excludeId;
 
-      // Detect the first real user message: seed CharacterBook entries into
-      // agent_entries so the auto-summary pipeline has the user-authored base
-      // info available before the first AI call. Idempotent by (name, type).
+      // Safety net: if the user added CharacterBook entries AFTER the chat
+      // room was created (room creation already seeds, but later-added books
+      // would be missed), re-seed on the first user message. Idempotent.
       final isFirstUserMessage = !_messages.any((m) => m.role == MessageRole.user);
+      if (isFirstUserMessage && _character != null) {
+        await AgentSummaryService().seedFromCharacterBooks(
+          chatRoomId: widget.chatRoomId,
+          characterId: _character!.id!,
+        );
+      }
 
       if (_messages.isNotEmpty && _messages.last.role == MessageRole.user) {
         final lastUserMessage = _messages.last;
@@ -377,13 +383,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           tokenCount: tokenCount,
         );
         excludeId = await _db.createChatMessage(userMessage);
-      }
-
-      if (isFirstUserMessage && _character != null) {
-        await AgentSummaryService().seedFromCharacterBooks(
-          chatRoomId: widget.chatRoomId,
-          characterId: _character!.id!,
-        );
       }
 
       // Mark favorite posts as used

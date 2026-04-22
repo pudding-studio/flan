@@ -17,7 +17,7 @@ Respond ONLY with a single JSON object (no markdown, no explanation). The top-le
 ```
 
 Every entry MUST include:
-- `"name"`: unique identifier string (consistent across references)
+- `"name"`: unique identifier string (consistent across references). Use the entity's proper noun — the character's actual name (e.g., `홍길동`), the location's actual place name, the item's name, or the event's name. If an entity matches one already in `=== 기존 데이터 ===`, you MUST reuse that exact name verbatim (including in `characters` / `locations` / `possessions` / `related_episodes` cross-reference arrays). Never invent a variant spelling or alias for the same entity.
 - `"_action"`: one of `"create"`, `"update"`, or `"unchanged"`
 
 Only include entries that are NEW or have CHANGED. Use `"unchanged"` sparingly — only when you need to confirm an existing entry is still relevant. Omit entries that are completely unaffected.
