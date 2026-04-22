@@ -643,6 +643,20 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         _hasNewMessage = true;
       }
     });
+
+    // When the user was at the bottom and new messages arrived, anchor the
+    // viewport to the end of the second-to-last message instead of letting
+    // the reverse list auto-pin to the very bottom of the new last message.
+    if (!wasScrolledUp && delta > 0 && _messages.length >= 2) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_itemScrollController.isAttached) return;
+        _itemScrollController.scrollTo(
+          index: 1,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      });
+    }
   }
 
   /// Resolves the model to use for the next API call. Unlike a simple
