@@ -2047,6 +2047,24 @@ class AppLocalizationsJa extends AppLocalizations {
   String get characterBookFieldResult => '結果';
 
   @override
+  String get characterBookFieldImages => '画像';
+
+  @override
+  String get characterBookImagesEmpty => '登録された画像がありません';
+
+  @override
+  String get characterBookImagesEmptyReadOnly => '画像なし';
+
+  @override
+  String get characterBookImagesAddButton => '画像を追加';
+
+  @override
+  String get characterBookFieldSubNames => 'サブ名';
+
+  @override
+  String get characterBookFieldSubNamesHint => 'カンマ区切り（例: Alice, alice）';
+
+  @override
   String get newsArticleDeleteTitle => '記事を削除';
 
   @override

@@ -182,9 +182,15 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
     final folders = await _db.readCharacterBookFolders(characterId);
     for (final folder in folders) {
       final books = await _db.readCharacterBooksByFolder(folder.id!);
+      for (final book in books) {
+        await _loadDrawerBookImages(book);
+      }
       folder.characterBooks.addAll(books);
     }
     final standaloneBooks = await _db.readStandaloneCharacterBooks(characterId);
+    for (final book in standaloneBooks) {
+      await _loadDrawerBookImages(book);
+    }
 
     final summaries = await _db.getChatSummaries(widget.chatRoom.id!);
 
@@ -201,6 +207,16 @@ class ChatRoomDrawerState extends State<ChatRoomDrawer> {
       _agentEntries = agentEntries;
       _isLoading = false;
     });
+  }
+
+  /// Loads the character-book's images (if any) into the in-memory model.
+  /// Drawer is read-only, so this is purely for display.
+  Future<void> _loadDrawerBookImages(CharacterBook book) async {
+    if (book.id == null || book.id! <= 0) return;
+    final images = await _db.readCharacterBookImages(book.id!);
+    book.images
+      ..clear()
+      ..addAll(images);
   }
 
   Future<void> _loadPresetsAndConditions() async {

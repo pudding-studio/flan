@@ -45,7 +45,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 55,
+      version: 56,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -130,6 +130,7 @@ class DatabaseHelper {
     (table: 'auto_summary_settings', column: 'is_agent_enabled', def: 'INTEGER NOT NULL DEFAULT 0'),
     (table: 'cover_images', column: 'path', def: 'TEXT'),
     (table: 'cover_images', column: 'image_type', def: "TEXT DEFAULT 'cover'"),
+    (table: 'cover_images', column: 'character_book_id', def: 'INTEGER'),
     (table: 'community_posts', column: 'is_favorited', def: 'INTEGER NOT NULL DEFAULT 0'),
     (table: 'community_posts', column: 'favorite_used', def: 'INTEGER NOT NULL DEFAULT 0'),
   ];
@@ -234,7 +235,9 @@ class DatabaseHelper {
         image_data BLOB,
         path TEXT,
         image_type TEXT DEFAULT 'cover',
-        FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE
+        character_book_id INTEGER,
+        FOREIGN KEY (character_id) REFERENCES characters (id) ON DELETE CASCADE,
+        FOREIGN KEY (character_book_id) REFERENCES character_books (id) ON DELETE CASCADE
       )
     ''');
 
@@ -1539,6 +1542,18 @@ class DatabaseHelper {
         'INTEGER NOT NULL DEFAULT 1',
       );
     }
+
+    if (oldVersion < 56) {
+      // 설정집 등장인물별 이미지 지원. cover_images 레코드가 특정
+      // character_books 항목에 속하도록 nullable FK를 추가한다.
+      // image_type='characterBook'인 행만 이 FK를 사용한다.
+      await _ensureColumn(
+        db,
+        'cover_images',
+        'character_book_id',
+        'INTEGER',
+      );
+    }
   }
 
   // ==================== 캐릭터 CRUD ====================
@@ -1841,6 +1856,19 @@ class DatabaseHelper {
       'cover_images',
       where: "character_id = ? AND image_type = 'background'",
       whereArgs: [characterId],
+      orderBy: '`order` ASC',
+    );
+    return result.map((map) => CoverImage.fromMap(map)).toList();
+  }
+
+  /// 설정집(등장인물) 항목에 귀속된 이미지 목록.
+  /// `<img="characterName_imageName">` 태그 렌더링 시 참조된다.
+  Future<List<CoverImage>> readCharacterBookImages(int characterBookId) async {
+    final db = await database;
+    final result = await db.query(
+      'cover_images',
+      where: "image_type = 'characterBook' AND character_book_id = ?",
+      whereArgs: [characterBookId],
       orderBy: '`order` ASC',
     );
     return result.map((map) => CoverImage.fromMap(map)).toList();

@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'cover_image.dart';
+
 class CharacterBookFolder {
   final int? id; // autoincrement primary key
   final int characterId; // foreign key to character
@@ -195,6 +197,11 @@ class CharacterBook {
   /// true면 채팅 최초 메시지 진행 시 AgentEntry로 복사된다.
   bool autoSummaryInsert;
 
+  /// 런타임 전용 필드: category == character 일 때만 의미 있음.
+  /// DB에는 `cover_images` 테이블에 별도 행으로 저장되고, 편집 화면이
+  /// 로드할 때 채워 넣는다. `toMap()`에는 포함되지 않는다.
+  List<CoverImage> images;
+
   CharacterBook({
     this.id,
     required this.characterId,
@@ -211,8 +218,10 @@ class CharacterBook {
     this.category = CharacterBookCategory.other,
     this.oneLineDescription = '',
     this.autoSummaryInsert = true,
+    List<CoverImage>? images,
   }) : keys = keys ?? [],
-       secondaryKeys = secondaryKeys ?? [];
+       secondaryKeys = secondaryKeys ?? [],
+       images = images ?? [];
 
   // ==================== 구조화된 데이터 (content JSON) ====================
 
@@ -279,6 +288,19 @@ class CharacterBook {
   }
 
   // ---------- 등장인물 필드 접근자 ----------
+  /// 이미지 태그 매칭에 사용되는 별칭 목록. 쉼표로 구분된 원문을 그대로
+  /// 저장한다 (예: "Alice, alice, 앨리스"). `<img="{alias}_{imgName}">`
+  /// 렌더링 시 name과 subNameList를 모두 후보 키로 사용한다.
+  String get subNames => getStructuredString('sub_names');
+  set subNames(String v) => setStructuredString('sub_names', v);
+
+  /// [subNames]를 쉼표로 분리해 공백 제거한 리스트. 빈 항목은 제외.
+  List<String> get subNameList => subNames
+      .split(',')
+      .map((e) => e.trim())
+      .where((e) => e.isNotEmpty)
+      .toList();
+
   String get appearance => getStructuredString('appearance');
   set appearance(String v) => setStructuredString('appearance', v);
 
@@ -397,6 +419,7 @@ class CharacterBook {
     CharacterBookCategory? category,
     String? oneLineDescription,
     bool? autoSummaryInsert,
+    List<CoverImage>? images,
   }) {
     return CharacterBook(
       id: id ?? this.id,
@@ -414,6 +437,7 @@ class CharacterBook {
       category: category ?? this.category,
       oneLineDescription: oneLineDescription ?? this.oneLineDescription,
       autoSummaryInsert: autoSummaryInsert ?? this.autoSummaryInsert,
+      images: images ?? this.images,
     );
   }
 
@@ -434,6 +458,7 @@ class CharacterBook {
       'category': category.name,
       'oneLineDescription': oneLineDescription,
       'autoSummaryInsert': autoSummaryInsert,
+      'images': images.map((e) => e.toJson()).toList(),
     };
   }
 
@@ -469,6 +494,10 @@ class CharacterBook {
       ),
       oneLineDescription: (json['oneLineDescription'] as String?) ?? '',
       autoSummaryInsert: json['autoSummaryInsert'] as bool? ?? true,
+      images: (json['images'] as List<dynamic>?)
+              ?.map((e) => CoverImage.fromJson(e as Map<String, dynamic>))
+              .toList() ??
+          [],
     );
   }
 }

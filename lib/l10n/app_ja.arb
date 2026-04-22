@@ -1003,6 +1003,13 @@
   "characterBookFieldEventContent": "内容",
   "characterBookFieldResult": "結果",
 
+  "characterBookFieldImages": "画像",
+  "characterBookImagesEmpty": "登録された画像がありません",
+  "characterBookImagesEmptyReadOnly": "画像なし",
+  "characterBookImagesAddButton": "画像を追加",
+  "characterBookFieldSubNames": "サブ名",
+  "characterBookFieldSubNamesHint": "カンマ区切り（例: Alice, alice）",
+
   "newsArticleDeleteTitle": "記事を削除",
   "newsArticleDeleteContent": "この記事を削除しますか？",
   "newsEmptyTitle": "まだ記事がありません",

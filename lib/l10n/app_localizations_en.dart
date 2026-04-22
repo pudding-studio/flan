@@ -2087,6 +2087,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get characterBookFieldResult => 'Result';
 
   @override
+  String get characterBookFieldImages => 'Images';
+
+  @override
+  String get characterBookImagesEmpty => 'No images registered';
+
+  @override
+  String get characterBookImagesEmptyReadOnly => 'No images';
+
+  @override
+  String get characterBookImagesAddButton => 'Add image';
+
+  @override
+  String get characterBookFieldSubNames => 'Sub names';
+
+  @override
+  String get characterBookFieldSubNamesHint =>
+      'Comma separated (e.g. Alice, alice)';
+
+  @override
   String get newsArticleDeleteTitle => 'Delete Article';
 
   @override

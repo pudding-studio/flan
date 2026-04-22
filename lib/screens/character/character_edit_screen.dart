@@ -8,6 +8,7 @@ import '../../constants/ui_constants.dart';
 import '../../l10n/app_localizations.dart';
 import '../../providers/localization_provider.dart';
 import '../../providers/tokenizer_provider.dart';
+import '../../utils/character_image_storage.dart';
 import '../../utils/token_counter.dart';
 import '../../database/database_helper.dart';
 import '../../models/character/character.dart';
@@ -167,6 +168,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       final folders = await _db.readCharacterBookFolders(widget.characterId!);
       for (var folder in folders) {
         final characterBooks = await _db.readCharacterBooksByFolder(folder.id!);
+        for (final book in characterBooks) {
+          await _loadBookImages(book);
+        }
         folder.characterBooks.addAll(characterBooks);
       }
       _folders.addAll(folders);
@@ -174,6 +178,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
 
       // 독립형 로어북 로드
       final standaloneCharacterBooks = await _db.readStandaloneCharacterBooks(widget.characterId!);
+      for (final book in standaloneCharacterBooks) {
+        await _loadBookImages(book);
+      }
       _standaloneCharacterBooks.addAll(standaloneCharacterBooks);
       _originalStandaloneCharacterBooks = standaloneCharacterBooks.map((lb) => _copyCharacterBook(lb)).toList();
 
@@ -242,7 +249,69 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       secondaryKeys: List<String>.from(characterBook.secondaryKeys),
       insertionOrder: characterBook.insertionOrder,
       content: characterBook.content,
+      images: characterBook.images.map(_copyCoverImage).toList(),
     );
+  }
+
+  /// Pulls the character-book's image rows into the in-memory model. Called
+  /// after [DatabaseHelper.readCharacterBooksByFolder] /
+  /// [DatabaseHelper.readStandaloneCharacterBooks] since those queries only
+  /// populate the book row itself, not its attached images.
+  Future<void> _loadBookImages(CharacterBook book) async {
+    if (book.id == null || book.id! <= 0) return;
+    final images = await _db.readCharacterBookImages(book.id!);
+    book.images
+      ..clear()
+      ..addAll(images);
+  }
+
+  /// Reconciles a character-book's in-memory image list with the DB.
+  /// Deletes rows no longer present, inserts new ones, updates the rest —
+  /// mirroring the deletion/creation pattern used for the top-level image tabs.
+  Future<void> _saveBookImages(
+    CharacterBook book,
+    int savedBookId,
+    int characterId,
+  ) async {
+    final bookWasPersisted = _isEditMode &&
+        book.id != null &&
+        book.id! > 0 &&
+        book.characterId == characterId;
+
+    if (bookWasPersisted) {
+      final existing = await _db.readCharacterBookImages(book.id!);
+      final currentIds = book.images
+          .where((c) => c.id != null && c.id! > 0)
+          .map((c) => c.id!)
+          .toSet();
+      for (final existingImage in existing) {
+        if (!currentIds.contains(existingImage.id)) {
+          if (existingImage.path != null) {
+            await CharacterImageStorage.deleteImage(existingImage.path!);
+          }
+          await _db.deleteCoverImage(existingImage.id!);
+        }
+      }
+    }
+
+    for (final image in book.images) {
+      final isNew = image.id == null || image.id! < 0;
+      final isCopy = !bookWasPersisted || image.characterId != characterId;
+      if (isNew || isCopy) {
+        await _db.createCoverImage(image.copyWith(
+          id: null,
+          characterId: characterId,
+          characterBookId: savedBookId,
+          imageType: 'characterBook',
+        ));
+      } else {
+        await _db.updateCoverImage(image.copyWith(
+          characterId: characterId,
+          characterBookId: savedBookId,
+          imageType: 'characterBook',
+        ));
+      }
+    }
   }
 
   Persona _copyPersona(Persona persona) {
@@ -311,7 +380,8 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         if (current.name != original.name ||
             current.content != original.content ||
             current.enabled != original.enabled ||
-            current.keys.join(',') != original.keys.join(',')) {
+            current.keys.join(',') != original.keys.join(',') ||
+            _bookImagesChanged(current.images, original.images)) {
           return true;
         }
       }
@@ -325,7 +395,8 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       if (current.name != original.name ||
           current.content != original.content ||
           current.enabled != original.enabled ||
-          current.keys.join(',') != original.keys.join(',')) {
+          current.keys.join(',') != original.keys.join(',') ||
+          _bookImagesChanged(current.images, original.images)) {
         return true;
       }
     }
@@ -376,6 +447,39 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       }
     }
 
+    return false;
+  }
+
+  /// CharacterBook.toMap() plus the runtime-only images list. Used by the
+  /// autosave payload so unsaved image entries survive accidental exits.
+  Map<String, dynamic> _bookAutoSaveMap(CharacterBook book) {
+    final map = book.toMap();
+    map['images'] = book.images.map((c) => c.toMap()).toList();
+    return map;
+  }
+
+  /// Inverse of [_bookAutoSaveMap]: rebuilds a CharacterBook plus its image
+  /// list from the autosave JSON shape.
+  CharacterBook _restoreBookFromAutoSaveMap(Map<String, dynamic> map) {
+    final book = CharacterBook.fromMap(map);
+    final rawImages = map['images'];
+    if (rawImages is List) {
+      for (final imageMap in rawImages) {
+        book.images.add(CoverImage.fromMap(imageMap as Map<String, dynamic>));
+      }
+    }
+    return book;
+  }
+
+  bool _bookImagesChanged(List<CoverImage> current, List<CoverImage> original) {
+    if (current.length != original.length) return true;
+    for (int i = 0; i < current.length; i++) {
+      if (current[i].name != original[i].name ||
+          current[i].path != original[i].path ||
+          current[i].id != original[i].id) {
+        return true;
+      }
+    }
     return false;
   }
 
@@ -472,10 +576,10 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         'selectedCoverImageId': _selectedCoverImageId,
         'folders': _folders.map((f) {
           final folderMap = f.toMap();
-          folderMap['characterBooks'] = f.characterBooks.map((lb) => lb.toMap()).toList();
+          folderMap['characterBooks'] = f.characterBooks.map(_bookAutoSaveMap).toList();
           return folderMap;
         }).toList(),
-        'standaloneCharacterBooks': _standaloneCharacterBooks.map((lb) => lb.toMap()).toList(),
+        'standaloneCharacterBooks': _standaloneCharacterBooks.map(_bookAutoSaveMap).toList(),
         'personas': _personas.map((p) => p.toMap()).toList(),
         'startScenarios': _startScenarios.map((s) => s.toMap()).toList(),
         'coverImages': _coverImages.map((c) => c.toMap()).toList(),
@@ -537,7 +641,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
               final folder = CharacterBookFolder.fromMap(folderMap as Map<String, dynamic>);
               if (folderMap['characterBooks'] != null) {
                 for (var lbMap in folderMap['characterBooks'] as List) {
-                  folder.characterBooks.add(CharacterBook.fromMap(lbMap as Map<String, dynamic>));
+                  folder.characterBooks.add(_restoreBookFromAutoSaveMap(lbMap as Map<String, dynamic>));
                 }
               }
               _folders.add(folder);
@@ -548,7 +652,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           _standaloneCharacterBooks.clear();
           if (data['standaloneCharacterBooks'] != null) {
             for (var lbMap in data['standaloneCharacterBooks'] as List) {
-              _standaloneCharacterBooks.add(CharacterBook.fromMap(lbMap as Map<String, dynamic>));
+              _standaloneCharacterBooks.add(_restoreBookFromAutoSaveMap(lbMap as Map<String, dynamic>));
             }
           }
 
@@ -907,15 +1011,16 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
 
       // 폴더 내 로어북 저장
       for (var characterBook in folder.characterBooks) {
+        int savedBookId;
         if (characterBook.id == null || characterBook.id! < 0) {
-          await _db.createCharacterBook(characterBook.copyWith(
+          savedBookId = await _db.createCharacterBook(characterBook.copyWith(
             id: null,
             characterId: characterId,
             folderId: folderId,
           ));
         } else if (!_isEditMode || characterBook.characterId != characterId) {
           // 새 캐릭터로 복사하는 경우 새로 생성
-          await _db.createCharacterBook(characterBook.copyWith(
+          savedBookId = await _db.createCharacterBook(characterBook.copyWith(
             id: null,
             characterId: characterId,
             folderId: folderId,
@@ -925,20 +1030,23 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
             characterId: characterId,
             folderId: folderId,
           ));
+          savedBookId = characterBook.id!;
         }
+        await _saveBookImages(characterBook, savedBookId, characterId);
       }
     }
 
     // 독립형 로어북 저장
     for (var characterBook in _standaloneCharacterBooks) {
+      int savedBookId;
       if (characterBook.id == null || characterBook.id! < 0) {
-        await _db.createCharacterBook(characterBook.copyWith(
+        savedBookId = await _db.createCharacterBook(characterBook.copyWith(
           id: null,
           characterId: characterId,
           folderId: null,
         ));
       } else if (!_isEditMode || characterBook.characterId != characterId) {
-        await _db.createCharacterBook(characterBook.copyWith(
+        savedBookId = await _db.createCharacterBook(characterBook.copyWith(
           id: null,
           characterId: characterId,
           folderId: null,
@@ -947,7 +1055,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         await _db.updateCharacterBook(characterBook.copyWith(
           characterId: characterId,
         ));
+        savedBookId = characterBook.id!;
       }
+      await _saveBookImages(characterBook, savedBookId, characterId);
     }
 
     // 페르소나 저장
@@ -1096,6 +1206,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           CharacterBookTab(
             folders: _folders,
             standaloneCharacterBooks: _standaloneCharacterBooks,
+            characterName: _nameController.text,
             onUpdate: () {
               setState(() {});
               _autoSave();

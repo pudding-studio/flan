@@ -2053,6 +2053,24 @@ class AppLocalizationsKo extends AppLocalizations {
   String get characterBookFieldResult => '결과';
 
   @override
+  String get characterBookFieldImages => '이미지';
+
+  @override
+  String get characterBookImagesEmpty => '등록된 이미지가 없습니다';
+
+  @override
+  String get characterBookImagesEmptyReadOnly => '이미지 없음';
+
+  @override
+  String get characterBookImagesAddButton => '이미지 추가';
+
+  @override
+  String get characterBookFieldSubNames => '서브이름';
+
+  @override
+  String get characterBookFieldSubNamesHint => '쉼표로 구분 (예: Alice, alice)';
+
+  @override
   String get newsArticleDeleteTitle => '기사 삭제';
 
   @override

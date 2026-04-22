@@ -1003,6 +1003,13 @@
   "characterBookFieldEventContent": "내용",
   "characterBookFieldResult": "결과",
 
+  "characterBookFieldImages": "이미지",
+  "characterBookImagesEmpty": "등록된 이미지가 없습니다",
+  "characterBookImagesEmptyReadOnly": "이미지 없음",
+  "characterBookImagesAddButton": "이미지 추가",
+  "characterBookFieldSubNames": "서브이름",
+  "characterBookFieldSubNamesHint": "쉼표로 구분 (예: Alice, alice)",
+
   "newsArticleDeleteTitle": "기사 삭제",
   "newsArticleDeleteContent": "이 기사를 삭제하시겠습니까?",
   "newsEmptyTitle": "아직 기사가 없습니다",

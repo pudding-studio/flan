@@ -4,6 +4,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../database/database_helper.dart';
 import '../../../models/character/character_book_folder.dart';
 import '../../../utils/common_dialog.dart';
+import '../../../widgets/character/character_book_images_section.dart';
 import '../../../widgets/common/common_edit_text.dart';
 import '../../../widgets/common/common_editable_expandable_item.dart';
 import '../../../widgets/common/common_field_section.dart';
@@ -255,7 +256,26 @@ class DrawerLorebookPanelState extends State<DrawerLorebookPanel> {
             _buildBookInsertionOrderField(book),
           _buildBookOneLineDescriptionField(book),
           _buildBookContentField(book),
+          if (book.category == CharacterBookCategory.character &&
+              book.images.isNotEmpty)
+            _buildBookImagesField(book),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBookImagesField(CharacterBook book) {
+    final l10n = AppLocalizations.of(context);
+    return CommonFieldSection(
+      label: l10n.characterBookFieldImages,
+      bottomSpacing: 0,
+      child: CharacterBookImagesSection(
+        key: ValueKey('drawerBookImages_${book.id}'),
+        images: book.images,
+        // Drawer is read-only so characterName is unused; the widget skips
+        // the image-picker code path when readOnly is true.
+        characterName: '',
+        readOnly: true,
       ),
     );
   }

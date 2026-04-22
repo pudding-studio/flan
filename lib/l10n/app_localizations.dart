@@ -3874,6 +3874,42 @@ abstract class AppLocalizations {
   /// **'결과'**
   String get characterBookFieldResult;
 
+  /// No description provided for @characterBookFieldImages.
+  ///
+  /// In ko, this message translates to:
+  /// **'이미지'**
+  String get characterBookFieldImages;
+
+  /// No description provided for @characterBookImagesEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'등록된 이미지가 없습니다'**
+  String get characterBookImagesEmpty;
+
+  /// No description provided for @characterBookImagesEmptyReadOnly.
+  ///
+  /// In ko, this message translates to:
+  /// **'이미지 없음'**
+  String get characterBookImagesEmptyReadOnly;
+
+  /// No description provided for @characterBookImagesAddButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'이미지 추가'**
+  String get characterBookImagesAddButton;
+
+  /// No description provided for @characterBookFieldSubNames.
+  ///
+  /// In ko, this message translates to:
+  /// **'서브이름'**
+  String get characterBookFieldSubNames;
+
+  /// No description provided for @characterBookFieldSubNamesHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'쉼표로 구분 (예: Alice, alice)'**
+  String get characterBookFieldSubNamesHint;
+
   /// No description provided for @newsArticleDeleteTitle.
   ///
   /// In ko, this message translates to:

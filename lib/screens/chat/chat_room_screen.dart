@@ -7,6 +7,7 @@ import '../../l10n/app_localizations.dart';
 import '../../models/chat/chat_room.dart';
 import '../../models/chat/chat_message.dart';
 import '../../models/character/character.dart';
+import '../../models/character/character_book_folder.dart';
 import '../../models/character/cover_image.dart';
 import '../../models/character/persona.dart';
 import '../../models/character/start_scenario.dart';
@@ -203,6 +204,46 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         final stripped = img.name.replaceFirst(imageExtPattern, '');
         if (stripped != img.name) {
           additionalImagePathMap.putIfAbsent(stripped, () => img.path!);
+        }
+      }
+
+      // 설정집 등장인물 이미지 등록. `<img="{bookName}_{imgName}">` 혹은
+      // `<img="{subName}_{imgName}">` 태그를 해결하기 위해, 각 등장인물
+      // character_book 항목의 name + subNameList를 모든 alias로 삼아 각각
+      // `{alias}_{imgName}` 키로 경로를 등록한다.
+      final folders =
+          await _db.readCharacterBookFolders(chatRoom.characterId);
+      final folderBooks = <CharacterBook>[];
+      for (final folder in folders) {
+        folderBooks.addAll(await _db.readCharacterBooksByFolder(folder.id!));
+      }
+      final standaloneBooks =
+          await _db.readStandaloneCharacterBooks(chatRoom.characterId);
+      final characterBooks = [
+        ...folderBooks,
+        ...standaloneBooks,
+      ].where((b) => b.category == CharacterBookCategory.character);
+      for (final book in characterBooks) {
+        if (book.id == null) continue;
+        final bookImages = await _db.readCharacterBookImages(book.id!);
+        if (bookImages.isEmpty) continue;
+        final aliases = <String>{
+          if (book.name.isNotEmpty) book.name,
+          ...book.subNameList,
+        };
+        for (final img in bookImages) {
+          if (img.path == null || img.name.isEmpty) continue;
+          for (final alias in aliases) {
+            final key = '${alias}_${img.name}';
+            imagePathMap.putIfAbsent(key, () => img.path!);
+            final strippedImg = img.name.replaceFirst(imageExtPattern, '');
+            if (strippedImg != img.name) {
+              imagePathMap.putIfAbsent(
+                '${alias}_$strippedImg',
+                () => img.path!,
+              );
+            }
+          }
         }
       }
       final metadataList = await _db.readChatMessageMetadataByChatRoom(widget.chatRoomId);

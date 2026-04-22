@@ -1003,6 +1003,13 @@
   "characterBookFieldEventContent": "Content",
   "characterBookFieldResult": "Result",
 
+  "characterBookFieldImages": "Images",
+  "characterBookImagesEmpty": "No images registered",
+  "characterBookImagesEmptyReadOnly": "No images",
+  "characterBookImagesAddButton": "Add image",
+  "characterBookFieldSubNames": "Sub names",
+  "characterBookFieldSubNamesHint": "Comma separated (e.g. Alice, alice)",
+
   "newsArticleDeleteTitle": "Delete Article",
   "newsArticleDeleteContent": "Delete this article?",
   "newsEmptyTitle": "No articles yet",

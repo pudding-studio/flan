@@ -9,6 +9,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../constants/ui_constants.dart';
 import '../../../models/character/character_book_folder.dart';
 import '../../../utils/common_dialog.dart';
+import '../../../widgets/character/character_book_images_section.dart';
 import '../../../widgets/common/common_draggable_folder_list.dart';
 import '../../../widgets/common/common_editable_expandable_item.dart';
 import '../../../widgets/common/common_edit_text.dart';
@@ -25,12 +26,14 @@ import '../../../widgets/common/common_title_medium.dart';
 class CharacterBookTab extends StatefulWidget {
   final List<CharacterBookFolder> folders;
   final List<CharacterBook> standaloneCharacterBooks;
+  final String characterName;
   final VoidCallback onUpdate;
 
   const CharacterBookTab({
     super.key,
     required this.folders,
     required this.standaloneCharacterBooks,
+    required this.characterName,
     required this.onUpdate,
   });
 
@@ -663,6 +666,8 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (book.category == CharacterBookCategory.character)
+            _buildSubNamesField(book),
           _buildActivationConditionField(book),
           if (book.enabled == CharacterBookActivationCondition.keyBased) ...[
             _buildActivationKeysField(book),
@@ -677,6 +682,25 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
           _buildOneLineDescriptionField(book),
           ..._buildCategorySpecificFields(book),
         ],
+      ),
+    );
+  }
+
+  Widget _buildSubNamesField(CharacterBook book) {
+    final l10n = AppLocalizations.of(context);
+    final key = 'characterBook_${book.id}_subNames';
+    final controller = _getFieldController(key, book.subNames);
+
+    return CommonFieldSection(
+      label: l10n.characterBookFieldSubNames,
+      child: CommonEditText(
+        controller: controller,
+        hintText: l10n.characterBookFieldSubNamesHint,
+        size: CommonEditTextSize.small,
+        onFocusLost: (value) {
+          book.subNames = value;
+          _notifyUpdate(rebuildUI: false);
+        },
       ),
     );
   }
@@ -892,7 +916,17 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
         label: l10n.characterBookFieldDialogueStyle,
         minLines: 2,
         multiline: true,
+      ),
+      CommonFieldSection(
+        label: l10n.characterBookFieldImages,
         bottomSpacing: 0,
+        child: CharacterBookImagesSection(
+          // Per-book key so Flutter keeps per-book image state isolated.
+          key: ValueKey('bookImages_${book.id}'),
+          images: book.images,
+          characterName: widget.characterName,
+          onUpdate: () => _notifyUpdate(rebuildUI: false),
+        ),
       ),
     ];
   }
