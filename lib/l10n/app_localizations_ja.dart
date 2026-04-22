@@ -1066,6 +1066,15 @@ class AppLocalizationsJa extends AppLocalizations {
   String get characterEditSnsHelp => 'このキャラクターのSNS掲示板設定を行います。';
 
   @override
+  String get characterEditSnsBoardNameLabel => '掲示板の名前';
+
+  @override
+  String get characterEditSnsBoardMoodLabel => '掲示板の雰囲気';
+
+  @override
+  String get characterEditSnsBoardLanguageLabel => '使用言語';
+
+  @override
   String get characterEditSnsBoardHint => '例: 自由掲示板、冒険者広場';
 
   @override

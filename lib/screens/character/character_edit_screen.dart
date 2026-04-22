@@ -6,6 +6,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../constants/ui_constants.dart';
 import '../../l10n/app_localizations.dart';
+import '../../providers/localization_provider.dart';
 import '../../providers/tokenizer_provider.dart';
 import '../../utils/token_counter.dart';
 import '../../database/database_helper.dart';
@@ -107,14 +108,15 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
     super.initState();
     _tabController = TabController(length: 9, vsync: this);
 
-    // 자동 저장 데이터 확인 및 복원
+    // 캐릭터 데이터 로드 → 자동 저장 복원 → 기본값 채우기
     WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (_isEditMode) {
+        await _loadCharacterData();
+      }
       await _checkAndRestoreAutoSave();
+      if (!mounted) return;
+      _fillDefaultCommunityLanguageIfEmpty();
     });
-
-    if (_isEditMode) {
-      _loadCharacterData();
-    }
 
     // 텍스트 컨트롤러에 리스너 추가하여 자동 저장
     _nameController.addListener(_autoSave);
@@ -437,6 +439,16 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   String _getAutoSaveKey() {
     // 편집 모드면 characterId 기반, 생성 모드면 'new' 키 사용
     return _isEditMode ? 'autosave_character_${widget.characterId}' : 'autosave_character_new';
+  }
+
+  void _fillDefaultCommunityLanguageIfEmpty() {
+    if (_communityLanguageController.text.isNotEmpty) return;
+    final defaultLanguage =
+        context.read<LocalizationProvider>().effectiveAiLanguageName;
+    _communityLanguageController.text = defaultLanguage;
+    if (_isEditMode) {
+      _originalCommunityLanguage = defaultLanguage;
+    }
   }
 
   Future<void> _autoSave() async {
@@ -1210,20 +1222,20 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           const SizedBox(height: 16),
           CommonCustomTextField(
             controller: _communityNameController,
-            label: 'SNS',
+            label: l10n.characterEditSnsBoardNameLabel,
             hintText: l10n.characterEditSnsBoardHint,
           ),
           const SizedBox(height: 16),
           CommonCustomTextField(
             controller: _communityMoodController,
-            label: 'SNS',
+            label: l10n.characterEditSnsBoardMoodLabel,
             hintText: l10n.characterEditSnsToneHint,
             maxLines: null,
           ),
           const SizedBox(height: 16),
           CommonCustomTextField(
             controller: _communityLanguageController,
-            label: 'SNS',
+            label: l10n.characterEditSnsBoardLanguageLabel,
             hintText: l10n.characterEditSnsLanguageHint,
           ),
         ],

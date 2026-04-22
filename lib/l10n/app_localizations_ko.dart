@@ -1070,6 +1070,15 @@ class AppLocalizationsKo extends AppLocalizations {
   String get characterEditSnsHelp => '캐릭터의 SNS 게시판 설정을 구성합니다.';
 
   @override
+  String get characterEditSnsBoardNameLabel => '게시판 이름';
+
+  @override
+  String get characterEditSnsBoardMoodLabel => '게시판 분위기';
+
+  @override
+  String get characterEditSnsBoardLanguageLabel => '사용 언어';
+
+  @override
   String get characterEditSnsBoardHint => '예: 자유게시판, 모험가 광장 등';
 
   @override

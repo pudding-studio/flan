@@ -1083,6 +1083,15 @@ class AppLocalizationsEn extends AppLocalizations {
       'Configure the SNS board settings for this character.';
 
   @override
+  String get characterEditSnsBoardNameLabel => 'Board Name';
+
+  @override
+  String get characterEditSnsBoardMoodLabel => 'Board Mood';
+
+  @override
+  String get characterEditSnsBoardLanguageLabel => 'Language';
+
+  @override
   String get characterEditSnsBoardHint =>
       'e.g. Free Board, Adventurers\' Plaza';
 

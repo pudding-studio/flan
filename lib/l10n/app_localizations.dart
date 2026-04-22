@@ -2038,6 +2038,24 @@ abstract class AppLocalizations {
   /// **'캐릭터의 SNS 게시판 설정을 구성합니다.'**
   String get characterEditSnsHelp;
 
+  /// No description provided for @characterEditSnsBoardNameLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'게시판 이름'**
+  String get characterEditSnsBoardNameLabel;
+
+  /// No description provided for @characterEditSnsBoardMoodLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'게시판 분위기'**
+  String get characterEditSnsBoardMoodLabel;
+
+  /// No description provided for @characterEditSnsBoardLanguageLabel.
+  ///
+  /// In ko, this message translates to:
+  /// **'사용 언어'**
+  String get characterEditSnsBoardLanguageLabel;
+
   /// No description provided for @characterEditSnsBoardHint.
   ///
   /// In ko, this message translates to:
