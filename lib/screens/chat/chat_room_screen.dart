@@ -681,6 +681,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   Future<void> _finishSending() async {
+    final wasScrolledUp = _showScrollButtons;
     final prevMessageCount = _messages.length;
 
     await _loadChatData(showLoading: false);
@@ -690,14 +691,30 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     setState(() {
       _sendingPhase = SendingPhase.none;
       _retryAttempt = 0;
-      // Buffer freshly-arrived messages regardless of scroll position so the
-      // list never auto-jumps. They're revealed when the user scrolls down to
-      // the bottom or taps the "new messages" chip.
-      if (delta > 0) {
+      // Only buffer when the user is reading older messages. If they're at
+      // the bottom, reveal new messages immediately — hiding them there
+      // strands the user on the "new messages" chip because no scroll
+      // transition can fire reveal (they're already at the bottom).
+      if (wasScrolledUp && delta > 0) {
         _hiddenNewMessageCount += delta;
         _hasNewMessage = true;
       }
     });
+
+    // When the user was at the bottom, pin the viewport to the newest
+    // message after layout. ScrollablePositionedList keeps the prior
+    // index-0 at its physical position on insertion, so without this the
+    // new message lands just below the viewport.
+    if (!wasScrolledUp && delta > 0 && _messages.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_itemScrollController.isAttached) return;
+        _itemScrollController.scrollTo(
+          index: 0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      });
+    }
   }
 
   /// Resolves the model to use for the next API call. Unlike a simple

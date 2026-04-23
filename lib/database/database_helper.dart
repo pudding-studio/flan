@@ -1731,11 +1731,55 @@ class DatabaseHelper {
 
   Future<int> deleteCharacterBookFolder(int id) async {
     final db = await database;
-    return await db.delete(
-      'character_book_folders',
-      where: 'id = ?',
+    // Collect file paths for images owned by books inside this folder.
+    // Schema CASCADEs book_folders → books → cover_images, but the pragma
+    // isn't enabled, so everything must be cleaned manually.
+    final books = await db.query(
+      'character_books',
+      columns: ['id'],
+      where: 'folder_id = ?',
       whereArgs: [id],
     );
+    final bookIds = books.map((b) => b['id'] as int).toList();
+    final imageRows = bookIds.isEmpty
+        ? <Map<String, Object?>>[]
+        : await db.query(
+            'cover_images',
+            columns: ['path'],
+            where:
+                'character_book_id IN (${List.filled(bookIds.length, '?').join(',')}) '
+                "AND path IS NOT NULL AND path != ''",
+            whereArgs: bookIds,
+          );
+
+    final result = await db.transaction<int>((txn) async {
+      if (bookIds.isNotEmpty) {
+        final placeholders = List.filled(bookIds.length, '?').join(',');
+        await txn.delete(
+          'cover_images',
+          where: 'character_book_id IN ($placeholders)',
+          whereArgs: bookIds,
+        );
+        await txn.delete(
+          'character_books',
+          where: 'folder_id = ?',
+          whereArgs: [id],
+        );
+      }
+      return await txn.delete(
+        'character_book_folders',
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    });
+
+    for (final row in imageRows) {
+      final path = row['path'] as String?;
+      if (path != null && path.isNotEmpty) {
+        await CharacterImageStorage.deleteImage(path);
+      }
+    }
+    return result;
   }
 
   // ==================== 캐릭터 북 CRUD ====================
@@ -1792,11 +1836,34 @@ class DatabaseHelper {
 
   Future<int> deleteCharacterBook(int id) async {
     final db = await database;
-    return await db.delete(
-      'character_books',
-      where: 'id = ?',
+    final imageRows = await db.query(
+      'cover_images',
+      columns: ['path'],
+      where: "character_book_id = ? AND path IS NOT NULL AND path != ''",
       whereArgs: [id],
     );
+
+    final result = await db.transaction<int>((txn) async {
+      // Manual cascade: FK enforcement is off on this connection.
+      await txn.delete(
+        'cover_images',
+        where: 'character_book_id = ?',
+        whereArgs: [id],
+      );
+      return await txn.delete(
+        'character_books',
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    });
+
+    for (final row in imageRows) {
+      final path = row['path'] as String?;
+      if (path != null && path.isNotEmpty) {
+        await CharacterImageStorage.deleteImage(path);
+      }
+    }
+    return result;
   }
 
   // ==================== 페르소나 CRUD ====================
