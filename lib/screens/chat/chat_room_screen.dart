@@ -134,13 +134,19 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final positions = _itemPositionsListener.itemPositions.value;
     if (positions.isEmpty) return;
     final minIndex = positions.map((p) => p.index).reduce((a, b) => a < b ? a : b);
-    final show = minIndex > 3;
-    final shouldReveal =
-        !show && (_hasNewMessage || _hiddenNewMessageCount > 0);
-    if (show != _showScrollButtons || shouldReveal) {
+    final nowShowButtons = minIndex > 3;
+    final wasShowingButtons = _showScrollButtons;
+    // Only reveal buffered new messages on the transition from "scrolled up"
+    // back to the bottom. If the user was already at the bottom when the
+    // messages arrived, leave them hidden until the chip is tapped — this
+    // prevents the list from auto-jumping whenever a new message lands.
+    final shouldReveal = wasShowingButtons &&
+        !nowShowButtons &&
+        (_hasNewMessage || _hiddenNewMessageCount > 0);
+    if (nowShowButtons != _showScrollButtons || shouldReveal) {
       setState(() {
-        _showScrollButtons = show;
-        if (!show) {
+        _showScrollButtons = nowShowButtons;
+        if (shouldReveal) {
           _hasNewMessage = false;
           _hiddenNewMessageCount = 0;
         }
@@ -623,7 +629,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   Future<void> _finishSending() async {
-    final wasScrolledUp = _showScrollButtons;
     final prevMessageCount = _messages.length;
 
     await _loadChatData(showLoading: false);
@@ -633,30 +638,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     setState(() {
       _sendingPhase = SendingPhase.none;
       _retryAttempt = 0;
-      // When the user is scrolled up, keep the viewport stable by hiding the
-      // freshly-arrived messages. The visible item count doesn't change, so
-      // ScrollablePositionedList keeps the same indices pinned to the same
-      // messages. The messages get revealed when the user scrolls back to
+      // Buffer freshly-arrived messages regardless of scroll position so the
+      // list never auto-jumps. They're revealed when the user scrolls down to
       // the bottom or taps the "new messages" chip.
-      if (wasScrolledUp && delta > 0) {
+      if (delta > 0) {
         _hiddenNewMessageCount += delta;
         _hasNewMessage = true;
       }
     });
-
-    // When the user was at the bottom and new messages arrived, anchor the
-    // viewport to the end of the second-to-last message instead of letting
-    // the reverse list auto-pin to the very bottom of the new last message.
-    if (!wasScrolledUp && delta > 0 && _messages.length >= 2) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted || !_itemScrollController.isAttached) return;
-        _itemScrollController.scrollTo(
-          index: 1,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      });
-    }
   }
 
   /// Resolves the model to use for the next API call. Unlike a simple
