@@ -1324,6 +1324,54 @@ class AppLocalizationsEn extends AppLocalizations {
   String get characterExportSaveFailed => 'Failed to save file';
 
   @override
+  String get chatRoomExport => 'Export';
+
+  @override
+  String get chatRoomImport => 'Import chat';
+
+  @override
+  String get chatRoomExportFormatTitle => 'Select export format';
+
+  @override
+  String get chatRoomExportJsonSubtitle => 'Full data — can be re-imported';
+
+  @override
+  String get chatRoomExportTxtSubtitle => 'Read-only transcript';
+
+  @override
+  String chatRoomExportSuccessAndroid(String fileName) {
+    return 'Export complete: /storage/emulated/0/Download/$fileName';
+  }
+
+  @override
+  String chatRoomExportSuccess(String path) {
+    return 'Export complete: $path';
+  }
+
+  @override
+  String get chatRoomExportSaveFailed => 'Failed to save file';
+
+  @override
+  String chatRoomExportFailed(String error) {
+    return 'Chat room export failed: $error';
+  }
+
+  @override
+  String get chatRoomImportSuccess => 'Chat room imported successfully';
+
+  @override
+  String chatRoomImportFailed(String error) {
+    return 'Chat room import failed: $error';
+  }
+
+  @override
+  String get chatRoomImportSelectCharacter => 'Select target character';
+
+  @override
+  String get chatRoomImportNoCharacters =>
+      'No characters available to import into';
+
+  @override
   String get characterCoverDefault => 'Cover 1';
 
   @override

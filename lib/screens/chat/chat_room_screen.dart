@@ -96,6 +96,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   bool _showMorePanel = false;
   bool _showScrollButtons = false;
   bool _hasNewMessage = false;
+  // Number of latest messages withheld from the rendered list while the user
+  // is scrolled up. Keeps the visible itemCount stable so the viewport never
+  // jumps when new assistant messages arrive. Revealed when the user scrolls
+  // back to the bottom or taps the "new messages" chip / scroll-to-bottom.
+  int _hiddenNewMessageCount = 0;
   List<ChatPrompt> _chatPrompts = [];
   List<Persona> _personas = [];
   List<PromptRegexRule> _regexRules = [];
@@ -130,11 +135,21 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final positions = _itemPositionsListener.itemPositions.value;
     if (positions.isEmpty) return;
     final minIndex = positions.map((p) => p.index).reduce((a, b) => a < b ? a : b);
-    final show = minIndex > 3;
-    if (show != _showScrollButtons || (!show && _hasNewMessage)) {
+    final nowShowButtons = minIndex > 3;
+    final wasShowingButtons = _showScrollButtons;
+    // Reveal buffered messages on the transition from "scrolled up" back to
+    // the bottom. Without the transition guard, being already at the bottom
+    // when the chip arrives would immediately clear it with nothing to show.
+    final shouldReveal = wasShowingButtons &&
+        !nowShowButtons &&
+        _hiddenNewMessageCount > 0;
+    if (nowShowButtons != _showScrollButtons || shouldReveal) {
       setState(() {
-        _showScrollButtons = show;
-        if (!show) _hasNewMessage = false;
+        _showScrollButtons = nowShowButtons;
+        if (shouldReveal) {
+          _hasNewMessage = false;
+          _hiddenNewMessageCount = 0;
+        }
       });
     }
   }
@@ -665,19 +680,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   }
 
   Future<void> _finishSending() async {
-    // Capture the topmost visible item (highest index in reverse mode) so we
-    // can re-anchor after reload. Without this, ScrollablePositionedList
-    // drifts the viewport toward newer content when items are inserted at
-    // index 0, and the user's reading position jumps.
-    int? anchorIndex;
-    double? anchorLeadingEdge;
+    final wasScrolledUp = _showScrollButtons;
     final prevMessageCount = _messages.length;
-    final positions = _itemPositionsListener.itemPositions.value;
-    if (positions.isNotEmpty) {
-      final topPos = positions.reduce((a, b) => a.index > b.index ? a : b);
-      anchorIndex = topPos.index;
-      anchorLeadingEdge = topPos.itemLeadingEdge;
-    }
 
     await _loadChatData(showLoading: false);
     if (!mounted) return;
@@ -686,17 +690,26 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     setState(() {
       _sendingPhase = SendingPhase.none;
       _retryAttempt = 0;
-      if (delta > 0) _hasNewMessage = true;
+      // Only buffer when the user is reading older messages. When they're at
+      // the bottom, reveal immediately — hiding there would strand them on
+      // the chip with no scroll transition available to trigger reveal.
+      if (wasScrolledUp && delta > 0) {
+        _hiddenNewMessageCount += delta;
+        _hasNewMessage = true;
+      }
     });
 
-    if (anchorIndex != null && anchorLeadingEdge != null && delta > 0) {
-      final targetIndex = anchorIndex + delta;
-      final targetAlignment = anchorLeadingEdge;
+    // When the user was at the bottom, pin the viewport to the newest
+    // message. ScrollablePositionedList leaves the previous index-0 pinned
+    // to its physical position on insertion, so without this nudge the new
+    // message would land just below the viewport.
+    if (!wasScrolledUp && delta > 0 && _messages.isNotEmpty) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted || !_itemScrollController.isAttached) return;
-        _itemScrollController.jumpTo(
-          index: targetIndex,
-          alignment: targetAlignment,
+        _itemScrollController.scrollTo(
+          index: 0,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
         );
       });
     }
@@ -1011,7 +1024,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   Widget _buildMessage(ChatMessage message, int index) {
     final isUser = message.role == MessageRole.user;
-    final isLastMessage = index == _messages.length - 1;
+    final visibleCount = _messages.length - _hiddenNewMessageCount;
+    final isLastMessage = index == visibleCount - 1;
     final metadata = message.id != null ? _metadataMap[message.id!] : null;
     final isSummaryThreshold =
         _summaryThresholdIndex != null && index == _summaryThresholdIndex;
@@ -1157,25 +1171,33 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   onTap: () {
                     if (_showMorePanel) setState(() => _showMorePanel = false);
                   },
-                  child: ScrollablePositionedList.builder(
-                    itemScrollController: _itemScrollController,
-                    itemPositionsListener: _itemPositionsListener,
-                    reverse: true,
-                    itemCount: _messages.length + 1,
-                    itemBuilder: (context, index) {
-                      if (index == _messages.length) {
-                        return ChatRoomHeader(
-                          character: _character!,
-                          selectedPersona: _personas
-                              .where((p) => p.id == _chatRoom?.selectedPersonaId)
-                              .firstOrNull,
-                          startScenario: _startScenario,
-                          displayContentBuilder: _buildDisplayContent,
-                        );
-                      }
-                      final messageIndex = _messages.length - 1 - index;
-                      return _buildMessage(
-                          _messages[messageIndex], messageIndex);
+                  child: Builder(
+                    builder: (context) {
+                      final visibleCount =
+                          (_messages.length - _hiddenNewMessageCount)
+                              .clamp(0, _messages.length);
+                      return ScrollablePositionedList.builder(
+                        itemScrollController: _itemScrollController,
+                        itemPositionsListener: _itemPositionsListener,
+                        reverse: true,
+                        itemCount: visibleCount + 1,
+                        itemBuilder: (context, index) {
+                          if (index == visibleCount) {
+                            return ChatRoomHeader(
+                              character: _character!,
+                              selectedPersona: _personas
+                                  .where((p) =>
+                                      p.id == _chatRoom?.selectedPersonaId)
+                                  .firstOrNull,
+                              startScenario: _startScenario,
+                              displayContentBuilder: _buildDisplayContent,
+                            );
+                          }
+                          final messageIndex = visibleCount - 1 - index;
+                          return _buildMessage(
+                              _messages[messageIndex], messageIndex);
+                        },
+                      );
                     },
                   ),
                 ),
@@ -1183,7 +1205,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                   hasNewMessage: _hasNewMessage,
                   showScrollButtons: _showScrollButtons,
                   onJumpToLatest: () {
-                    setState(() => _hasNewMessage = false);
+                    setState(() {
+                      _hasNewMessage = false;
+                      _hiddenNewMessageCount = 0;
+                    });
                     _itemScrollController.scrollTo(
                       index: 0,
                       duration: const Duration(milliseconds: 300),
@@ -1191,14 +1216,20 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
                     );
                   },
                   onScrollToTop: () {
+                    final visibleCount =
+                        (_messages.length - _hiddenNewMessageCount)
+                            .clamp(0, _messages.length);
                     _itemScrollController.scrollTo(
-                      index: _messages.length,
+                      index: visibleCount,
                       duration: const Duration(milliseconds: 300),
                       curve: Curves.easeOut,
                     );
                   },
                   onScrollToBottom: () {
-                    setState(() => _hasNewMessage = false);
+                    setState(() {
+                      _hasNewMessage = false;
+                      _hiddenNewMessageCount = 0;
+                    });
                     _itemScrollController.scrollTo(
                       index: 0,
                       duration: const Duration(milliseconds: 300),

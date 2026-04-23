@@ -4,6 +4,8 @@ import 'package:flutter/foundation.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
+import 'image_processor.dart';
+
 /// Result of [CharacterImageStorage.saveImageBytes].
 /// Native: [path] is set, [bytes] is null.
 /// Web: [bytes] is set, [path] is null (no filesystem available).
@@ -16,14 +18,20 @@ class StoredImage {
 class CharacterImageStorage {
   /// Saves image bytes to {baseDir}/characters/{characterName}/{imageName}.{ext}
   /// Returns the absolute path of the saved file.
+  /// Images are run through [ImageProcessor.processForStorage] first, capping
+  /// the longer side at 1024px (WebP on mobile, source format on desktop).
   static Future<String> saveImage(
     String characterName,
     String imageName,
     String ext,
     Uint8List bytes,
   ) async {
+    final processed = await ImageProcessor.processForStorage(
+      bytes,
+      originalExt: ext,
+    );
     final dir = await _characterDir(characterName);
-    final filePath = await _resolvePath(dir, imageName, ext);
+    final filePath = await _resolvePath(dir, imageName, processed.ext);
     final file = File(filePath);
     // Re-assert parent exists right before write — guards against the dir
     // being removed between _characterDir() and writeAsBytes(), and against
@@ -34,7 +42,7 @@ class CharacterImageStorage {
     if (!await parent.exists()) {
       await parent.create(recursive: true);
     }
-    await file.writeAsBytes(bytes);
+    await file.writeAsBytes(processed.bytes);
     return filePath;
   }
 
@@ -48,7 +56,11 @@ class CharacterImageStorage {
     Uint8List bytes,
   ) async {
     if (kIsWeb) {
-      return StoredImage(bytes: bytes);
+      final processed = await ImageProcessor.processForStorage(
+        bytes,
+        originalExt: ext,
+      );
+      return StoredImage(bytes: processed.bytes);
     }
     final path = await saveImage(characterName, imageName, ext, bytes);
     return StoredImage(path: path);

@@ -1,31 +1,28 @@
 import 'package:flutter/material.dart';
+import '../../../database/database_helper.dart';
 import '../../../l10n/app_localizations.dart';
-import '../../../models/chat/chat_room.dart';
 import '../../../models/chat/chat_room_summary.dart';
-import '../../../utils/date_formatter.dart';
-import '../../../utils/metadata_parser.dart';
-import '../../../widgets/chat/chat_room_card.dart';
-import '../../../widgets/chat/chat_room_context_menu.dart';
+import '../../../widgets/chat/chat_room_list_entry.dart';
 import '../../../widgets/common/common_button.dart';
 
 class CharacterChatTab extends StatelessWidget {
   final List<ChatRoomSummary> chatRooms;
   final bool hasMoreChats;
   final ScrollController scrollController;
+  final DatabaseHelper db;
+  final VoidCallback onChatRoomsChanged;
   final VoidCallback onNewChat;
   final void Function(ChatRoomSummary) onChatRoomTap;
-  final void Function(ChatRoom) onRename;
-  final void Function(ChatRoom) onDelete;
 
   const CharacterChatTab({
     super.key,
     required this.chatRooms,
     required this.hasMoreChats,
     required this.scrollController,
+    required this.db,
+    required this.onChatRoomsChanged,
     required this.onNewChat,
     required this.onChatRoomTap,
-    required this.onRename,
-    required this.onDelete,
   });
 
   @override
@@ -84,30 +81,11 @@ class CharacterChatTab extends StatelessWidget {
                 );
               }
               final data = chatRooms[index];
-              return GestureDetector(
+              return ChatRoomListEntry(
+                data: data,
+                db: db,
+                onChanged: onChatRoomsChanged,
                 onTap: () => onChatRoomTap(data),
-                onLongPress: () {
-                  showDialog(
-                    context: context,
-                    builder: (_) => ChatRoomContextMenu(
-                      chatRoomName: data.chatRoom.name,
-                      onRename: () => onRename(data.chatRoom),
-                      onDelete: () => onDelete(data.chatRoom),
-                    ),
-                  );
-                },
-                child: ChatRoomCard(
-                  title: data.chatRoom.name,
-                  lastMessage: data.lastMessage != null
-                      ? MetadataParser.removeMetadataTags(data.lastMessage!.content)
-                      : l10n.chatNoMessages,
-                  date: DateFormatter.formatRelativeDate(data.chatRoom.updatedAt, l10n),
-                  imageData: data.coverImage?.imageData,
-                  messageCount: data.messageCount,
-                  tokenCount: data.tokenCount,
-                  isEditMode: false,
-                  isSelected: false,
-                ),
               );
             },
           ),

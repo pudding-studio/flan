@@ -8,7 +8,7 @@ import '../../models/character/persona.dart';
 import '../../models/character/start_scenario.dart';
 import '../../models/chat/chat_room.dart';
 import '../../services/agent_summary_service.dart';
-import '../../utils/chat_room_dialogs.dart';
+import '../../utils/chat_room_importer.dart';
 import '../chat/chat_room_screen.dart';
 import 'character_edit_screen.dart';
 import 'tabs/character_info_tab.dart';
@@ -61,6 +61,12 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
     disposePagination();
     _tabController.dispose();
     super.dispose();
+  }
+
+  Future<void> _importChatRoom() async {
+    final success =
+        await ChatRoomImporter.importToCharacter(context, paginationDb, widget.characterId);
+    if (success) loadChatRooms();
   }
 
   Future<void> _loadCharacterData() async {
@@ -222,6 +228,12 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
           onBackPressed: () => Navigator.of(context).pop(_hasChanges),
           actions: [
             CommonAppBarIconButton(
+              icon: Icons.download_outlined,
+              onPressed: _importChatRoom,
+              tooltip: l10n.chatRoomImport,
+              offsetX: 0.0,
+            ),
+            CommonAppBarIconButton(
               icon: Icons.edit_outlined,
               onPressed: _navigateToEdit,
               tooltip: l10n.commonEdit,
@@ -264,20 +276,10 @@ class _CharacterViewScreenState extends State<CharacterViewScreen> with SingleTi
               chatRooms: chatRooms,
               hasMoreChats: hasMoreChats,
               scrollController: chatScrollController,
+              db: paginationDb,
+              onChatRoomsChanged: loadChatRooms,
               onNewChat: _createNewChat,
               onChatRoomTap: _onChatRoomTap,
-              onRename: (chatRoom) => ChatRoomDialogs.showRename(
-                context: context,
-                chatRoom: chatRoom,
-                db: paginationDb,
-                onSuccess: loadChatRooms,
-              ),
-              onDelete: (chatRoom) => ChatRoomDialogs.showDelete(
-                context: context,
-                chatRoom: chatRoom,
-                db: paginationDb,
-                onSuccess: loadChatRooms,
-              ),
             ),
           ],
         ),

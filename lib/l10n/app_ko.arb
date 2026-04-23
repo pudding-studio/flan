@@ -633,6 +633,41 @@
     }
   },
   "characterExportSaveFailed": "파일 저장에 실패했습니다",
+
+  "chatRoomExport": "내보내기",
+  "chatRoomImport": "채팅 가져오기",
+  "chatRoomExportFormatTitle": "내보내기 형식 선택",
+  "chatRoomExportJsonSubtitle": "전체 데이터 — 다시 가져올 수 있음",
+  "chatRoomExportTxtSubtitle": "읽기 전용 텍스트 기록",
+  "chatRoomExportSuccessAndroid": "내보내기 완료: /storage/emulated/0/Download/{fileName}",
+  "@chatRoomExportSuccessAndroid": {
+    "placeholders": {
+      "fileName": { "type": "String" }
+    }
+  },
+  "chatRoomExportSuccess": "내보내기 완료: {path}",
+  "@chatRoomExportSuccess": {
+    "placeholders": {
+      "path": { "type": "String" }
+    }
+  },
+  "chatRoomExportSaveFailed": "파일 저장에 실패했습니다",
+  "chatRoomExportFailed": "채팅방 내보내기 실패: {error}",
+  "@chatRoomExportFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "chatRoomImportSuccess": "채팅방을 성공적으로 가져왔습니다",
+  "chatRoomImportFailed": "채팅방 가져오기 실패: {error}",
+  "@chatRoomImportFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "chatRoomImportSelectCharacter": "대상 캐릭터 선택",
+  "chatRoomImportNoCharacters": "가져올 수 있는 캐릭터가 없습니다",
+
   "characterCoverDefault": "표지 1",
   "characterCopyName": "{name} (복사본)",
   "@characterCopyName": {

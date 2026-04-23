@@ -1,74 +1,130 @@
-import 'package:universal_io/io.dart';
-import 'dart:typed_data';
+import 'package:flutter/foundation.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:image/image.dart' as img;
+import 'package:universal_io/io.dart';
+
+class ProcessedImage {
+  final Uint8List bytes;
+  final String ext;
+  const ProcessedImage(this.bytes, this.ext);
+}
 
 class ImageProcessor {
-  static const int targetSize = 512;
+  static const int maxDimension = 1024;
+  static const int webpQuality = 85;
+  static const int jpegQuality = 85;
 
-  static Future<Uint8List> processToWebp512FromBytes(Uint8List imageBytes) async {
-    img.Image? image = img.decodeImage(imageBytes);
-    if (image == null) {
-      throw Exception('이미지를 디코딩할 수 없습니다');
+  /// Processes an image for storage: caps the longer side at [maxDimension]
+  /// and, on Android/iOS, re-encodes as WebP. On other platforms (desktop/web)
+  /// the image is only resized — the original format is preserved.
+  /// On any failure, returns the original bytes with the original extension.
+  static Future<ProcessedImage> processForStorage(
+    Uint8List bytes, {
+    String originalExt = '',
+  }) async {
+    final normalizedExt = _normalizeExt(originalExt);
+    final isMobile = !kIsWeb && (Platform.isAndroid || Platform.isIOS);
+
+    img.Image? decoded;
+    try {
+      decoded = img.decodeImage(bytes);
+    } catch (_) {
+      decoded = null;
     }
 
-    final int size = image.width > image.height ? image.height : image.width;
-    final int offsetX = (image.width - size) ~/ 2;
-    final int offsetY = (image.height - size) ~/ 2;
+    // Undecodable by the `image` package (e.g. HEIC). On mobile, still try
+    // the native encoder — it may understand the format. Otherwise leave
+    // the bytes untouched.
+    if (decoded == null) {
+      if (isMobile) {
+        final compressed = await _compressToWebp(
+          bytes,
+          minWidth: maxDimension,
+          minHeight: maxDimension,
+        );
+        if (compressed != null) return ProcessedImage(compressed, 'webp');
+      }
+      return ProcessedImage(bytes, normalizedExt);
+    }
 
-    img.Image croppedImage = img.copyCrop(
-      image,
-      x: offsetX,
-      y: offsetY,
-      width: size,
-      height: size,
-    );
+    final longer = decoded.width >= decoded.height ? decoded.width : decoded.height;
+    int targetW = decoded.width;
+    int targetH = decoded.height;
+    if (longer > maxDimension) {
+      final scale = maxDimension / longer;
+      targetW = (decoded.width * scale).round().clamp(1, maxDimension);
+      targetH = (decoded.height * scale).round().clamp(1, maxDimension);
+    }
+    final needsResize = targetW != decoded.width || targetH != decoded.height;
 
-    img.Image resizedImage = img.copyResize(
-      croppedImage,
-      width: targetSize,
-      height: targetSize,
+    if (isMobile) {
+      final compressed = await _compressToWebp(
+        bytes,
+        minWidth: targetW,
+        minHeight: targetH,
+      );
+      if (compressed != null) return ProcessedImage(compressed, 'webp');
+      // Fall through to pure-Dart path if native compressor failed
+    }
+
+    // Desktop / web / fallback: resize only, preserve format.
+    if (!needsResize) {
+      return ProcessedImage(bytes, normalizedExt);
+    }
+
+    final resized = img.copyResize(
+      decoded,
+      width: targetW,
+      height: targetH,
       interpolation: img.Interpolation.cubic,
     );
 
-    final Uint8List webpBytes = Uint8List.fromList(
-      img.encodeJpg(resizedImage, quality: 90),
-    );
-
-    return webpBytes;
+    switch (normalizedExt) {
+      case 'jpg':
+      case 'jpeg':
+        return ProcessedImage(
+          Uint8List.fromList(img.encodeJpg(resized, quality: jpegQuality)),
+          'jpg',
+        );
+      case 'webp':
+        // No WebP encoder available in pure Dart — fall back to PNG.
+        return ProcessedImage(
+          Uint8List.fromList(img.encodePng(resized)),
+          'png',
+        );
+      case 'png':
+      default:
+        return ProcessedImage(
+          Uint8List.fromList(img.encodePng(resized)),
+          'png',
+        );
+    }
   }
 
-  static Future<Uint8List> processToWebp512(String imagePath) async {
-    final File imageFile = File(imagePath);
-    final Uint8List imageBytes = await imageFile.readAsBytes();
-
-    img.Image? image = img.decodeImage(imageBytes);
-    if (image == null) {
-      throw Exception('이미지를 디코딩할 수 없습니다');
+  static Future<Uint8List?> _compressToWebp(
+    Uint8List bytes, {
+    required int minWidth,
+    required int minHeight,
+  }) async {
+    try {
+      final result = await FlutterImageCompress.compressWithList(
+        bytes,
+        format: CompressFormat.webp,
+        minWidth: minWidth,
+        minHeight: minHeight,
+        quality: webpQuality,
+      );
+      if (result.isEmpty) return null;
+      return result;
+    } catch (_) {
+      return null;
     }
+  }
 
-    final int size = image.width > image.height ? image.height : image.width;
-    final int offsetX = (image.width - size) ~/ 2;
-    final int offsetY = (image.height - size) ~/ 2;
-
-    img.Image croppedImage = img.copyCrop(
-      image,
-      x: offsetX,
-      y: offsetY,
-      width: size,
-      height: size,
-    );
-
-    img.Image resizedImage = img.copyResize(
-      croppedImage,
-      width: targetSize,
-      height: targetSize,
-      interpolation: img.Interpolation.cubic,
-    );
-
-    final Uint8List webpBytes = Uint8List.fromList(
-      img.encodeJpg(resizedImage, quality: 90),
-    );
-
-    return webpBytes;
+  static String _normalizeExt(String ext) {
+    final lower = ext.toLowerCase().replaceFirst('.', '').trim();
+    if (lower.isEmpty) return 'bin';
+    if (lower == 'jpeg') return 'jpg';
+    return lower;
   }
 }

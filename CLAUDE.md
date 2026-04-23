@@ -122,6 +122,30 @@ flutter build windows --release
 - **Code comments**: English only
 - **Reports/explanations**: Korean
 
+## Chat Room Scroll Policy (중요)
+
+`lib/screens/chat/chat_room_screen.dart`의 새 메시지 도착 UX는 **지연 렌더링 방식**을 사용한다. 임의로 뷰포트 앵커링·자동 스크롤 등 다른 방식으로 바꾸지 않는다.
+
+### 동작 규약
+
+- 상태: `_hiddenNewMessageCount` — 아직 렌더되지 않은 최신 메시지 개수. `ScrollablePositionedList`의 `itemCount = visibleCount + 1`에서 `visibleCount = _messages.length - _hiddenNewMessageCount`로 반영되어, 버퍼된 메시지는 리스트에 아예 나타나지 않는다.
+- 새 메시지 도착 시 (`_finishSending`):
+  - 사용자가 **위로 스크롤된 상태** (`_showScrollButtons == true`): `_hiddenNewMessageCount += delta`, 칩 표시. 뷰포트는 건드리지 않는다.
+  - 사용자가 **하단에 있는 상태**: 숨기지 않고 즉시 렌더한 뒤 index 0으로 `scrollTo`. (숨기면 스크롤 transition이 발생하지 않아 칩이 해제되지 않고 stranded 상태가 되므로.)
+- "새 메시지" 칩 (`ChatRoomScrollButtons.hasNewMessage`):
+  - 새 메시지가 화면에 보이지 않을 때만 나타난다.
+  - 화면에 한 번이라도 드러나면 사라진다. 구현상 `_hiddenNewMessageCount > 0`과 동치 — 공개되면 카운트가 0이 되어 칩도 사라진다.
+  - 알림 전용. 탭 시 `_hiddenNewMessageCount = 0`으로 공개 + index 0으로 스크롤. 그 외 기능은 넣지 않는다.
+- 공개 트리거:
+  - 칩 / 아래 화살표 FAB 탭
+  - 위로 스크롤된 상태에서 다시 하단으로 돌아오는 transition (`_onScrollChanged`에서 `wasShowingButtons && !nowShowButtons && _hiddenNewMessageCount > 0`)
+
+### 참고 커밋
+
+- `9543ffd` — 지연 렌더링 도입
+- `9943410` — 하단 위치 시 즉시 공개 (stranded 버그 수정)
+- `a12fa56` — 뷰포트 앵커링으로 잠시 전환했으나 다시 지연 렌더링으로 복구됨. 이 방향으로 돌아가지 않는다.
+
 ## Internationalization (i18n)
 
 지원 언어: 한국어(`ko`) / 영어(`en`) / 일본어(`ja`)
