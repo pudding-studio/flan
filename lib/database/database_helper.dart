@@ -1,5 +1,6 @@
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
+import '../utils/character_image_storage.dart';
 import '../models/character/character.dart';
 import '../models/character/character_book_folder.dart';
 import '../models/character/persona.dart';
@@ -1661,11 +1662,41 @@ class DatabaseHelper {
 
   Future<int> deleteCharacter(int id) async {
     final db = await database;
-    return await db.delete(
-      'characters',
-      where: 'id = ?',
+    // Collect image file paths before the rows disappear. `character_id` is
+    // NOT NULL on every cover_images row (covers / additional / background /
+    // characterBook), so a single query catches all images belonging to this
+    // character — including those owned by its character books.
+    final imageRows = await db.query(
+      'cover_images',
+      columns: ['path'],
+      where: "character_id = ? AND path IS NOT NULL AND path != ''",
       whereArgs: [id],
     );
+
+    final result = await db.transaction<int>((txn) async {
+      // Schema declares ON DELETE CASCADE, but PRAGMA foreign_keys isn't
+      // enabled on this connection so dependents must be cleared manually.
+      // Without this, deleted characters leave orphan cover_images rows and
+      // files on disk that contaminate subsequent backups.
+      await txn.delete(
+        'cover_images',
+        where: 'character_id = ?',
+        whereArgs: [id],
+      );
+      return await txn.delete(
+        'characters',
+        where: 'id = ?',
+        whereArgs: [id],
+      );
+    });
+
+    for (final row in imageRows) {
+      final path = row['path'] as String?;
+      if (path != null && path.isNotEmpty) {
+        await CharacterImageStorage.deleteImage(path);
+      }
+    }
+    return result;
   }
 
   // ==================== 캐릭터 북 폴더 CRUD ====================
