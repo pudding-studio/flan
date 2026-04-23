@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../l10n/app_localizations.dart';
 import '../../mixins/chat_room_pagination_mixin.dart';
-import '../../utils/chat_room_dialogs.dart';
+import '../../utils/chat_room_importer.dart';
 import '../../utils/common_dialog.dart';
-import '../../utils/date_formatter.dart';
-import '../../utils/metadata_parser.dart';
-import '../../widgets/chat/chat_room_card.dart';
-import '../../widgets/chat/chat_room_context_menu.dart';
+import '../../widgets/chat/chat_room_list_entry.dart';
 import '../../widgets/common/common_appbar.dart';
 import 'chat_room_screen.dart';
 
@@ -82,6 +79,12 @@ class _ChatScreenState extends State<ChatScreen> with ChatRoomPaginationMixin {
     });
   }
 
+  Future<void> _importChatRoom() async {
+    final success =
+        await ChatRoomImporter.importWithCharacterPicker(context, paginationDb);
+    if (success) loadChatRooms();
+  }
+
   Future<void> _deleteSelectedChatRooms() async {
     if (_selectedChatRoomIds.isEmpty) return;
 
@@ -153,7 +156,9 @@ class _ChatScreenState extends State<ChatScreen> with ChatRoomPaginationMixin {
             CommonAppBarPopupMenuButton<String>(
               tooltip: l10n.commonMore,
               onSelected: (String value) {
-                if (value == 'date' || value == 'name' || value == 'message_count') {
+                if (value == 'import') {
+                  _importChatRoom();
+                } else if (value == 'date' || value == 'name' || value == 'message_count') {
                   setState(() {
                     _sortMethod = value;
                     _sortChatRooms();
@@ -162,6 +167,17 @@ class _ChatScreenState extends State<ChatScreen> with ChatRoomPaginationMixin {
               },
               itemBuilder: (BuildContext context) {
                 return [
+                  PopupMenuItem<String>(
+                    value: 'import',
+                    child: Row(
+                      children: [
+                        const Icon(Icons.download_outlined, size: 20),
+                        const SizedBox(width: 12),
+                        Text(l10n.chatRoomImport),
+                      ],
+                    ),
+                  ),
+                  const PopupMenuDivider(),
                   PopupMenuItem<String>(
                     enabled: false,
                     child: Text(
@@ -263,7 +279,12 @@ class _ChatScreenState extends State<ChatScreen> with ChatRoomPaginationMixin {
                       );
                     }
                     final data = chatRooms[index];
-                    return GestureDetector(
+                    return ChatRoomListEntry(
+                      data: data,
+                      db: paginationDb,
+                      onChanged: loadChatRooms,
+                      isEditMode: _isEditMode,
+                      isSelected: _selectedChatRoomIds.contains(data.chatRoom.id),
                       onTap: () async {
                         if (_isEditMode) {
                           _toggleChatRoomSelection(data.chatRoom.id!);
@@ -279,38 +300,6 @@ class _ChatScreenState extends State<ChatScreen> with ChatRoomPaginationMixin {
                           loadChatRooms();
                         }
                       },
-                      onLongPress: _isEditMode ? null : () {
-                        showDialog(
-                          context: context,
-                          builder: (_) => ChatRoomContextMenu(
-                            chatRoomName: data.chatRoom.name,
-                            onRename: () => ChatRoomDialogs.showRename(
-                              context: context,
-                              chatRoom: data.chatRoom,
-                              db: paginationDb,
-                              onSuccess: loadChatRooms,
-                            ),
-                            onDelete: () => ChatRoomDialogs.showDelete(
-                              context: context,
-                              chatRoom: data.chatRoom,
-                              db: paginationDb,
-                              onSuccess: loadChatRooms,
-                            ),
-                          ),
-                        );
-                      },
-                      child: ChatRoomCard(
-                        title: data.chatRoom.name,
-                        lastMessage: data.lastMessage != null
-                            ? MetadataParser.removeMetadataTags(data.lastMessage!.content)
-                            : l10n.chatNoMessages,
-                        date: DateFormatter.formatRelativeDate(data.chatRoom.updatedAt, l10n),
-                        imageData: data.coverImage?.imageData,
-                        messageCount: data.messageCount,
-                        tokenCount: data.tokenCount,
-                        isEditMode: _isEditMode,
-                        isSelected: _selectedChatRoomIds.contains(data.chatRoom.id),
-                      ),
                     );
                   },
                 ),

@@ -633,6 +633,41 @@
     }
   },
   "characterExportSaveFailed": "ファイルの保存に失敗しました",
+
+  "chatRoomExport": "エクスポート",
+  "chatRoomImport": "チャットをインポート",
+  "chatRoomExportFormatTitle": "エクスポート形式を選択",
+  "chatRoomExportJsonSubtitle": "全データ — 再インポート可能",
+  "chatRoomExportTxtSubtitle": "読み取り専用テキスト記録",
+  "chatRoomExportSuccessAndroid": "エクスポート完了: /storage/emulated/0/Download/{fileName}",
+  "@chatRoomExportSuccessAndroid": {
+    "placeholders": {
+      "fileName": { "type": "String" }
+    }
+  },
+  "chatRoomExportSuccess": "エクスポート完了: {path}",
+  "@chatRoomExportSuccess": {
+    "placeholders": {
+      "path": { "type": "String" }
+    }
+  },
+  "chatRoomExportSaveFailed": "ファイルの保存に失敗しました",
+  "chatRoomExportFailed": "チャットルームのエクスポートに失敗しました: {error}",
+  "@chatRoomExportFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "chatRoomImportSuccess": "チャットルームを正常にインポートしました",
+  "chatRoomImportFailed": "チャットルームのインポートに失敗しました: {error}",
+  "@chatRoomImportFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "chatRoomImportSelectCharacter": "対象キャラクターを選択",
+  "chatRoomImportNoCharacters": "インポート先のキャラクターがありません",
+
   "characterCoverDefault": "カバー 1",
   "characterCopyName": "{name} (コピー)",
   "@characterCopyName": {

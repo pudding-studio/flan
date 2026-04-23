@@ -4,12 +4,14 @@ import '../../l10n/app_localizations.dart';
 class ChatRoomContextMenu extends StatelessWidget {
   final String chatRoomName;
   final VoidCallback onRename;
+  final VoidCallback onExport;
   final VoidCallback onDelete;
 
   const ChatRoomContextMenu({
     super.key,
     required this.chatRoomName,
     required this.onRename,
+    required this.onExport,
     required this.onDelete,
   });
 
@@ -42,6 +44,15 @@ class ChatRoomContextMenu extends StatelessWidget {
               onTap: () {
                 Navigator.pop(context);
                 onRename();
+              },
+            ),
+            ListTile(
+              contentPadding: EdgeInsets.zero,
+              leading: const Icon(Icons.upload_outlined),
+              title: Text(l10n.chatRoomExport),
+              onTap: () {
+                Navigator.pop(context);
+                onExport();
               },
             ),
             ListTile(

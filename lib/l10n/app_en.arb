@@ -633,6 +633,41 @@
     }
   },
   "characterExportSaveFailed": "Failed to save file",
+
+  "chatRoomExport": "Export",
+  "chatRoomImport": "Import chat",
+  "chatRoomExportFormatTitle": "Select export format",
+  "chatRoomExportJsonSubtitle": "Full data — can be re-imported",
+  "chatRoomExportTxtSubtitle": "Read-only transcript",
+  "chatRoomExportSuccessAndroid": "Export complete: /storage/emulated/0/Download/{fileName}",
+  "@chatRoomExportSuccessAndroid": {
+    "placeholders": {
+      "fileName": { "type": "String" }
+    }
+  },
+  "chatRoomExportSuccess": "Export complete: {path}",
+  "@chatRoomExportSuccess": {
+    "placeholders": {
+      "path": { "type": "String" }
+    }
+  },
+  "chatRoomExportSaveFailed": "Failed to save file",
+  "chatRoomExportFailed": "Chat room export failed: {error}",
+  "@chatRoomExportFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "chatRoomImportSuccess": "Chat room imported successfully",
+  "chatRoomImportFailed": "Chat room import failed: {error}",
+  "@chatRoomImportFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
+  "chatRoomImportSelectCharacter": "Select target character",
+  "chatRoomImportNoCharacters": "No characters available to import into",
+
   "characterCoverDefault": "Cover 1",
   "characterCopyName": "{name} (Copy)",
   "@characterCopyName": {

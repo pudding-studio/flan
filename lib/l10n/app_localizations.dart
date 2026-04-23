@@ -2476,6 +2476,84 @@ abstract class AppLocalizations {
   /// **'파일 저장에 실패했습니다'**
   String get characterExportSaveFailed;
 
+  /// No description provided for @chatRoomExport.
+  ///
+  /// In ko, this message translates to:
+  /// **'내보내기'**
+  String get chatRoomExport;
+
+  /// No description provided for @chatRoomImport.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅 가져오기'**
+  String get chatRoomImport;
+
+  /// No description provided for @chatRoomExportFormatTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'내보내기 형식 선택'**
+  String get chatRoomExportFormatTitle;
+
+  /// No description provided for @chatRoomExportJsonSubtitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'전체 데이터 — 다시 가져올 수 있음'**
+  String get chatRoomExportJsonSubtitle;
+
+  /// No description provided for @chatRoomExportTxtSubtitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'읽기 전용 텍스트 기록'**
+  String get chatRoomExportTxtSubtitle;
+
+  /// No description provided for @chatRoomExportSuccessAndroid.
+  ///
+  /// In ko, this message translates to:
+  /// **'내보내기 완료: /storage/emulated/0/Download/{fileName}'**
+  String chatRoomExportSuccessAndroid(String fileName);
+
+  /// No description provided for @chatRoomExportSuccess.
+  ///
+  /// In ko, this message translates to:
+  /// **'내보내기 완료: {path}'**
+  String chatRoomExportSuccess(String path);
+
+  /// No description provided for @chatRoomExportSaveFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'파일 저장에 실패했습니다'**
+  String get chatRoomExportSaveFailed;
+
+  /// No description provided for @chatRoomExportFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅방 내보내기 실패: {error}'**
+  String chatRoomExportFailed(String error);
+
+  /// No description provided for @chatRoomImportSuccess.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅방을 성공적으로 가져왔습니다'**
+  String get chatRoomImportSuccess;
+
+  /// No description provided for @chatRoomImportFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅방 가져오기 실패: {error}'**
+  String chatRoomImportFailed(String error);
+
+  /// No description provided for @chatRoomImportSelectCharacter.
+  ///
+  /// In ko, this message translates to:
+  /// **'대상 캐릭터 선택'**
+  String get chatRoomImportSelectCharacter;
+
+  /// No description provided for @chatRoomImportNoCharacters.
+  ///
+  /// In ko, this message translates to:
+  /// **'가져올 수 있는 캐릭터가 없습니다'**
+  String get chatRoomImportNoCharacters;
+
   /// No description provided for @characterCoverDefault.
   ///
   /// In ko, this message translates to:

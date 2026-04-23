@@ -1302,6 +1302,53 @@ class AppLocalizationsKo extends AppLocalizations {
   String get characterExportSaveFailed => '파일 저장에 실패했습니다';
 
   @override
+  String get chatRoomExport => '내보내기';
+
+  @override
+  String get chatRoomImport => '채팅 가져오기';
+
+  @override
+  String get chatRoomExportFormatTitle => '내보내기 형식 선택';
+
+  @override
+  String get chatRoomExportJsonSubtitle => '전체 데이터 — 다시 가져올 수 있음';
+
+  @override
+  String get chatRoomExportTxtSubtitle => '읽기 전용 텍스트 기록';
+
+  @override
+  String chatRoomExportSuccessAndroid(String fileName) {
+    return '내보내기 완료: /storage/emulated/0/Download/$fileName';
+  }
+
+  @override
+  String chatRoomExportSuccess(String path) {
+    return '내보내기 완료: $path';
+  }
+
+  @override
+  String get chatRoomExportSaveFailed => '파일 저장에 실패했습니다';
+
+  @override
+  String chatRoomExportFailed(String error) {
+    return '채팅방 내보내기 실패: $error';
+  }
+
+  @override
+  String get chatRoomImportSuccess => '채팅방을 성공적으로 가져왔습니다';
+
+  @override
+  String chatRoomImportFailed(String error) {
+    return '채팅방 가져오기 실패: $error';
+  }
+
+  @override
+  String get chatRoomImportSelectCharacter => '대상 캐릭터 선택';
+
+  @override
+  String get chatRoomImportNoCharacters => '가져올 수 있는 캐릭터가 없습니다';
+
+  @override
   String get characterCoverDefault => '표지 1';
 
   @override

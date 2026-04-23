@@ -1295,6 +1295,53 @@ class AppLocalizationsJa extends AppLocalizations {
   String get characterExportSaveFailed => 'ファイルの保存に失敗しました';
 
   @override
+  String get chatRoomExport => 'エクスポート';
+
+  @override
+  String get chatRoomImport => 'チャットをインポート';
+
+  @override
+  String get chatRoomExportFormatTitle => 'エクスポート形式を選択';
+
+  @override
+  String get chatRoomExportJsonSubtitle => '全データ — 再インポート可能';
+
+  @override
+  String get chatRoomExportTxtSubtitle => '読み取り専用テキスト記録';
+
+  @override
+  String chatRoomExportSuccessAndroid(String fileName) {
+    return 'エクスポート完了: /storage/emulated/0/Download/$fileName';
+  }
+
+  @override
+  String chatRoomExportSuccess(String path) {
+    return 'エクスポート完了: $path';
+  }
+
+  @override
+  String get chatRoomExportSaveFailed => 'ファイルの保存に失敗しました';
+
+  @override
+  String chatRoomExportFailed(String error) {
+    return 'チャットルームのエクスポートに失敗しました: $error';
+  }
+
+  @override
+  String get chatRoomImportSuccess => 'チャットルームを正常にインポートしました';
+
+  @override
+  String chatRoomImportFailed(String error) {
+    return 'チャットルームのインポートに失敗しました: $error';
+  }
+
+  @override
+  String get chatRoomImportSelectCharacter => '対象キャラクターを選択';
+
+  @override
+  String get chatRoomImportNoCharacters => 'インポート先のキャラクターがありません';
+
+  @override
   String get characterCoverDefault => 'カバー 1';
 
   @override
