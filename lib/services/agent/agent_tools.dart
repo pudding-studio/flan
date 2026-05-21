@@ -1,9 +1,25 @@
+import 'package:shared_preferences/shared_preferences.dart';
+
 import '../../database/database_helper.dart';
 import '../../models/character/character.dart';
 import '../../models/character/character_book_folder.dart';
 import '../../models/character/persona.dart';
 import '../../models/character/start_scenario.dart';
 import 'agent_tool.dart';
+
+// Mirrors CharacterEditScreen._getAutoSaveKey: keep keys in sync so that
+// any agent-side mutation drops the draft the user might have left behind.
+Future<void> _clearCharacterAutoSave(int? characterId) async {
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    final key = characterId == null
+        ? 'autosave_character_new'
+        : 'autosave_character_$characterId';
+    await prefs.remove(key);
+  } catch (_) {
+    // Best-effort cleanup; ignore.
+  }
+}
 
 class ListCharactersTool extends AgentTool {
   final DatabaseHelper _db;
@@ -248,6 +264,7 @@ class CreateCharacterTool extends AgentTool {
     );
 
     final id = await _db.createCharacter(character);
+    await _clearCharacterAutoSave(null);
 
     return AgentToolResult(
       success: true,
@@ -368,6 +385,7 @@ class UpdateCharacterTool extends AgentTool {
     );
 
     await _db.updateCharacter(updated);
+    await _clearCharacterAutoSave(id);
 
     return AgentToolResult(
       success: true,
@@ -433,6 +451,7 @@ class CreatePersonaTool extends AgentTool {
     );
 
     final id = await _db.createPersona(persona);
+    await _clearCharacterAutoSave(characterId);
 
     return AgentToolResult(
       success: true,
@@ -490,6 +509,7 @@ class UpdatePersonaTool extends AgentTool {
     );
 
     await _db.updatePersona(updated);
+    await _clearCharacterAutoSave(persona.characterId);
 
     return AgentToolResult(
       success: true,
@@ -532,6 +552,7 @@ class DeletePersonaTool extends AgentTool {
     }
 
     await _db.deletePersona(id);
+    await _clearCharacterAutoSave(persona.characterId);
 
     return AgentToolResult(
       success: true,
@@ -607,6 +628,7 @@ class CreateStartScenarioTool extends AgentTool {
     );
 
     final id = await _db.createStartScenario(scenario);
+    await _clearCharacterAutoSave(characterId);
 
     return AgentToolResult(
       success: true,
@@ -675,6 +697,7 @@ class UpdateStartScenarioTool extends AgentTool {
     );
 
     await _db.updateStartScenario(updated);
+    await _clearCharacterAutoSave(scenario.characterId);
 
     return AgentToolResult(
       success: true,
@@ -721,6 +744,7 @@ class DeleteStartScenarioTool extends AgentTool {
     }
 
     await _db.deleteStartScenario(id);
+    await _clearCharacterAutoSave(scenarios.first.characterId);
 
     return AgentToolResult(
       success: true,
@@ -788,6 +812,7 @@ class CreateCharacterBookTool extends AgentTool {
     _applyBookStructuredFields(book, args);
 
     final id = await _db.createCharacterBook(book);
+    await _clearCharacterAutoSave(characterId);
 
     return AgentToolResult(
       success: true,
@@ -863,6 +888,7 @@ class UpdateCharacterBookTool extends AgentTool {
     _applyBookStructuredFields(updated, args);
 
     await _db.updateCharacterBook(updated);
+    await _clearCharacterAutoSave(book.characterId);
 
     return AgentToolResult(
       success: true,
@@ -913,6 +939,7 @@ class DeleteCharacterBookTool extends AgentTool {
     }
 
     await _db.deleteCharacterBook(id);
+    await _clearCharacterAutoSave(books.first.characterId);
 
     return AgentToolResult(
       success: true,
