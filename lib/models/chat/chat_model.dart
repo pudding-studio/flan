@@ -72,6 +72,13 @@ class ModelPricing {
 
 enum ChatModel {
   // Gemini models
+  geminiFlash35(
+    'Gemini 3.5 Flash',
+    ChatModelProvider.googleAIStudio,
+    'gemini-3.5-flash',
+    ApiFormat.gemini,
+    ModelPricing(inputPrice: 1.50, cachedInputPrice: 0.15, outputPrice: 9.00),
+  ),
   geminiPro31Preview(
     'Gemini 3.1 Pro Preview',
     ChatModelProvider.googleAIStudio,
@@ -116,6 +123,13 @@ enum ChatModel {
   ),
 
   // Vertex AI models (same Gemini models via Vertex AI endpoint)
+  vertexGeminiFlash35(
+    'Gemini 3.5 Flash',
+    ChatModelProvider.vertexAi,
+    'gemini-3.5-flash',
+    ApiFormat.gemini,
+    ModelPricing(inputPrice: 1.50, cachedInputPrice: 0.15, outputPrice: 9.00),
+  ),
   vertexGeminiPro31Preview(
     'Gemini 3.1 Pro Preview',
     ChatModelProvider.vertexAi,
@@ -167,6 +181,13 @@ enum ChatModel {
   ),
 
   // OpenAI models
+  gpt55(
+    'GPT-5.5',
+    ChatModelProvider.openai,
+    'gpt-5.5',
+    ApiFormat.openai,
+    ModelPricing(inputPrice: 5.00, cachedInputPrice: 0.50, outputPrice: 30.00),
+  ),
   gpt54(
     'GPT-5.4',
     ChatModelProvider.openai,
@@ -194,6 +215,13 @@ enum ChatModel {
     'o3',
     ApiFormat.openai,
     ModelPricing(inputPrice: 2.00, cachedInputPrice: 0.50, outputPrice: 8.00),
+  ),
+  o3Pro(
+    'o3-pro',
+    ChatModelProvider.openai,
+    'o3-pro',
+    ApiFormat.openai,
+    ModelPricing(inputPrice: 20.00, cachedInputPrice: 5.00, outputPrice: 80.00),
   ),
   o4Mini(
     'o4-mini',
@@ -253,6 +281,13 @@ enum ChatModel {
   ),
 
   // Claude models
+  claudeOpus47(
+    'Claude Opus 4.7',
+    ChatModelProvider.anthropic,
+    'claude-opus-4-7',
+    ApiFormat.claude,
+    ModelPricing(inputPrice: 5.00, cachedInputPrice: 0.50, outputPrice: 25.00),
+  ),
   claudeOpus46(
     'Claude Opus 4.6',
     ChatModelProvider.anthropic,
