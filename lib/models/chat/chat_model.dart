@@ -9,7 +9,7 @@ enum ApiFormat {
 
 enum ChatModelProvider {
   googleAIStudio('Google AI Studio'),
-  vertexAi('Vertex AI'),
+  vertexAi('Gemini Enterprise'),
   openai('OpenAI'),
   anthropic('Anthropic'),
   custom('커스텀');
@@ -129,7 +129,7 @@ enum ChatModel {
     ModelPricing(inputPrice: 0.10, cachedInputPrice: 0.010, outputPrice: 0.40),
   ),
 
-  // Vertex AI models (same Gemini models via Vertex AI endpoint)
+  // Gemini Enterprise models (formerly Vertex AI; same Gemini models via the same endpoint)
   vertexGeminiFlash36(
     'Gemini 3.6 Flash',
     ChatModelProvider.vertexAi,

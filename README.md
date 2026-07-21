@@ -9,7 +9,7 @@ Google Gemini API를 활용한 자연스러운 롤플레이 대화 경험을 제
 
 - **캐릭터 관리** — 이름, 설명, 페르소나, 캐릭터북, 표지 이미지 등 세부 설정 지원
 - **채팅 룸** — 캐릭터별 독립된 대화 공간, 대화 이력 영구 저장
-- **AI 대화** — Google Gemini / Vertex AI 기반 실시간 스트리밍 응답
+- **AI 대화** — Google Gemini / Gemini Enterprise (구 Vertex AI) 기반 실시간 스트리밍 응답
 - **자동 요약** — 긴 대화를 자동으로 요약해 컨텍스트 관리
 - **에이전트 모드** — 툴 호출을 통해 캐릭터 및 채팅 데이터를 조회·조작하는 AI 에이전트
 - **씬 핀** — 대화 내 위치·날짜·시간 핀을 자동 감지해 씬 구분 삽입
@@ -20,7 +20,7 @@ Google Gemini API를 활용한 자연스러운 롤플레이 대화 경험을 제
 | 항목 | 내용 |
 |------|------|
 | Framework | Flutter 3.x (Dart ^3.7) |
-| AI | Google Gemini API, Vertex AI |
+| AI | Google Gemini API, Gemini Enterprise (구 Vertex AI) |
 | Database | SQLite (sqflite) |
 | State Management | Provider |
 | Analytics | Firebase Analytics, Crashlytics |
@@ -46,7 +46,7 @@ assets/
 
 - Flutter SDK ^3.7.2
 - Android Studio 또는 VS Code
-- Google Gemini API 키 (또는 Vertex AI 설정)
+- Google Gemini API 키 (또는 Gemini Enterprise / 구 Vertex AI 설정)
 
 ### 실행
 

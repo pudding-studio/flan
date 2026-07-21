@@ -281,7 +281,7 @@
       "provider": { "type": "String" }
     }
   },
-  "tutorialVertexSaved": "Vertex AIサービスアカウントを登録しました",
+  "tutorialVertexSaved": "Gemini Enterpriseサービスアカウントを登録しました",
   "tutorialApiKeySaveFailed": "APIキーの保存に失敗しました: {error}",
   "@tutorialApiKeySaveFailed": {
     "placeholders": {
@@ -315,7 +315,7 @@
   "tutorialAgentBoxSubtitle": "キャラクタータブ上部の光るアイコンをタップしてみて",
   "tutorialAgentBoxBody": "Agentに作りたいキャラクターを伝えてみよう！\n「ファンタジー世界のエルフの魔法使いを作って」のように自由にリクエストできます。",
   "tutorialHelpGoogleAi": "Google AI Studio APIキーを取得",
-  "tutorialHelpVertex": "Vertex AIサービスアカウントを設定",
+  "tutorialHelpVertex": "Gemini Enterpriseサービスアカウントを設定",
   "tutorialHelpOpenai": "OpenAI APIキーを取得",
   "tutorialHelpAnthropic": "Anthropic APIキーを取得",
 
