@@ -1147,7 +1147,7 @@ abstract class AppLocalizations {
   /// No description provided for @tutorialVertexSaved.
   ///
   /// In ko, this message translates to:
-  /// **'Vertex AI 서비스 계정이 등록되었습니다'**
+  /// **'Gemini Enterprise 서비스 계정이 등록되었습니다'**
   String get tutorialVertexSaved;
 
   /// No description provided for @tutorialApiKeySaveFailed.
@@ -1291,7 +1291,7 @@ abstract class AppLocalizations {
   /// No description provided for @tutorialHelpVertex.
   ///
   /// In ko, this message translates to:
-  /// **'Vertex AI 서비스 계정 설정'**
+  /// **'Gemini Enterprise 서비스 계정 설정'**
   String get tutorialHelpVertex;
 
   /// No description provided for @tutorialHelpOpenai.

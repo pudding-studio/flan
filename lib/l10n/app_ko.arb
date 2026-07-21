@@ -281,7 +281,7 @@
       "provider": { "type": "String" }
     }
   },
-  "tutorialVertexSaved": "Vertex AI 서비스 계정이 등록되었습니다",
+  "tutorialVertexSaved": "Gemini Enterprise 서비스 계정이 등록되었습니다",
   "tutorialApiKeySaveFailed": "API 키 저장 실패: {error}",
   "@tutorialApiKeySaveFailed": {
     "placeholders": {
@@ -315,7 +315,7 @@
   "tutorialAgentBoxSubtitle": "캐릭터 탭 상단의 빛나는 아이콘을 눌러보세요",
   "tutorialAgentBoxBody": "Agent에게 원하는 캐릭터를 만들어달라고 말해보세요!\n\"판타지 세계의 엘프 마법사를 만들어줘\" 같이 자유롭게 요청하면 됩니다.",
   "tutorialHelpGoogleAi": "Google AI Studio API 키 발급",
-  "tutorialHelpVertex": "Vertex AI 서비스 계정 설정",
+  "tutorialHelpVertex": "Gemini Enterprise 서비스 계정 설정",
   "tutorialHelpOpenai": "OpenAI API 키 발급",
   "tutorialHelpAnthropic": "Anthropic API 키 발급",
 

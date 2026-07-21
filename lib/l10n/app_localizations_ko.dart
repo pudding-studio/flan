@@ -578,7 +578,7 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
-  String get tutorialVertexSaved => 'Vertex AI 서비스 계정이 등록되었습니다';
+  String get tutorialVertexSaved => 'Gemini Enterprise 서비스 계정이 등록되었습니다';
 
   @override
   String tutorialApiKeySaveFailed(String error) {
@@ -659,7 +659,7 @@ class AppLocalizationsKo extends AppLocalizations {
   String get tutorialHelpGoogleAi => 'Google AI Studio API 키 발급';
 
   @override
-  String get tutorialHelpVertex => 'Vertex AI 서비스 계정 설정';
+  String get tutorialHelpVertex => 'Gemini Enterprise 서비스 계정 설정';
 
   @override
   String get tutorialHelpOpenai => 'OpenAI API 키 발급';

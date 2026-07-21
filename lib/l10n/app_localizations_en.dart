@@ -586,7 +586,7 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get tutorialVertexSaved => 'Vertex AI service account registered';
+  String get tutorialVertexSaved => 'Gemini Enterprise service account registered';
 
   @override
   String tutorialApiKeySaveFailed(String error) {
@@ -672,7 +672,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get tutorialHelpGoogleAi => 'Get a Google AI Studio API key';
 
   @override
-  String get tutorialHelpVertex => 'Set up a Vertex AI service account';
+  String get tutorialHelpVertex => 'Set up a Gemini Enterprise service account';
 
   @override
   String get tutorialHelpOpenai => 'Get an OpenAI API key';

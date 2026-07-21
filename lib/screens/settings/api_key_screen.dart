@@ -14,7 +14,7 @@ import '../../services/vertex_auth_service.dart';
 
 enum ApiKeyType {
   googleAiStudio('Google AI Studio', 'google'),
-  vertexAi('Vertex AI', 'vertex_ai'),
+  vertexAi('Gemini Enterprise', 'vertex_ai'),
   openai('OpenAI', 'openai'),
   anthropic('Anthropic', 'anthropic');
   // openRouter('OpenRouter', 'openrouter');

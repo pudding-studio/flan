@@ -281,7 +281,7 @@
       "provider": { "type": "String" }
     }
   },
-  "tutorialVertexSaved": "Vertex AI service account registered",
+  "tutorialVertexSaved": "Gemini Enterprise service account registered",
   "tutorialApiKeySaveFailed": "Failed to save API key: {error}",
   "@tutorialApiKeySaveFailed": {
     "placeholders": {
@@ -315,7 +315,7 @@
   "tutorialAgentBoxSubtitle": "Tap the glowing icon at the top of the Characters tab",
   "tutorialAgentBoxBody": "Ask the Agent to create any character you want!\nTry something like \"Create an elven mage from a fantasy world\".",
   "tutorialHelpGoogleAi": "Get a Google AI Studio API key",
-  "tutorialHelpVertex": "Set up a Vertex AI service account",
+  "tutorialHelpVertex": "Set up a Gemini Enterprise service account",
   "tutorialHelpOpenai": "Get an OpenAI API key",
   "tutorialHelpAnthropic": "Get an Anthropic API key",
 
