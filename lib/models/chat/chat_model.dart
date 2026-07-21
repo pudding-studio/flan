@@ -72,6 +72,13 @@ class ModelPricing {
 
 enum ChatModel {
   // Gemini models
+  geminiFlash36(
+    'Gemini 3.6 Flash',
+    ChatModelProvider.googleAIStudio,
+    'gemini-3.6-flash',
+    ApiFormat.gemini,
+    ModelPricing(inputPrice: 1.50, cachedInputPrice: 0.15, outputPrice: 7.50),
+  ),
   geminiFlash35(
     'Gemini 3.5 Flash',
     ChatModelProvider.googleAIStudio,
@@ -123,6 +130,13 @@ enum ChatModel {
   ),
 
   // Vertex AI models (same Gemini models via Vertex AI endpoint)
+  vertexGeminiFlash36(
+    'Gemini 3.6 Flash',
+    ChatModelProvider.vertexAi,
+    'gemini-3.6-flash',
+    ApiFormat.gemini,
+    ModelPricing(inputPrice: 1.50, cachedInputPrice: 0.15, outputPrice: 7.50),
+  ),
   vertexGeminiFlash35(
     'Gemini 3.5 Flash',
     ChatModelProvider.vertexAi,
@@ -181,6 +195,27 @@ enum ChatModel {
   ),
 
   // OpenAI models
+  gpt56Sol(
+    'GPT-5.6 Sol',
+    ChatModelProvider.openai,
+    'gpt-5.6-sol',
+    ApiFormat.openai,
+    ModelPricing(inputPrice: 5.00, cachedInputPrice: 0.50, outputPrice: 30.00),
+  ),
+  gpt56Terra(
+    'GPT-5.6 Terra',
+    ChatModelProvider.openai,
+    'gpt-5.6-terra',
+    ApiFormat.openai,
+    ModelPricing(inputPrice: 2.50, cachedInputPrice: 0.25, outputPrice: 15.00),
+  ),
+  gpt56Luna(
+    'GPT-5.6 Luna',
+    ChatModelProvider.openai,
+    'gpt-5.6-luna',
+    ApiFormat.openai,
+    ModelPricing(inputPrice: 1.00, cachedInputPrice: 0.10, outputPrice: 6.00),
+  ),
   gpt55(
     'GPT-5.5',
     ChatModelProvider.openai,
@@ -281,6 +316,20 @@ enum ChatModel {
   ),
 
   // Claude models
+  claudeSonnet5(
+    'Claude Sonnet 5',
+    ChatModelProvider.anthropic,
+    'claude-sonnet-5',
+    ApiFormat.claude,
+    ModelPricing(inputPrice: 3.00, cachedInputPrice: 0.30, outputPrice: 15.00),
+  ),
+  claudeOpus48(
+    'Claude Opus 4.8',
+    ChatModelProvider.anthropic,
+    'claude-opus-4-8',
+    ApiFormat.claude,
+    ModelPricing(inputPrice: 5.00, cachedInputPrice: 0.50, outputPrice: 25.00),
+  ),
   claudeOpus47(
     'Claude Opus 4.7',
     ChatModelProvider.anthropic,
