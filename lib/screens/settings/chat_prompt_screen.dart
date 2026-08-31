@@ -10,6 +10,7 @@ import '../../models/prompt/chat_prompt.dart';
 import '../../utils/common_dialog.dart';
 import '../../services/default_seeder_service.dart';
 import '../../utils/silly_tavern_preset_converter.dart';
+import '../../utils/risu_preset_converter.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../../widgets/common/common_fab.dart';
 import '../../widgets/settings/settings_prompt_list_item.dart';
@@ -491,9 +492,14 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
       final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
 
       final Map<String, dynamic> normalizedData;
+      final fileName = result.files.single.name.replaceAll('.json', '');
       if (SillyTavernPresetConverter.isSillyTavernPreset(jsonData)) {
-        final fileName = result.files.single.name.replaceAll('.json', '');
         normalizedData = SillyTavernPresetConverter.convertToNativeFormat(
+          jsonData,
+          fileName: fileName,
+        );
+      } else if (RisuPresetConverter.isRisuPreset(jsonData)) {
+        normalizedData = RisuPresetConverter.convertToNativeFormat(
           jsonData,
           fileName: fileName,
         );
