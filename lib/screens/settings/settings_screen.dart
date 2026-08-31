@@ -8,6 +8,7 @@ import '../../l10n/app_localizations.dart';
 import '../../providers/chat_background_provider.dart';
 import '../../providers/localization_provider.dart';
 import '../../providers/message_send_key_provider.dart';
+import '../../providers/sound_notification_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../tutorial/tutorial_screen.dart';
@@ -293,6 +294,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               },
             ),
           ],
+          Consumer<SoundNotificationProvider>(
+            builder: (context, provider, child) {
+              return _buildListTile(
+                icon: Icons.notifications_active_outlined,
+                title: l10n.settingsSoundOnAiReply,
+                trailing: Switch(
+                  value: provider.enabled,
+                  onChanged: provider.setEnabled,
+                ),
+              );
+            },
+          ),
           const Divider(),
           _buildSectionHeader(l10n.settingsSectionChat),
           _buildListTile(

@@ -358,6 +358,12 @@ abstract class AppLocalizations {
   /// **'메시지 전송 Shift Enter'**
   String get settingsSendOnShiftEnter;
 
+  /// No description provided for @settingsSoundOnAiReply.
+  ///
+  /// In ko, this message translates to:
+  /// **'AI 답장 소리 알림'**
+  String get settingsSoundOnAiReply;
+
   /// No description provided for @languageKorean.
   ///
   /// In ko, this message translates to:
