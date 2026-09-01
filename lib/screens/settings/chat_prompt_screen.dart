@@ -11,6 +11,7 @@ import '../../utils/common_dialog.dart';
 import '../../services/default_seeder_service.dart';
 import '../../utils/silly_tavern_preset_converter.dart';
 import '../../utils/risu_preset_converter.dart';
+import '../../utils/risup_binary_decoder.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../../widgets/common/common_fab.dart';
 import '../../widgets/settings/settings_prompt_list_item.dart';
@@ -488,11 +489,21 @@ class _ChatPromptScreenState extends State<ChatPromptScreen> {
       if (result == null || result.files.isEmpty) return;
 
       final file = File(result.files.single.path!);
-      final jsonString = await file.readAsString();
-      final jsonData = jsonDecode(jsonString) as Map<String, dynamic>;
+      final originalName = result.files.single.name;
+      final lowerName = originalName.toLowerCase();
+      final bytes = await file.readAsBytes();
+
+      Map<String, dynamic> jsonData;
+      if (lowerName.endsWith('.risup')) {
+        jsonData = await RisupBinaryDecoder.decode(bytes);
+      } else {
+        jsonData =
+            jsonDecode(utf8.decode(bytes)) as Map<String, dynamic>;
+      }
 
       final Map<String, dynamic> normalizedData;
-      final fileName = result.files.single.name.replaceAll('.json', '');
+      final fileName = originalName
+          .replaceAll(RegExp(r'\.(risup|risupreset|json)$', caseSensitive: false), '');
       if (SillyTavernPresetConverter.isSillyTavernPreset(jsonData)) {
         normalizedData = SillyTavernPresetConverter.convertToNativeFormat(
           jsonData,
