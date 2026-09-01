@@ -140,6 +140,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsSendOnShiftEnter => '메시지 전송 Shift Enter';
 
   @override
+  String get settingsSoundOnAiReply => 'AI 답장 소리 알림';
+
+  @override
   String get languageKorean => '한국어';
 
   @override

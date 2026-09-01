@@ -140,6 +140,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsSendOnShiftEnter => 'Shift+Enterで送信';
 
   @override
+  String get settingsSoundOnAiReply => 'AI返信サウンド通知';
+
+  @override
   String get languageKorean => '한국어';
 
   @override

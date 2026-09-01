@@ -51,6 +51,7 @@
   "settingsBackgroundImage": "背景画像",
   "settingsSendOnEnter": "Enterで送信",
   "settingsSendOnShiftEnter": "Shift+Enterで送信",
+  "settingsSoundOnAiReply": "AI返信サウンド通知",
   "languageKorean": "한국어",
   "languageEnglish": "English",
   "languageJapanese": "日本語",

@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../l10n/app_localizations.dart';
@@ -17,6 +18,7 @@ import '../../utils/chat_content_formatter.dart';
 import '../../utils/regex_processor.dart';
 import '../../utils/retry_runner.dart';
 import '../../database/database_helper.dart';
+import '../../providers/sound_notification_provider.dart';
 import '../../providers/tokenizer_provider.dart';
 import '../../utils/common_dialog.dart';
 import '../../utils/token_counter.dart';
@@ -486,6 +488,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           );
 
           final assistantMessageId = await _db.createChatMessage(assistantMessage);
+          _playAiReplyNotification();
           final pinCreated = await _saveMessageMetadata(assistantMessageId, responseText);
 
           // 채팅방 토큰 합산 업데이트
@@ -679,6 +682,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
+  void _playAiReplyNotification() {
+    if (!mounted) return;
+    if (!context.read<SoundNotificationProvider>().enabled) return;
+    // Android plays the system notification sound; other platforms may be
+    // silent — that is acceptable for a lightweight in-app alert.
+    SystemSound.play(SystemSoundType.alert);
+  }
+
   Future<void> _finishSending() async {
     final wasScrolledUp = _showScrollButtons;
     final prevMessageCount = _messages.length;
@@ -868,6 +879,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           );
 
           final assistantMessageId = await _db.createChatMessage(assistantMessage);
+          _playAiReplyNotification();
           await _saveMessageMetadata(assistantMessageId, responseText2);
 
           // 채팅방 토큰 합산 업데이트
@@ -1000,6 +1012,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           );
 
           await _db.updateChatMessage(updatedMessage);
+          _playAiReplyNotification();
           await _db.deleteChatMessageMetadataByMessage(messageId);
           await _saveMessageMetadata(messageId, responseText3);
 
