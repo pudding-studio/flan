@@ -1,7 +1,8 @@
+import 'dart:async';
 import 'dart:typed_data';
 
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
 import '../../l10n/app_localizations.dart';
@@ -69,6 +70,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   final DatabaseHelper _db = DatabaseHelper.instance;
   final AiService _aiService = AiService();
   final AutoSummaryService _autoSummaryService = AutoSummaryService();
+  final AudioPlayer _notificationPlayer = AudioPlayer(
+    playerId: 'flan-ai-reply-notification',
+  );
   final TextEditingController _messageController = TextEditingController();
   final ItemScrollController _itemScrollController = ItemScrollController();
   final ItemPositionsListener _itemPositionsListener = ItemPositionsListener.create();
@@ -171,6 +175,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     _searchController.dispose();
     _itemPositionsListener.itemPositions.removeListener(_onScrollChanged);
     _editController.dispose();
+    _notificationPlayer.dispose();
     super.dispose();
   }
 
@@ -685,9 +690,20 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   void _playAiReplyNotification() {
     if (!mounted) return;
     if (!context.read<SoundNotificationProvider>().enabled) return;
-    // Android plays the system notification sound; other platforms may be
-    // silent — that is acceptable for a lightweight in-app alert.
-    SystemSound.play(SystemSoundType.alert);
+    // Fire-and-forget: audio failures must not surface in the chat flow.
+    unawaited(_playNotificationSoundOnce());
+  }
+
+  Future<void> _playNotificationSoundOnce() async {
+    try {
+      // Stop first so rapid successive replies retrigger cleanly.
+      await _notificationPlayer.stop();
+      await _notificationPlayer.play(
+        AssetSource('sounds/notification.wav'),
+      );
+    } catch (_) {
+      // Ignore — silent failure is preferable to disrupting the chat.
+    }
   }
 
   Future<void> _finishSending() async {
