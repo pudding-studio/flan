@@ -143,6 +143,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsSoundOnAiReply => 'Sound on AI reply';
 
   @override
+  String get settingsVibrateOnAiReply => 'Vibrate on AI reply';
+
+  @override
   String get languageKorean => '한국어';
 
   @override

@@ -306,6 +306,18 @@ class _SettingsScreenState extends State<SettingsScreen> {
               );
             },
           ),
+          Consumer<SoundNotificationProvider>(
+            builder: (context, provider, child) {
+              return _buildListTile(
+                icon: Icons.vibration,
+                title: l10n.settingsVibrateOnAiReply,
+                trailing: Switch(
+                  value: provider.vibrationEnabled,
+                  onChanged: provider.setVibrationEnabled,
+                ),
+              );
+            },
+          ),
           const Divider(),
           _buildSectionHeader(l10n.settingsSectionChat),
           _buildListTile(

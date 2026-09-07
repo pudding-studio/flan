@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 
 import 'package:audioplayers/audioplayers.dart';
+import 'package:vibration/vibration.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:scrollable_positioned_list/scrollable_positioned_list.dart';
@@ -689,9 +690,21 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
   void _playAiReplyNotification() {
     if (!mounted) return;
-    if (!context.read<SoundNotificationProvider>().enabled) return;
-    // Fire-and-forget: audio failures must not surface in the chat flow.
-    unawaited(_playNotificationSoundOnce());
+    final settings = context.read<SoundNotificationProvider>();
+    // Sound and vibration are independent toggles; either, both, or neither.
+    // Both are fire-and-forget so device/plugin failures never reach the chat.
+    if (settings.enabled) unawaited(_playNotificationSoundOnce());
+    if (settings.vibrationEnabled) unawaited(_vibrateOnce());
+  }
+
+  Future<void> _vibrateOnce() async {
+    try {
+      // Uses the Vibrator API directly (not HapticFeedback), so it fires even
+      // when the OS "touch feedback" haptic setting is off. No-ops on desktop.
+      await Vibration.vibrate(duration: 250);
+    } catch (_) {
+      // Ignore — MissingPluginException on unsupported platforms, etc.
+    }
   }
 
   Future<void> _playNotificationSoundOnce() async {

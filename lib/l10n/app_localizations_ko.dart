@@ -143,6 +143,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsSoundOnAiReply => 'AI 답장 소리 알림';
 
   @override
+  String get settingsVibrateOnAiReply => 'AI 답장 진동 알림';
+
+  @override
   String get languageKorean => '한국어';
 
   @override
