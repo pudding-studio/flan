@@ -364,6 +364,12 @@ abstract class AppLocalizations {
   /// **'AI 답장 소리 알림'**
   String get settingsSoundOnAiReply;
 
+  /// No description provided for @settingsVibrateOnAiReply.
+  ///
+  /// In ko, this message translates to:
+  /// **'AI 답장 진동 알림'**
+  String get settingsVibrateOnAiReply;
+
   /// No description provided for @languageKorean.
   ///
   /// In ko, this message translates to:

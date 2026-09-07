@@ -143,6 +143,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsSoundOnAiReply => 'AI返信サウンド通知';
 
   @override
+  String get settingsVibrateOnAiReply => 'AI返信バイブ通知';
+
+  @override
   String get languageKorean => '한국어';
 
   @override
