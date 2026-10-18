@@ -75,7 +75,7 @@ final Map<ApiKeyType, _ProviderModels> _providerModelMap = {
     ],
     subCandidates: [
       ChatModel.geminiFlash3Preview,
-      ChatModel.geminiFlashLite31Preview,
+      ChatModel.geminiFlashLite31,
       ChatModel.geminiFlash25,
       ChatModel.geminiFlashLite25,
     ],
@@ -91,7 +91,7 @@ final Map<ApiKeyType, _ProviderModels> _providerModelMap = {
     ],
     subCandidates: [
       ChatModel.vertexGeminiFlash3Preview,
-      ChatModel.vertexGeminiFlashLite31Preview,
+      ChatModel.vertexGeminiFlashLite31,
       ChatModel.vertexGeminiFlash25,
       ChatModel.vertexGeminiFlashLite25,
     ],
@@ -126,7 +126,7 @@ final Map<ApiKeyType, _ProviderModels> _providerModelMap = {
       ChatModel.claudeHaiku45,
       ChatModel.claudeSonnet46,
       ChatModel.claudeSonnet45,
-      ChatModel.claudeHaiku35,
+      ChatModel.claudeHaiku55,
     ],
     defaultMain: ChatModel.claudeSonnet46,
     defaultSub: ChatModel.claudeHaiku45,

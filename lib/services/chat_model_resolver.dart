@@ -1,3 +1,4 @@
+import '../models/chat/chat_model.dart';
 import '../models/chat/chat_room.dart';
 import '../models/chat/unified_model.dart';
 import '../providers/chat_model_provider.dart';
@@ -55,7 +56,9 @@ class ChatModelResolver {
         // Per-room custom model: re-check against the (possibly stale)
         // available models, refreshing the catalog from disk on a miss
         // before giving up.
-        final savedId = chatRoom?.selectedModelId ?? customModelLoadFailedId;
+        final storedId = chatRoom?.selectedModelId ?? customModelLoadFailedId;
+        final savedId =
+            storedId == null ? null : ChatModel.migrateStoredId(storedId);
         if (savedId != null) {
           var match = provider.availableModels.where((m) => m.id == savedId);
           if (match.isEmpty) {

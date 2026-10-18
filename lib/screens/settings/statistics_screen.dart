@@ -124,16 +124,16 @@ class _StatisticsScreenState extends State<StatisticsScreen> {
   }
 
   ModelPricing _getPricing(String modelId) {
-    final builtIn = ChatModel.fromModelId(modelId);
-    if (builtIn != null) return builtIn.pricing;
+    final builtIn = ChatModel.historicalPricing(modelId);
+    if (builtIn != null) return builtIn;
 
     final custom = _customModels.where((m) => m.modelId == modelId).firstOrNull;
     return custom?.pricing ?? const ModelPricing.zero();
   }
 
   String _getDisplayName(String modelId) {
-    final builtIn = ChatModel.fromModelId(modelId);
-    if (builtIn != null) return builtIn.displayName;
+    final builtIn = ChatModel.historicalDisplayName(modelId);
+    if (builtIn != null) return builtIn;
 
     final custom = _customModels.where((m) => m.modelId == modelId).firstOrNull;
     return custom?.displayName ?? modelId;

@@ -19,11 +19,14 @@ class ChatUsageMetadataDialog {
       return;
     }
 
-    final model = message.modelId != null ? ChatModel.fromModelId(message.modelId!) : null;
+    final modelId = message.modelId;
+    final pricing = modelId != null ? ChatModel.historicalPricing(modelId) : null;
+    final modelName =
+        modelId != null ? ChatModel.historicalDisplayName(modelId) : null;
 
     double? cost;
-    if (model != null) {
-      cost = model.pricing.calculateCost(
+    if (pricing != null) {
+      cost = pricing.calculateCost(
         promptTokens: metadata.promptTokenCount,
         cachedTokens: metadata.cachedContentTokenCount ?? 0,
         outputTokens: metadata.candidatesTokenCount,
@@ -39,9 +42,9 @@ class ChatUsageMetadataDialog {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (model != null)
-              _statRow(context, l10n.chatRoomStatModel, model.displayName),
-            if (model != null) const Divider(),
+            if (modelName != null)
+              _statRow(context, l10n.chatRoomStatModel, modelName),
+            if (modelName != null) const Divider(),
             _statRow(context, l10n.chatRoomStatInputTokens, '${metadata.promptTokenCount}'),
             if (metadata.cachedContentTokenCount != null) ...[
               _statRow(context, l10n.chatRoomStatCachedTokens, '${metadata.cachedContentTokenCount}'),
