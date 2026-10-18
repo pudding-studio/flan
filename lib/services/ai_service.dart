@@ -706,6 +706,24 @@ class AiService {
 
   // ── Claude ──
 
+  // Claude 4.7+ (and the Fable/Mythos lines) answer HTTP 400 to any
+  // non-default temperature/top_p/top_k, which imported presets always set.
+  // The 1-2 digit minor group keeps dated IDs like "-4-20250514" at 4.0.
+  static final RegExp _claudeVersionPattern =
+      RegExp(r'claude-(?:opus|sonnet|haiku)-(\d+)(?:[-.](\d{1,2}))?(?!\d)');
+
+  static bool _claudeRejectsSamplingParams(String modelId) {
+    final id = modelId.toLowerCase();
+    if (id.contains('claude-fable') || id.contains('claude-mythos')) {
+      return true;
+    }
+    final match = _claudeVersionPattern.firstMatch(id);
+    if (match == null) return false;
+    final major = int.parse(match.group(1)!);
+    final minor = int.tryParse(match.group(2) ?? '') ?? 0;
+    return major > 4 || (major == 4 && minor >= 7);
+  }
+
   Future<AiResponse> _sendClaude({
     required String systemPrompt,
     required List<Map<String, dynamic>> contents,
@@ -733,14 +751,16 @@ class AiService {
     }
 
     if (promptParameters != null) {
-      if (promptParameters.temperature != null) {
-        requestBody['temperature'] = promptParameters.temperature;
-      }
-      if (promptParameters.topP != null) {
-        requestBody['top_p'] = promptParameters.topP;
-      }
-      if (promptParameters.topK != null) {
-        requestBody['top_k'] = promptParameters.topK;
+      if (!_claudeRejectsSamplingParams(modelId)) {
+        if (promptParameters.temperature != null) {
+          requestBody['temperature'] = promptParameters.temperature;
+        }
+        if (promptParameters.topP != null) {
+          requestBody['top_p'] = promptParameters.topP;
+        }
+        if (promptParameters.topK != null) {
+          requestBody['top_k'] = promptParameters.topK;
+        }
       }
       if (promptParameters.stopSequences != null &&
           promptParameters.stopSequences!.isNotEmpty) {
