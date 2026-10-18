@@ -25,6 +25,7 @@ import 'providers/community_model_provider.dart';
 import 'providers/diary_model_provider.dart';
 import 'providers/chat_background_provider.dart';
 import 'providers/message_send_key_provider.dart';
+import 'providers/context_pdf_provider.dart';
 import 'providers/sound_notification_provider.dart';
 import 'database/database_helper.dart';
 import 'services/default_seeder_service.dart';
@@ -76,6 +77,7 @@ void main() async {
           ChangeNotifierProvider(create: (_) => ChatBackgroundProvider()),
           ChangeNotifierProvider(create: (_) => MessageSendKeyProvider()),
           ChangeNotifierProvider(create: (_) => SoundNotificationProvider()),
+          ChangeNotifierProvider(create: (_) => ContextPdfProvider()),
         ],
         child: const MyApp(),
       ),

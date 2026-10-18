@@ -58,6 +58,8 @@
   "languageJapanese": "日本語",
   "settingsApiKey": "API 키 등록",
   "settingsChatModel": "채팅 모델",
+  "settingsContextPdf": "긴 대화 PDF로 보내기",
+  "settingsContextPdfDescription": "3만 토큰이 넘으면 요약과 대화 기록을 PDF로 보내 토큰을 아낍니다 (Gemini 전용)",
   "settingsTokenizer": "토크나이저",
   "settingsChatPrompt": "채팅 프롬프트",
   "settingsAuxiliaryPrompts": "보조 프롬프트",

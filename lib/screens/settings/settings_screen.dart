@@ -8,6 +8,7 @@ import '../../l10n/app_localizations.dart';
 import '../../providers/chat_background_provider.dart';
 import '../../providers/localization_provider.dart';
 import '../../providers/message_send_key_provider.dart';
+import '../../providers/context_pdf_provider.dart';
 import '../../providers/sound_notification_provider.dart';
 import '../../providers/theme_provider.dart';
 import '../../widgets/common/common_appbar.dart';
@@ -337,6 +338,19 @@ class _SettingsScreenState extends State<SettingsScreen> {
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const ChatModelScreen()),
+              );
+            },
+          ),
+          Consumer<ContextPdfProvider>(
+            builder: (context, provider, child) {
+              return _buildListTile(
+                icon: Icons.picture_as_pdf_outlined,
+                title: l10n.settingsContextPdf,
+                subtitle: l10n.settingsContextPdfDescription,
+                trailing: Switch(
+                  value: provider.enabled,
+                  onChanged: provider.setEnabled,
+                ),
               );
             },
           ),

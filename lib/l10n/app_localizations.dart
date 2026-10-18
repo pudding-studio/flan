@@ -400,6 +400,18 @@ abstract class AppLocalizations {
   /// **'채팅 모델'**
   String get settingsChatModel;
 
+  /// No description provided for @settingsContextPdf.
+  ///
+  /// In ko, this message translates to:
+  /// **'긴 대화 PDF로 보내기'**
+  String get settingsContextPdf;
+
+  /// No description provided for @settingsContextPdfDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'3만 토큰이 넘으면 요약과 대화 기록을 PDF로 보내 토큰을 아낍니다 (Gemini 전용)'**
+  String get settingsContextPdfDescription;
+
   /// No description provided for @settingsTokenizer.
   ///
   /// In ko, this message translates to:
