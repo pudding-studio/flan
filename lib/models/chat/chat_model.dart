@@ -135,10 +135,10 @@ enum ChatModel {
     ApiFormat.gemini,
     ModelPricing(inputPrice: 0.15, cachedInputPrice: 0.015, outputPrice: 0.60, thinkingOutputPrice: 3.50),
   ),
-  geminiFlashLite31Preview(
-    'Gemini 3.1 Flash Lite Preview',
+  geminiFlashLite31(
+    'Gemini 3.1 Flash Lite',
     ChatModelProvider.googleAIStudio,
-    'gemini-3.1-flash-lite-preview',
+    'gemini-3.1-flash-lite',
     ApiFormat.gemini,
     ModelPricing(inputPrice: 0.25, cachedInputPrice: 0.025, outputPrice: 1.50),
   ),
@@ -221,10 +221,10 @@ enum ChatModel {
     ApiFormat.gemini,
     ModelPricing(inputPrice: 0.15, cachedInputPrice: 0.015, outputPrice: 0.60, thinkingOutputPrice: 3.50),
   ),
-  vertexGeminiFlashLite31Preview(
-    'Gemini 3.1 Flash Lite Preview',
+  vertexGeminiFlashLite31(
+    'Gemini 3.1 Flash Lite',
     ChatModelProvider.vertexAi,
-    'gemini-3.1-flash-lite-preview',
+    'gemini-3.1-flash-lite',
     ApiFormat.gemini,
     ModelPricing(inputPrice: 0.25, cachedInputPrice: 0.025, outputPrice: 1.50),
   ),
@@ -321,13 +321,6 @@ enum ChatModel {
     ApiFormat.openai,
     ModelPricing(inputPrice: 20.00, cachedInputPrice: 5.00, outputPrice: 80.00),
   ),
-  o4Mini(
-    'o4-mini',
-    ChatModelProvider.openai,
-    'o4-mini',
-    ApiFormat.openai,
-    ModelPricing(inputPrice: 1.10, cachedInputPrice: 0.275, outputPrice: 4.40),
-  ),
   gpt41(
     'GPT-4.1',
     ChatModelProvider.openai,
@@ -362,20 +355,6 @@ enum ChatModel {
     'gpt-4o-mini',
     ApiFormat.openai,
     ModelPricing(inputPrice: 0.15, cachedInputPrice: 0.075, outputPrice: 0.60),
-  ),
-  o3Mini(
-    'o3-mini',
-    ChatModelProvider.openai,
-    'o3-mini',
-    ApiFormat.openai,
-    ModelPricing(inputPrice: 1.10, cachedInputPrice: 0.55, outputPrice: 4.40),
-  ),
-  o1(
-    'o1',
-    ChatModelProvider.openai,
-    'o1',
-    ApiFormat.openai,
-    ModelPricing(inputPrice: 15.00, cachedInputPrice: 7.50, outputPrice: 60.00),
   ),
 
   // Claude models
@@ -469,27 +448,6 @@ enum ChatModel {
     'claude-haiku-4-5',
     ApiFormat.claude,
     ModelPricing(inputPrice: 1.00, cachedInputPrice: 0.10, outputPrice: 5.00),
-  ),
-  claudeOpus4(
-    'Claude Opus 4',
-    ChatModelProvider.anthropic,
-    'claude-opus-4-20250514',
-    ApiFormat.claude,
-    ModelPricing(inputPrice: 15.00, cachedInputPrice: 1.50, outputPrice: 75.00),
-  ),
-  claudeSonnet4(
-    'Claude Sonnet 4',
-    ChatModelProvider.anthropic,
-    'claude-sonnet-4-20250514',
-    ApiFormat.claude,
-    ModelPricing(inputPrice: 3.00, cachedInputPrice: 0.30, outputPrice: 15.00),
-  ),
-  claudeHaiku35(
-    'Claude Haiku 3.5',
-    ChatModelProvider.anthropic,
-    'claude-3-5-haiku-20241022',
-    ApiFormat.claude,
-    ModelPricing(inputPrice: 0.80, cachedInputPrice: 0.08, outputPrice: 4.00),
   );
 
   final String displayName;
@@ -515,14 +473,8 @@ enum ChatModel {
 
   /// Resolve a ChatModel from a stored value (enum name or legacy modelId).
   static ChatModel resolveFromStoredValue(String storedValue) {
-    // Try enum name first
-    for (final model in ChatModel.values) {
-      if (model.name == storedValue) return model;
-    }
-    // Fallback: legacy modelId lookup (returns first match)
-    for (final model in ChatModel.values) {
-      if (model.modelId == storedValue) return model;
-    }
+    final resolved = tryResolveStored(storedValue);
+    if (resolved != null) return resolved;
     // Legacy: geminiPro3Preview → redirect to 3.1 Pro Preview
     if (storedValue == 'geminiPro3Preview' || storedValue == 'gemini-3-pro-preview') {
       return ChatModel.geminiPro31Preview;
@@ -531,5 +483,106 @@ enum ChatModel {
       return ChatModel.vertexGeminiPro31Preview;
     }
     return ChatModel.geminiFlash3Preview;
+  }
+
+  /// Exact match on a stored enum name or model ID. A retired model resolves
+  /// to its [RetiredChatModel.successor]; anything else unknown is null.
+  static ChatModel? tryResolveStored(String storedValue) {
+    for (final model in ChatModel.values) {
+      if (model.name == storedValue) return model;
+    }
+    final retired = RetiredChatModel.tryParse(storedValue);
+    if (retired != null) return retired.successor;
+    return fromModelId(storedValue);
+  }
+
+  /// Rewrites a saved UnifiedModel id so a retired model lands on its
+  /// successor. Custom-model ids and current ids pass through unchanged.
+  static String migrateStoredId(String storedId) =>
+      RetiredChatModel.tryParse(storedId)?.successor.name ?? storedId;
+
+  /// Pricing for a model ID found in message history. Also covers retired
+  /// models, so past messages keep their real cost after removal.
+  static ModelPricing? historicalPricing(String modelId) =>
+      fromModelId(modelId)?.pricing ??
+      RetiredChatModel.tryParse(modelId)?.pricing;
+
+  static String? historicalDisplayName(String modelId) =>
+      fromModelId(modelId)?.displayName ??
+      RetiredChatModel.tryParse(modelId)?.displayName;
+}
+
+/// Built-in models removed after their provider shut them down. Each keeps
+/// its old [ChatModel] name so saved selections still match, its price for
+/// costing past messages, and the [successor] that saved choices move to.
+enum RetiredChatModel {
+  geminiFlashLite31Preview(
+    'Gemini 3.1 Flash Lite Preview',
+    'gemini-3.1-flash-lite-preview',
+    ModelPricing(inputPrice: 0.25, cachedInputPrice: 0.025, outputPrice: 1.50),
+    ChatModel.geminiFlashLite31,
+  ),
+  vertexGeminiFlashLite31Preview(
+    'Gemini 3.1 Flash Lite Preview',
+    'gemini-3.1-flash-lite-preview',
+    ModelPricing(inputPrice: 0.25, cachedInputPrice: 0.025, outputPrice: 1.50),
+    ChatModel.vertexGeminiFlashLite31,
+  ),
+  o1(
+    'o1',
+    'o1',
+    ModelPricing(inputPrice: 15.00, cachedInputPrice: 7.50, outputPrice: 60.00),
+    ChatModel.o3,
+  ),
+  o3Mini(
+    'o3-mini',
+    'o3-mini',
+    ModelPricing(inputPrice: 1.10, cachedInputPrice: 0.55, outputPrice: 4.40),
+    ChatModel.o3,
+  ),
+  // No later o-series mini exists; OpenAI's listed substitute is used.
+  o4Mini(
+    'o4-mini',
+    'o4-mini',
+    ModelPricing(inputPrice: 1.10, cachedInputPrice: 0.275, outputPrice: 4.40),
+    ChatModel.gpt56Terra,
+  ),
+  claudeOpus4(
+    'Claude Opus 4',
+    'claude-opus-4-20250514',
+    ModelPricing(inputPrice: 15.00, cachedInputPrice: 1.50, outputPrice: 75.00),
+    ChatModel.claudeOpus48,
+  ),
+  claudeSonnet4(
+    'Claude Sonnet 4',
+    'claude-sonnet-4-20250514',
+    ModelPricing(inputPrice: 3.00, cachedInputPrice: 0.30, outputPrice: 15.00),
+    ChatModel.claudeSonnet55,
+  ),
+  claudeHaiku35(
+    'Claude Haiku 3.5',
+    'claude-3-5-haiku-20241022',
+    ModelPricing(inputPrice: 0.80, cachedInputPrice: 0.08, outputPrice: 4.00),
+    ChatModel.claudeHaiku45,
+  );
+
+  final String displayName;
+  final String modelId;
+  final ModelPricing pricing;
+  final ChatModel successor;
+
+  const RetiredChatModel(this.displayName, this.modelId, this.pricing, this.successor);
+
+  /// Matches an old enum name first, then a model ID. The ID shared by the
+  /// AI Studio and Gemini Enterprise previews resolves to the AI Studio
+  /// entry, mirroring [ChatModel.fromModelId]'s first-match rule.
+  static RetiredChatModel? tryParse(String value) {
+    for (final model in RetiredChatModel.values) {
+      if (model.name == value) return model;
+    }
+    for (final model in RetiredChatModel.values) {
+      if (model.modelId == value) return model;
+    }
+    return null;
   }
 }

@@ -49,7 +49,8 @@ class CommunityModelProvider extends ChangeNotifier {
 
     final savedId = prefs.getString(_modelIdKey);
     if (savedId != null) {
-      final match = availableModels.where((m) => m.id == savedId);
+      final id = ChatModel.migrateStoredId(savedId);
+      final match = availableModels.where((m) => m.id == id);
       if (match.isNotEmpty) _selectedModel = match.first;
     }
 

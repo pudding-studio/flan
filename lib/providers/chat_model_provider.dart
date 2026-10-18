@@ -142,10 +142,8 @@ class ChatModelSettingsProvider extends ChangeNotifier {
         return UnifiedModel.fromCustomModel(custom.first, provider: cp);
       }
     } else {
-      final builtIn = ChatModel.values.where((m) => m.name == modelString);
-      if (builtIn.isNotEmpty) {
-        return UnifiedModel.fromChatModel(builtIn.first);
-      }
+      final builtIn = ChatModel.tryResolveStored(modelString);
+      if (builtIn != null) return UnifiedModel.fromChatModel(builtIn);
     }
     return null;
   }
