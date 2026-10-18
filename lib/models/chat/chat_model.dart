@@ -72,6 +72,13 @@ class ModelPricing {
 
 enum ChatModel {
   // Gemini models
+  geminiArgon4(
+    'Gemini 4 Argon',
+    ChatModelProvider.googleAIStudio,
+    'gemini-4-argon',
+    ApiFormat.gemini,
+    ModelPricing(inputPrice: 2.00, cachedInputPrice: 0.10, outputPrice: 10.00),
+  ),
   geminiFlash38(
     'Gemini 3.8 Flash',
     ChatModelProvider.googleAIStudio,
@@ -144,6 +151,13 @@ enum ChatModel {
   ),
 
   // Gemini Enterprise models (formerly Vertex AI; same Gemini models via the same endpoint)
+  vertexGeminiArgon4(
+    'Gemini 4 Argon',
+    ChatModelProvider.vertexAi,
+    'gemini-4-argon',
+    ApiFormat.gemini,
+    ModelPricing(inputPrice: 2.00, cachedInputPrice: 0.10, outputPrice: 10.00),
+  ),
   vertexGeminiFlash38(
     'Gemini 3.8 Flash',
     ChatModelProvider.vertexAi,
@@ -223,6 +237,27 @@ enum ChatModel {
   ),
 
   // OpenAI models
+  gpt6Astra(
+    'GPT-6 Astra',
+    ChatModelProvider.openai,
+    'gpt-6-astra',
+    ApiFormat.openai,
+    ModelPricing(inputPrice: 10.00, cachedInputPrice: 1.00, outputPrice: 50.00),
+  ),
+  gpt61Sol(
+    'GPT-6.1 Sol',
+    ChatModelProvider.openai,
+    'gpt-6.1-sol',
+    ApiFormat.openai,
+    ModelPricing(inputPrice: 2.00, cachedInputPrice: 0.10, outputPrice: 10.00),
+  ),
+  gpt6Luna(
+    'GPT-6 Luna',
+    ChatModelProvider.openai,
+    'gpt-6-luna',
+    ApiFormat.openai,
+    ModelPricing(inputPrice: 0.10, cachedInputPrice: 0.01, outputPrice: 0.50),
+  ),
   gpt56Sol(
     'GPT-5.6 Sol',
     ChatModelProvider.openai,
@@ -350,6 +385,27 @@ enum ChatModel {
     'claude-fable-5-1',
     ApiFormat.claude,
     ModelPricing(inputPrice: 10.00, cachedInputPrice: 0.25, outputPrice: 50.00),
+  ),
+  claudeOpus55(
+    'Claude Opus 5.5',
+    ChatModelProvider.anthropic,
+    'claude-opus-5-5',
+    ApiFormat.claude,
+    ModelPricing(inputPrice: 4.00, cachedInputPrice: 0.20, outputPrice: 20.00),
+  ),
+  claudeSonnet55(
+    'Claude Sonnet 5.5',
+    ChatModelProvider.anthropic,
+    'claude-sonnet-5-5',
+    ApiFormat.claude,
+    ModelPricing(inputPrice: 2.00, cachedInputPrice: 0.10, outputPrice: 10.00),
+  ),
+  claudeHaiku55(
+    'Claude Haiku 5.5',
+    ChatModelProvider.anthropic,
+    'claude-haiku-5-5',
+    ApiFormat.claude,
+    ModelPricing(inputPrice: 0.10, cachedInputPrice: 0.01, outputPrice: 0.50),
   ),
   claudeOpus5(
     'Claude Opus 5',
