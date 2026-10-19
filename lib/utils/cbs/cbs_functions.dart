@@ -315,7 +315,8 @@ Map<String, CbsFunction> _buildCbsFunctions() {
     return c.run.role ?? 'null';
   });
   reg(['isfirstmsg', 'isfirstmessage'], (c, a, r) => _bool(c.run.firstMsg));
-  reg(['jbtoggled'], (c, a, r) => '0');
+  reg(['jbtoggled'], (c, a, r) =>
+      _bool(c.ctx.globalVar('toggle_$cbsJailbreakToggleKey') == '1'));
   reg(['maxcontext'], (c, a, r) => '${c.ctx.maxContext ?? 0}');
   reg(['lastmessage'], (c, a, r) => c.ctx.messages.last.data);
   reg(['lastmessageid', 'lastmessageindex'],

@@ -1766,6 +1766,36 @@ class AppLocalizationsEn extends AppLocalizations {
   String get promptEditThinkingLevel => 'Thinking Level';
 
   @override
+  String get promptEditTemplateBehavior => 'Template behavior (RisuAI compatible)';
+
+  @override
+  String get promptEditUserMessageInChatHistory => 'Put the new message right after the chat history';
+
+  @override
+  String get promptEditUserMessageInChatHistoryHelp => 'When on, the new message goes right after the chat history item, as in RisuAI, and later items follow it. When off, the new message is sent last.';
+
+  @override
+  String get promptEditSendChatAsSystem => 'Send chat as system messages';
+
+  @override
+  String get promptEditSendChatAsSystemHelp => 'Sends the chat history as "system: user: …" instructions (RisuAI sendChatAsSystem).';
+
+  @override
+  String get promptEditSendName => 'Send names with chat';
+
+  @override
+  String get promptEditSendNameHelp => 'Wraps the chat history in name tags (<Name\'s Message>) and sends it as user messages (RisuAI sendName).';
+
+  @override
+  String get promptEditDefaultVariables => 'Default variables';
+
+  @override
+  String get promptEditDefaultVariablesHelp => 'One key=value per line. Chat variables (getvar) that have no value yet read these.';
+
+  @override
+  String get promptEditDefaultVariablesHint => 'hp=100';
+
+  @override
   String get chatModelTitle => 'Chat Model';
 
   @override

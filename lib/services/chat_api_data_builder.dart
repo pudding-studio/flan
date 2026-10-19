@@ -210,6 +210,8 @@ class ChatApiDataBuilder {
       modelId: modelId ?? '',
       maxContext: chatPrompt?.parameters?.maxInputTokens,
       language: outputLanguage,
+      defaultChatVars:
+          cbsParseKeyValue(chatPrompt?.parameters?.defaultVariables),
       globalVars: cbsToggleVars(conditions ?? [], conditionStates ?? {}),
       pickSeed: '${character.id}$chatRoomId',
     );

@@ -3274,6 +3274,66 @@ abstract class AppLocalizations {
   /// **'생각 수준'**
   String get promptEditThinkingLevel;
 
+  /// No description provided for @promptEditTemplateBehavior.
+  ///
+  /// In ko, this message translates to:
+  /// **'템플릿 동작 (RisuAI 호환)'**
+  String get promptEditTemplateBehavior;
+
+  /// No description provided for @promptEditUserMessageInChatHistory.
+  ///
+  /// In ko, this message translates to:
+  /// **'새 메시지를 채팅 기록 바로 뒤에 넣기'**
+  String get promptEditUserMessageInChatHistory;
+
+  /// No description provided for @promptEditUserMessageInChatHistoryHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'켜면 RisuAI처럼 새 메시지가 채팅 목록 항목 바로 뒤에 들어가고, 그 뒤 항목들은 새 메시지 다음에 전송됩니다. 끄면 새 메시지가 맨 마지막에 전송됩니다.'**
+  String get promptEditUserMessageInChatHistoryHelp;
+
+  /// No description provided for @promptEditSendChatAsSystem.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅을 시스템 메시지로 보내기'**
+  String get promptEditSendChatAsSystem;
+
+  /// No description provided for @promptEditSendChatAsSystemHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅 기록을 "system: user: …" 형식의 지시문으로 보냅니다 (RisuAI sendChatAsSystem).'**
+  String get promptEditSendChatAsSystemHelp;
+
+  /// No description provided for @promptEditSendName.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅에 이름 붙여 보내기'**
+  String get promptEditSendName;
+
+  /// No description provided for @promptEditSendNameHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'채팅 기록을 이름 태그(<이름\'s Message>)로 감싸 사용자 메시지로 보냅니다 (RisuAI sendName).'**
+  String get promptEditSendNameHelp;
+
+  /// No description provided for @promptEditDefaultVariables.
+  ///
+  /// In ko, this message translates to:
+  /// **'기본 변수'**
+  String get promptEditDefaultVariables;
+
+  /// No description provided for @promptEditDefaultVariablesHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'한 줄에 하나씩 키=값 형식으로 입력합니다. 아직 값이 없는 채팅 변수(getvar)는 이 값을 읽습니다.'**
+  String get promptEditDefaultVariablesHelp;
+
+  /// No description provided for @promptEditDefaultVariablesHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'hp=100'**
+  String get promptEditDefaultVariablesHint;
+
   /// No description provided for @chatModelTitle.
   ///
   /// In ko, this message translates to:

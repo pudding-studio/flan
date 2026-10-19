@@ -63,6 +63,8 @@ class PromptBuilder {
 
         final replaced = replaceKeywords(item.content, keywords,
             context: cbsContext, role: 'system');
+        // Like RisuAI, a block that renders to nothing is not sent.
+        if (replaced.trim().isEmpty) continue;
         buffer.writeln(replaced);
         buffer.writeln();
       }
@@ -133,7 +135,51 @@ class PromptBuilder {
       conditionStates: states,
     );
 
+    // Attach `Start Date + start message` in front of the user's first message
+    // on the very first send (no prior chat history after exclusions) so the
+    // whole bundle — Start Date / start message / user input — arrives as a
+    // single user turn.
+    final hasChatHistory =
+        adjustedChatHistoryMap.values.any((list) => list.isNotEmpty);
+    var resolvedUserMessage = replaceKeywords(userMessage, keywords,
+        context: cbsContext, role: 'user');
+    if (!hasChatHistory &&
+        startScenario?.startMessage != null &&
+        startScenario!.startMessage!.isNotEmpty) {
+      final resolvedStartMessage =
+          replaceKeywords(startScenario.startMessage!, keywords,
+              context: cbsContext, role: 'char');
+      final bundle =
+          _prefixStartDate(resolvedStartMessage, character.worldStartDate);
+      resolvedUserMessage = '$bundle\n$resolvedUserMessage';
+    }
+
+    final settings = chatPrompt?.parameters;
+    final historyFormat = _HistoryFormat(
+      sendName: settings?.sendName == true,
+      sendChatAsSystem: settings?.sendChatAsSystem == true,
+    );
+    // RisuAI keeps the new message inside the chat history, so prompt items
+    // placed after the history follow it.
+    PromptItem? userMessageAnchor;
+    if (settings?.userMessageInChatHistory == true && chatPrompt != null) {
+      for (final item in chatPrompt.items) {
+        if (item.role == PromptRole.chat && isItemActive(item, states)) {
+          userMessageAnchor = item;
+        }
+      }
+    }
     final contents = <Map<String, dynamic>>[];
+    var userMessageAdded = false;
+    void addUserMessage() {
+      final turn = historyFormat.apply(
+        role: 'user',
+        speaker: _userName(persona),
+        text: resolvedUserMessage,
+      );
+      _addContent(contents, turn.role, turn.text);
+      userMessageAdded = true;
+    }
 
     if (chatPrompt != null && chatPrompt.items.isNotEmpty) {
       for (final item in chatPrompt.items) {
@@ -165,36 +211,25 @@ class PromptBuilder {
               ));
               continue;
             }
-            _addContent(contents, _chatMessageRole(msg), content);
+            final turn = historyFormat.apply(
+              role: _chatMessageRole(msg),
+              speaker: _speakerName(msg, character, persona),
+              text: content,
+            );
+            _addContent(contents, turn.role, turn.text);
           }
+          if (identical(item, userMessageAnchor)) addUserMessage();
         } else {
           final role = item.role == PromptRole.user ? 'user' : 'model';
           final replaced = replaceKeywords(item.content, keywords,
               context: cbsContext, role: role == 'user' ? 'user' : 'char');
+          if (replaced.trim().isEmpty) continue;
           _addContent(contents, role, replaced);
         }
       }
     }
 
-    // Attach `Start Date + start message` in front of the user's first message
-    // on the very first send (no prior chat history after exclusions) so the
-    // whole bundle — Start Date / start message / user input — arrives as a
-    // single user turn.
-    final hasChatHistory =
-        adjustedChatHistoryMap.values.any((list) => list.isNotEmpty);
-    var resolvedUserMessage = replaceKeywords(userMessage, keywords,
-        context: cbsContext, role: 'user');
-    if (!hasChatHistory &&
-        startScenario?.startMessage != null &&
-        startScenario!.startMessage!.isNotEmpty) {
-      final resolvedStartMessage =
-          replaceKeywords(startScenario.startMessage!, keywords,
-              context: cbsContext, role: 'char');
-      final bundle =
-          _prefixStartDate(resolvedStartMessage, character.worldStartDate);
-      resolvedUserMessage = '$bundle\n$resolvedUserMessage';
-    }
-    _addContent(contents, 'user', resolvedUserMessage);
+    if (!userMessageAdded) addUserMessage();
 
     return contents;
   }
@@ -333,6 +368,10 @@ class PromptBuilder {
     Persona? persona,
   ) {
     if (msg.role != MessageRole.user) return character.name;
+    return _userName(persona);
+  }
+
+  static String _userName(Persona? persona) {
     final name = persona?.name ?? '';
     return name.isEmpty ? 'User' : name;
   }
@@ -568,5 +607,36 @@ class PromptBuilder {
       }
     }
     return keywords;
+  }
+}
+
+/// How chat history turns are sent, following RisuAI's preset settings.
+class _HistoryFormat {
+  final bool sendName;
+  final bool sendChatAsSystem;
+
+  const _HistoryFormat({required this.sendName, required this.sendChatAsSystem});
+
+  /// [role] is 'user' or 'model'. RisuAI's `sendName` wraps each turn in
+  /// its default group template and sends it as a user turn;
+  /// `sendChatAsSystem` turns it into a system message labelled with its
+  /// role, which RisuAI sends mid-conversation as a `system: ` user turn.
+  ({String role, String text}) apply({
+    required String role,
+    required String speaker,
+    required String text,
+  }) {
+    var turnRole = role;
+    var turnText = text;
+    if (sendName) {
+      turnText = "<$speaker's Message>\n$turnText\n</$speaker's Message>";
+      turnRole = 'user';
+    }
+    if (sendChatAsSystem) {
+      turnText =
+          'system: ${turnRole == 'user' ? 'user' : 'assistant'}: $turnText';
+      turnRole = 'user';
+    }
+    return (role: turnRole, text: turnText);
   }
 }

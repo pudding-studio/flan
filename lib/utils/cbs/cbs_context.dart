@@ -1,5 +1,26 @@
 import 'dart:math';
 
+/// Global toggle that stands in for RisuAI's jailbreak switch
+/// (`{{jbtoggled}}`, jailbreak prompt items).
+const String cbsJailbreakToggleKey = 'risu_jailbreak';
+
+/// Global toggle that stands in for RisuAI's chain-of-thought switch
+/// (chain-of-thought prompt items).
+const String cbsChainOfThoughtToggleKey = 'risu_cot';
+
+/// RisuAI `parseKeyValue`: `key=value` lines; a line counts only when both
+/// sides are non-empty, and anything after a second `=` is dropped.
+Map<String, String> cbsParseKeyValue(String? text) {
+  final result = <String, String>{};
+  if (text == null || text.isEmpty) return result;
+  for (final line in text.split('\n')) {
+    final parts = line.split('=');
+    if (parts.length < 2 || parts[0].isEmpty || parts[1].isEmpty) continue;
+    result.putIfAbsent(parts[0], () => parts[1]);
+  }
+  return result;
+}
+
 /// One chat message as CBS sees it. Roles follow RisuAI: 'user' or 'char'.
 class CbsMessage {
   final String role;
@@ -40,6 +61,9 @@ class CbsContext {
   /// Chat variables (`getvar`), keyed without RisuAI's `$` prefix.
   final Map<String, String> chatVars;
 
+  /// Values unset chat variables read (RisuAI `templateDefaultVariables`).
+  final Map<String, String> defaultChatVars;
+
   /// Global variables (`getglobalvar`), including `toggle_<key>` entries.
   final Map<String, String> globalVars;
 
@@ -69,6 +93,7 @@ class CbsContext {
     this.appVersion = '',
     this.language = '',
     Map<String, String>? chatVars,
+    this.defaultChatVars = const {},
     this.globalVars = const {},
     this.chatVarReader,
     this.globalVarReader,
@@ -79,9 +104,13 @@ class CbsContext {
         random = random ?? Random(),
         now = now ?? DateTime.now;
 
-  /// RisuAI `getChatVar`: missing values read as the string "null".
+  /// RisuAI `getChatVar`: unset values fall back to the template defaults,
+  /// then read as the string "null".
   String chatVar(String key) =>
-      chatVarReader?.call(key) ?? chatVars[key] ?? 'null';
+      chatVarReader?.call(key) ??
+      chatVars[key] ??
+      defaultChatVars[key] ??
+      'null';
 
   /// RisuAI `getGlobalChatVar`.
   String globalVar(String key) =>
@@ -104,6 +133,7 @@ class CbsContext {
         appVersion: appVersion,
         language: language,
         chatVars: chatVars,
+        defaultChatVars: defaultChatVars,
         globalVars: globalVars,
         chatVarReader: chatVarReader,
         globalVarReader: globalVarReader,

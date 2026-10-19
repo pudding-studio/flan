@@ -1735,6 +1735,36 @@ class AppLocalizationsKo extends AppLocalizations {
   String get promptEditThinkingLevel => '생각 수준';
 
   @override
+  String get promptEditTemplateBehavior => '템플릿 동작 (RisuAI 호환)';
+
+  @override
+  String get promptEditUserMessageInChatHistory => '새 메시지를 채팅 기록 바로 뒤에 넣기';
+
+  @override
+  String get promptEditUserMessageInChatHistoryHelp => '켜면 RisuAI처럼 새 메시지가 채팅 목록 항목 바로 뒤에 들어가고, 그 뒤 항목들은 새 메시지 다음에 전송됩니다. 끄면 새 메시지가 맨 마지막에 전송됩니다.';
+
+  @override
+  String get promptEditSendChatAsSystem => '채팅을 시스템 메시지로 보내기';
+
+  @override
+  String get promptEditSendChatAsSystemHelp => '채팅 기록을 "system: user: …" 형식의 지시문으로 보냅니다 (RisuAI sendChatAsSystem).';
+
+  @override
+  String get promptEditSendName => '채팅에 이름 붙여 보내기';
+
+  @override
+  String get promptEditSendNameHelp => '채팅 기록을 이름 태그(<이름\'s Message>)로 감싸 사용자 메시지로 보냅니다 (RisuAI sendName).';
+
+  @override
+  String get promptEditDefaultVariables => '기본 변수';
+
+  @override
+  String get promptEditDefaultVariablesHelp => '한 줄에 하나씩 키=값 형식으로 입력합니다. 아직 값이 없는 채팅 변수(getvar)는 이 값을 읽습니다.';
+
+  @override
+  String get promptEditDefaultVariablesHint => 'hp=100';
+
+  @override
   String get chatModelTitle => '채팅 모델';
 
   @override

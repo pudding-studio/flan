@@ -1543,5 +1543,15 @@
       "error": { "type": "String" }
     }
   },
-  "promptItemsTranslateEmpty": "There is no prompt content to translate"
+  "promptItemsTranslateEmpty": "There is no prompt content to translate",
+  "promptEditTemplateBehavior": "Template behavior (RisuAI compatible)",
+  "promptEditUserMessageInChatHistory": "Put the new message right after the chat history",
+  "promptEditUserMessageInChatHistoryHelp": "When on, the new message goes right after the chat history item, as in RisuAI, and later items follow it. When off, the new message is sent last.",
+  "promptEditSendChatAsSystem": "Send chat as system messages",
+  "promptEditSendChatAsSystemHelp": "Sends the chat history as \"system: user: …\" instructions (RisuAI sendChatAsSystem).",
+  "promptEditSendName": "Send names with chat",
+  "promptEditSendNameHelp": "Wraps the chat history in name tags (<Name's Message>) and sends it as user messages (RisuAI sendName).",
+  "promptEditDefaultVariables": "Default variables",
+  "promptEditDefaultVariablesHelp": "One key=value per line. Chat variables (getvar) that have no value yet read these.",
+  "promptEditDefaultVariablesHint": "hp=100"
 }
