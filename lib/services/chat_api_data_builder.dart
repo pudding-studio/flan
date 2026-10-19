@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 import '../database/database_helper.dart';
 import '../models/character/character.dart';
 import '../models/character/character_book_folder.dart';
@@ -15,11 +17,13 @@ import '../models/prompt/prompt_parameters.dart';
 import '../models/prompt/prompt_regex_rule.dart';
 import '../providers/tokenizer_provider.dart';
 import '../screens/chat/chat_send_errors.dart';
+import '../utils/context_pdf.dart';
 import '../utils/prompt_builder.dart';
 import '../utils/regex_processor.dart';
 import '../utils/token_counter.dart';
 import 'agent_summary_service.dart';
 import 'auto_summary_service.dart';
+import 'context_pdf_service.dart';
 
 /// Result tuple returned by [ChatApiDataBuilder.build] — everything the
 /// AI service call needs, plus the regex rules so the caller can apply
@@ -96,6 +100,7 @@ class ChatApiDataBuilder {
     required String Function(String promptId) promptLoadFailedMessage,
     List<int>? excludeMessageIds,
     int? beforeMessageIndex,
+    bool allowContextPdf = false,
   }) async {
     // Stage 1: Load prompt frame.
     // selectedChatPromptId == null means the user explicitly chose "없음".
@@ -289,37 +294,37 @@ class ChatApiDataBuilder {
       }
     }
 
-    String rawSystemPrompt = PromptBuilder.buildSystemPrompt(
-      chatPrompt: chatPrompt,
-      character: character,
-      persona: persona,
-      startScenario: startScenario,
-      activeCharacterBooks: activeCharacterBooks,
-      chatRoom: chatRoom,
-      summaries: summaries,
-      summaryMetadataMap: summaryMetadataMap,
-      latestMetadata: latestMetadata,
-      conditions: conditions,
-      conditionStates: conditionStates,
-      agentContext: agentContext,
-      extraKeywords: outputLanguageKeywords,
-    );
+    String buildRawSystemPrompt(Map<String, String> extraKeywords) {
+      final prompt = PromptBuilder.buildSystemPrompt(
+        chatPrompt: chatPrompt,
+        character: character,
+        persona: persona,
+        startScenario: startScenario,
+        activeCharacterBooks: activeCharacterBooks,
+        chatRoom: chatRoom,
+        summaries: summaries,
+        summaryMetadataMap: summaryMetadataMap,
+        latestMetadata: latestMetadata,
+        conditions: conditions,
+        conditionStates: conditionStates,
+        agentContext: agentContext,
+        extraKeywords: extraKeywords,
+      );
 
-    // Auto-append agent context only when no prompt item consumes the
-    // {{agent_context}} keyword. If any item (system/user/assistant) uses the
-    // placeholder, it will be substituted in its own slot — appending here
-    // would duplicate the text and place a copy at the very front of the
-    // conversation.
-    if (agentContext != null && agentContext.isNotEmpty) {
+      // Auto-append agent context only when no prompt item consumes the
+      // {{agent_context}} keyword. If any item (system/user/assistant) uses
+      // the placeholder, it will be substituted in its own slot — appending
+      // here would duplicate the text and place a copy at the very front of
+      // the conversation.
+      if (agentContext == null || agentContext.isEmpty) return prompt;
       final consumedByItem = chatPrompt?.items
               .any((item) => item.content.contains('{{agent_context}}')) ??
           false;
-      if (!consumedByItem) {
-        rawSystemPrompt = rawSystemPrompt.isEmpty
-            ? agentContext
-            : '$rawSystemPrompt\n\n$agentContext';
-      }
+      if (consumedByItem) return prompt;
+      return prompt.isEmpty ? agentContext : '$prompt\n\n$agentContext';
     }
+
+    var rawSystemPrompt = buildRawSystemPrompt(outputLanguageKeywords);
 
     // Exclude old messages from chat history
     Set<int> contextExcludeIds;
@@ -344,33 +349,84 @@ class ChatApiDataBuilder {
       beforeMessageIndex: beforeMessageIndex,
     );
 
-    final rawContents = PromptBuilder.buildContents(
-      chatPrompt: chatPrompt,
-      character: character,
-      userMessage: apiUserMessage,
-      chatHistoryMap: chatHistoryMap,
-      systemPrompt: rawSystemPrompt,
-      persona: persona,
-      startScenario: startScenario,
-      activeCharacterBooks: activeCharacterBooks,
-      maxInputTokens: chatPrompt?.parameters?.maxInputTokens,
-      tokenizer: tokenizer,
-      metadataMap: metadataMap,
-      chatRoom: chatRoom,
-      summaries: summaries,
-      summaryMetadataMap: summaryMetadataMap,
-      latestMetadata: latestMetadata,
-      conditions: conditions,
-      conditionStates: conditionStates,
-      agentContext: agentContext,
-      extraKeywords: outputLanguageKeywords,
-    );
+    List<Map<String, dynamic>> buildRawContents(
+      Map<String, String> extraKeywords, {
+      List<ContextPdfEntry>? pdfHistorySink,
+    }) {
+      return PromptBuilder.buildContents(
+        chatPrompt: chatPrompt,
+        character: character,
+        userMessage: apiUserMessage,
+        chatHistoryMap: chatHistoryMap,
+        systemPrompt: rawSystemPrompt,
+        persona: persona,
+        startScenario: startScenario,
+        activeCharacterBooks: activeCharacterBooks,
+        maxInputTokens: chatPrompt?.parameters?.maxInputTokens,
+        tokenizer: tokenizer,
+        metadataMap: metadataMap,
+        chatRoom: chatRoom,
+        summaries: summaries,
+        summaryMetadataMap: summaryMetadataMap,
+        latestMetadata: latestMetadata,
+        conditions: conditions,
+        conditionStates: conditionStates,
+        agentContext: agentContext,
+        extraKeywords: extraKeywords,
+        pdfHistorySink: pdfHistorySink,
+      );
+    }
+
+    var rawContents = buildRawContents(outputLanguageKeywords);
+
+    // Stage 2.5: Gemini only — past the threshold, move the summary and chat
+    // history into one PDF. Prompt instructions and the new user message
+    // stay as text; only how the same context is billed changes.
+    Uint8List? contextPdf;
+    if (allowContextPdf &&
+        _estimateTokens(rawSystemPrompt, rawContents, tokenizer) >=
+            ContextPdf.thresholdTokens) {
+      final states = conditionStates ?? <int, String>{};
+      final summaryInPrompt = chatPrompt?.items.any((item) =>
+              PromptBuilder.isItemActive(item, states) &&
+              item.content.contains('{{chat_historys}}')) ??
+          false;
+      final pdfKeywords = {
+        ...outputLanguageKeywords,
+        if (summaryInPrompt) 'chat_historys': ContextPdf.summaryPointer,
+      };
+      final history = <ContextPdfEntry>[];
+      final pdfContents =
+          buildRawContents(pdfKeywords, pdfHistorySink: history);
+      if (history.isNotEmpty) {
+        final summary = summaryInPrompt
+            ? PromptBuilder.buildKeywordMap(
+                  character: character,
+                  persona: persona,
+                  startScenario: startScenario,
+                  activeCharacterBooks: activeCharacterBooks,
+                  chatRoom: chatRoom,
+                  summaries: summaries,
+                  summaryMetadataMap: summaryMetadataMap,
+                  latestMetadata: latestMetadata,
+                  agentContext: agentContext,
+                )['chat_historys'] ??
+                ''
+            : '';
+        contextPdf = await _renderContextPdf(summary, history, regexRules);
+        if (contextPdf != null) {
+          rawSystemPrompt = buildRawSystemPrompt(pdfKeywords);
+          rawContents = pdfContents;
+        }
+      }
+    }
 
     // Stage 3: Apply sendDataModify to the fully assembled prompt data
     final systemPrompt =
         RegexProcessor.apply(rawSystemPrompt, regexRules, RegexTarget.sendDataModify);
-    final contents = RegexProcessor.applyToContents(
+    var contents = RegexProcessor.applyToContents(
         rawContents, regexRules, RegexTarget.sendDataModify);
+    if (contextPdf != null) contents = ContextPdf.attach(contents, contextPdf);
 
     return ChatApiData(
       systemPrompt: systemPrompt,
@@ -378,6 +434,48 @@ class ChatApiDataBuilder {
       parameters: chatPrompt?.parameters,
       regexRules: regexRules,
     );
+  }
+
+  int _estimateTokens(
+    String systemPrompt,
+    List<Map<String, dynamic>> contents,
+    TokenizerType tokenizer,
+  ) {
+    final text = StringBuffer(systemPrompt);
+    for (final message in contents) {
+      for (final part in message['parts'] as List<dynamic>) {
+        if (part is Map && part['text'] is String) {
+          text
+            ..write('\n')
+            ..write(part['text'] as String);
+        }
+      }
+    }
+    return TokenCounter.estimateTokenCount(text.toString(), tokenizer: tokenizer);
+  }
+
+  /// Renders the context PDF with the same sendDataModify rules the text
+  /// path applies. Returns null on failure so the send falls back to plain
+  /// text: the PDF only saves tokens, it must never block the message.
+  Future<Uint8List?> _renderContextPdf(
+    String summary,
+    List<ContextPdfEntry> history,
+    List<PromptRegexRule> regexRules,
+  ) async {
+    String modify(String text) =>
+        RegexProcessor.apply(text, regexRules, RegexTarget.sendDataModify);
+    try {
+      return await ContextPdfService.render(
+        summary: modify(summary),
+        entries: [
+          for (final entry in history)
+            ContextPdfEntry(entry.speaker, modify(entry.text)),
+        ],
+      );
+    } catch (e, stack) {
+      debugPrint('Context PDF render failed, sending as text: $e\n$stack');
+      return null;
+    }
   }
 
   Future<Map<PromptItem, List<ChatMessage>>> _buildChatHistoryMap({

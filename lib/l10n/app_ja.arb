@@ -58,6 +58,8 @@
   "languageJapanese": "日本語",
   "settingsApiKey": "APIキー登録",
   "settingsChatModel": "チャットモデル",
+  "settingsContextPdf": "長い会話をPDFで送信",
+  "settingsContextPdfDescription": "3万トークンを超えると、要約と会話履歴をPDFで送ってトークンを節約します（Gemini専用）",
   "settingsTokenizer": "トークナイザー",
   "settingsChatPrompt": "チャットプロンプト",
   "settingsAuxiliaryPrompts": "補助プロンプト",

@@ -10,6 +10,7 @@ import '../models/prompt/chat_prompt.dart';
 import '../models/prompt/prompt_condition.dart';
 import '../models/prompt/prompt_item.dart';
 import '../providers/tokenizer_provider.dart';
+import 'context_pdf.dart';
 import 'date_formatter.dart';
 import 'metadata_parser.dart';
 import 'token_counter.dart';
@@ -78,6 +79,11 @@ class PromptBuilder {
     int? maxInputTokens,
     TokenizerType? tokenizer,
     Map<int, ChatMessageMetadata>? metadataMap,
+    // When given, chat history is collected here instead of being emitted as
+    // turns, and a single PDF placeholder takes the first history slot. All
+    // chat items share that slot, so items placed between two chat items end
+    // up after the whole history.
+    List<ContextPdfEntry>? pdfHistorySink,
     ChatRoom? chatRoom,
     List<ChatSummary>? summaries,
     Map<int, ChatMessageMetadata>? summaryMetadataMap,
@@ -142,6 +148,16 @@ class PromptBuilder {
                   content = '$content\n$tagString';
                 }
               }
+            }
+            if (pdfHistorySink != null) {
+              if (pdfHistorySink.isEmpty) {
+                _addPart(contents, 'user', ContextPdf.placeholderPart());
+              }
+              pdfHistorySink.add(ContextPdfEntry(
+                _speakerName(msg, character, persona),
+                content,
+              ));
+              continue;
             }
             _addContent(contents, _chatMessageRole(msg), content);
           }
@@ -264,20 +280,50 @@ class PromptBuilder {
   ) {
     if (contents.isNotEmpty && contents.last['role'] == role) {
       final parts = contents.last['parts'] as List;
-      final lastText = parts.last['text'] as String;
-      parts.last = {'text': '$lastText\n$text'};
+      final lastText = parts.last['text'];
+      if (lastText is String) {
+        parts.last = {'text': '$lastText\n$text'};
+      } else {
+        // The previous part is not text (the context PDF placeholder).
+        parts.add({'text': text});
+      }
     } else {
       contents.add({
         'role': role,
-        'parts': [
+        'parts': <Map<String, dynamic>>[
           {'text': text}
         ]
       });
     }
   }
 
+  static void _addPart(
+    List<Map<String, dynamic>> contents,
+    String role,
+    Map<String, dynamic> part,
+  ) {
+    if (contents.isNotEmpty && contents.last['role'] == role) {
+      (contents.last['parts'] as List).add(part);
+    } else {
+      contents.add({
+        'role': role,
+        'parts': <Map<String, dynamic>>[part],
+      });
+    }
+  }
+
   static String _chatMessageRole(ChatMessage msg) {
     return msg.role == MessageRole.user ? 'user' : 'model';
+  }
+
+  static String _speakerName(
+    ChatMessage msg,
+    Character character,
+    Persona? persona,
+  ) {
+    if (msg.role != MessageRole.user) return character.name;
+    final name = persona?.name ?? '';
+    return name.isEmpty ? 'User' : name;
   }
 
   static Map<String, String> buildKeywordMap({

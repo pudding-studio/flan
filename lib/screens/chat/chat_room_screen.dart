@@ -20,6 +20,7 @@ import '../../utils/chat_content_formatter.dart';
 import '../../utils/regex_processor.dart';
 import '../../utils/retry_runner.dart';
 import '../../database/database_helper.dart';
+import '../../providers/context_pdf_provider.dart';
 import '../../providers/sound_notification_provider.dart';
 import '../../providers/tokenizer_provider.dart';
 import '../../utils/common_dialog.dart';
@@ -344,6 +345,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
 
   Future<ChatApiData> _buildApiData({
+    required UnifiedModel model,
     required String userMessage,
     List<int>? excludeMessageIds,
     int? beforeMessageIndex,
@@ -355,6 +357,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     final outputLanguage =
         context.read<LocalizationProvider>().effectiveAiLanguageName;
     final tokenizer = context.read<TokenizerProvider>().selectedTokenizer;
+    final allowContextPdf = context.read<ContextPdfProvider>().appliesTo(model);
 
     return ChatApiDataBuilder.instance.build(
       chatRoom: _chatRoom!,
@@ -368,6 +371,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       promptLoadFailedMessage: l10n.chatRoomPromptLoadFailed,
       excludeMessageIds: excludeMessageIds,
       beforeMessageIndex: beforeMessageIndex,
+      allowContextPdf: allowContextPdf,
     );
   }
 
@@ -446,16 +450,19 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
       _messageController.clear();
 
+      // The model decides whether the context may go out as a PDF, so it is
+      // resolved before the request is assembled.
+      final modelProvider = context.read<ChatModelSettingsProvider>();
+      await modelProvider.initialized;
+      final model = await _resolveModel();
+
       final apiData = await _buildApiData(
+        model: model,
         userMessage: combinedUserMessage,
         excludeMessageIds: [excludeId],
       );
 
       if (mounted) setState(() => _sendingPhase = SendingPhase.waiting);
-
-      final modelProvider = context.read<ChatModelSettingsProvider>();
-      await modelProvider.initialized;
-      final model = await _resolveModel();
 
       await RetryRunner.run<void>(
         maxRetries: model.retryCount,
@@ -867,14 +874,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       final tokenizerProvider = context.read<TokenizerProvider>();
       final tokenizer = tokenizerProvider.selectedTokenizer;
 
+      final model = await _resolveModel();
+
       final apiData = await _buildApiData(
+        model: model,
         userMessage: lastMessage.content,
         excludeMessageIds: [lastMessage.id!],
       );
 
       if (mounted) setState(() => _sendingPhase = SendingPhase.waiting);
-
-      final model = await _resolveModel();
 
       await RetryRunner.run<void>(
         maxRetries: model.retryCount,
@@ -996,14 +1004,15 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       final previousMessage = _messages[messageIndex - 1];
       if (previousMessage.role != MessageRole.user) return;
 
+      final model = await _resolveModel();
+
       final apiData = await _buildApiData(
+        model: model,
         userMessage: previousMessage.content,
         beforeMessageIndex: messageIndex - 1,
       );
 
       if (mounted) setState(() => _sendingPhase = SendingPhase.waiting);
-
-      final model = await _resolveModel();
 
       await RetryRunner.run<void>(
         maxRetries: model.retryCount,

@@ -161,6 +161,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsChatModel => 'Chat Model';
 
   @override
+  String get settingsContextPdf => 'Send long chats as PDF';
+
+  @override
+  String get settingsContextPdfDescription =>
+      'Over 30k tokens, sends the summary and chat history as a PDF to save tokens (Gemini only)';
+
+  @override
   String get settingsTokenizer => 'Tokenizer';
 
   @override

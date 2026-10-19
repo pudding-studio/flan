@@ -161,6 +161,13 @@ class AppLocalizationsJa extends AppLocalizations {
   String get settingsChatModel => 'チャットモデル';
 
   @override
+  String get settingsContextPdf => '長い会話をPDFで送信';
+
+  @override
+  String get settingsContextPdfDescription =>
+      '3万トークンを超えると、要約と会話履歴をPDFで送ってトークンを節約します（Gemini専用）';
+
+  @override
   String get settingsTokenizer => 'トークナイザー';
 
   @override

@@ -161,6 +161,13 @@ class AppLocalizationsKo extends AppLocalizations {
   String get settingsChatModel => '채팅 모델';
 
   @override
+  String get settingsContextPdf => '긴 대화 PDF로 보내기';
+
+  @override
+  String get settingsContextPdfDescription =>
+      '3만 토큰이 넘으면 요약과 대화 기록을 PDF로 보내 토큰을 아낍니다 (Gemini 전용)';
+
+  @override
   String get settingsTokenizer => '토크나이저';
 
   @override

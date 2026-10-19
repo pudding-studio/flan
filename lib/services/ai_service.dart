@@ -8,6 +8,7 @@ import '../models/chat/chat_model.dart';
 import '../models/chat/unified_model.dart';
 import '../models/prompt/prompt_parameters.dart';
 import '../database/database_helper.dart';
+import '../utils/context_pdf.dart';
 import 'format_converter.dart';
 import 'vertex_auth_service.dart';
 
@@ -284,7 +285,8 @@ class AiService {
     int? characterId,
     String logType = 'gemini',
   }) async {
-    final generationConfig = _buildGeminiGenerationConfig(promptParameters);
+    final generationConfig =
+        _withContextPdfResolution(_buildGeminiGenerationConfig(promptParameters), contents);
 
     final requestBody = {
       'model': modelId,
@@ -304,7 +306,8 @@ class AiService {
     final url = Uri.parse(
         '$_geminiBaseUrl/$modelId:generateContent?key=$apiKey');
     final reqHeaders = {'Content-Type': 'application/json'};
-    final fullRequest = _buildFullRequest(url, reqHeaders, requestJson);
+    final fullRequest = _buildFullRequest(
+        url, reqHeaders, jsonEncode(ContextPdf.redactForLog(requestBody)));
 
     try {
       final response = await http.post(
@@ -366,6 +369,17 @@ class AiService {
       );
       rethrow;
     }
+  }
+
+  /// A context PDF is billed per page at the media resolution, and its native
+  /// text layer is what the model reads, so the lowest resolution keeps the
+  /// full content at the smallest per-page cost.
+  Map<String, dynamic>? _withContextPdfResolution(
+    Map<String, dynamic>? config,
+    List<Map<String, dynamic>> contents,
+  ) {
+    if (!ContextPdf.containsPdf(contents)) return config;
+    return {...?config, 'mediaResolution': 'MEDIA_RESOLUTION_LOW'};
   }
 
   Map<String, dynamic>? _buildGeminiGenerationConfig(
@@ -463,7 +477,8 @@ class AiService {
     int? characterId,
     String logType = 'vertex_ai',
   }) async {
-    final generationConfig = _buildGeminiGenerationConfig(promptParameters);
+    final generationConfig =
+        _withContextPdfResolution(_buildGeminiGenerationConfig(promptParameters), contents);
 
     final requestBody = {
       'model': modelId,
@@ -480,7 +495,8 @@ class AiService {
 
     final requestJson = jsonEncode(requestBody);
     final startTime = DateTime.now();
-    String fullRequest = requestJson;
+    final logJson = jsonEncode(ContextPdf.redactForLog(requestBody));
+    String fullRequest = logJson;
 
     try {
       final accessToken =
@@ -501,7 +517,7 @@ class AiService {
         'Content-Type': 'application/json',
         'Authorization': 'Bearer $accessToken',
       };
-      fullRequest = _buildFullRequest(url, reqHeaders, requestJson);
+      fullRequest = _buildFullRequest(url, reqHeaders, logJson);
 
       final response = await http.post(
         url,
