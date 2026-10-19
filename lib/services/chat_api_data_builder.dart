@@ -17,6 +17,8 @@ import '../models/prompt/prompt_parameters.dart';
 import '../models/prompt/prompt_regex_rule.dart';
 import '../providers/tokenizer_provider.dart';
 import '../screens/chat/chat_send_errors.dart';
+import '../utils/cbs/cbs_app_bridge.dart';
+import '../utils/cbs/cbs_context.dart';
 import '../utils/context_pdf.dart';
 import '../utils/prompt_builder.dart';
 import '../utils/regex_processor.dart';
@@ -101,6 +103,7 @@ class ChatApiDataBuilder {
     List<int>? excludeMessageIds,
     int? beforeMessageIndex,
     bool allowContextPdf = false,
+    String? modelId,
   }) async {
     // Stage 1: Load prompt frame.
     // selectedChatPromptId == null means the user explicitly chose "없음".
@@ -193,6 +196,24 @@ class ChatApiDataBuilder {
       }
     }
 
+    final cbsContext = CbsContext(
+      parsedKeywords: cbsParsedAppKeywords,
+      charName: character.name,
+      userName: persona?.name ?? '',
+      charDescription: character.description ?? '',
+      personaPrompt: persona?.content ?? '',
+      scenario: startScenario?.startSetting ?? '',
+      firstMessage: startScenario?.startMessage ?? '',
+      authorNote: chatRoom.memo,
+      lorebook: cbsLorebookOf(activeCharacterBooks),
+      messages: messages.map(cbsMessageOf).toList(),
+      modelId: modelId ?? '',
+      maxContext: chatPrompt?.parameters?.maxInputTokens,
+      language: outputLanguage,
+      globalVars: cbsToggleVars(conditions ?? [], conditionStates ?? {}),
+      pickSeed: '${character.id}$chatRoomId',
+    );
+
     // Load agent context if agent mode is enabled
     String? agentContext;
     final summarySettings = await db.getAutoSummarySettings(0);
@@ -228,6 +249,7 @@ class ChatApiDataBuilder {
           conditions: conditions,
           conditionStates: conditionStates,
           agentContext: baselineAgentContext,
+          cbsContext: cbsContext,
         );
         // Mirror the auto-append logic used after the real system prompt build.
         if (!consumedByItem && baselineAgentContext.isNotEmpty) {
@@ -309,6 +331,7 @@ class ChatApiDataBuilder {
         conditionStates: conditionStates,
         agentContext: agentContext,
         extraKeywords: extraKeywords,
+        cbsContext: cbsContext,
       );
 
       // Auto-append agent context only when no prompt item consumes the
@@ -374,6 +397,7 @@ class ChatApiDataBuilder {
         agentContext: agentContext,
         extraKeywords: extraKeywords,
         pdfHistorySink: pdfHistorySink,
+        cbsContext: cbsContext,
       );
     }
 

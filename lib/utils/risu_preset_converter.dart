@@ -5,7 +5,7 @@ import '../models/prompt/prompt_item.dart';
 /// Two Risu layouts are supported:
 /// - Legacy: `formatingOrder[]` chooses which sections appear where. Section
 ///   text comes from top-level `mainPrompt` / `jailbreak` / `globalNote`; the
-///   character/persona/lorebook slots become `{{character}}` / `{{persona}}` /
+///   character/persona/lorebook slots become `{{char_description}}` / `{{user_description}}` /
 ///   `{{character_book}}` placeholder items.
 /// - Modern: `promptTemplate[]` carries explicit per-item entries
 ///   (plain / chat / typed / authornote / chatML). Cache markers are dropped.
@@ -144,14 +144,14 @@ class RisuPresetConverter {
 
       case 'persona':
         return _keywordItem(
-          '{{persona}}',
+          '{{user_description}}',
           entry['name'] as String? ?? 'Persona',
           entry['role2'] as String?,
           order,
         );
       case 'description':
         return _keywordItem(
-          '{{character}}',
+          '{{char_description}}',
           entry['name'] as String? ?? 'Character',
           entry['role2'] as String?,
           order,
@@ -292,9 +292,9 @@ class RisuPresetConverter {
         if (text.trim().isEmpty) return null;
         return _systemItem(text, 'Global Note', order);
       case 'description':
-        return _keywordItem('{{character}}', 'Character', null, order);
+        return _keywordItem('{{char_description}}', 'Character', null, order);
       case 'personaPrompt':
-        return _keywordItem('{{persona}}', 'Persona', null, order);
+        return _keywordItem('{{user_description}}', 'Persona', null, order);
       case 'lorebook':
         return _keywordItem('{{character_book}}', 'Lorebook', null, order);
       case 'chats':

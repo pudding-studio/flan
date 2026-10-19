@@ -10,6 +10,8 @@ import '../models/prompt/chat_prompt.dart';
 import '../models/prompt/prompt_condition.dart';
 import '../models/prompt/prompt_item.dart';
 import '../providers/tokenizer_provider.dart';
+import 'cbs/cbs_context.dart';
+import 'cbs/cbs_parser.dart';
 import 'context_pdf.dart';
 import 'date_formatter.dart';
 import 'metadata_parser.dart';
@@ -17,6 +19,7 @@ import 'token_counter.dart';
 
 class PromptBuilder {
   static String buildSystemPrompt({
+    CbsContext? cbsContext,
     required ChatPrompt? chatPrompt,
     required Character character,
     Persona? persona,
@@ -58,7 +61,8 @@ class PromptBuilder {
       for (final item in chatPrompt.items) {
         if (item.role != PromptRole.system || !isItemActive(item, states)) continue;
 
-        final replaced = replaceKeywords(item.content, keywords);
+        final replaced = replaceKeywords(item.content, keywords,
+            context: cbsContext, role: 'system');
         buffer.writeln(replaced);
         buffer.writeln();
       }
@@ -68,6 +72,7 @@ class PromptBuilder {
   }
 
   static List<Map<String, dynamic>> buildContents({
+    CbsContext? cbsContext,
     required ChatPrompt? chatPrompt,
     required Character character,
     required String userMessage,
@@ -117,6 +122,7 @@ class PromptBuilder {
 
     // 토큰 제한이 있으면 채팅 히스토리 조정
     final adjustedChatHistoryMap = _adjustChatHistoryForTokenLimit(
+      cbsContext: cbsContext,
       chatPrompt: chatPrompt,
       chatHistoryMap: chatHistoryMap,
       systemPrompt: systemPrompt,
@@ -163,7 +169,8 @@ class PromptBuilder {
           }
         } else {
           final role = item.role == PromptRole.user ? 'user' : 'model';
-          final replaced = replaceKeywords(item.content, keywords);
+          final replaced = replaceKeywords(item.content, keywords,
+              context: cbsContext, role: role == 'user' ? 'user' : 'char');
           _addContent(contents, role, replaced);
         }
       }
@@ -175,12 +182,14 @@ class PromptBuilder {
     // single user turn.
     final hasChatHistory =
         adjustedChatHistoryMap.values.any((list) => list.isNotEmpty);
-    var resolvedUserMessage = replaceKeywords(userMessage, keywords);
+    var resolvedUserMessage = replaceKeywords(userMessage, keywords,
+        context: cbsContext, role: 'user');
     if (!hasChatHistory &&
         startScenario?.startMessage != null &&
         startScenario!.startMessage!.isNotEmpty) {
       final resolvedStartMessage =
-          replaceKeywords(startScenario.startMessage!, keywords);
+          replaceKeywords(startScenario.startMessage!, keywords,
+              context: cbsContext, role: 'char');
       final bundle =
           _prefixStartDate(resolvedStartMessage, character.worldStartDate);
       resolvedUserMessage = '$bundle\n$resolvedUserMessage';
@@ -192,6 +201,7 @@ class PromptBuilder {
 
   /// 토큰 제한에 맞춰 채팅 히스토리 조정 (오래된 메시지부터 생략)
   static Map<PromptItem, List<ChatMessage>> _adjustChatHistoryForTokenLimit({
+    CbsContext? cbsContext,
     required ChatPrompt? chatPrompt,
     required Map<PromptItem, List<ChatMessage>> chatHistoryMap,
     required String systemPrompt,
@@ -213,7 +223,8 @@ class PromptBuilder {
     if (chatPrompt != null) {
       for (final item in chatPrompt.items) {
         if (item.role == PromptRole.system || item.role == PromptRole.chat || !isItemActive(item, conditionStates)) continue;
-        final replaced = replaceKeywords(item.content, keywords);
+        final replaced =
+            replaceKeywords(item.content, keywords, context: cbsContext);
         baseTokens += TokenCounter.estimateTokenCount(replaced, tokenizer: tokenizer);
       }
     }
@@ -468,12 +479,41 @@ class PromptBuilder {
     return buffer.toString().trim();
   }
 
-  static String replaceKeywords(String text, Map<String, String> keywords) {
-    var result = text;
-    for (final entry in keywords.entries) {
-      result = result.replaceAll('{{${entry.key}}}', entry.value);
-    }
-    return stripComments(result);
+  // Legacy flat replacement, superseded by the RisuAI-compatible CBS engine
+  // below. Kept for reference while the engine settles in.
+  //
+  // static String replaceKeywords(String text, Map<String, String> keywords) {
+  //   var result = text;
+  //   for (final entry in keywords.entries) {
+  //     result = result.replaceAll('{{${entry.key}}}', entry.value);
+  //   }
+  //   return stripComments(result);
+  // }
+
+  /// Renders [text] with the RisuAI-compatible CBS engine.
+  ///
+  /// [keywords] keep the meaning they had under the old flat replacement: an
+  /// exact `{{name}}` match wins over any CBS function. Variable writes
+  /// (`setvar`, `addvar`, ...) are stripped without running, because
+  /// assembling a prompt must not change chat state; regenerating would
+  /// apply them twice. Without a [context], chat-level CBS functions see an
+  /// empty chat.
+  static String replaceKeywords(
+    String text,
+    Map<String, String> keywords, {
+    CbsContext? context,
+    String? role,
+  }) {
+    final base = context ??
+        CbsContext(
+          charName: keywords['char'] ?? '',
+          userName: keywords['user'] ?? '',
+        );
+    final rendered = CbsParser.render(
+      text,
+      CbsRun(base.withKeywords(keywords), rmVar: true, role: role),
+    );
+    return stripComments(cbsUnescape(rendered));
   }
 
   /// Strips /* ... */ block comments from text before sending to AI.
