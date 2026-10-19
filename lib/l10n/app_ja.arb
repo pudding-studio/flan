@@ -1543,5 +1543,15 @@
       "error": { "type": "String" }
     }
   },
-  "promptItemsTranslateEmpty": "翻訳するプロンプト内容がありません"
+  "promptItemsTranslateEmpty": "翻訳するプロンプト内容がありません",
+  "promptEditTemplateBehavior": "テンプレート動作（RisuAI互換）",
+  "promptEditUserMessageInChatHistory": "新しいメッセージをチャット履歴の直後に入れる",
+  "promptEditUserMessageInChatHistoryHelp": "オンにするとRisuAIと同様に新しいメッセージがチャット履歴項目の直後に入り、後の項目はその後に送信されます。オフにすると新しいメッセージは最後に送信されます。",
+  "promptEditSendChatAsSystem": "チャットをシステムメッセージとして送信",
+  "promptEditSendChatAsSystemHelp": "チャット履歴を「system: user: …」形式の指示として送信します（RisuAI sendChatAsSystem）。",
+  "promptEditSendName": "チャットに名前を付けて送信",
+  "promptEditSendNameHelp": "チャット履歴を名前タグ（<名前's Message>）で囲み、ユーザーメッセージとして送信します（RisuAI sendName）。",
+  "promptEditDefaultVariables": "デフォルト変数",
+  "promptEditDefaultVariablesHelp": "1行に1つ、キー=値の形式で入力します。まだ値のないチャット変数（getvar）はこの値を読みます。",
+  "promptEditDefaultVariablesHint": "hp=100"
 }

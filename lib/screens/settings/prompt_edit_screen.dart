@@ -92,6 +92,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
   final _maxOutputTokensController = TextEditingController();
   final _thinkingTokensController = TextEditingController();
   final _thinkingMaxTokensController = TextEditingController();
+  final _defaultVariablesController = TextEditingController();
 
   bool get _isEditing => widget.prompt != null;
   bool get _isReadOnly => false;
@@ -173,6 +174,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
     _maxOutputTokensController.text = _parameters.maxOutputTokens?.toString() ?? '';
     _thinkingTokensController.text = _parameters.thinkingTokens?.toString() ?? '';
     _thinkingMaxTokensController.text = _parameters.thinkingMaxTokens?.toString() ?? '';
+    _defaultVariablesController.text = _parameters.defaultVariables ?? '';
 
     // Load folders and their items
     final folders = await _db.readPromptItemFolders(prompt.id!);
@@ -256,6 +258,7 @@ class _PromptEditScreenState extends State<PromptEditScreen>
     _maxOutputTokensController.dispose();
     _thinkingTokensController.dispose();
     _thinkingMaxTokensController.dispose();
+    _defaultVariablesController.dispose();
     for (var controller in _regexPatternControllers.values) {
       controller.dispose();
     }
@@ -285,6 +288,9 @@ class _PromptEditScreenState extends State<PromptEditScreen>
       maxOutputTokens: maxOutputTokens,
       thinkingTokens: thinkingTokens,
       thinkingMaxTokens: thinkingMaxTokens,
+      defaultVariables: _defaultVariablesController.text.trim().isEmpty
+          ? null
+          : _defaultVariablesController.text.trim(),
     );
   }
 
@@ -1023,7 +1029,82 @@ class _PromptEditScreenState extends State<PromptEditScreen>
           _buildStopSequencesSection(),
           const SizedBox(height: 24),
           _buildThinkingSection(),
+          const SizedBox(height: UIConstants.spacing20),
+          _buildTemplateBehaviorSection(),
         ],
+      ),
+    );
+  }
+
+  /// Prompt-level template behavior that RisuAI presets rely on.
+  Widget _buildTemplateBehaviorSection() {
+    final l10n = AppLocalizations.of(context);
+    Widget toggle({
+      required String title,
+      required String help,
+      required bool? value,
+      required PromptParameters Function(bool) update,
+    }) {
+      return SwitchListTile(
+        contentPadding: EdgeInsets.zero,
+        title: Text(title, style: Theme.of(context).textTheme.bodyMedium),
+        subtitle: Text(help, style: Theme.of(context).textTheme.bodySmall),
+        value: value == true,
+        onChanged: (checked) => setState(() => _parameters = update(checked)),
+      );
+    }
+
+    return Container(
+      decoration: BoxDecoration(
+        border: Border.all(
+          color: Theme.of(context).colorScheme.outline.withValues(alpha: 0.2),
+        ),
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Theme(
+        data: Theme.of(context).copyWith(dividerColor: Colors.transparent),
+        child: ExpansionTile(
+          title: CommonTitleMedium(text: l10n.promptEditTemplateBehavior),
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  toggle(
+                    title: l10n.promptEditUserMessageInChatHistory,
+                    help: l10n.promptEditUserMessageInChatHistoryHelp,
+                    value: _parameters.userMessageInChatHistory,
+                    update: (v) => _parameters.copyWith(
+                        userMessageInChatHistory: v ? true : null),
+                  ),
+                  toggle(
+                    title: l10n.promptEditSendChatAsSystem,
+                    help: l10n.promptEditSendChatAsSystemHelp,
+                    value: _parameters.sendChatAsSystem,
+                    update: (v) =>
+                        _parameters.copyWith(sendChatAsSystem: v ? true : null),
+                  ),
+                  toggle(
+                    title: l10n.promptEditSendName,
+                    help: l10n.promptEditSendNameHelp,
+                    value: _parameters.sendName,
+                    update: (v) =>
+                        _parameters.copyWith(sendName: v ? true : null),
+                  ),
+                  const SizedBox(height: 12),
+                  CommonCustomTextField(
+                    label: l10n.promptEditDefaultVariables,
+                    helpText: l10n.promptEditDefaultVariablesHelp,
+                    hintText: l10n.promptEditDefaultVariablesHint,
+                    controller: _defaultVariablesController,
+                    maxLines: 6,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

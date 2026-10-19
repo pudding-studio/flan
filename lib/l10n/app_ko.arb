@@ -1543,5 +1543,15 @@
       "error": { "type": "String" }
     }
   },
-  "promptItemsTranslateEmpty": "번역할 프롬프트 내용이 없습니다"
+  "promptItemsTranslateEmpty": "번역할 프롬프트 내용이 없습니다",
+  "promptEditTemplateBehavior": "템플릿 동작 (RisuAI 호환)",
+  "promptEditUserMessageInChatHistory": "새 메시지를 채팅 기록 바로 뒤에 넣기",
+  "promptEditUserMessageInChatHistoryHelp": "켜면 RisuAI처럼 새 메시지가 채팅 목록 항목 바로 뒤에 들어가고, 그 뒤 항목들은 새 메시지 다음에 전송됩니다. 끄면 새 메시지가 맨 마지막에 전송됩니다.",
+  "promptEditSendChatAsSystem": "채팅을 시스템 메시지로 보내기",
+  "promptEditSendChatAsSystemHelp": "채팅 기록을 \"system: user: …\" 형식의 지시문으로 보냅니다 (RisuAI sendChatAsSystem).",
+  "promptEditSendName": "채팅에 이름 붙여 보내기",
+  "promptEditSendNameHelp": "채팅 기록을 이름 태그(<이름's Message>)로 감싸 사용자 메시지로 보냅니다 (RisuAI sendName).",
+  "promptEditDefaultVariables": "기본 변수",
+  "promptEditDefaultVariablesHelp": "한 줄에 하나씩 키=값 형식으로 입력합니다. 아직 값이 없는 채팅 변수(getvar)는 이 값을 읽습니다.",
+  "promptEditDefaultVariablesHint": "hp=100"
 }

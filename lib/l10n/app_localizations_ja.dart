@@ -1727,6 +1727,36 @@ class AppLocalizationsJa extends AppLocalizations {
   String get promptEditThinkingLevel => '思考レベル';
 
   @override
+  String get promptEditTemplateBehavior => 'テンプレート動作（RisuAI互換）';
+
+  @override
+  String get promptEditUserMessageInChatHistory => '新しいメッセージをチャット履歴の直後に入れる';
+
+  @override
+  String get promptEditUserMessageInChatHistoryHelp => 'オンにするとRisuAIと同様に新しいメッセージがチャット履歴項目の直後に入り、後の項目はその後に送信されます。オフにすると新しいメッセージは最後に送信されます。';
+
+  @override
+  String get promptEditSendChatAsSystem => 'チャットをシステムメッセージとして送信';
+
+  @override
+  String get promptEditSendChatAsSystemHelp => 'チャット履歴を「system: user: …」形式の指示として送信します（RisuAI sendChatAsSystem）。';
+
+  @override
+  String get promptEditSendName => 'チャットに名前を付けて送信';
+
+  @override
+  String get promptEditSendNameHelp => 'チャット履歴を名前タグ（<名前\'s Message>）で囲み、ユーザーメッセージとして送信します（RisuAI sendName）。';
+
+  @override
+  String get promptEditDefaultVariables => 'デフォルト変数';
+
+  @override
+  String get promptEditDefaultVariablesHelp => '1行に1つ、キー=値の形式で入力します。まだ値のないチャット変数（getvar）はこの値を読みます。';
+
+  @override
+  String get promptEditDefaultVariablesHint => 'hp=100';
+
+  @override
   String get chatModelTitle => 'チャットモデル';
 
   @override

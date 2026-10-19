@@ -10,6 +10,8 @@ import '../models/prompt/chat_prompt.dart';
 import '../models/prompt/prompt_condition.dart';
 import '../models/prompt/prompt_item.dart';
 import '../providers/tokenizer_provider.dart';
+import 'cbs/cbs_context.dart';
+import 'cbs/cbs_parser.dart';
 import 'context_pdf.dart';
 import 'date_formatter.dart';
 import 'metadata_parser.dart';
@@ -17,6 +19,7 @@ import 'token_counter.dart';
 
 class PromptBuilder {
   static String buildSystemPrompt({
+    CbsContext? cbsContext,
     required ChatPrompt? chatPrompt,
     required Character character,
     Persona? persona,
@@ -58,7 +61,10 @@ class PromptBuilder {
       for (final item in chatPrompt.items) {
         if (item.role != PromptRole.system || !isItemActive(item, states)) continue;
 
-        final replaced = replaceKeywords(item.content, keywords);
+        final replaced = replaceKeywords(item.content, keywords,
+            context: cbsContext, role: 'system');
+        // Like RisuAI, a block that renders to nothing is not sent.
+        if (replaced.trim().isEmpty) continue;
         buffer.writeln(replaced);
         buffer.writeln();
       }
@@ -68,6 +74,7 @@ class PromptBuilder {
   }
 
   static List<Map<String, dynamic>> buildContents({
+    CbsContext? cbsContext,
     required ChatPrompt? chatPrompt,
     required Character character,
     required String userMessage,
@@ -117,6 +124,7 @@ class PromptBuilder {
 
     // 토큰 제한이 있으면 채팅 히스토리 조정
     final adjustedChatHistoryMap = _adjustChatHistoryForTokenLimit(
+      cbsContext: cbsContext,
       chatPrompt: chatPrompt,
       chatHistoryMap: chatHistoryMap,
       systemPrompt: systemPrompt,
@@ -127,7 +135,51 @@ class PromptBuilder {
       conditionStates: states,
     );
 
+    // Attach `Start Date + start message` in front of the user's first message
+    // on the very first send (no prior chat history after exclusions) so the
+    // whole bundle — Start Date / start message / user input — arrives as a
+    // single user turn.
+    final hasChatHistory =
+        adjustedChatHistoryMap.values.any((list) => list.isNotEmpty);
+    var resolvedUserMessage = replaceKeywords(userMessage, keywords,
+        context: cbsContext, role: 'user');
+    if (!hasChatHistory &&
+        startScenario?.startMessage != null &&
+        startScenario!.startMessage!.isNotEmpty) {
+      final resolvedStartMessage =
+          replaceKeywords(startScenario.startMessage!, keywords,
+              context: cbsContext, role: 'char');
+      final bundle =
+          _prefixStartDate(resolvedStartMessage, character.worldStartDate);
+      resolvedUserMessage = '$bundle\n$resolvedUserMessage';
+    }
+
+    final settings = chatPrompt?.parameters;
+    final historyFormat = _HistoryFormat(
+      sendName: settings?.sendName == true,
+      sendChatAsSystem: settings?.sendChatAsSystem == true,
+    );
+    // RisuAI keeps the new message inside the chat history, so prompt items
+    // placed after the history follow it.
+    PromptItem? userMessageAnchor;
+    if (settings?.userMessageInChatHistory == true && chatPrompt != null) {
+      for (final item in chatPrompt.items) {
+        if (item.role == PromptRole.chat && isItemActive(item, states)) {
+          userMessageAnchor = item;
+        }
+      }
+    }
     final contents = <Map<String, dynamic>>[];
+    var userMessageAdded = false;
+    void addUserMessage() {
+      final turn = historyFormat.apply(
+        role: 'user',
+        speaker: _userName(persona),
+        text: resolvedUserMessage,
+      );
+      _addContent(contents, turn.role, turn.text);
+      userMessageAdded = true;
+    }
 
     if (chatPrompt != null && chatPrompt.items.isNotEmpty) {
       for (final item in chatPrompt.items) {
@@ -159,39 +211,32 @@ class PromptBuilder {
               ));
               continue;
             }
-            _addContent(contents, _chatMessageRole(msg), content);
+            final turn = historyFormat.apply(
+              role: _chatMessageRole(msg),
+              speaker: _speakerName(msg, character, persona),
+              text: content,
+            );
+            _addContent(contents, turn.role, turn.text);
           }
+          if (identical(item, userMessageAnchor)) addUserMessage();
         } else {
           final role = item.role == PromptRole.user ? 'user' : 'model';
-          final replaced = replaceKeywords(item.content, keywords);
+          final replaced = replaceKeywords(item.content, keywords,
+              context: cbsContext, role: role == 'user' ? 'user' : 'char');
+          if (replaced.trim().isEmpty) continue;
           _addContent(contents, role, replaced);
         }
       }
     }
 
-    // Attach `Start Date + start message` in front of the user's first message
-    // on the very first send (no prior chat history after exclusions) so the
-    // whole bundle — Start Date / start message / user input — arrives as a
-    // single user turn.
-    final hasChatHistory =
-        adjustedChatHistoryMap.values.any((list) => list.isNotEmpty);
-    var resolvedUserMessage = replaceKeywords(userMessage, keywords);
-    if (!hasChatHistory &&
-        startScenario?.startMessage != null &&
-        startScenario!.startMessage!.isNotEmpty) {
-      final resolvedStartMessage =
-          replaceKeywords(startScenario.startMessage!, keywords);
-      final bundle =
-          _prefixStartDate(resolvedStartMessage, character.worldStartDate);
-      resolvedUserMessage = '$bundle\n$resolvedUserMessage';
-    }
-    _addContent(contents, 'user', resolvedUserMessage);
+    if (!userMessageAdded) addUserMessage();
 
     return contents;
   }
 
   /// 토큰 제한에 맞춰 채팅 히스토리 조정 (오래된 메시지부터 생략)
   static Map<PromptItem, List<ChatMessage>> _adjustChatHistoryForTokenLimit({
+    CbsContext? cbsContext,
     required ChatPrompt? chatPrompt,
     required Map<PromptItem, List<ChatMessage>> chatHistoryMap,
     required String systemPrompt,
@@ -213,7 +258,8 @@ class PromptBuilder {
     if (chatPrompt != null) {
       for (final item in chatPrompt.items) {
         if (item.role == PromptRole.system || item.role == PromptRole.chat || !isItemActive(item, conditionStates)) continue;
-        final replaced = replaceKeywords(item.content, keywords);
+        final replaced =
+            replaceKeywords(item.content, keywords, context: cbsContext);
         baseTokens += TokenCounter.estimateTokenCount(replaced, tokenizer: tokenizer);
       }
     }
@@ -322,6 +368,10 @@ class PromptBuilder {
     Persona? persona,
   ) {
     if (msg.role != MessageRole.user) return character.name;
+    return _userName(persona);
+  }
+
+  static String _userName(Persona? persona) {
     final name = persona?.name ?? '';
     return name.isEmpty ? 'User' : name;
   }
@@ -468,12 +518,41 @@ class PromptBuilder {
     return buffer.toString().trim();
   }
 
-  static String replaceKeywords(String text, Map<String, String> keywords) {
-    var result = text;
-    for (final entry in keywords.entries) {
-      result = result.replaceAll('{{${entry.key}}}', entry.value);
-    }
-    return stripComments(result);
+  // Legacy flat replacement, superseded by the RisuAI-compatible CBS engine
+  // below. Kept for reference while the engine settles in.
+  //
+  // static String replaceKeywords(String text, Map<String, String> keywords) {
+  //   var result = text;
+  //   for (final entry in keywords.entries) {
+  //     result = result.replaceAll('{{${entry.key}}}', entry.value);
+  //   }
+  //   return stripComments(result);
+  // }
+
+  /// Renders [text] with the RisuAI-compatible CBS engine.
+  ///
+  /// [keywords] keep the meaning they had under the old flat replacement: an
+  /// exact `{{name}}` match wins over any CBS function. Variable writes
+  /// (`setvar`, `addvar`, ...) are stripped without running, because
+  /// assembling a prompt must not change chat state; regenerating would
+  /// apply them twice. Without a [context], chat-level CBS functions see an
+  /// empty chat.
+  static String replaceKeywords(
+    String text,
+    Map<String, String> keywords, {
+    CbsContext? context,
+    String? role,
+  }) {
+    final base = context ??
+        CbsContext(
+          charName: keywords['char'] ?? '',
+          userName: keywords['user'] ?? '',
+        );
+    final rendered = CbsParser.render(
+      text,
+      CbsRun(base.withKeywords(keywords), rmVar: true, role: role),
+    );
+    return stripComments(cbsUnescape(rendered));
   }
 
   /// Strips /* ... */ block comments from text before sending to AI.
@@ -528,5 +607,36 @@ class PromptBuilder {
       }
     }
     return keywords;
+  }
+}
+
+/// How chat history turns are sent, following RisuAI's preset settings.
+class _HistoryFormat {
+  final bool sendName;
+  final bool sendChatAsSystem;
+
+  const _HistoryFormat({required this.sendName, required this.sendChatAsSystem});
+
+  /// [role] is 'user' or 'model'. RisuAI's `sendName` wraps each turn in
+  /// its default group template and sends it as a user turn;
+  /// `sendChatAsSystem` turns it into a system message labelled with its
+  /// role, which RisuAI sends mid-conversation as a `system: ` user turn.
+  ({String role, String text}) apply({
+    required String role,
+    required String speaker,
+    required String text,
+  }) {
+    var turnRole = role;
+    var turnText = text;
+    if (sendName) {
+      turnText = "<$speaker's Message>\n$turnText\n</$speaker's Message>";
+      turnRole = 'user';
+    }
+    if (sendChatAsSystem) {
+      turnText =
+          'system: ${turnRole == 'user' ? 'user' : 'assistant'}: $turnText';
+      turnRole = 'user';
+    }
+    return (role: turnRole, text: turnText);
   }
 }

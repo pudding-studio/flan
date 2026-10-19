@@ -67,6 +67,23 @@ class PromptParameters {
   final ThinkingLevel? thinkingLevel;
   final List<String>? stopSequences;
 
+  // Template behavior (RisuAI preset settings).
+
+  /// Places the new user message right after the last chat history item,
+  /// as RisuAI does, instead of after every prompt item.
+  final bool? userMessageInChatHistory;
+
+  /// RisuAI `sendChatAsSystem`: history turns are sent as instructions,
+  /// prefixed with their role.
+  final bool? sendChatAsSystem;
+
+  /// RisuAI `sendName`: history turns are wrapped with the speaker's name.
+  final bool? sendName;
+
+  /// RisuAI `templateDefaultVariables`: `key=value` lines that chat
+  /// variables read as long as they are unset.
+  final String? defaultVariables;
+
   const PromptParameters({
     this.maxInputTokens,
     this.maxOutputTokens,
@@ -80,6 +97,10 @@ class PromptParameters {
     this.thinkingMaxTokens,
     this.thinkingLevel,
     this.stopSequences,
+    this.userMessageInChatHistory,
+    this.sendChatAsSystem,
+    this.sendName,
+    this.defaultVariables,
   });
 
   factory PromptParameters.fromJson(Map<String, dynamic> json) {
@@ -100,6 +121,10 @@ class PromptParameters {
       stopSequences: (json['stopSequences'] as List<dynamic>?)
           ?.map((e) => e as String)
           .toList(),
+      userMessageInChatHistory: json['userMessageInChatHistory'] as bool?,
+      sendChatAsSystem: json['sendChatAsSystem'] as bool?,
+      sendName: json['sendName'] as bool?,
+      defaultVariables: json['defaultVariables'] as String?,
     );
   }
 
@@ -117,6 +142,11 @@ class PromptParameters {
       if (thinkingMaxTokens != null) 'thinkingMaxTokens': thinkingMaxTokens,
       if (thinkingLevel != null) 'thinkingLevel': thinkingLevel!.apiValue,
       if (stopSequences != null && stopSequences!.isNotEmpty) 'stopSequences': stopSequences,
+      if (userMessageInChatHistory == true) 'userMessageInChatHistory': true,
+      if (sendChatAsSystem == true) 'sendChatAsSystem': true,
+      if (sendName == true) 'sendName': true,
+      if (defaultVariables != null && defaultVariables!.isNotEmpty)
+        'defaultVariables': defaultVariables,
     };
   }
 
@@ -133,6 +163,10 @@ class PromptParameters {
     Object? thinkingMaxTokens = _undefined,
     Object? thinkingLevel = _undefined,
     Object? stopSequences = _undefined,
+    Object? userMessageInChatHistory = _undefined,
+    Object? sendChatAsSystem = _undefined,
+    Object? sendName = _undefined,
+    Object? defaultVariables = _undefined,
   }) {
     return PromptParameters(
       maxInputTokens: maxInputTokens == _undefined ? this.maxInputTokens : maxInputTokens as int?,
@@ -147,6 +181,10 @@ class PromptParameters {
       thinkingMaxTokens: thinkingMaxTokens == _undefined ? this.thinkingMaxTokens : thinkingMaxTokens as int?,
       thinkingLevel: thinkingLevel == _undefined ? this.thinkingLevel : thinkingLevel as ThinkingLevel?,
       stopSequences: stopSequences == _undefined ? this.stopSequences : stopSequences as List<String>?,
+      userMessageInChatHistory: userMessageInChatHistory == _undefined ? this.userMessageInChatHistory : userMessageInChatHistory as bool?,
+      sendChatAsSystem: sendChatAsSystem == _undefined ? this.sendChatAsSystem : sendChatAsSystem as bool?,
+      sendName: sendName == _undefined ? this.sendName : sendName as bool?,
+      defaultVariables: defaultVariables == _undefined ? this.defaultVariables : defaultVariables as String?,
     );
   }
 }

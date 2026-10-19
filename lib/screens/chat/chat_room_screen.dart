@@ -372,6 +372,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       excludeMessageIds: excludeMessageIds,
       beforeMessageIndex: beforeMessageIndex,
       allowContextPdf: allowContextPdf,
+      modelId: model.modelId,
     );
   }
 
