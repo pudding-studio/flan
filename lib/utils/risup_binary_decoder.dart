@@ -141,8 +141,14 @@ class RisupBinaryDecoder {
 
 /// Minimal recursive MessagePack decoder covering the value types Risu
 /// presets use: nil, bool, int (all widths), float 32/64, str (all widths),
-/// bin (all widths), array, map. Extension types are not needed and throw.
+/// bin (all widths), array, map, and the extension types msgpackr writes.
 class _MsgpackReader {
+  /// msgpackr writes JavaScript `undefined` as ext type 0.
+  static const int _extUndefined = 0;
+
+  /// MessagePack timestamp.
+  static const int _extTimestamp = -1;
+
   final ByteData _view;
   final Uint8List _bytes;
   int _pos = 0;
@@ -181,6 +187,12 @@ class _MsgpackReader {
         return _readBin(_readU16());
       case 0xc6:
         return _readBin(_readU32());
+      case 0xc7:
+        return _readExt(_readU8());
+      case 0xc8:
+        return _readExt(_readU16());
+      case 0xc9:
+        return _readExt(_readU32());
       case 0xca:
         return _readF32();
       case 0xcb:
@@ -201,6 +213,16 @@ class _MsgpackReader {
         return _readI32();
       case 0xd3:
         return _readI64();
+      case 0xd4:
+        return _readExt(1);
+      case 0xd5:
+        return _readExt(2);
+      case 0xd6:
+        return _readExt(4);
+      case 0xd7:
+        return _readExt(8);
+      case 0xd8:
+        return _readExt(16);
       case 0xd9:
         return _readStr(_readU8());
       case 0xda:
@@ -288,6 +310,48 @@ class _MsgpackReader {
     final slice = Uint8List.fromList(_bytes.sublist(_pos, _pos + length));
     _pos += length;
     return slice;
+  }
+
+  /// `undefined` reads as null, a timestamp as an ISO-8601 string. Other
+  /// msgpackr extensions (Map, Set, typed arrays, ...) never carry preset
+  /// text, so they read as null instead of failing the whole import.
+  dynamic _readExt(int length) {
+    final type = _readI8();
+    final data = _readBin(length);
+    switch (type) {
+      case _extUndefined:
+        return null;
+      case _extTimestamp:
+        return _timestamp(data)?.toIso8601String();
+      default:
+        return null;
+    }
+  }
+
+  static DateTime? _timestamp(Uint8List data) {
+    final view = ByteData.sublistView(data);
+    switch (data.length) {
+      case 4:
+        return DateTime.fromMillisecondsSinceEpoch(
+          view.getUint32(0) * 1000,
+          isUtc: true,
+        );
+      case 8:
+        final high = view.getUint32(0);
+        final nanoseconds = high >> 2;
+        final seconds = ((high & 0x3) << 32) | view.getUint32(4);
+        return DateTime.fromMicrosecondsSinceEpoch(
+          seconds * 1000000 + nanoseconds ~/ 1000,
+          isUtc: true,
+        );
+      case 12:
+        return DateTime.fromMicrosecondsSinceEpoch(
+          view.getInt64(4) * 1000000 + view.getUint32(0) ~/ 1000,
+          isUtc: true,
+        );
+      default:
+        return null;
+    }
   }
 
   List<dynamic> _readArray(int length) {
