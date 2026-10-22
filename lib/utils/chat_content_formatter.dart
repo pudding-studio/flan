@@ -1,5 +1,6 @@
 import '../models/chat/chat_room.dart';
 import '../models/prompt/prompt_regex_rule.dart';
+import 'emotion_picker.dart';
 import 'metadata_parser.dart';
 import 'regex_processor.dart';
 
@@ -20,16 +21,35 @@ class ChatContentFormatter {
   ///
   /// Strips metadata tags, applies display-time regex rules, and rewrites
   /// `<img="name">` placeholders to local-image markdown when the matching
-  /// character image exists. When the chat room has images disabled, all
-  /// image markdown is removed entirely.
+  /// character image exists. Emotion images follow RisuAI: `<Emotion="name">`
+  /// and `{{emotion::name}}` become the image where they stand, and
+  /// [emotion] (picked for the whole reply) is shown above the text.
+  /// [emotionImageMap] is keyed by lowercase name, as RisuAI matches them.
+  /// When the chat room has images disabled, all image markdown is removed
+  /// entirely.
   static String buildDisplayContent({
     required String content,
     required ChatRoom? chatRoom,
     required List<PromptRegexRule> regexRules,
     required Map<String, String> imagePathMap,
+    Map<String, String> emotionImageMap = const {},
+    String? emotion,
   }) {
+    final showImages = chatRoom?.showImages != false;
+    String emotionImage(String name) {
+      final source = emotionImageMap[name.trim().toLowerCase()];
+      return showImages && source != null ? '![$name]($source)' : '';
+    }
+
     var text = MetadataParser.removeMetadataTags(content);
     text = RegexProcessor.apply(text, regexRules, RegexTarget.displayModify);
+    text = text
+        .replaceAllMapped(EmotionPicker.inlineTag, (m) => emotionImage(m[1]!))
+        .replaceAllMapped(EmotionPicker.cbsTag, (m) => emotionImage(m[1]!));
+    if (emotion != null) {
+      final image = emotionImage(emotion);
+      if (image.isNotEmpty) text = '$image\n\n$text';
+    }
     text = text.replaceAllMapped(_imgTagPattern, (match) {
       if (chatRoom?.showImages == false) return '';
       final name = match.group(1)!;

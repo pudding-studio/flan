@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:typed_data';
 
 import 'package:audioplayers/audioplayers.dart';
@@ -12,6 +13,8 @@ import '../../models/chat/chat_message.dart';
 import '../../models/character/character.dart';
 import '../../models/character/character_book_folder.dart';
 import '../../models/character/cover_image.dart';
+import '../../models/character/emotion_mode.dart';
+import '../../utils/character_card_parser.dart';
 import '../../models/character/persona.dart';
 import '../../models/character/start_scenario.dart';
 import '../../models/prompt/chat_prompt.dart';
@@ -31,6 +34,7 @@ import '../../services/auto_summary_service.dart';
 import '../../services/chat_api_data_builder.dart';
 import '../../services/chat_branch_service.dart';
 import '../../services/chat_model_resolver.dart';
+import '../../services/emotion_service.dart';
 import '../../models/chat/chat_message_metadata.dart';
 import '../../models/chat/unified_model.dart';
 import '../../utils/metadata_parser.dart';
@@ -72,6 +76,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   final DatabaseHelper _db = DatabaseHelper.instance;
   final AiService _aiService = AiService();
   final AutoSummaryService _autoSummaryService = AutoSummaryService();
+  final EmotionService _emotionService = EmotionService();
   final AudioPlayer _notificationPlayer = AudioPlayer(
     playerId: 'flan-ai-reply-notification',
   );
@@ -92,6 +97,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   // `${speakerName}_default` without falling back to cover images when no
   // such additional image exists.
   Map<String, String> _additionalImagePathMap = {};
+  // Emotion image name (lowercase, as RisuAI matches) → image source.
+  Map<String, String> _emotionImageMap = {};
   bool _isLoading = true;
   SendingPhase _sendingPhase = SendingPhase.none;
   int _retryAttempt = 0;
@@ -205,20 +212,32 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         caseSensitive: false,
       );
       for (final img in [...coverImages, ...additionalImages]) {
-        if (img.path == null || img.name.isEmpty) continue;
-        imagePathMap.putIfAbsent(img.name, () => img.path!);
+        final source = _imageSource(img);
+        if (source == null || img.name.isEmpty) continue;
+        imagePathMap.putIfAbsent(img.name, () => source);
         final stripped = img.name.replaceFirst(imageExtPattern, '');
         if (stripped != img.name) {
-          imagePathMap.putIfAbsent(stripped, () => img.path!);
+          imagePathMap.putIfAbsent(stripped, () => source);
         }
       }
       for (final img in additionalImages) {
-        if (img.path == null || img.name.isEmpty) continue;
-        additionalImagePathMap.putIfAbsent(img.name, () => img.path!);
+        final source = _imageSource(img);
+        if (source == null || img.name.isEmpty) continue;
+        additionalImagePathMap.putIfAbsent(img.name, () => source);
         final stripped = img.name.replaceFirst(imageExtPattern, '');
         if (stripped != img.name) {
-          additionalImagePathMap.putIfAbsent(stripped, () => img.path!);
+          additionalImagePathMap.putIfAbsent(stripped, () => source);
         }
+      }
+
+      // Emotion images answer to RisuAI's emotion tags and, when no other
+      // image has the name, to <img="name"> as well.
+      final emotionImageMap = <String, String>{};
+      for (final img in await _db.readEmotionImages(chatRoom.characterId)) {
+        final source = _imageSource(img);
+        if (source == null || img.name.isEmpty) continue;
+        emotionImageMap.putIfAbsent(img.name.toLowerCase(), () => source);
+        imagePathMap.putIfAbsent(img.name, () => source);
       }
 
       // 설정집 등장인물 이미지 등록. `<img="{bookName}_{imgName}">` 혹은
@@ -246,15 +265,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           ...book.subNameList,
         };
         for (final img in bookImages) {
-          if (img.path == null || img.name.isEmpty) continue;
+          final source = _imageSource(img);
+        if (source == null || img.name.isEmpty) continue;
           for (final alias in aliases) {
             final key = '${alias}_${img.name}';
-            imagePathMap.putIfAbsent(key, () => img.path!);
+            imagePathMap.putIfAbsent(key, () => source);
             final strippedImg = img.name.replaceFirst(imageExtPattern, '');
             if (strippedImg != img.name) {
               imagePathMap.putIfAbsent(
                 '${alias}_$strippedImg',
-                () => img.path!,
+                () => source,
               );
             }
           }
@@ -326,6 +346,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         _backgroundImages = backgroundImages;
         _imagePathMap = imagePathMap;
         _additionalImagePathMap = additionalImagePathMap;
+        _emotionImageMap = emotionImageMap;
         _metadataMap = metadataMap;
         _summaryThresholdIndex = summaryThresholdIndex;
         _summarizedMessageIds = summarizedIds;
@@ -503,6 +524,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
           final assistantMessageId = await _db.createChatMessage(assistantMessage);
           _playAiReplyNotification();
+          _pickEmotion(assistantMessageId, responseText);
           final pinCreated = await _saveMessageMetadata(assistantMessageId, responseText);
 
           // 채팅방 토큰 합산 업데이트
@@ -578,13 +600,25 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
-  String _buildDisplayContent(String content) {
+  String _buildDisplayContent(String content, {String? emotion}) {
     return ChatContentFormatter.buildDisplayContent(
       content: content,
       chatRoom: _chatRoom,
       regexRules: _regexRules,
       imagePathMap: _imagePathMap,
+      emotionImageMap: _emotionImageMap,
+      emotion: emotion,
     );
+  }
+
+  /// A file path where images are stored as files; web keeps only bytes,
+  /// so those are shown through a data URI.
+  static String? _imageSource(CoverImage image) {
+    if (image.path != null) return image.path;
+    final bytes = image.imageData;
+    if (bytes == null) return null;
+    final mime = CharacterCardParser.detectMimeType(bytes);
+    return 'data:$mime;base64,${base64Encode(bytes)}';
   }
 
   Future<void> _saveEditMessage(ChatMessage message) async {
@@ -703,6 +737,32 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     // Both are fire-and-forget so device/plugin failures never reach the chat.
     if (settings.enabled) unawaited(_playNotificationSoundOnce());
     if (settings.vibrationEnabled) unawaited(_vibrateOnce());
+  }
+
+  /// Classifies the reply's emotion in the background (RisuAI runs this
+  /// after the reply too) and shows it once stored. The reply never waits
+  /// on it.
+  void _pickEmotion(int messageId, String reply) {
+    final character = _character;
+    if (character == null) return;
+    final model = context.read<ChatModelSettingsProvider>().subModel;
+    final history = List<ChatMessage>.of(_messages);
+    unawaited(_emotionService
+        .pickForReply(
+      character: character,
+      messageId: messageId,
+      reply: reply,
+      history: history,
+      model: model,
+    )
+        .then((emotion) {
+      if (emotion == null || !mounted) return;
+      final index = _messages.indexWhere((m) => m.id == messageId);
+      if (index == -1) return;
+      setState(() {
+        _messages[index] = _messages[index].copyWith(emotion: emotion);
+      });
+    }));
   }
 
   Future<void> _vibrateOnce() async {
@@ -918,6 +978,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
           final assistantMessageId = await _db.createChatMessage(assistantMessage);
           _playAiReplyNotification();
+          _pickEmotion(assistantMessageId, responseText2);
           await _saveMessageMetadata(assistantMessageId, responseText2);
 
           // 채팅방 토큰 합산 업데이트
@@ -1048,10 +1109,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
             editedAt: DateTime.now(),
             usageMetadata: aiResponse3.usageMetadata,
             modelId: aiResponse3.modelId,
+            emotion: null,
           );
 
           await _db.updateChatMessage(updatedMessage);
           _playAiReplyNotification();
+          _pickEmotion(messageId, responseText3);
           await _db.deleteChatMessageMetadataByMessage(messageId);
           await _saveMessageMetadata(messageId, responseText3);
 
@@ -1094,7 +1157,12 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       message: message,
       index: index,
       isLastMessage: isLastMessage,
-      displayContent: _buildDisplayContent(message.content),
+      displayContent: _buildDisplayContent(
+        message.content,
+        emotion: _character?.emotionMode == EmotionMode.classifier
+            ? message.emotion
+            : null,
+      ),
       metadata: metadata,
       character: _character,
       coverImages: _coverImages,

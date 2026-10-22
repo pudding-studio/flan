@@ -481,7 +481,13 @@ class _ImageBlock extends StatelessWidget {
               borderRadius: BorderRadius.circular(8),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxHeight: 300),
-                child: _isLocalFile
+                child: url.startsWith('data:')
+                    ? Image.memory(
+                        UriData.parse(url).contentAsBytes(),
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => _errorWidget(context),
+                      )
+                    : _isLocalFile
                     ? Image.file(
                         File(_filePath),
                         fit: BoxFit.contain,

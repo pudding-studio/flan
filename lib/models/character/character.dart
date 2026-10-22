@@ -3,6 +3,7 @@ import 'persona.dart';
 import 'start_scenario.dart';
 import 'character_book_folder.dart';
 import 'cover_image.dart';
+import 'emotion_mode.dart';
 
 class Character {
   final int? id;
@@ -20,6 +21,10 @@ class Character {
   final String? communityMood;
   final String? communityLanguage;
   final DateTime? worldStartDate;
+  final EmotionMode emotionMode;
+
+  /// Overrides [EmotionMode.defaultInstructions] when set.
+  final String? emotionInstructions;
 
   Character({
     this.id,
@@ -37,6 +42,8 @@ class Character {
     this.communityMood,
     this.communityLanguage,
     this.worldStartDate,
+    this.emotionMode = EmotionMode.none,
+    this.emotionInstructions,
   })  : tags = tags ?? [],
         createdAt = createdAt ?? DateTime.now(),
         updatedAt = updatedAt ?? DateTime.now();
@@ -78,6 +85,8 @@ class Character {
       worldStartDate: map['world_start_date'] != null
           ? DateTime.tryParse(map['world_start_date'] as String)
           : null,
+      emotionMode: EmotionMode.fromName(map['emotion_mode'] as String?),
+      emotionInstructions: map['emotion_instructions'] as String?,
     );
   }
 
@@ -98,6 +107,8 @@ class Character {
       'community_mood': communityMood,
       'community_language': communityLanguage,
       'world_start_date': worldStartDate?.toIso8601String(),
+      'emotion_mode': emotionMode.name,
+      'emotion_instructions': emotionInstructions,
     };
   }
 
@@ -117,6 +128,8 @@ class Character {
     Object? communityMood = _sentinel,
     Object? communityLanguage = _sentinel,
     Object? worldStartDate = _sentinel,
+    EmotionMode? emotionMode,
+    Object? emotionInstructions = _sentinel,
   }) {
     return Character(
       id: id ?? this.id,
@@ -142,6 +155,10 @@ class Character {
       worldStartDate: worldStartDate == _sentinel
           ? this.worldStartDate
           : worldStartDate as DateTime?,
+      emotionMode: emotionMode ?? this.emotionMode,
+      emotionInstructions: emotionInstructions == _sentinel
+          ? this.emotionInstructions
+          : emotionInstructions as String?,
     );
   }
 
@@ -170,6 +187,8 @@ class Character {
       'communityMood': communityMood,
       'communityLanguage': communityLanguage,
       'worldStartDate': worldStartDate?.toIso8601String(),
+      'emotionMode': emotionMode.name,
+      'emotionInstructions': emotionInstructions,
       'personas': personas?.map((p) => p.toJson()).toList(),
       'startScenarios': startScenarios?.map((s) => s.toJson()).toList(),
       'characterBookFolders': characterBookFolders?.map((f) => f.toJson()).toList(),
@@ -205,6 +224,8 @@ class Character {
       worldStartDate: json['worldStartDate'] != null
           ? DateTime.tryParse(json['worldStartDate'] as String)
           : null,
+      emotionMode: EmotionMode.fromName(json['emotionMode'] as String?),
+      emotionInstructions: json['emotionInstructions'] as String?,
     );
   }
 }

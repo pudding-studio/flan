@@ -11,16 +11,30 @@ import '../../../utils/common_dialog.dart';
 import '../../../widgets/common/common_button.dart';
 import '../../../widgets/common/common_title_medium.dart';
 
+/// A named image list. Defaults to additional images; emotion images reuse
+/// it with their own [imageType], labels and a [header] for settings.
 class AdditionalImageTab extends StatefulWidget {
   final List<CoverImage> images;
   final String characterName;
   final VoidCallback onUpdate;
+  final String imageType;
+  final String? title;
+  final String? titleHelp;
+  final String? emptyText;
+  final String? addLabel;
+  final Widget? header;
 
   const AdditionalImageTab({
     super.key,
     required this.images,
     required this.characterName,
     required this.onUpdate,
+    this.imageType = 'additional',
+    this.title,
+    this.titleHelp,
+    this.emptyText,
+    this.addLabel,
+    this.header,
   });
 
   @override
@@ -66,9 +80,11 @@ class _AdditionalImageTabState extends State<AdditionalImageTab> {
           ? widget.characterName
           : 'unknown';
 
+      // Emotion names often repeat other image names ("happy"), so their
+      // files get their own prefix.
       final stored = await CharacterImageStorage.saveImageBytes(
         characterName,
-        originalName,
+        widget.imageType == 'emotion' ? 'emotion_$originalName' : originalName,
         ext,
         bytes,
       );
@@ -83,7 +99,7 @@ class _AdditionalImageTabState extends State<AdditionalImageTab> {
           order: widget.images.length,
           path: stored.path,
           imageData: stored.bytes,
-          imageType: 'additional',
+          imageType: widget.imageType,
           isExpanded: true,
         );
         widget.images.add(newImage);
@@ -165,14 +181,15 @@ class _AdditionalImageTabState extends State<AdditionalImageTab> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 5),
             child: CommonTitleMedium(
-              text: l10n.additionalImageTitle,
-              helpMessage: l10n.additionalImageTitleHelp,
+              text: widget.title ?? l10n.additionalImageTitle,
+              helpMessage: widget.titleHelp ?? l10n.additionalImageTitleHelp,
             ),
           ),
+          if (widget.header != null) widget.header!,
           const SizedBox(height: 8),
           Expanded(
             child: widget.images.isEmpty
-                ? Center(child: Text(l10n.additionalImageEmpty))
+                ? Center(child: Text(widget.emptyText ?? l10n.additionalImageEmpty))
                 : ListView.builder(
                     itemCount: widget.images.length,
                     itemBuilder: (context, index) =>
@@ -185,7 +202,7 @@ class _AdditionalImageTabState extends State<AdditionalImageTab> {
             child: CommonButton.filled(
               onPressed: _addImage,
               icon: Icons.add,
-              label: l10n.additionalImageAddButton,
+              label: widget.addLabel ?? l10n.additionalImageAddButton,
             ),
           ),
         ],

@@ -22,6 +22,8 @@ import '../../widgets/common/common_appbar.dart';
 import '../../widgets/common/common_edit_text.dart';
 import '../../widgets/common/common_title_medium.dart';
 import 'tabs/additional_image_tab.dart';
+import '../../models/character/emotion_mode.dart';
+import '../../widgets/character/emotion_settings_section.dart';
 import 'tabs/background_image_tab.dart';
 import 'tabs/cover_image_tab.dart';
 import 'tabs/character_book_tab.dart';
@@ -70,6 +72,11 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   // 배경 이미지 상태
   final List<CoverImage> _backgroundImages = [];
 
+  // 감정 이미지 상태
+  final List<CoverImage> _emotionImages = [];
+  EmotionMode _emotionMode = EmotionMode.none;
+  String? _emotionInstructions;
+
   // 세계 날짜
   DateTime? _worldStartDate;
   DateTime? _originalWorldStartDate;
@@ -98,6 +105,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   List<CoverImage> _originalCoverImages = [];
   List<CoverImage> _originalAdditionalImages = [];
   List<CoverImage> _originalBackgroundImages = [];
+  List<CoverImage> _originalEmotionImages = [];
+  EmotionMode _originalEmotionMode = EmotionMode.none;
+  String? _originalEmotionInstructions;
   String _originalCommunityName = '';
   String _originalCommunityMood = '';
   String _originalCommunityLanguage = '';
@@ -107,7 +117,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 9, vsync: this);
+    _tabController = TabController(length: 10, vsync: this);
 
     // 캐릭터 데이터 로드 → 자동 저장 복원 → 기본값 채우기
     WidgetsBinding.instance.addPostFrameCallback((_) async {
@@ -162,6 +172,10 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         _originalCommunityLanguage = character.communityLanguage ?? '';
         _worldStartDate = character.worldStartDate;
         _originalWorldStartDate = character.worldStartDate;
+        _emotionMode = character.emotionMode;
+        _originalEmotionMode = character.emotionMode;
+        _emotionInstructions = character.emotionInstructions;
+        _originalEmotionInstructions = character.emotionInstructions;
       }
 
       // 로어북 폴더 및 로어북 로드
@@ -208,6 +222,11 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       final backgroundImages = await _db.readBackgroundImages(widget.characterId!);
       _backgroundImages.addAll(backgroundImages);
       _originalBackgroundImages = backgroundImages.map((c) => _copyCoverImage(c)).toList();
+
+      // 감정 이미지 로드
+      final emotionImages = await _db.readEmotionImages(widget.characterId!);
+      _emotionImages.addAll(emotionImages);
+      _originalEmotionImages = emotionImages.map((c) => _copyCoverImage(c)).toList();
 
       setState(() {});
     } catch (e) {
@@ -362,7 +381,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         _communityNameController.text != _originalCommunityName ||
         _communityMoodController.text != _originalCommunityMood ||
         _communityLanguageController.text != _originalCommunityLanguage ||
-        _worldStartDate != _originalWorldStartDate) {
+        _worldStartDate != _originalWorldStartDate ||
+        _emotionMode != _originalEmotionMode ||
+        _emotionInstructions != _originalEmotionInstructions) {
       return true;
     }
 
@@ -447,6 +468,15 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
       }
     }
 
+    // 감정 이미지 변경 확인
+    if (_emotionImages.length != _originalEmotionImages.length) return true;
+    for (int i = 0; i < _emotionImages.length; i++) {
+      if (_emotionImages[i].name != _originalEmotionImages[i].name ||
+          _emotionImages[i].path != _originalEmotionImages[i].path) {
+        return true;
+      }
+    }
+
     return false;
   }
 
@@ -503,7 +533,8 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         _startScenarios.isNotEmpty ||
         _coverImages.isNotEmpty ||
         _additionalImages.isNotEmpty ||
-        _backgroundImages.isNotEmpty) {
+        _backgroundImages.isNotEmpty ||
+        _emotionImages.isNotEmpty) {
       return true;
     }
 
@@ -585,6 +616,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         'coverImages': _coverImages.map((c) => c.toMap()).toList(),
         'additionalImages': _additionalImages.map((c) => c.toMap()).toList(),
         'backgroundImages': _backgroundImages.map((c) => c.toMap()).toList(),
+        'emotionImages': _emotionImages.map((c) => c.toMap()).toList(),
+        'emotionMode': _emotionMode.name,
+        'emotionInstructions': _emotionInstructions,
         'communityName': _communityNameController.text,
         'communityMood': _communityMoodController.text,
         'communityLanguage': _communityLanguageController.text,
@@ -696,6 +730,16 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
             }
           }
 
+          // 감정 이미지 복원
+          _emotionImages.clear();
+          if (data['emotionImages'] != null) {
+            for (var cMap in data['emotionImages'] as List) {
+              _emotionImages.add(CoverImage.fromMap(cMap as Map<String, dynamic>));
+            }
+          }
+          _emotionMode = EmotionMode.fromName(data['emotionMode'] as String?);
+          _emotionInstructions = data['emotionInstructions'] as String?;
+
           // SNS 설정 복원
           _communityNameController.text = data['communityName'] as String? ?? '';
           _communityMoodController.text = data['communityMood'] as String? ?? '';
@@ -721,6 +765,9 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           _originalCoverImages = _coverImages.map((c) => _copyCoverImage(c)).toList();
           _originalAdditionalImages = _additionalImages.map((c) => _copyCoverImage(c)).toList();
           _originalBackgroundImages = _backgroundImages.map((c) => _copyCoverImage(c)).toList();
+          _originalEmotionImages = _emotionImages.map((c) => _copyCoverImage(c)).toList();
+          _originalEmotionMode = _emotionMode;
+          _originalEmotionInstructions = _emotionInstructions;
           _originalCommunityName = _communityNameController.text;
           _originalCommunityMood = _communityMoodController.text;
           _originalCommunityLanguage = _communityLanguageController.text;
@@ -802,6 +849,8 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           communityMood: _communityMoodController.text.isEmpty ? null : _communityMoodController.text,
           communityLanguage: _communityLanguageController.text.isEmpty ? null : _communityLanguageController.text,
           worldStartDate: _worldStartDate,
+          emotionMode: _emotionMode,
+          emotionInstructions: _emotionInstructions,
         );
         await _db.updateCharacter(character);
       } else {
@@ -822,6 +871,8 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           communityMood: _communityMoodController.text.isEmpty ? null : _communityMoodController.text,
           communityLanguage: _communityLanguageController.text.isEmpty ? null : _communityLanguageController.text,
           worldStartDate: _worldStartDate,
+          emotionMode: _emotionMode,
+          emotionInstructions: _emotionInstructions,
         );
         characterId = await _db.createCharacter(character);
       }
@@ -955,6 +1006,18 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         if (!currentBackgroundIds.contains(existing.id)) {
           await _db.deleteCoverImage(existing.id!);
           debugPrint('배경 이미지 삭제: ${existing.id}');
+        }
+      }
+
+      // 감정 이미지 삭제 처리
+      final existingEmotionImages = await _db.readEmotionImages(characterId);
+      final currentEmotionIds = _emotionImages
+          .where((c) => c.id != null && c.id! > 0)
+          .map((c) => c.id!)
+          .toSet();
+      for (var existing in existingEmotionImages) {
+        if (!currentEmotionIds.contains(existing.id)) {
+          await _db.deleteCoverImage(existing.id!);
         }
       }
     }
@@ -1160,6 +1223,24 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
         ));
       }
     }
+
+    // 감정 이미지 저장
+    for (var image in _emotionImages) {
+      if (image.id == null ||
+          image.id! < 0 ||
+          !_isEditMode ||
+          image.characterId != characterId) {
+        await _db.createCoverImage(image.copyWith(
+          id: null,
+          characterId: characterId,
+          imageType: 'emotion',
+        ));
+      } else {
+        await _db.updateCoverImage(image.copyWith(
+          characterId: characterId,
+        ));
+      }
+    }
   }
 
   @override
@@ -1193,6 +1274,7 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
               Tab(text: l10n.characterEditTabCoverImage),
               Tab(text: l10n.characterEditTabBackgroundImage),
               Tab(text: l10n.characterEditTabAdditionalImage),
+              Tab(text: l10n.characterEditTabEmotionImage),
               const Tab(text: 'SNS'),
             ],
           ),
@@ -1250,6 +1332,31 @@ class _CharacterEditScreenState extends State<CharacterEditScreen>
           AdditionalImageTab(
             images: _additionalImages,
             characterName: _nameController.text,
+            onUpdate: () {
+              setState(() {});
+              _autoSave();
+            },
+          ),
+          AdditionalImageTab(
+            images: _emotionImages,
+            characterName: _nameController.text,
+            imageType: 'emotion',
+            title: l10n.emotionImageTitle,
+            titleHelp: l10n.emotionImageTitleHelp,
+            emptyText: l10n.emotionImageEmpty,
+            addLabel: l10n.emotionImageAddButton,
+            header: EmotionSettingsSection(
+              mode: _emotionMode,
+              instructions: _emotionInstructions,
+              onModeChanged: (mode) {
+                setState(() => _emotionMode = mode);
+                _autoSave();
+              },
+              onInstructionsChanged: (text) {
+                setState(() => _emotionInstructions = text);
+                _autoSave();
+              },
+            ),
             onUpdate: () {
               setState(() {});
               _autoSave();

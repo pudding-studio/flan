@@ -53,6 +53,9 @@ class CbsContext {
   final List<Map<String, String>> lorebook;
   final List<CbsMessage> messages;
 
+  /// The character's emotion image names (`{{emotionlist}}`).
+  final List<String> emotions;
+
   final String modelId;
   final int? maxContext;
   final String appVersion;
@@ -88,6 +91,7 @@ class CbsContext {
     this.authorNote = '',
     this.lorebook = const [],
     this.messages = const [],
+    this.emotions = const [],
     this.modelId = '',
     this.maxContext,
     this.appVersion = '',
@@ -128,6 +132,7 @@ class CbsContext {
         authorNote: authorNote,
         lorebook: lorebook,
         messages: messages,
+        emotions: emotions,
         modelId: modelId,
         maxContext: maxContext,
         appVersion: appVersion,

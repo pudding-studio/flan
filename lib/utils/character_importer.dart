@@ -91,6 +91,14 @@ class CharacterImporter {
           character = CharacterCardParser.parseCharacterCard(jsonData);
           startScenarios = CharacterCardParser.parseStartScenarios(jsonData, 0);
           standaloneCharacterBooks = CharacterCardParser.parseCharacterBooks(jsonData, 0);
+          final allAssets = await CharacterCardParser.parseAssets(
+            jsonData,
+            0,
+            character.name,
+          );
+          coverImages = allAssets.where((i) => i.imageType == 'cover').toList();
+          additionalImages =
+              allAssets.where((i) => i.imageType != 'cover').toList();
         } else {
           throw FormatException('Unsupported format: ${format ?? spec}');
         }
@@ -112,10 +120,13 @@ class CharacterImporter {
           metadata,
           0,
           character.name,
+          pngAssets: CharacterCardParser.extractPngAssetChunks(pngBytes),
         );
-        if (allAssets.isNotEmpty) {
-          coverImages = allAssets.where((i) => i.imageType == 'cover').toList();
-          additionalImages = allAssets.where((i) => i.imageType == 'additional').toList();
+        additionalImages =
+            allAssets.where((i) => i.imageType != 'cover').toList();
+        final covers = allAssets.where((i) => i.imageType == 'cover').toList();
+        if (covers.isNotEmpty) {
+          coverImages = covers;
         } else {
           // PNG 이미지 자체를 표지 이미지로 저장
           try {
@@ -192,7 +203,8 @@ class CharacterImporter {
           archiveFiles: archiveFiles,
         );
         coverImages = allAssets.where((i) => i.imageType == 'cover').toList();
-        additionalImages = allAssets.where((i) => i.imageType == 'additional').toList();
+        additionalImages =
+            allAssets.where((i) => i.imageType != 'cover').toList();
       } else if (extension == 'flan') {
         // Flan 형식: 이미지+ZIP 폴리글롯(신규) 또는 순수 ZIP(레거시).
         // 파일이 PK 시그니처로 시작하지 않으면 앞쪽 이미지 바이트를 건너뛰기 위해
@@ -252,11 +264,13 @@ class CharacterImporter {
           final imageType = (imgData['imageType'] as String?) ?? 'cover';
           final order = imgData['order'] as int? ?? 0;
 
-          // Find matching image file in ZIP (images/{name}.*)
+          // Find matching image file in ZIP: images/{name}.*, or
+          // images/emotion/{name}.* for emotion images.
+          final folder = imageType == 'emotion' ? 'images/emotion' : 'images';
           ArchiveFile? found;
           for (final entry in archive) {
             if (!entry.isFile) continue;
-            if (entry.name.startsWith('images/') &&
+            if (p.posix.dirname(entry.name) == folder &&
                 p.basenameWithoutExtension(entry.name) == name) {
               found = entry;
               break;
@@ -268,7 +282,10 @@ class CharacterImporter {
             final ext = p.extension(found.name).replaceFirst('.', '');
             try {
               final stored = await CharacterImageStorage.saveImageBytes(
-                character.name, name, ext, imgBytes,
+                character.name,
+                imageType == 'emotion' ? 'emotion_$name' : name,
+                ext,
+                imgBytes,
               );
               coverImages.add(CoverImage(
                 characterId: 0,
@@ -328,7 +345,7 @@ class CharacterImporter {
       if (coverImages != null) {
         for (final image in coverImages) {
           final imageId = await db.createCoverImage(image.copyWith(characterId: characterId));
-          firstCoverImageId ??= imageId;
+          if (image.imageType == 'cover') firstCoverImageId ??= imageId;
         }
       }
 

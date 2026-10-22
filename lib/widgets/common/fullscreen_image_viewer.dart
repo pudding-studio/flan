@@ -62,7 +62,15 @@ class _FullscreenImageViewerState extends State<FullscreenImageViewer> {
                 transformationController: _transformController,
                 minScale: 0.5,
                 maxScale: 4.0,
-                child: widget._isLocalFile
+                child: widget.imageUrl.startsWith('data:')
+                    ? Image.memory(
+                        UriData.parse(widget.imageUrl).contentAsBytes(),
+                        fit: BoxFit.contain,
+                        errorBuilder: (_, __, ___) => const Center(
+                          child: Icon(Icons.broken_image, color: Colors.white54, size: 64),
+                        ),
+                      )
+                    : widget._isLocalFile
                     ? Image.file(
                         File(widget._filePath),
                         fit: BoxFit.contain,

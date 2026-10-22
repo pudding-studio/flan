@@ -7,6 +7,7 @@ import '../models/character/persona.dart';
 import '../models/character/start_scenario.dart';
 import '../models/character/character_book_folder.dart';
 import '../models/character/cover_image.dart';
+import '../models/character/emotion_mode.dart';
 import '../utils/character_image_storage.dart';
 
 class CharacterCardParser {
@@ -31,6 +32,49 @@ class CharacterCardParser {
       return json.decode(jsonString) as Map<String, dynamic>;
     } catch (e) {
       return null;
+    }
+  }
+
+  /// RisuAI stores card assets as `chara-ext-asset_:<n>` tEXt chunks
+  /// (base64) and points at them with `__asset:<n>` URIs.
+  static Map<String, Uint8List> extractPngAssetChunks(Uint8List pngBytes) {
+    final assets = <String, Uint8List>{};
+    for (final (keyword, value) in _textChunks(pngBytes)) {
+      if (!keyword.startsWith('chara-ext-asset_')) continue;
+      final key = keyword
+          .replaceFirst('chara-ext-asset_:', '')
+          .replaceFirst('chara-ext-asset_', '');
+      try {
+        assets[key] = base64.decode(value);
+      } catch (_) {
+        // Skip corrupt chunks.
+      }
+    }
+    return assets;
+  }
+
+  static Iterable<(String, String)> _textChunks(Uint8List bytes) sync* {
+    var offset = 8;
+    while (offset + 8 <= bytes.length) {
+      final length = (bytes[offset] << 24) |
+          (bytes[offset + 1] << 16) |
+          (bytes[offset + 2] << 8) |
+          bytes[offset + 3];
+      final type = String.fromCharCodes(bytes.sublist(offset + 4, offset + 8));
+      offset += 8;
+      if (offset + length > bytes.length) return;
+      if (type == 'tEXt') {
+        final data = bytes.sublist(offset, offset + length);
+        final nullIndex = data.indexOf(0);
+        if (nullIndex != -1) {
+          yield (
+            String.fromCharCodes(data.sublist(0, nullIndex)),
+            String.fromCharCodes(data.sublist(nullIndex + 1)),
+          );
+        }
+      }
+      if (type == 'IEND') return;
+      offset += length + 4;
     }
   }
 
@@ -97,6 +141,8 @@ class CharacterCardParser {
         nickname = data['nickname'] as String?;
       }
 
+      final (emotionMode, emotionInstructions) = _parseEmotionSettings(data);
+
       return Character(
         name: data['name'] as String? ?? 'Unknown',
         nickname: nickname,
@@ -104,10 +150,41 @@ class CharacterCardParser {
         tags: tags,
         description: description,
         isDraft: false,
+        emotionMode: emotionMode,
+        emotionInstructions: emotionInstructions,
       );
     }
 
     throw FormatException('Unsupported character card format: $spec');
+  }
+
+  static Map<String, dynamic>? _risuExtension(Map<String, dynamic> data) {
+    final extensions = data['extensions'];
+    final risu = extensions is Map ? extensions['risuai'] : null;
+    return risu is Map ? risu.cast<String, dynamic>() : null;
+  }
+
+  /// RisuAI `viewScreen: 'emotion'`, with `inlayViewScreen` selecting the
+  /// in-reply tag. Instructions equal to RisuAI's defaults are not kept, so
+  /// the app's own defaults apply.
+  static (EmotionMode, String?) _parseEmotionSettings(
+    Map<String, dynamic> data,
+  ) {
+    final risu = _risuExtension(data);
+    if (risu == null || risu['viewScreen'] != 'emotion') {
+      return (EmotionMode.none, null);
+    }
+    final mode = risu['inlayViewScreen'] == true
+        ? EmotionMode.inline
+        : EmotionMode.classifier;
+    final newGenData = risu['newGenData'];
+    final instructions =
+        newGenData is Map ? newGenData['emotionInstructions'] as String? : null;
+    final custom = mode == EmotionMode.inline &&
+        instructions != null &&
+        instructions.trim().isNotEmpty &&
+        instructions != mode.defaultInstructions;
+    return (mode, custom ? instructions : null);
   }
 
   /// Character Card V2 data 필드들을 description에 태그로 구분하여 합칩니다
@@ -253,21 +330,28 @@ class CharacterCardParser {
 
   /// V3 assets의 모든 이미지를 CoverImage로 변환합니다 (모든 asset type 지원)
   /// [archiveFiles]는 CHARX에서 embeded:// URI 해석 시 사용
+  /// [pngAssets]는 RisuAI PNG 카드의 `__asset:<n>` URI 해석 시 사용
+  /// `emotion` 에셋과 V2 카드의 RisuAI 감정 목록은 감정 이미지가 된다.
   static Future<List<CoverImage>> parseAssets(
     Map<String, dynamic> cardData,
     int characterId,
     String characterName, {
     Map<String, Uint8List>? archiveFiles,
+    Map<String, Uint8List>? pngAssets,
   }) async {
     try {
       final data = cardData['data'] as Map<String, dynamic>;
-      final assets = data['assets'] as List?;
-      if (assets == null) return [];
+      final assets = [
+        ...?(data['assets'] as List?),
+        if (cardData['spec'] == 'chara_card_v2') ..._risuV2Emotions(data),
+      ];
+      if (assets.isEmpty) return [];
 
       final coverImages = <CoverImage>[];
 
       int coverOrder = 0;
       int additionalOrder = 0;
+      int emotionOrder = 0;
 
       for (final asset in assets) {
         if (asset is! Map<String, dynamic>) continue;
@@ -277,6 +361,7 @@ class CharacterCardParser {
 
         final type = asset['type'] as String?;
         final isIcon = type == 'icon';
+        final isEmotion = type == 'emotion';
 
         Uint8List? imageBytes;
         String imageName;
@@ -309,6 +394,13 @@ class CharacterCardParser {
             imageName = fileName.isNotEmpty ? fileName : 'asset_${coverOrder + additionalOrder + 1}';
             ext = 'bin';
           }
+        } else if (uri.startsWith('__asset:') && pngAssets != null) {
+          imageBytes = pngAssets[uri.substring('__asset:'.length)];
+          ext = (asset['ext'] as String?)?.toLowerCase() ?? 'png';
+          final assetName = asset['name'] as String?;
+          imageName = (assetName != null && assetName.isNotEmpty)
+              ? assetName
+              : 'asset_${coverOrder + additionalOrder + emotionOrder + 1}';
         } else {
           continue;
         }
@@ -317,13 +409,17 @@ class CharacterCardParser {
           try {
             final stored = await CharacterImageStorage.saveImageBytes(
               characterName,
-              imageName,
+              isEmotion ? 'emotion_$imageName' : imageName,
               ext,
               imageBytes,
             );
             final assetDisplayName = asset['name'] as String?;
-            final imageType = isIcon ? 'cover' : 'additional';
-            final order = isIcon ? coverOrder++ : additionalOrder++;
+            final imageType = isIcon
+                ? 'cover'
+                : (isEmotion ? 'emotion' : 'additional');
+            final order = isIcon
+                ? coverOrder++
+                : (isEmotion ? emotionOrder++ : additionalOrder++);
             coverImages.add(CoverImage(
               characterId: characterId,
               name: (assetDisplayName != null && assetDisplayName.isNotEmpty)
@@ -345,6 +441,53 @@ class CharacterCardParser {
       return [];
     }
   }
+
+  /// V2 cards keep RisuAI emotions as `[name, base64 | __asset:<n>]`
+  /// pairs; they are returned as V3-style emotion assets.
+  static List<Map<String, dynamic>> _risuV2Emotions(Map<String, dynamic> data) {
+    final emotions = _risuExtension(data)?['emotions'];
+    if (emotions is! List) return const [];
+    return [
+      for (final entry in emotions)
+        if (entry is List && entry.length >= 2 && entry[1] is String)
+          {
+            'type': 'emotion',
+            'name': entry[0].toString(),
+            'uri': (entry[1] as String).startsWith('__asset:')
+                ? entry[1]
+                : 'data:${detectMimeType(_tryBase64(entry[1] as String))};base64,${entry[1]}',
+          },
+    ];
+  }
+
+  static Uint8List _tryBase64(String value) {
+    try {
+      return base64.decode(value);
+    } catch (_) {
+      return Uint8List(0);
+    }
+  }
+
+  static String _cardAssetType(String imageType) => switch (imageType) {
+        'cover' => 'icon',
+        'emotion' => 'emotion',
+        _ => 'background',
+      };
+
+  /// RisuAI's emotion settings for an exported card.
+  static Map<String, dynamic> _risuEmotionExtension(Character character) => {
+        'viewScreen': 'emotion',
+        'inlayViewScreen': character.emotionMode == EmotionMode.inline,
+        'newGenData': {
+          'prompt': '',
+          'negative': '',
+          'instructions': '',
+          'emotionInstructions': character.emotionMode == EmotionMode.inline
+              ? (character.emotionInstructions ??
+                  EmotionMode.inline.defaultInstructions)
+              : '',
+        },
+      };
 
   /// Maps MIME type string to a file extension.
   static String mimeToExt(String? mime) {
@@ -432,7 +575,10 @@ class CharacterCardParser {
         'tags': character.tags,
         'creator': '',
         'character_version': '',
-        'extensions': {},
+        'extensions': {
+          if (character.emotionMode != EmotionMode.none)
+            'risuai': _risuEmotionExtension(character),
+        },
       },
     };
   }
@@ -495,7 +641,7 @@ class CharacterCardParser {
       final data = v3['data'] as Map<String, dynamic>;
       data['assets'] = imageAssets.map((asset) {
         return {
-          'type': asset.imageType == 'cover' ? 'icon' : 'background',
+          'type': _cardAssetType(asset.imageType),
           'uri': 'data:${asset.mimeType};base64,${base64.encode(asset.bytes)}',
           'name': asset.name,
           'ext': mimeToExt(asset.mimeType),
@@ -525,11 +671,12 @@ class CharacterCardParser {
     if (assetFiles != null && assetFiles.isNotEmpty) {
       final data = v3['data'] as Map<String, dynamic>;
       data['assets'] = assetFiles.map((asset) {
-        final dotIdx = asset.filename.lastIndexOf('.');
-        final ext = dotIdx != -1 ? asset.filename.substring(dotIdx + 1) : 'bin';
-        final baseName = dotIdx != -1 ? asset.filename.substring(0, dotIdx) : asset.filename;
+        final fileName = asset.filename.split('/').last;
+        final dotIdx = fileName.lastIndexOf('.');
+        final ext = dotIdx != -1 ? fileName.substring(dotIdx + 1) : 'bin';
+        final baseName = dotIdx != -1 ? fileName.substring(0, dotIdx) : fileName;
         return {
-          'type': asset.imageType == 'cover' ? 'icon' : 'background',
+          'type': _cardAssetType(asset.imageType),
           'uri': 'embeded://assets/${asset.filename}',
           'name': baseName,
           'ext': ext,

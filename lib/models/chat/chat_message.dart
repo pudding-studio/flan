@@ -73,6 +73,9 @@ class ChatMessage {
   final UsageMetadata? usageMetadata;
   final String? modelId;
 
+  /// Emotion image name picked for this AI reply (classifier mode).
+  final String? emotion;
+
   ChatMessage({
     this.id,
     required this.chatRoomId,
@@ -83,6 +86,7 @@ class ChatMessage {
     this.editedAt,
     this.usageMetadata,
     this.modelId,
+    this.emotion,
   }) : createdAt = createdAt ?? DateTime.now();
 
   factory ChatMessage.fromMap(Map<String, dynamic> map) {
@@ -107,6 +111,7 @@ class ChatMessage {
           : null,
       usageMetadata: usageMetadata,
       modelId: map['model_id'] as String?,
+      emotion: map['emotion'] as String?,
     );
   }
 
@@ -121,6 +126,7 @@ class ChatMessage {
       'edited_at': editedAt?.toIso8601String(),
       'usage_metadata': usageMetadata != null ? jsonEncode(usageMetadata!.toJson()) : null,
       'model_id': modelId,
+      'emotion': emotion,
     };
   }
 
@@ -134,6 +140,7 @@ class ChatMessage {
     DateTime? editedAt,
     UsageMetadata? usageMetadata,
     String? modelId,
+    Object? emotion = _sentinel,
   }) {
     return ChatMessage(
       id: id ?? this.id,
@@ -145,6 +152,9 @@ class ChatMessage {
       editedAt: editedAt ?? this.editedAt,
       usageMetadata: usageMetadata ?? this.usageMetadata,
       modelId: modelId ?? this.modelId,
+      emotion: emotion == _sentinel ? this.emotion : emotion as String?,
     );
   }
+
+  static const _sentinel = Object();
 }
