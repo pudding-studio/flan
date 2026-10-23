@@ -114,6 +114,28 @@ class _CommunityScreenState extends State<CommunityScreen> {
     });
   }
 
+  /// The story's current time: the latest chat date tag, else the world's
+  /// start date, else the real clock.
+  DateTime _worldNow() =>
+      DateFormatter.parseMetadataDateTime(
+        _latestMetadata?.date,
+        _latestMetadata?.time,
+      ) ??
+      _character?.worldStartDate ??
+      DateTime.now();
+
+  /// Posts are listed newest first, so `_posts.first` is the newest.
+  DateTime? get _latestPostTime => _posts.isEmpty ? null : _posts.first.time;
+
+  /// The post's newest activity: its last comment, or the post itself.
+  static DateTime _latestCommentTime(CommunityPost post) {
+    DateTime latest = post.time;
+    for (final comment in post.comments) {
+      if (comment.time.isAfter(latest)) latest = comment.time;
+    }
+    return latest;
+  }
+
   Future<UnifiedModel> _getModel() async {
     final communityProvider = context.read<CommunityModelProvider>();
     final chatProvider = context.read<ChatModelSettingsProvider>();
@@ -191,21 +213,17 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
     try {
       final model = await _getModel();
-      final worldNow = DateFormatter.parseMetadataDateTime(
-            _latestMetadata?.date,
-            _latestMetadata?.time,
-          ) ??
-          _character?.worldStartDate ??
-          DateTime.now();
-      final nowStr = DateFormatter.formatPromptDateTime(worldNow);
+      final latestPostTime = _latestPostTime;
+      final nowStr = DateFormatter.formatPromptDateTime(
+          CommunityParser.nextTime(_worldNow(), latestPostTime));
 
       var systemPrompt = await AuxiliaryPromptService.instance
           .getEffectiveContent(AuxiliaryPromptKey.snsGenerate);
       systemPrompt = _appendCommunitySettings(systemPrompt, outputLanguage);
 
       String latestPostInfo = '';
-      if (_posts.isNotEmpty) {
-        final latestStr = DateFormatter.formatPromptDateTime(_posts.first.time);
+      if (latestPostTime != null) {
+        final latestStr = DateFormatter.formatPromptDateTime(latestPostTime);
         latestPostInfo = '\nBase time (generate only after this time): $latestStr\n';
       }
 
@@ -238,7 +256,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
         logType: 'community',
       );
 
-      final parsed = CommunityParser.parse(response.text, chatRoomId: widget.chatRoomId);
+      final parsed = CommunityParser.parse(
+        response.text,
+        chatRoomId: widget.chatRoomId,
+        notBefore: latestPostTime,
+      );
       for (final post in parsed) {
         final postId = await _db.createCommunityPost(post);
         _newPostIds.add(postId);
@@ -292,14 +314,20 @@ class _CommunityScreenState extends State<CommunityScreen> {
     _newCommentIds.clear();
     setState(() => _isSubmitting = true);
     try {
-      final replies = await _generatePostReplies(title: title, content: content);
+      // Same clock as the AI posts (story time), and never older than the
+      // newest post, so the user's post shows first.
+      final postTime = CommunityParser.nextTime(_worldNow(), _latestPostTime);
+      final replies = await _generatePostReplies(
+        title: title,
+        content: content,
+        postTime: postTime,
+      );
 
-      final now = DateTime.now();
       final post = CommunityPost(
         chatRoomId: widget.chatRoomId,
         author: author,
         title: title,
-        time: now,
+        time: postTime,
         content: content,
       );
       final postId = await _db.createCommunityPost(post);
@@ -357,7 +385,8 @@ class _CommunityScreenState extends State<CommunityScreen> {
     setState(() => _isSubmitting = true);
     try {
       // Add user comment to post context for AI without saving to DB yet
-      final now = DateTime.now();
+      final now =
+          CommunityParser.nextTime(_worldNow(), _latestCommentTime(post));
       final postWithUserComment = CommunityPost(
         id: post.id,
         chatRoomId: post.chatRoomId,
@@ -404,14 +433,14 @@ class _CommunityScreenState extends State<CommunityScreen> {
   Future<List<CommunityComment>> _generatePostReplies({
     required String title,
     required String content,
+    required DateTime postTime,
   }) async {
     final outputLanguage = context.read<LocalizationProvider>().effectiveAiLanguageName;
     final model = await _getModel();
     var systemPrompt = await AuxiliaryPromptService.instance
         .getEffectiveContent(AuxiliaryPromptKey.snsPostReplies);
     systemPrompt = _appendCommunitySettings(systemPrompt, outputLanguage);
-    final now = DateTime.now();
-    final nowStr = DateFormatter.formatPromptDateTime(now);
+    final nowStr = DateFormatter.formatPromptDateTime(postTime);
     final worldview = _buildWorldviewText();
 
     final userMessage =
@@ -430,7 +459,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
       logType: 'community',
     );
 
-    return CommunityParser.parseComments(response.text, postId: 0);
+    return CommunityParser.parseComments(
+      response.text,
+      postId: 0,
+      notBefore: postTime,
+    );
   }
 
   Future<List<CommunityComment>> _generateCommentReplies({required CommunityPost post}) async {
@@ -439,22 +472,16 @@ class _CommunityScreenState extends State<CommunityScreen> {
     var systemPrompt = await AuxiliaryPromptService.instance
         .getEffectiveContent(AuxiliaryPromptKey.snsCommentReplies);
     systemPrompt = _appendCommunitySettings(systemPrompt, outputLanguage);
-    final now = DateTime.now();
-    final nowStr = DateFormatter.formatPromptDateTime(now);
+    final latestComment = _latestCommentTime(post);
+    final nowStr = DateFormatter.formatPromptDateTime(latestComment);
     final worldview = _buildWorldviewText();
 
     final existingComments = post.comments.map((c) {
       return '  - ${c.author} (${DateFormatter.formatDateTime(c.time)}): ${c.content}';
     }).join('\n');
 
-    String baseTimeStr = nowStr;
-    if (post.comments.isNotEmpty) {
-      final latestComment = post.comments.last;
-      baseTimeStr = DateFormatter.formatPromptDateTime(latestComment.time);
-    }
-
     final userMessage =
-        'Current time: $nowStr\nBase time (generate only after this time): $baseTimeStr\n\n'
+        'Current time: $nowStr\nBase time (generate only after this time): $nowStr\n\n'
         '${worldview.isNotEmpty ? '## Worldview\n$worldview\n\n' : ''}'
         '## Post\nTitle: ${post.title}\nContent: ${post.content}\n\n'
         '## Existing Comments\n$existingComments';
@@ -470,7 +497,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
       logType: 'community',
     );
 
-    return CommunityParser.parseComments(response.text, postId: post.id!);
+    return CommunityParser.parseComments(
+      response.text,
+      postId: post.id!,
+      notBefore: latestComment,
+    );
   }
 
   Future<void> _deleteComment(CommunityComment comment) async {
