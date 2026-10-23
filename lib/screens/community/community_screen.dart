@@ -124,9 +124,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
       _character?.worldStartDate ??
       DateTime.now();
 
-  /// Posts are listed newest first, so `_posts.first` is the newest.
-  DateTime? get _latestPostTime => _posts.isEmpty ? null : _posts.first.time;
-
   /// The post's newest activity: its last comment, or the post itself.
   static DateTime _latestCommentTime(CommunityPost post) {
     DateTime latest = post.time;
@@ -213,19 +210,17 @@ class _CommunityScreenState extends State<CommunityScreen> {
 
     try {
       final model = await _getModel();
-      final latestPostTime = _latestPostTime;
-      final nowStr = DateFormatter.formatPromptDateTime(
-          CommunityParser.nextTime(_worldNow(), latestPostTime));
+      // New posts follow the story's clock; the feed lists them first by
+      // posting order, whatever times earlier posts carry.
+      final storyNow = _worldNow();
+      final nowStr = DateFormatter.formatPromptDateTime(storyNow);
 
       var systemPrompt = await AuxiliaryPromptService.instance
           .getEffectiveContent(AuxiliaryPromptKey.snsGenerate);
       systemPrompt = _appendCommunitySettings(systemPrompt, outputLanguage);
 
-      String latestPostInfo = '';
-      if (latestPostTime != null) {
-        final latestStr = DateFormatter.formatPromptDateTime(latestPostTime);
-        latestPostInfo = '\nBase time (generate only after this time): $latestStr\n';
-      }
+      final latestPostInfo =
+          '\nBase time (generate only after this time): $nowStr\n';
 
       String previousPosts = '';
       if (_posts.isNotEmpty) {
@@ -259,10 +254,14 @@ class _CommunityScreenState extends State<CommunityScreen> {
       final parsed = CommunityParser.parse(
         response.text,
         chatRoomId: widget.chatRoomId,
-        notBefore: latestPostTime,
-      );
-      for (final post in parsed) {
-        final postId = await _db.createCommunityPost(post);
+        notBefore: storyNow,
+      )..sort((a, b) => a.time.compareTo(b.time));
+      // Within one batch, a later story time counts as posted later.
+      final postedAt = DateTime.now();
+      for (final (index, post) in parsed.indexed) {
+        final postId = await _db.createCommunityPost(post.copyWith(
+          createdAt: postedAt.add(Duration(milliseconds: index)),
+        ));
         _newPostIds.add(postId);
         for (final comment in post.comments) {
           final commentId = await _db.createCommunityComment(CommunityComment(
@@ -314,9 +313,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
     _newCommentIds.clear();
     setState(() => _isSubmitting = true);
     try {
-      // Same clock as the AI posts (story time), and never older than the
-      // newest post, so the user's post shows first.
-      final postTime = CommunityParser.nextTime(_worldNow(), _latestPostTime);
+      // Story time, like the AI posts; the feed shows it first because it
+      // is the latest one posted.
+      final postTime = _worldNow();
       final replies = await _generatePostReplies(
         title: title,
         content: content,

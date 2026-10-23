@@ -1,9 +1,10 @@
 name: Deploy to Firebase Hosting on merge
 
+# Automatic deploys on push to main are off: the deploy service account
+# lacks serviceusage.services.get on flan-9926c (403 PERMISSION_DENIED).
+# Run manually from the Actions tab once the IAM role is granted.
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
   build_and_deploy:
