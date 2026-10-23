@@ -254,9 +254,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
       final parsed = CommunityParser.parse(
         response.text,
         chatRoomId: widget.chatRoomId,
-        notBefore: storyNow,
+        fallbackStart: storyNow,
       )..sort((a, b) => a.time.compareTo(b.time));
-      // Within one batch, a later story time counts as posted later.
+      // Times are the AI's call. Within one batch, a later time counts as
+      // posted later so the feed shows the batch newest first.
       final postedAt = DateTime.now();
       for (final (index, post) in parsed.indexed) {
         final postId = await _db.createCommunityPost(post.copyWith(
@@ -461,7 +462,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     return CommunityParser.parseComments(
       response.text,
       postId: 0,
-      notBefore: postTime,
+      fallbackStart: postTime,
     );
   }
 
@@ -499,7 +500,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     return CommunityParser.parseComments(
       response.text,
       postId: post.id!,
-      notBefore: latestComment,
+      fallbackStart: latestComment,
     );
   }
 

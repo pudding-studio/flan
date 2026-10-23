@@ -9,26 +9,24 @@ class CommunityParser {
   ///   [Comment]Auther:'...'|Time:'YYYYMMDD'|Content:'...'
   ///
   /// Comments belong to the post immediately above them.
-  /// If a time value cannot be parsed, it is set to latestTime + 1 minute.
-  /// Entries are kept after [notBefore] (the newest existing post) and
-  /// comments after their post, so new entries always sort as the latest.
+  /// Times are the AI's own; only a missing or unreadable time is filled in,
+  /// one minute after the previous entry, starting from [fallbackStart]
+  /// (the story's current time).
   static List<CommunityPost> parse(
     String raw, {
     required int chatRoomId,
-    DateTime? notBefore,
+    DateTime? fallbackStart,
   }) {
     final lines = raw.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty);
 
     final posts = <CommunityPost>[];
-    DateTime latestTime = notBefore ?? DateTime.now();
+    DateTime latestTime = fallbackStart ?? DateTime.now();
 
     for (final line in lines) {
       if (line.startsWith('[Post]')) {
         final fields = _extractFields(line.substring('[Post]'.length));
-        final time = nextTime(
-          _parseTime(fields['Time']) ?? latestTime.add(const Duration(minutes: 1)),
-          notBefore,
-        );
+        final time =
+            _parseTime(fields['Time']) ?? latestTime.add(const Duration(minutes: 1));
         latestTime = time;
         posts.add(CommunityPost(
           chatRoomId: chatRoomId,
@@ -39,10 +37,8 @@ class CommunityParser {
         ));
       } else if (line.startsWith('[Comment]') && posts.isNotEmpty) {
         final fields = _extractFields(line.substring('[Comment]'.length));
-        final time = nextTime(
-          _parseTime(fields['Time']) ?? latestTime.add(const Duration(minutes: 1)),
-          posts.last.time,
-        );
+        final time =
+            _parseTime(fields['Time']) ?? latestTime.add(const Duration(minutes: 1));
         latestTime = time;
         posts.last.comments.add(CommunityComment(
           postId: 0, // filled after DB insert
@@ -56,24 +52,22 @@ class CommunityParser {
     return posts;
   }
 
-  /// Parses AI-generated text that contains only [Comment] lines, kept
-  /// after [notBefore] (the post or the comment they answer).
+  /// Parses AI-generated text that contains only [Comment] lines. Times
+  /// are the AI's own; missing ones continue from [fallbackStart].
   static List<CommunityComment> parseComments(
     String raw, {
     required int postId,
-    DateTime? notBefore,
+    DateTime? fallbackStart,
   }) {
     final lines = raw.split('\n').map((l) => l.trim()).where((l) => l.isNotEmpty);
     final comments = <CommunityComment>[];
-    DateTime latestTime = notBefore ?? DateTime.now();
+    DateTime latestTime = fallbackStart ?? DateTime.now();
 
     for (final line in lines) {
       if (!line.startsWith('[Comment]')) continue;
       final fields = _extractFields(line.substring('[Comment]'.length));
-      final time = nextTime(
-        _parseTime(fields['Time']) ?? latestTime.add(const Duration(minutes: 1)),
-        notBefore,
-      );
+      final time =
+          _parseTime(fields['Time']) ?? latestTime.add(const Duration(minutes: 1));
       latestTime = time;
       comments.add(CommunityComment(
         postId: postId,
