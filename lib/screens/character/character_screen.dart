@@ -260,7 +260,10 @@ class _CharacterScreenState extends State<CharacterScreen> {
       final startScenarios = await _db.readStartScenarios(characterId);
       final characterBookFolders = await _db.readCharacterBookFolders(characterId);
       final standaloneCharacterBooks = await _db.readCharacterBooks(characterId);
-      final coverImages = await _db.readCoverImages(characterId);
+      final coverImages = [
+        ...await _db.readCoverImages(characterId),
+        ...await _db.readEmotionImages(characterId),
+      ];
 
       for (final folder in characterBookFolders) {
         folder.characterBooks.addAll(await _db.readCharacterBooksByFolder(folder.id!));
@@ -274,6 +277,8 @@ class _CharacterScreenState extends State<CharacterScreen> {
           tags: List<String>.from(character.tags),
           description: character.description,
           isDraft: character.isDraft,
+          emotionMode: character.emotionMode,
+          emotionInstructions: character.emotionInstructions,
         ),
       );
 

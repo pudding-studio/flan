@@ -47,7 +47,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 58,
+      version: 59,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -137,6 +137,9 @@ class DatabaseHelper {
     (table: 'cover_images', column: 'character_book_id', def: 'INTEGER'),
     (table: 'community_posts', column: 'is_favorited', def: 'INTEGER NOT NULL DEFAULT 0'),
     (table: 'community_posts', column: 'favorite_used', def: 'INTEGER NOT NULL DEFAULT 0'),
+    (table: 'characters', column: 'emotion_mode', def: "TEXT NOT NULL DEFAULT 'none'"),
+    (table: 'characters', column: 'emotion_instructions', def: 'TEXT'),
+    (table: 'chat_messages', column: 'emotion', def: 'TEXT'),
   ];
 
   Future<void> _createDB(Database db, int version) async {
@@ -162,7 +165,9 @@ class DatabaseHelper {
         community_name $textTypeNullable,
         community_mood $textTypeNullable,
         community_language $textTypeNullable,
-        world_start_date $textTypeNullable
+        world_start_date $textTypeNullable,
+        emotion_mode TEXT NOT NULL DEFAULT 'none',
+        emotion_instructions $textTypeNullable
       )
     ''');
 
@@ -473,6 +478,7 @@ class DatabaseHelper {
         edited_at $textTypeNullable,
         usage_metadata $textTypeNullable,
         model_id $textTypeNullable,
+        emotion $textTypeNullable,
         FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE
       )
     ''');
@@ -1607,6 +1613,15 @@ class DatabaseHelper {
         )
       ''');
     }
+
+    if (oldVersion < 59) {
+      // Emotion images (RisuAI compatible): per-character mode and the
+      // expression picked for each AI message.
+      await _ensureColumn(
+          db, 'characters', 'emotion_mode', "TEXT NOT NULL DEFAULT 'none'");
+      await _ensureColumn(db, 'characters', 'emotion_instructions', 'TEXT');
+      await _ensureColumn(db, 'chat_messages', 'emotion', 'TEXT');
+    }
   }
 
   // ==================== 캐릭터 CRUD ====================
@@ -1994,6 +2009,17 @@ class DatabaseHelper {
     final result = await db.query(
       'cover_images',
       where: "character_id = ? AND image_type = 'additional'",
+      whereArgs: [characterId],
+      orderBy: '`order` ASC',
+    );
+    return result.map((map) => CoverImage.fromMap(map)).toList();
+  }
+
+  Future<List<CoverImage>> readEmotionImages(int characterId) async {
+    final db = await database;
+    final result = await db.query(
+      'cover_images',
+      where: "character_id = ? AND image_type = 'emotion'",
       whereArgs: [characterId],
       orderBy: '`order` ASC',
     );
@@ -2748,6 +2774,16 @@ class DatabaseHelper {
       message.toMap(),
       where: 'id = ?',
       whereArgs: [message.id],
+    );
+  }
+
+  Future<int> updateChatMessageEmotion(int id, String? emotion) async {
+    final db = await database;
+    return await db.update(
+      'chat_messages',
+      {'emotion': emotion},
+      where: 'id = ?',
+      whereArgs: [id],
     );
   }
 

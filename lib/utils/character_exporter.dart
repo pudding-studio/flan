@@ -150,6 +150,7 @@ class CharacterExporter {
     final standaloneCharacterBooks = await db.readCharacterBooks(characterId);
     final coverImages = await db.readCoverImages(characterId);
     final additionalImages = await db.readAdditionalImages(characterId);
+    final emotionImages = await db.readEmotionImages(characterId);
 
     for (final folder in characterBookFolders) {
       folder.characterBooks.addAll(await db.readCharacterBooksByFolder(folder.id!));
@@ -161,8 +162,8 @@ class CharacterExporter {
       ...standaloneCharacterBooks,
     ];
 
-    // Merge cover + additional images for export
-    final allImages = [...coverImages, ...additionalImages];
+    // Merge cover + additional + emotion images for export
+    final allImages = [...coverImages, ...additionalImages, ...emotionImages];
 
     return CharacterExportData(
       character: character,
@@ -322,7 +323,8 @@ class CharacterExporter {
       final ext = image.path != null
           ? p.extension(image.path!).replaceFirst('.', '').toLowerCase()
           : 'png';
-      final zipPath = 'images/${image.name}.${ext.isNotEmpty ? ext : 'png'}';
+      final folder = image.imageType == 'emotion' ? 'images/emotion' : 'images';
+      final zipPath = '$folder/${image.name}.${ext.isNotEmpty ? ext : 'png'}';
 
       imageEntries.add(CoverImage(
         characterId: image.characterId,
@@ -549,7 +551,11 @@ class CharacterExporter {
         mime = detected;
       }
 
-      final filename = isCover ? '${image.name}.$ext' : '${image.name}.$ext';
+      // RisuAI keeps emotions in their own folder; a name shared with
+      // another image must not overwrite it.
+      final filename = image.imageType == 'emotion'
+          ? 'emotion/${image.name}.$ext'
+          : '${image.name}.$ext';
       result.add((filename: filename, mimeType: mime, bytes: bytes, imageType: image.imageType));
       if (isCover) firstCoverDone = true;
     }

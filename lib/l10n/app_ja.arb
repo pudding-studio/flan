@@ -1553,5 +1553,17 @@
   "promptEditSendNameHelp": "チャット履歴を名前タグ（<名前's Message>）で囲み、ユーザーメッセージとして送信します（RisuAI sendName）。",
   "promptEditDefaultVariables": "デフォルト変数",
   "promptEditDefaultVariablesHelp": "1行に1つ、キー=値の形式で入力します。まだ値のないチャット変数（getvar）はこの値を読みます。",
-  "promptEditDefaultVariablesHint": "hp=100"
+  "promptEditDefaultVariablesHint": "hp=100",
+  "characterEditTabEmotionImage": "感情画像",
+  "emotionImageTitle": "感情画像",
+  "emotionImageTitleHelp": "画像名が感情名になります（例: happy, sad）。AIの返答ごとに合う感情画像を表示します。RisuAIの感情画像と互換性があります。",
+  "emotionImageEmpty": "感情画像がありません",
+  "emotionImageAddButton": "感情画像を追加",
+  "emotionModeNone": "使用しない",
+  "emotionModeClassifier": "サブモデルが選択",
+  "emotionModeInline": "返答内のタグで選択",
+  "emotionModeNoneHelp": "感情画像を表示しません。",
+  "emotionModeClassifierHelp": "返答の後にサブモデルが感情を1つ選び、メッセージの上に表示します。返答ごとにサブモデルの呼び出しが1回増えます。",
+  "emotionModeInlineHelp": "AIが返答に<Emotion=\"名前\">タグを書き、その位置に画像を表示します。追加の呼び出しはありませんが、AIがタグを省くことがあります。",
+  "emotionInstructionsHelp": "感情を選ばせる指示文です。空欄の場合はRisuAIのデフォルトを使用します。"
 }

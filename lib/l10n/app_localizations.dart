@@ -5392,6 +5392,78 @@ abstract class AppLocalizations {
   /// **'이미지 추가'**
   String get additionalImageAddButton;
 
+  /// No description provided for @characterEditTabEmotionImage.
+  ///
+  /// In ko, this message translates to:
+  /// **'감정이미지'**
+  String get characterEditTabEmotionImage;
+
+  /// No description provided for @emotionImageTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'감정 이미지'**
+  String get emotionImageTitle;
+
+  /// No description provided for @emotionImageTitleHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'이미지 이름이 감정 이름이 됩니다 (예: happy, sad). AI 답변마다 어울리는 감정 이미지를 보여줍니다. RisuAI 감정 이미지와 호환됩니다.'**
+  String get emotionImageTitleHelp;
+
+  /// No description provided for @emotionImageEmpty.
+  ///
+  /// In ko, this message translates to:
+  /// **'등록된 감정 이미지가 없습니다'**
+  String get emotionImageEmpty;
+
+  /// No description provided for @emotionImageAddButton.
+  ///
+  /// In ko, this message translates to:
+  /// **'감정 이미지 추가'**
+  String get emotionImageAddButton;
+
+  /// No description provided for @emotionModeNone.
+  ///
+  /// In ko, this message translates to:
+  /// **'사용 안 함'**
+  String get emotionModeNone;
+
+  /// No description provided for @emotionModeClassifier.
+  ///
+  /// In ko, this message translates to:
+  /// **'보조 모델이 선택'**
+  String get emotionModeClassifier;
+
+  /// No description provided for @emotionModeInline.
+  ///
+  /// In ko, this message translates to:
+  /// **'답변 안의 태그로 선택'**
+  String get emotionModeInline;
+
+  /// No description provided for @emotionModeNoneHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'감정 이미지를 표시하지 않습니다.'**
+  String get emotionModeNoneHelp;
+
+  /// No description provided for @emotionModeClassifierHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'답변이 끝나면 보조 모델이 감정 하나를 골라 메시지 위에 표시합니다. 답변마다 보조 모델 호출이 1회 추가됩니다.'**
+  String get emotionModeClassifierHelp;
+
+  /// No description provided for @emotionModeInlineHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'AI가 답변에 <Emotion="이름"> 태그를 쓰게 하고, 그 자리에 이미지를 표시합니다. 추가 호출은 없지만 AI가 태그를 빠뜨릴 수 있습니다.'**
+  String get emotionModeInlineHelp;
+
+  /// No description provided for @emotionInstructionsHelp.
+  ///
+  /// In ko, this message translates to:
+  /// **'감정을 고르게 하는 안내문입니다. 비워두면 RisuAI 기본 안내문을 사용합니다.'**
+  String get emotionInstructionsHelp;
+
   /// No description provided for @additionalImageDefaultName.
   ///
   /// In ko, this message translates to:

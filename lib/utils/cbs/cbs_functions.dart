@@ -339,7 +339,7 @@ Map<String, CbsFunction> _buildCbsFunctions() {
     return cbsMakeArray(c.ctx.messages
         .map((m) => '${a.contains('role') ? '${m.role}: ' : ''}${m.data}'));
   });
-  reg(['emotionlist'], (c, a, r) => cbsMakeArray(const []));
+  reg(['emotionlist'], (c, a, r) => cbsMakeArray(c.ctx.emotions));
   reg(['assetlist'], (c, a, r) => cbsMakeArray(const []));
   reg(['chardisplayasset'], (c, a, r) => cbsMakeArray(const []));
   reg(['prefillsupported', 'prefill_supported', 'prefill'],

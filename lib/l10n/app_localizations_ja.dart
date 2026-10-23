@@ -2864,6 +2864,42 @@ class AppLocalizationsJa extends AppLocalizations {
   String get additionalImageAddButton => '画像を追加';
 
   @override
+  String get characterEditTabEmotionImage => '感情画像';
+
+  @override
+  String get emotionImageTitle => '感情画像';
+
+  @override
+  String get emotionImageTitleHelp => '画像名が感情名になります（例: happy, sad）。AIの返答ごとに合う感情画像を表示します。RisuAIの感情画像と互換性があります。';
+
+  @override
+  String get emotionImageEmpty => '感情画像がありません';
+
+  @override
+  String get emotionImageAddButton => '感情画像を追加';
+
+  @override
+  String get emotionModeNone => '使用しない';
+
+  @override
+  String get emotionModeClassifier => 'サブモデルが選択';
+
+  @override
+  String get emotionModeInline => '返答内のタグで選択';
+
+  @override
+  String get emotionModeNoneHelp => '感情画像を表示しません。';
+
+  @override
+  String get emotionModeClassifierHelp => '返答の後にサブモデルが感情を1つ選び、メッセージの上に表示します。返答ごとにサブモデルの呼び出しが1回増えます。';
+
+  @override
+  String get emotionModeInlineHelp => 'AIが返答に<Emotion="名前">タグを書き、その位置に画像を表示します。追加の呼び出しはありませんが、AIがタグを省くことがあります。';
+
+  @override
+  String get emotionInstructionsHelp => '感情を選ばせる指示文です。空欄の場合はRisuAIのデフォルトを使用します。';
+
+  @override
   String additionalImageDefaultName(int index) {
     return '画像 $index';
   }

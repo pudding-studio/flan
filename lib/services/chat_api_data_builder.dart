@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import '../database/database_helper.dart';
 import '../models/character/character.dart';
 import '../models/character/character_book_folder.dart';
+import '../models/character/emotion_mode.dart';
 import '../models/character/persona.dart';
 import '../models/character/start_scenario.dart';
 import '../models/chat/chat_message.dart';
@@ -20,6 +21,7 @@ import '../screens/chat/chat_send_errors.dart';
 import '../utils/cbs/cbs_app_bridge.dart';
 import '../utils/cbs/cbs_context.dart';
 import '../utils/context_pdf.dart';
+import '../utils/emotion_picker.dart';
 import '../utils/prompt_builder.dart';
 import '../utils/regex_processor.dart';
 import '../utils/token_counter.dart';
@@ -196,6 +198,11 @@ class ChatApiDataBuilder {
       }
     }
 
+    final emotions = (await db.readEmotionImages(character.id!))
+        .map((image) => image.name)
+        .where((name) => name.isNotEmpty)
+        .toList();
+
     final cbsContext = CbsContext(
       parsedKeywords: cbsParsedAppKeywords,
       charName: character.name,
@@ -207,6 +214,7 @@ class ChatApiDataBuilder {
       authorNote: chatRoom.memo,
       lorebook: cbsLorebookOf(activeCharacterBooks),
       messages: messages.map(cbsMessageOf).toList(),
+      emotions: emotions,
       modelId: modelId ?? '',
       maxContext: chatPrompt?.parameters?.maxInputTokens,
       language: outputLanguage,
@@ -447,6 +455,19 @@ class ChatApiDataBuilder {
       }
     }
 
+    // RisuAI's inline emotion mode: the emotion list instruction goes after
+    // everything else, where RisuAI's post-everything slot sends it.
+    if (character.emotionMode == EmotionMode.inline && emotions.isNotEmpty) {
+      rawContents = _appendSystemNote(
+        rawContents,
+        EmotionPicker.inlineInstruction(
+          character.emotionInstructions ??
+              EmotionMode.inline.defaultInstructions,
+          emotions,
+        ),
+      );
+    }
+
     // Stage 3: Apply sendDataModify to the fully assembled prompt data
     final systemPrompt =
         RegexProcessor.apply(rawSystemPrompt, regexRules, RegexTarget.sendDataModify);
@@ -460,6 +481,35 @@ class ChatApiDataBuilder {
       parameters: chatPrompt?.parameters,
       regexRules: regexRules,
     );
+  }
+
+  /// A system message after the conversation start, as RisuAI sends it to
+  /// Gemini: joined to the last user turn, or as a new user turn, prefixed
+  /// with `system:`.
+  static List<Map<String, dynamic>> _appendSystemNote(
+    List<Map<String, dynamic>> contents,
+    String note,
+  ) {
+    final result = [...contents];
+    final last = result.isEmpty ? null : result.last;
+    if (last != null && last['role'] == 'user') {
+      final parts = [...(last['parts'] as List)];
+      final lastPart = parts.isEmpty ? null : parts.last;
+      if (lastPart is Map && lastPart['text'] is String) {
+        parts[parts.length - 1] = {'text': '${lastPart['text']}\nsystem:$note'};
+      } else {
+        parts.add({'text': 'system:$note'});
+      }
+      result[result.length - 1] = {...last, 'parts': parts};
+    } else {
+      result.add({
+        'role': 'user',
+        'parts': [
+          {'text': 'system:$note'},
+        ],
+      });
+    }
+    return result;
   }
 
   int _estimateTokens(

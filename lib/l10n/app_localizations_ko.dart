@@ -2873,6 +2873,42 @@ class AppLocalizationsKo extends AppLocalizations {
   String get additionalImageAddButton => '이미지 추가';
 
   @override
+  String get characterEditTabEmotionImage => '감정이미지';
+
+  @override
+  String get emotionImageTitle => '감정 이미지';
+
+  @override
+  String get emotionImageTitleHelp => '이미지 이름이 감정 이름이 됩니다 (예: happy, sad). AI 답변마다 어울리는 감정 이미지를 보여줍니다. RisuAI 감정 이미지와 호환됩니다.';
+
+  @override
+  String get emotionImageEmpty => '등록된 감정 이미지가 없습니다';
+
+  @override
+  String get emotionImageAddButton => '감정 이미지 추가';
+
+  @override
+  String get emotionModeNone => '사용 안 함';
+
+  @override
+  String get emotionModeClassifier => '보조 모델이 선택';
+
+  @override
+  String get emotionModeInline => '답변 안의 태그로 선택';
+
+  @override
+  String get emotionModeNoneHelp => '감정 이미지를 표시하지 않습니다.';
+
+  @override
+  String get emotionModeClassifierHelp => '답변이 끝나면 보조 모델이 감정 하나를 골라 메시지 위에 표시합니다. 답변마다 보조 모델 호출이 1회 추가됩니다.';
+
+  @override
+  String get emotionModeInlineHelp => 'AI가 답변에 <Emotion="이름"> 태그를 쓰게 하고, 그 자리에 이미지를 표시합니다. 추가 호출은 없지만 AI가 태그를 빠뜨릴 수 있습니다.';
+
+  @override
+  String get emotionInstructionsHelp => '감정을 고르게 하는 안내문입니다. 비워두면 RisuAI 기본 안내문을 사용합니다.';
+
+  @override
   String additionalImageDefaultName(int index) {
     return '이미지 $index';
   }

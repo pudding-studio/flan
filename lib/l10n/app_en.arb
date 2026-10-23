@@ -1553,5 +1553,17 @@
   "promptEditSendNameHelp": "Wraps the chat history in name tags (<Name's Message>) and sends it as user messages (RisuAI sendName).",
   "promptEditDefaultVariables": "Default variables",
   "promptEditDefaultVariablesHelp": "One key=value per line. Chat variables (getvar) that have no value yet read these.",
-  "promptEditDefaultVariablesHint": "hp=100"
+  "promptEditDefaultVariablesHint": "hp=100",
+  "characterEditTabEmotionImage": "Emotions",
+  "emotionImageTitle": "Emotion images",
+  "emotionImageTitleHelp": "Each image name is an emotion name (e.g. happy, sad). A fitting emotion image is shown for each AI reply. Compatible with RisuAI emotion images.",
+  "emotionImageEmpty": "No emotion images yet",
+  "emotionImageAddButton": "Add emotion image",
+  "emotionModeNone": "Off",
+  "emotionModeClassifier": "Picked by sub model",
+  "emotionModeInline": "Tag in the reply",
+  "emotionModeNoneHelp": "Emotion images are not shown.",
+  "emotionModeClassifierHelp": "After each reply the sub model picks one emotion, shown above the message. Adds one sub model call per reply.",
+  "emotionModeInlineHelp": "The AI writes an <Emotion=\"name\"> tag in its reply and the image is shown there. No extra call, but the AI may leave the tag out.",
+  "emotionInstructionsHelp": "Instructions for picking the emotion. Leave empty to use the RisuAI default."
 }

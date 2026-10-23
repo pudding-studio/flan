@@ -2924,6 +2924,42 @@ class AppLocalizationsEn extends AppLocalizations {
   String get additionalImageAddButton => 'Add Image';
 
   @override
+  String get characterEditTabEmotionImage => 'Emotions';
+
+  @override
+  String get emotionImageTitle => 'Emotion images';
+
+  @override
+  String get emotionImageTitleHelp => 'Each image name is an emotion name (e.g. happy, sad). A fitting emotion image is shown for each AI reply. Compatible with RisuAI emotion images.';
+
+  @override
+  String get emotionImageEmpty => 'No emotion images yet';
+
+  @override
+  String get emotionImageAddButton => 'Add emotion image';
+
+  @override
+  String get emotionModeNone => 'Off';
+
+  @override
+  String get emotionModeClassifier => 'Picked by sub model';
+
+  @override
+  String get emotionModeInline => 'Tag in the reply';
+
+  @override
+  String get emotionModeNoneHelp => 'Emotion images are not shown.';
+
+  @override
+  String get emotionModeClassifierHelp => 'After each reply the sub model picks one emotion, shown above the message. Adds one sub model call per reply.';
+
+  @override
+  String get emotionModeInlineHelp => 'The AI writes an <Emotion="name"> tag in its reply and the image is shown there. No extra call, but the AI may leave the tag out.';
+
+  @override
+  String get emotionInstructionsHelp => 'Instructions for picking the emotion. Leave empty to use the RisuAI default.';
+
+  @override
   String additionalImageDefaultName(int index) {
     return 'Image $index';
   }

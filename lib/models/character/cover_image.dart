@@ -11,7 +11,7 @@ class CoverImage {
   bool isExpanded;
   Uint8List? imageData; // legacy BLOB data (backward compat)
   String? path; // absolute file path (file-based storage)
-  String imageType; // 'cover' | 'additional' | 'background' | 'characterBook'
+  String imageType; // 'cover' | 'additional' | 'background' | 'characterBook' | 'emotion'
   int? characterBookId; // set only when imageType == 'characterBook'
 
   CoverImage({
