@@ -3455,7 +3455,9 @@ class DatabaseHelper {
       'community_posts',
       where: 'chat_room_id = ?',
       whereArgs: [chatRoomId],
-      orderBy: 'time DESC',
+      // Newest posted first; `time` is the story time shown on the post,
+      // which need not follow posting order.
+      orderBy: 'created_at DESC, id DESC',
     );
     final posts = postMaps.map((m) => CommunityPost.fromMap(m)).toList();
 

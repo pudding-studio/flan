@@ -1,5 +1,7 @@
 // Database v59: emotion settings per character, emotion per message.
 
+import 'dart:io';
+
 import 'package:flan/database/database_helper.dart';
 import 'package:flan/models/character/character.dart';
 import 'package:flan/models/character/cover_image.dart';
@@ -16,7 +18,9 @@ void main() {
   setUpAll(() async {
     sqfliteFfiInit();
     databaseFactory = databaseFactoryFfi;
-    await deleteDatabase(p.join(await getDatabasesPath(), 'flan.db'));
+    // Test files run in parallel; each needs its own flan.db.
+    await databaseFactory.setDatabasesPath(
+        Directory.systemTemp.createTempSync('flan_db_test').path);
   });
 
   tearDownAll(() async {
