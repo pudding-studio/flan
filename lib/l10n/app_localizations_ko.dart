@@ -967,6 +967,11 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String chatRoomSummaryFailed(String error) {
+    return '자동 요약 중 오류가 발생했습니다: $error';
+  }
+
+  @override
   String get chatRoomMessageItemName => '이 메시지';
 
   @override

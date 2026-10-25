@@ -455,6 +455,12 @@
       "error": { "type": "String" }
     }
   },
+  "chatRoomSummaryFailed": "Automatic summary failed: {error}",
+  "@chatRoomSummaryFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
   "chatRoomMessageItemName": "This Message",
   "chatRoomMessageDeleted": "Message deleted",
   "chatRoomMessageDeleteFailed": "Failed to delete message",

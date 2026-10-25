@@ -1870,6 +1870,12 @@ abstract class AppLocalizations {
   /// **'메시지 전송 중 오류가 발생했습니다: {error}'**
   String chatRoomMessageSendFailed(String error);
 
+  /// No description provided for @chatRoomSummaryFailed.
+  ///
+  /// In ko, this message translates to:
+  /// **'자동 요약 중 오류가 발생했습니다: {error}'**
+  String chatRoomSummaryFailed(String error);
+
   /// No description provided for @chatRoomMessageItemName.
   ///
   /// In ko, this message translates to:

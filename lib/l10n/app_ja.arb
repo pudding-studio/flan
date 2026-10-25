@@ -455,6 +455,12 @@
       "error": { "type": "String" }
     }
   },
+  "chatRoomSummaryFailed": "自動要約中にエラーが発生しました: {error}",
+  "@chatRoomSummaryFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
   "chatRoomMessageItemName": "このメッセージ",
   "chatRoomMessageDeleted": "メッセージを削除しました",
   "chatRoomMessageDeleteFailed": "メッセージの削除に失敗しました",
