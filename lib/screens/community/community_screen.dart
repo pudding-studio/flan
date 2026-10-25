@@ -7,6 +7,7 @@ import '../../database/database_helper.dart';
 import '../../models/prompt/auxiliary_prompt.dart';
 import '../../services/auxiliary_prompt_service.dart';
 import '../../models/character/character.dart';
+import '../../models/character/persona.dart';
 import '../../models/character/start_scenario.dart';
 import '../../models/chat/agent_entry.dart';
 import '../../models/chat/chat_message.dart';
@@ -53,6 +54,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   Character? _character;
   ChatRoom? _chatRoom;
   StartScenario? _selectedScenario;
+  Persona? _persona;
   List<ChatSummary> _chatSummaries = [];
   List<ChatMessage> _recentMessages = [];
   List<AgentEntry> _agentEntries = [];
@@ -98,11 +100,16 @@ class _CommunityScreenState extends State<CommunityScreen> {
     if (chatRoom?.selectedStartScenarioId != null) {
       scenario = await _db.readStartScenario(chatRoom!.selectedStartScenarioId!);
     }
+    Persona? persona;
+    if (chatRoom?.selectedPersonaId != null) {
+      persona = await _db.readPersona(chatRoom!.selectedPersonaId!);
+    }
     if (!mounted) return;
     setState(() {
       _character = results[0] as Character?;
       _chatRoom = chatRoom;
       _selectedScenario = scenario;
+      _persona = persona;
       final allSummaries = results[2] as List<ChatSummary>;
       _chatSummaries = allSummaries.length > 5 ? allSummaries.sublist(allSummaries.length - 5) : allSummaries;
       _recentMessages = results[3] as List<ChatMessage>;
@@ -152,7 +159,11 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final language = (_character?.communityLanguage?.isNotEmpty == true)
         ? _character!.communityLanguage!
         : outputLanguage;
-    return systemPrompt.replaceAll('{{output_language}}', language);
+    final userName = _persona?.name ?? '';
+    return systemPrompt
+        .replaceAll('{{output_language}}', language)
+        .replaceAll('{{user}}', userName.isEmpty ? 'User' : userName)
+        .replaceAll('{{char}}', _character?.name ?? '');
   }
 
   String _buildWorldviewText() {
@@ -318,6 +329,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
       // is the latest one posted.
       final postTime = _worldNow();
       final replies = await _generatePostReplies(
+        author: author,
         title: title,
         content: content,
         postTime: postTime,
@@ -431,6 +443,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   Future<List<CommunityComment>> _generatePostReplies({
+    required String author,
     required String title,
     required String content,
     required DateTime postTime,
@@ -446,7 +459,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final userMessage =
         'Current time: $nowStr\nBase time (generate only after this time): $nowStr\n\n'
         '${worldview.isNotEmpty ? '## Worldview\n$worldview\n\n' : ''}'
-        '## Post\nTitle: $title\nContent: $content';
+        '## Post\nAuthor: $author\nTitle: $title\nContent: $content';
 
     final response = await _aiService.sendMessage(
       systemPrompt: systemPrompt,
@@ -483,7 +496,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final userMessage =
         'Current time: $nowStr\nBase time (generate only after this time): $nowStr\n\n'
         '${worldview.isNotEmpty ? '## Worldview\n$worldview\n\n' : ''}'
-        '## Post\nTitle: ${post.title}\nContent: ${post.content}\n\n'
+        '## Post\nAuthor: ${post.author}\nTitle: ${post.title}\nContent: ${post.content}\n\n'
         '## Existing Comments\n$existingComments';
 
     final response = await _aiService.sendMessage(
