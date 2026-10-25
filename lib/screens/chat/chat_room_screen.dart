@@ -403,6 +403,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
     setState(() => _sendingPhase = SendingPhase.preparing);
 
+    String? replyText;
+    var pinCreated = false;
     try {
       // Fetch and prepend unused favorite community posts
       final favoritePosts = await _db.readUnusedFavoritePosts(widget.chatRoomId);
@@ -525,48 +527,87 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           final assistantMessageId = await _db.createChatMessage(assistantMessage);
           _playAiReplyNotification();
           _pickEmotion(assistantMessageId, responseText);
-          final pinCreated = await _saveMessageMetadata(assistantMessageId, responseText);
+          pinCreated = await _saveMessageMetadata(assistantMessageId, responseText);
+          replyText = responseText;
 
           // 채팅방 토큰 합산 업데이트
           await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
           await _db.updateChatRoom(_chatRoom!.copyWith(updatedAt: DateTime.now()));
-
-          // 자동 요약 트리거 체크: 새 핀이 생성된 경우에만 실행
-          if (pinCreated) {
-            final latestChatRoom = await _db.readChatRoom(widget.chatRoomId);
-            if (latestChatRoom != null) {
-              final shouldTrigger = await _autoSummaryService.shouldTriggerSummary(
-                chatRoomId: widget.chatRoomId,
-                currentTokenCount: latestChatRoom.totalTokenCount,
-              );
-              if (shouldTrigger) {
-                if (mounted) setState(() => _sendingPhase = SendingPhase.summarizing);
-                await _autoSummaryService.generateAllPendingSummaries(
-                    chatRoomId: widget.chatRoomId);
-              }
-            }
-          }
-
-          // Future plan: agent summary 이후에 실행하여 우선순위를 보장
-          final agentSettings = await _db.getAutoSummarySettings(0);
-          if (agentSettings != null && agentSettings.isAgentEnabled) {
-            await AgentSummaryService()
-                .processFuturePlan(widget.chatRoomId, responseText);
-          }
         },
       );
     } catch (e) {
       debugPrint('Error sending message: $e');
-      if (!mounted) return;
-      final l10n = AppLocalizations.of(context);
-      final message = (e is ChatModelLoadException || e is ChatPromptLoadException)
-          ? e.toString()
-          : l10n.chatRoomMessageSendFailed(e.toString());
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(message)),
-      );
+      if (mounted) {
+        final l10n = AppLocalizations.of(context);
+        final message = (e is ChatModelLoadException || e is ChatPromptLoadException)
+            ? e.toString()
+            : l10n.chatRoomMessageSendFailed(e.toString());
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(message)),
+        );
+      }
     } finally {
-      await _finishSending();
+      // Show the reply first; summarizing afterwards keeps the input locked
+      // so the next send already includes the new summary.
+      final reply = replyText;
+      final summarize = reply != null && pinCreated && await _shouldSummarize();
+      await _finishSending(
+        nextPhase: summarize ? SendingPhase.summarizing : SendingPhase.none,
+      );
+      if (reply != null) await _runAfterReply(reply, summarize: summarize);
+    }
+  }
+
+  /// Automatic summaries run only once a new pin was created.
+  Future<bool> _shouldSummarize() async {
+    try {
+      final latestChatRoom = await _db.readChatRoom(widget.chatRoomId);
+      if (latestChatRoom == null) return false;
+      return await _autoSummaryService.shouldTriggerSummary(
+        chatRoomId: widget.chatRoomId,
+        currentTokenCount: latestChatRoom.totalTokenCount,
+      );
+    } catch (e) {
+      debugPrint('Summary trigger check failed: $e');
+      return false;
+    }
+  }
+
+  /// Work that follows a reply without holding it back: the automatic
+  /// summary, then the agent's future plan (after the summary, so the plan
+  /// takes priority). A failure here never undoes or resends the reply.
+  Future<void> _runAfterReply(String reply, {required bool summarize}) async {
+    try {
+      if (summarize) {
+        await _autoSummaryService.generateAllPendingSummaries(
+            chatRoomId: widget.chatRoomId);
+      }
+    } catch (e) {
+      debugPrint('Automatic summary failed: $e');
+      if (mounted) {
+        final l10n = AppLocalizations.of(context);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.chatRoomSummaryFailed(e.toString()))),
+        );
+      }
+    } finally {
+      if (summarize && mounted) {
+        // Refresh the summarized-range markers.
+        await _loadChatData(showLoading: false);
+        if (mounted) setState(() => _sendingPhase = SendingPhase.none);
+      }
+    }
+    await _processFuturePlan(reply);
+  }
+
+  Future<void> _processFuturePlan(String reply) async {
+    try {
+      final agentSettings = await _db.getAutoSummarySettings(0);
+      if (agentSettings != null && agentSettings.isAgentEnabled) {
+        await AgentSummaryService().processFuturePlan(widget.chatRoomId, reply);
+      }
+    } catch (e) {
+      debugPrint('Future plan processing failed: $e');
     }
   }
 
@@ -811,7 +852,9 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
-  Future<void> _finishSending() async {
+  /// Shows the new messages. [nextPhase] keeps the input locked for work
+  /// that continues after the reply is visible (the automatic summary).
+  Future<void> _finishSending({SendingPhase nextPhase = SendingPhase.none}) async {
     final wasScrolledUp = _showScrollButtons;
     final prevMessageCount = _messages.length;
 
@@ -820,7 +863,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
     final delta = _messages.length - prevMessageCount;
     setState(() {
-      _sendingPhase = SendingPhase.none;
+      _sendingPhase = nextPhase;
       _retryAttempt = 0;
       // Only buffer when the user is reading older messages. When they're at
       // the bottom, reveal immediately — hiding there would strand them on
@@ -955,6 +998,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
     setState(() => _sendingPhase = SendingPhase.preparing);
 
+    String? replyText;
     try {
       final tokenizerProvider = context.read<TokenizerProvider>();
       final tokenizer = tokenizerProvider.selectedTokenizer;
@@ -1005,16 +1049,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           _pickEmotion(assistantMessageId, responseText2);
           await _saveMessageMetadata(assistantMessageId, responseText2);
 
+          replyText = responseText2;
+
           // 채팅방 토큰 합산 업데이트
           await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
           await _db.updateChatRoom(_chatRoom!.copyWith(updatedAt: DateTime.now()));
-
-          // Future plan: AI 응답에서 [PLAN: ...] 파싱하여 활성화
-          final agentSettings2 = await _db.getAutoSummarySettings(0);
-          if (agentSettings2 != null && agentSettings2.isAgentEnabled) {
-            await AgentSummaryService()
-                .processFuturePlan(widget.chatRoomId, responseText2);
-          }
         },
       );
     } catch (e) {
@@ -1029,6 +1068,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       );
     } finally {
       await _finishSending();
+      final reply = replyText;
+      if (reply != null) await _processFuturePlan(reply);
     }
   }
 

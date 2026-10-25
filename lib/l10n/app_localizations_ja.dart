@@ -961,6 +961,11 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String chatRoomSummaryFailed(String error) {
+    return '自動要約中にエラーが発生しました: $error';
+  }
+
+  @override
   String get chatRoomMessageItemName => 'このメッセージ';
 
   @override

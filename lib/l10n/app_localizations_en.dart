@@ -983,6 +983,11 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String chatRoomSummaryFailed(String error) {
+    return 'Automatic summary failed: $error';
+  }
+
+  @override
   String get chatRoomMessageItemName => 'This Message';
 
   @override

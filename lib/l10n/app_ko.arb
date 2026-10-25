@@ -455,6 +455,12 @@
       "error": { "type": "String" }
     }
   },
+  "chatRoomSummaryFailed": "자동 요약 중 오류가 발생했습니다: {error}",
+  "@chatRoomSummaryFailed": {
+    "placeholders": {
+      "error": { "type": "String" }
+    }
+  },
   "chatRoomMessageItemName": "이 메시지",
   "chatRoomMessageDeleted": "메시지가 삭제되었습니다",
   "chatRoomMessageDeleteFailed": "메시지 삭제 중 오류가 발생했습니다",
