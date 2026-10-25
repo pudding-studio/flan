@@ -87,6 +87,9 @@ class ChatBranchService {
         editedAt: msg.editedAt,
         usageMetadata: msg.usageMetadata,
         modelId: msg.modelId,
+        emotion: msg.emotion,
+        versions: msg.versions,
+        versionIndex: msg.versionIndex,
       );
       final newMessageId = await _db.createChatMessage(newMessage);
 
