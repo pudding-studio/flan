@@ -632,28 +632,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     try {
       final cleanedContent = rawContent;
 
-      if (message.role == MessageRole.assistant && message.id != null) {
-        final parsed = MetadataParser.parse(rawContent);
-
-        if (parsed.location != null || parsed.date != null || parsed.time != null) {
-          final existingMetadata = _metadataMap[message.id!];
-          final newMetadata = ChatMessageMetadata(
-            chatMessageId: message.id!,
-            chatRoomId: widget.chatRoomId,
-            location: parsed.location,
-            date: parsed.date,
-            time: parsed.time,
-          );
-          if (existingMetadata != null) {
-            await _db.updateChatMessageMetadata(
-              newMetadata.copyWith(id: existingMetadata.id),
-            );
-          } else {
-            await _db.createChatMessageMetadata(newMetadata);
-          }
-        }
-        // Existing metadata is preserved when no tags are present in edited content
-      }
+      await _updateMetadataFromContent(message, rawContent);
 
       final tokenizerProvider = context.read<TokenizerProvider>();
       final tokenizer = tokenizerProvider.selectedTokenizer;
@@ -681,6 +660,51 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         context: context,
         message: AppLocalizations.of(context).chatRoomMessageEditFailed,
       );
+    }
+  }
+
+  /// Refreshes an AI message's date/time/location metadata from [content]
+  /// after it changed in place. Existing metadata is kept when [content]
+  /// carries no tags.
+  Future<void> _updateMetadataFromContent(
+    ChatMessage message,
+    String content,
+  ) async {
+    if (message.role != MessageRole.assistant || message.id == null) return;
+    final parsed = MetadataParser.parse(content);
+    if (parsed.location == null && parsed.date == null && parsed.time == null) {
+      return;
+    }
+    final existingMetadata = _metadataMap[message.id!];
+    final newMetadata = ChatMessageMetadata(
+      chatMessageId: message.id!,
+      chatRoomId: widget.chatRoomId,
+      location: parsed.location,
+      date: parsed.date,
+      time: parsed.time,
+    );
+    if (existingMetadata != null) {
+      await _db.updateChatMessageMetadata(
+        newMetadata.copyWith(id: existingMetadata.id),
+      );
+    } else {
+      await _db.createChatMessageMetadata(newMetadata);
+    }
+  }
+
+  /// Shows an earlier (or later) reply of a regenerated AI message.
+  Future<void> _selectMessageVersion(ChatMessage message, int index) async {
+    if (_isSending || message.id == null || index == message.versionIndex) {
+      return;
+    }
+    try {
+      final updated = message.withVersionSelected(index);
+      await _db.updateChatMessage(updated);
+      await _updateMetadataFromContent(updated, updated.content);
+      await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
+      await _loadChatData(showLoading: false);
+    } catch (e) {
+      debugPrint('Error switching message version: $e');
     }
   }
 
@@ -1103,14 +1127,14 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
           final tokenCount = aiResponse3.usageMetadata?.candidatesTokenCount ??
               TokenCounter.estimateTokenCount(responseText3, tokenizer: tokenizer);
-          final updatedMessage = message.copyWith(
+          // Keep the earlier reply as a version the user can switch back to.
+          final updatedMessage = message.withNewVersion(ChatMessageVersion(
             content: responseText3,
             tokenCount: tokenCount,
-            editedAt: DateTime.now(),
+            createdAt: DateTime.now(),
             usageMetadata: aiResponse3.usageMetadata,
             modelId: aiResponse3.modelId,
-            emotion: null,
-          );
+          ));
 
           await _db.updateChatMessage(updatedMessage);
           _playAiReplyNotification();
@@ -1185,6 +1209,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       onDelete: () => _deleteMessage(message.id!),
       onResendOrRegenerate:
           isUser ? _resendLastUserMessage : () => _regenerateMessage(message.id!),
+      onSelectVersion: (index) => _selectMessageVersion(message, index),
     );
   }
 

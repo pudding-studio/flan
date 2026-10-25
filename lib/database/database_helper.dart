@@ -47,7 +47,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 59,
+      version: 60,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -140,6 +140,8 @@ class DatabaseHelper {
     (table: 'characters', column: 'emotion_mode', def: "TEXT NOT NULL DEFAULT 'none'"),
     (table: 'characters', column: 'emotion_instructions', def: 'TEXT'),
     (table: 'chat_messages', column: 'emotion', def: 'TEXT'),
+    (table: 'chat_messages', column: 'versions', def: 'TEXT'),
+    (table: 'chat_messages', column: 'version_index', def: 'INTEGER NOT NULL DEFAULT 0'),
   ];
 
   Future<void> _createDB(Database db, int version) async {
@@ -479,6 +481,8 @@ class DatabaseHelper {
         usage_metadata $textTypeNullable,
         model_id $textTypeNullable,
         emotion $textTypeNullable,
+        versions $textTypeNullable,
+        version_index INTEGER NOT NULL DEFAULT 0,
         FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE
       )
     ''');
@@ -1621,6 +1625,14 @@ class DatabaseHelper {
           db, 'characters', 'emotion_mode', "TEXT NOT NULL DEFAULT 'none'");
       await _ensureColumn(db, 'characters', 'emotion_instructions', 'TEXT');
       await _ensureColumn(db, 'chat_messages', 'emotion', 'TEXT');
+    }
+
+    if (oldVersion < 60) {
+      // Earlier replies of a regenerated AI message, kept so the user can
+      // switch back to them.
+      await _ensureColumn(db, 'chat_messages', 'versions', 'TEXT');
+      await _ensureColumn(
+          db, 'chat_messages', 'version_index', 'INTEGER NOT NULL DEFAULT 0');
     }
   }
 

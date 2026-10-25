@@ -66,6 +66,9 @@ class ChatMessageBubble extends StatelessWidget {
   final VoidCallback onDelete;
   final VoidCallback onResendOrRegenerate;
 
+  /// Switches a regenerated AI message to the reply at the given index.
+  final ValueChanged<int> onSelectVersion;
+
   const ChatMessageBubble({
     super.key,
     required this.message,
@@ -93,6 +96,7 @@ class ChatMessageBubble extends StatelessWidget {
     required this.onCreateBranch,
     required this.onDelete,
     required this.onResendOrRegenerate,
+    required this.onSelectVersion,
   });
 
   @override
@@ -190,6 +194,12 @@ class ChatMessageBubble extends StatelessWidget {
                           : theme.colorScheme.onSurfaceVariant
                               .withValues(alpha: 0.4),
                       onPressed: onTogglePin,
+                    ),
+                  if (!isUser && message.versionCount > 1 && !isEditing)
+                    _VersionSelector(
+                      index: message.versionIndex,
+                      count: message.versionCount,
+                      onSelect: onSelectVersion,
                     ),
                   const Spacer(),
                   if (isEditing) ...[
@@ -353,6 +363,50 @@ class ChatMessageMetadataHeader extends StatelessWidget {
             alignment: Alignment.centerRight,
             child: Text(locationSub, style: metaStyle),
           ),
+      ],
+    );
+  }
+}
+
+/// `‹ 2/3 ›` switcher between the replies of a regenerated message.
+class _VersionSelector extends StatelessWidget {
+  final int index;
+  final int count;
+  final ValueChanged<int> onSelect;
+
+  const _VersionSelector({
+    required this.index,
+    required this.count,
+    required this.onSelect,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final disabled = theme.colorScheme.onSurfaceVariant.withValues(alpha: 0.3);
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        _CompactIconButton(
+          icon: Icons.chevron_left,
+          color: index > 0 ? null : disabled,
+          onPressed: () {
+            if (index > 0) onSelect(index - 1);
+          },
+        ),
+        Text(
+          '${index + 1}/$count',
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        _CompactIconButton(
+          icon: Icons.chevron_right,
+          color: index < count - 1 ? null : disabled,
+          onPressed: () {
+            if (index < count - 1) onSelect(index + 1);
+          },
+        ),
       ],
     );
   }
