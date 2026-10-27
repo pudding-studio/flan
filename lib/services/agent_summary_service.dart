@@ -63,7 +63,13 @@ class AgentSummaryService {
   }) async {
     try {
       final books = await _db.readCharacterBooks(characterId);
-      final seedable = books.where((b) => b.autoSummaryInsert).toList();
+      // Disabled entries are switched off for the story, so they must not
+      // reach the summary either; key-based ones stay, as they can still fire.
+      final seedable = books
+          .where((b) =>
+              b.autoSummaryInsert &&
+              b.enabled != CharacterBookActivationCondition.disabled)
+          .toList();
       if (seedable.isEmpty) return;
 
       int created = 0;
