@@ -298,7 +298,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   void _showWritePost() {
-    final l10n = AppLocalizations.of(context);
     showModalBottomSheet<({String author, String title, String content})>(
       context: context,
       isScrollControlled: true,
@@ -306,7 +305,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
       ),
       builder: (ctx) => WritePostSheet(
-        initialAuthor: _draftPostAuthor.isEmpty ? l10n.communityAnonymous : _draftPostAuthor,
+        initialAuthor: _draftPostAuthor,
         initialTitle: _draftPostTitle,
         initialContent: _draftPostContent,
       ),
@@ -324,20 +323,22 @@ class _CommunityScreenState extends State<CommunityScreen> {
     _newPostIds.clear();
     _newCommentIds.clear();
     setState(() => _isSubmitting = true);
+    final anonymous = AppLocalizations.of(context).communityAnonymous;
     try {
       // Story time, like the AI posts; the feed shows it first because it
       // is the latest one posted.
       final postTime = _worldNow();
-      final replies = await _generatePostReplies(
+      final result = await _generatePostReplies(
         author: author,
         title: title,
         content: content,
         postTime: postTime,
       );
+      final replies = result.replies;
 
       final post = CommunityPost(
         chatRoomId: widget.chatRoomId,
-        author: author,
+        author: author.isNotEmpty ? author : result.chosenAuthor ?? anonymous,
         title: title,
         time: postTime,
         content: content,
@@ -369,7 +370,6 @@ class _CommunityScreenState extends State<CommunityScreen> {
   }
 
   void _showWriteComment(CommunityPost post) {
-    final l10n = AppLocalizations.of(context);
     final postId = post.id!;
     showModalBottomSheet<({String author, String content})>(
       context: context,
@@ -379,7 +379,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
       ),
       builder: (ctx) => WriteCommentSheet(
         postTitle: post.title,
-        initialAuthor: _draftCommentAuthor[postId] ?? l10n.communityAnonymous,
+        initialAuthor: _draftCommentAuthor[postId] ?? '',
         initialContent: _draftCommentContent[postId] ?? '',
       ),
     ).then((result) {
@@ -395,6 +395,7 @@ class _CommunityScreenState extends State<CommunityScreen> {
     _newPostIds.clear();
     _newCommentIds.clear();
     setState(() => _isSubmitting = true);
+    final anonymous = AppLocalizations.of(context).communityAnonymous;
     try {
       // Add user comment to post context for AI without saving to DB yet
       final now =
@@ -413,12 +414,16 @@ class _CommunityScreenState extends State<CommunityScreen> {
         ],
       );
 
-      final aiReplies = await _generateCommentReplies(post: postWithUserComment);
+      final result = await _generateCommentReplies(
+        post: postWithUserComment,
+        nameLastCommenter: author.isEmpty,
+      );
+      final aiReplies = result.replies;
 
       // AI succeeded — now save user comment + AI replies to DB
       final userComment = CommunityComment(
         postId: post.id!,
-        author: author,
+        author: author.isNotEmpty ? author : result.chosenAuthor ?? anonymous,
         time: now,
         content: content,
       );
@@ -442,7 +447,16 @@ class _CommunityScreenState extends State<CommunityScreen> {
     }
   }
 
-  Future<List<CommunityComment>> _generatePostReplies({
+  /// Asks the AI to name the user, in the reply it is already writing, when
+  /// they left the nickname blank.
+  static const String _chooseNicknameInstruction =
+      "Before the comments, output one line [Author]Name:'nickname' with a "
+      'nickname for that writer that fits this community.';
+
+  /// AI replies to the user's post, plus the nickname the AI picked when
+  /// [author] is empty.
+  Future<({List<CommunityComment> replies, String? chosenAuthor})>
+      _generatePostReplies({
     required String author,
     required String title,
     required String content,
@@ -459,7 +473,9 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final userMessage =
         'Current time: $nowStr\nBase time (generate only after this time): $nowStr\n\n'
         '${worldview.isNotEmpty ? '## Worldview\n$worldview\n\n' : ''}'
-        '## Post\nAuthor: $author\nTitle: $title\nContent: $content';
+        '## Post\n'
+        '${author.isNotEmpty ? 'Author: $author' : 'Author: (not set) $_chooseNicknameInstruction'}\n'
+        'Title: $title\nContent: $content';
 
     final response = await _aiService.sendMessage(
       systemPrompt: systemPrompt,
@@ -472,14 +488,24 @@ class _CommunityScreenState extends State<CommunityScreen> {
       logType: 'community',
     );
 
-    return CommunityParser.parseComments(
-      response.text,
-      postId: 0,
-      fallbackStart: postTime,
+    return (
+      replies: CommunityParser.parseComments(
+        response.text,
+        postId: 0,
+        fallbackStart: postTime,
+      ),
+      chosenAuthor:
+          author.isEmpty ? CommunityParser.parseChosenAuthor(response.text) : null,
     );
   }
 
-  Future<List<CommunityComment>> _generateCommentReplies({required CommunityPost post}) async {
+  /// AI replies to the user's comment (the last one on [post]), plus the
+  /// nickname the AI picked for it when [nameLastCommenter] is set.
+  Future<({List<CommunityComment> replies, String? chosenAuthor})>
+      _generateCommentReplies({
+    required CommunityPost post,
+    required bool nameLastCommenter,
+  }) async {
     final outputLanguage = context.read<LocalizationProvider>().effectiveAiLanguageName;
     final model = await _getModel();
     var systemPrompt = await AuxiliaryPromptService.instance
@@ -490,14 +516,18 @@ class _CommunityScreenState extends State<CommunityScreen> {
     final worldview = _buildWorldviewText();
 
     final existingComments = post.comments.map((c) {
-      return '  - ${c.author} (${DateFormatter.formatDateTime(c.time)}): ${c.content}';
+      final author = c.author.isNotEmpty ? c.author : '(nickname not set)';
+      return '  - $author (${DateFormatter.formatDateTime(c.time)}): ${c.content}';
     }).join('\n');
+    final nicknameNote = nameLastCommenter
+        ? '\n\nThe last comment has no nickname. $_chooseNicknameInstruction'
+        : '';
 
     final userMessage =
         'Current time: $nowStr\nBase time (generate only after this time): $nowStr\n\n'
         '${worldview.isNotEmpty ? '## Worldview\n$worldview\n\n' : ''}'
         '## Post\nAuthor: ${post.author}\nTitle: ${post.title}\nContent: ${post.content}\n\n'
-        '## Existing Comments\n$existingComments';
+        '## Existing Comments\n$existingComments$nicknameNote';
 
     final response = await _aiService.sendMessage(
       systemPrompt: systemPrompt,
@@ -510,10 +540,15 @@ class _CommunityScreenState extends State<CommunityScreen> {
       logType: 'community',
     );
 
-    return CommunityParser.parseComments(
-      response.text,
-      postId: post.id!,
-      fallbackStart: latestComment,
+    return (
+      replies: CommunityParser.parseComments(
+        response.text,
+        postId: post.id!,
+        fallbackStart: latestComment,
+      ),
+      chosenAuthor: nameLastCommenter
+          ? CommunityParser.parseChosenAuthor(response.text)
+          : null,
     );
   }
 

@@ -3562,6 +3562,12 @@ abstract class AppLocalizations {
   /// **'닉네임'**
   String get communityNickname;
 
+  /// No description provided for @communityNicknameAiHint.
+  ///
+  /// In ko, this message translates to:
+  /// **'닉네임 (비워두면 AI가 정해요)'**
+  String get communityNicknameAiHint;
+
   /// No description provided for @communityTitle.
   ///
   /// In ko, this message translates to:

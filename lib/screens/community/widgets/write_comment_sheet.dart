@@ -43,7 +43,7 @@ class WriteCommentSheet extends StatelessWidget {
           TextField(
             controller: nicknameCtrl,
             decoration: InputDecoration(
-              hintText: l10n.communityNickname,
+              hintText: l10n.communityNicknameAiHint,
               border: const OutlineInputBorder(),
               isDense: true,
             ),
@@ -66,7 +66,8 @@ class WriteCommentSheet extends StatelessWidget {
               onPressed: () {
                 final nickname = nicknameCtrl.text.trim();
                 final content = contentCtrl.text.trim();
-                if (nickname.isEmpty || content.isEmpty) return;
+                // An empty nickname is left for the AI to choose.
+                if (content.isEmpty) return;
                 Navigator.pop(context, (author: nickname, content: content));
               },
               child: Text(l10n.communityRegister),

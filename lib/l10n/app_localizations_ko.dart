@@ -1900,6 +1900,9 @@ class AppLocalizationsKo extends AppLocalizations {
   String get communityNickname => '닉네임';
 
   @override
+  String get communityNicknameAiHint => '닉네임 (비워두면 AI가 정해요)';
+
+  @override
   String get communityTitle => '제목';
 
   @override

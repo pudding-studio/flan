@@ -35,7 +35,7 @@ class WritePostSheet extends StatelessWidget {
           TextField(
             controller: authorCtrl,
             decoration: InputDecoration(
-              hintText: l10n.communityNickname,
+              hintText: l10n.communityNicknameAiHint,
               border: const OutlineInputBorder(),
               isDense: true,
             ),
@@ -67,7 +67,8 @@ class WritePostSheet extends StatelessWidget {
                 final author = authorCtrl.text.trim();
                 final title = titleCtrl.text.trim();
                 final content = contentCtrl.text.trim();
-                if (author.isEmpty || title.isEmpty || content.isEmpty) return;
+                // An empty nickname is left for the AI to choose.
+                if (title.isEmpty || content.isEmpty) return;
                 Navigator.pop(context, (author: author, title: title, content: content));
               },
               child: Text(l10n.communityRegister),

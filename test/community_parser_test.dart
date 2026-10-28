@@ -49,4 +49,16 @@ void main() {
     expect(comments.map((c) => c.time),
         [DateTime(2030, 1, 1, 10), DateTime(2030, 1, 1, 10, 1)]);
   });
+
+  test('reads the nickname the AI chose for a blank author', () {
+    const raw = "[Author]Name:'night owl'\n"
+        "[Comment]Auther:'a'|Time:'203001011000'|Content:'hi'";
+    expect(CommunityParser.parseChosenAuthor(raw), 'night owl');
+    expect(
+      CommunityParser.parseComments(raw, postId: 1).map((c) => c.content),
+      ['hi'],
+    );
+    expect(CommunityParser.parseChosenAuthor("[Author]Name:''"), isNull);
+    expect(CommunityParser.parseChosenAuthor("[Comment]Auther:'a'"), isNull);
+  });
 }
