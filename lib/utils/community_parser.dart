@@ -80,6 +80,19 @@ class CommunityParser {
     return comments;
   }
 
+  /// The nickname the AI chose for the user's entry when they left it
+  /// blank, from an `[Author]Name:'...'` line; null when the AI gave none.
+  static String? parseChosenAuthor(String raw) {
+    for (final line in raw.split('\n')) {
+      final trimmed = line.trim();
+      if (!trimmed.startsWith('[Author]')) continue;
+      final name = _extractFields(trimmed.substring('[Author]'.length))['Name']
+          ?.trim();
+      if (name != null && name.isNotEmpty) return name;
+    }
+    return null;
+  }
+
   /// The time for an entry made at [now] that must come after [latest]:
   /// [now] itself, or one minute after [latest] when [now] is not later.
   static DateTime nextTime(DateTime now, DateTime? latest) =>

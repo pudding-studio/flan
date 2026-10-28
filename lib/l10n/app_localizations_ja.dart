@@ -1892,6 +1892,9 @@ class AppLocalizationsJa extends AppLocalizations {
   String get communityNickname => 'ニックネーム';
 
   @override
+  String get communityNicknameAiHint => 'ニックネーム（空欄ならAIが決めます）';
+
+  @override
   String get communityTitle => 'タイトル';
 
   @override
