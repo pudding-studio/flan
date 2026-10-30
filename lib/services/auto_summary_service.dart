@@ -46,19 +46,26 @@ class AutoSummaryService {
     );
   }
 
-  /// Check if auto-summary should trigger (global settings, chatRoomId=0)
+  /// Check if auto-summary should trigger (global settings, chatRoomId=0).
+  /// Agent mode runs whenever a pin range is still uncovered, so a range
+  /// missed earlier is caught up even without a new pin.
   Future<bool> shouldTriggerSummary({
     required int chatRoomId,
     required int currentTokenCount,
+    required bool pinCreated,
   }) async {
     final settings = await _db.getAutoSummarySettings(0);
     if (settings == null || !settings.isEnabled) return false;
 
     if (settings.isAgentEnabled) {
-      _log('Agent mode: triggering on pin creation');
-      return true;
+      if (pinCreated) return true;
+      final pins = await _db.getAgentSummaryPins(chatRoomId);
+      final pending = pins.isNotEmpty && !pins.last.agentSummarized;
+      if (pending) _log('Agent mode: uncovered pin range found');
+      return pending;
     }
 
+    if (!pinCreated) return false;
     final shouldTrigger = currentTokenCount >= settings.tokenThreshold;
     if (shouldTrigger) {
       _log('Trigger condition met: $currentTokenCount >= ${settings.tokenThreshold} tokens');

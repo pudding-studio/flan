@@ -47,7 +47,7 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 60,
+      version: 61,
       onCreate: _createDB,
       onUpgrade: _upgradeDB,
     );
@@ -142,6 +142,7 @@ class DatabaseHelper {
     (table: 'chat_messages', column: 'emotion', def: 'TEXT'),
     (table: 'chat_messages', column: 'versions', def: 'TEXT'),
     (table: 'chat_messages', column: 'version_index', def: 'INTEGER NOT NULL DEFAULT 0'),
+    (table: 'chat_message_metadata', column: 'agent_summarized', def: 'INTEGER NOT NULL DEFAULT 0'),
   ];
 
   Future<void> _createDB(Database db, int version) async {
@@ -529,6 +530,7 @@ class DatabaseHelper {
         date $textTypeNullable,
         time $textTypeNullable,
         is_pinned $boolType,
+        agent_summarized $boolType,
         created_at $textType,
         FOREIGN KEY (chat_message_id) REFERENCES chat_messages (id) ON DELETE CASCADE,
         FOREIGN KEY (chat_room_id) REFERENCES chat_rooms (id) ON DELETE CASCADE
@@ -1633,6 +1635,16 @@ class DatabaseHelper {
       await _ensureColumn(db, 'chat_messages', 'versions', 'TEXT');
       await _ensureColumn(
           db, 'chat_messages', 'version_index', 'INTEGER NOT NULL DEFAULT 0');
+    }
+
+    if (oldVersion < 61) {
+      // Which pins the agent summary has covered, so a missed range is
+      // caught up later. Nothing records which past pins were covered, so
+      // existing pins count as done instead of being summarized twice.
+      await _ensureColumn(db, 'chat_message_metadata', 'agent_summarized',
+          'INTEGER NOT NULL DEFAULT 0');
+      await db.execute(
+          'UPDATE chat_message_metadata SET agent_summarized = 1 WHERE is_pinned = 1');
     }
   }
 
@@ -2994,6 +3006,38 @@ class DatabaseHelper {
       metadata.toMap(),
       where: 'id = ?',
       whereArgs: [metadata.id],
+    );
+  }
+
+  /// Pins of a chat room in message order, with whether the agent summary
+  /// has covered the range ending at each.
+  Future<List<({int metadataId, int messageId, bool agentSummarized})>>
+      getAgentSummaryPins(int chatRoomId) async {
+    final db = await database;
+    final rows = await db.rawQuery('''
+      SELECT m.id AS metadata_id, m.chat_message_id, m.agent_summarized
+      FROM chat_message_metadata m
+      JOIN chat_messages c ON c.id = m.chat_message_id
+      WHERE m.chat_room_id = ? AND m.is_pinned = 1
+      ORDER BY c.created_at ASC, c.id ASC
+    ''', [chatRoomId]);
+    return [
+      for (final row in rows)
+        (
+          metadataId: row['metadata_id'] as int,
+          messageId: row['chat_message_id'] as int,
+          agentSummarized: (row['agent_summarized'] as int? ?? 0) == 1,
+        ),
+    ];
+  }
+
+  Future<void> markPinsAgentSummarized(List<int> metadataIds) async {
+    if (metadataIds.isEmpty) return;
+    final db = await database;
+    final placeholders = List.filled(metadataIds.length, '?').join(', ');
+    await db.rawUpdate(
+      'UPDATE chat_message_metadata SET agent_summarized = 1 WHERE id IN ($placeholders)',
+      metadataIds,
     );
   }
 

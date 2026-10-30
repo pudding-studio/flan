@@ -549,15 +549,26 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         );
       }
     } finally {
-      // Show the reply first; summarizing afterwards keeps the input locked
-      // so the next send already includes the new summary.
-      final reply = replyText;
-      final summarize = reply != null && pinCreated && await _shouldSummarize();
-      await _finishSending(
-        nextPhase: summarize ? SendingPhase.summarizing : SendingPhase.none,
-      );
-      if (reply != null) await _runAfterReply(reply, summarize: summarize);
+      await _completeReply(replyText, pinCreated: pinCreated);
     }
+  }
+
+  /// Shows the new reply first, then summarizes (keeping the input locked
+  /// so the next send already includes the new summary) and follows the
+  /// reply's future plan. Without a reply only the screen is refreshed.
+  Future<void> _completeReply(
+    String? reply, {
+    required bool pinCreated,
+    bool followFuturePlan = true,
+  }) async {
+    final summarize =
+        reply != null && await _shouldSummarize(pinCreated: pinCreated);
+    await _finishSending(
+      nextPhase: summarize ? SendingPhase.summarizing : SendingPhase.none,
+    );
+    if (reply == null) return;
+    await _runAfterReply(summarize: summarize);
+    if (followFuturePlan) await _processFuturePlan(reply);
   }
 
   /// Puts the user's own message on screen as soon as it is saved, instead
@@ -587,14 +598,16 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     });
   }
 
-  /// Automatic summaries run only once a new pin was created.
-  Future<bool> _shouldSummarize() async {
+  /// Automatic summaries run once a new pin was created; agent summaries
+  /// also catch up pin ranges an earlier run missed.
+  Future<bool> _shouldSummarize({required bool pinCreated}) async {
     try {
       final latestChatRoom = await _db.readChatRoom(widget.chatRoomId);
       if (latestChatRoom == null) return false;
       return await _autoSummaryService.shouldTriggerSummary(
         chatRoomId: widget.chatRoomId,
         currentTokenCount: latestChatRoom.totalTokenCount,
+        pinCreated: pinCreated,
       );
     } catch (e) {
       debugPrint('Summary trigger check failed: $e');
@@ -602,10 +615,10 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     }
   }
 
-  /// Work that follows a reply without holding it back: the automatic
-  /// summary, then the agent's future plan (after the summary, so the plan
-  /// takes priority). A failure here never undoes or resends the reply.
-  Future<void> _runAfterReply(String reply, {required bool summarize}) async {
+  /// The automatic summary after a reply; it runs before the future plan so
+  /// the plan takes priority. A failure here never undoes or resends the
+  /// reply.
+  Future<void> _runAfterReply({required bool summarize}) async {
     try {
       if (summarize) {
         await _autoSummaryService.generateAllPendingSummaries(
@@ -626,7 +639,6 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         if (mounted) setState(() => _sendingPhase = SendingPhase.none);
       }
     }
-    await _processFuturePlan(reply);
   }
 
   Future<void> _processFuturePlan(String reply) async {
@@ -746,19 +758,21 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       return;
     }
     final existingMetadata = _metadataMap[message.id!];
-    final newMetadata = ChatMessageMetadata(
-      chatMessageId: message.id!,
-      chatRoomId: widget.chatRoomId,
-      location: parsed.location,
-      date: parsed.date,
-      time: parsed.time,
-    );
     if (existingMetadata != null) {
-      await _db.updateChatMessageMetadata(
-        newMetadata.copyWith(id: existingMetadata.id),
-      );
+      // Keep the pin: only the tags the content now carries change.
+      await _db.updateChatMessageMetadata(existingMetadata.copyWith(
+        location: parsed.location,
+        date: parsed.date,
+        time: parsed.time,
+      ));
     } else {
-      await _db.createChatMessageMetadata(newMetadata);
+      await _db.createChatMessageMetadata(ChatMessageMetadata(
+        chatMessageId: message.id!,
+        chatRoomId: widget.chatRoomId,
+        location: parsed.location,
+        date: parsed.date,
+        time: parsed.time,
+      ));
     }
   }
 
@@ -1028,6 +1042,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     setState(() => _sendingPhase = SendingPhase.preparing);
 
     String? replyText;
+    var pinCreated = false;
     try {
       final tokenizerProvider = context.read<TokenizerProvider>();
       final tokenizer = tokenizerProvider.selectedTokenizer;
@@ -1076,7 +1091,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           final assistantMessageId = await _db.createChatMessage(assistantMessage);
           _playAiReplyNotification();
           _pickEmotion(assistantMessageId, responseText2);
-          await _saveMessageMetadata(assistantMessageId, responseText2);
+          pinCreated =
+              await _saveMessageMetadata(assistantMessageId, responseText2);
 
           replyText = responseText2;
 
@@ -1096,9 +1112,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         SnackBar(content: Text(message)),
       );
     } finally {
-      await _finishSending();
-      final reply = replyText;
-      if (reply != null) await _processFuturePlan(reply);
+      await _completeReply(replyText, pinCreated: pinCreated);
     }
   }
 
@@ -1148,6 +1162,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
 
     setState(() => _sendingPhase = SendingPhase.preparing);
 
+    String? replyText;
+    var pinCreated = false;
     try {
       final tokenizerProvider = context.read<TokenizerProvider>();
       final tokenizer = tokenizerProvider.selectedTokenizer;
@@ -1210,7 +1226,8 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           _playAiReplyNotification();
           _pickEmotion(messageId, responseText3);
           await _db.deleteChatMessageMetadataByMessage(messageId);
-          await _saveMessageMetadata(messageId, responseText3);
+          pinCreated = await _saveMessageMetadata(messageId, responseText3);
+          replyText = responseText3;
 
           // 채팅방 토큰 합산 업데이트
           await _db.updateChatRoomTotalTokenCount(widget.chatRoomId);
@@ -1227,7 +1244,11 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         SnackBar(content: Text(message)),
       );
     } finally {
-      await _finishSending();
+      await _completeReply(
+        replyText,
+        pinCreated: pinCreated,
+        followFuturePlan: false,
+      );
     }
   }
 
