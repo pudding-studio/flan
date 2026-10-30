@@ -139,6 +139,7 @@ flutter build windows --release
 - 공개 트리거:
   - 칩 / 아래 화살표 FAB 탭
   - 위로 스크롤된 상태에서 다시 하단으로 돌아오는 transition (`_onScrollChanged`에서 `wasShowingButtons && !nowShowButtons && _hiddenNewMessageCount > 0`)
+  - 사용자가 메시지를 보낼 때 (`_showSentMessage`): 보낸 메시지는 답변을 기다리지 않고 저장 직후 바로 렌더(답변 대기 중에도 보이고 편집 가능)하며, 이때 숨겨진 메시지도 함께 공개하고 index 0으로 스크롤한다. 답변 도착은 기존 규약(`_finishSending`)을 그대로 따른다.
 
 ### 참고 커밋
 

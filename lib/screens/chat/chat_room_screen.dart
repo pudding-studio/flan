@@ -453,6 +453,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
         );
         await _db.updateChatMessage(updatedUserMessage);
         excludeId = lastUserMessage.id!;
+        _showSentMessage(updatedUserMessage);
       } else {
         combinedUserMessage = favoritePrefix.isNotEmpty
             ? '$favoritePrefix\n\n$text'
@@ -465,6 +466,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
           tokenCount: tokenCount,
         );
         excludeId = await _db.createChatMessage(userMessage);
+        _showSentMessage(userMessage.copyWith(id: excludeId));
       }
 
       // Mark favorite posts as used
@@ -556,6 +558,33 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       );
       if (reply != null) await _runAfterReply(reply, summarize: summarize);
     }
+  }
+
+  /// Puts the user's own message on screen as soon as it is saved, instead
+  /// of with the reply, so it can be read and edited while the reply is
+  /// pending. Sending is the user's own action at the bottom of the chat,
+  /// so anything still held back by deferred rendering is revealed with it.
+  void _showSentMessage(ChatMessage message) {
+    if (!mounted) return;
+    setState(() {
+      final index = _messages.indexWhere((m) => m.id == message.id);
+      _messages = index == -1
+          ? [..._messages, message]
+          : [
+              for (var i = 0; i < _messages.length; i++)
+                i == index ? message : _messages[i],
+            ];
+      _hiddenNewMessageCount = 0;
+      _hasNewMessage = false;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_itemScrollController.isAttached) return;
+      _itemScrollController.scrollTo(
+        index: 0,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    });
   }
 
   /// Automatic summaries run only once a new pin was created.
