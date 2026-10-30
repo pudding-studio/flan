@@ -1572,5 +1572,9 @@
   "emotionModeClassifierHelp": "After each reply the sub model picks one emotion, shown above the message. Adds one sub model call per reply.",
   "emotionModeInlineHelp": "The AI writes an <Emotion=\"name\"> tag in its reply and the image is shown there. No extra call, but the AI may leave the tag out.",
   "emotionInstructionsHelp": "Instructions for picking the emotion. Leave empty to use the RisuAI default.",
-  "communityNicknameAiHint": "Nickname (leave empty to let the AI choose)"
+  "communityNicknameAiHint": "Nickname (leave empty to let the AI choose)",
+  "chatRoomSummarizeUpToTitle": "Summarize up to here",
+  "chatRoomSummarizeUpToContent": "Summarizes from the start or the previous pin up to this message. The message is pinned if it is not already.",
+  "chatRoomSummarizeUpToConfirm": "Summarize",
+  "chatRoomSummaryCreated": "Summary created"
 }

@@ -818,6 +818,51 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     return shouldPin;
   }
 
+  /// Summarizes from the start or the previous pin up to [messageId], for
+  /// a range the automatic summary missed. The range has to end at a pin
+  /// so the next automatic range starts after it, so the message is pinned.
+  Future<void> _summarizeUpTo(int messageId) async {
+    if (_isSending) return;
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await CommonDialog.showConfirmation(
+      context: context,
+      title: l10n.chatRoomSummarizeUpToTitle,
+      content: l10n.chatRoomSummarizeUpToContent,
+      confirmText: l10n.chatRoomSummarizeUpToConfirm,
+    );
+    if (confirmed != true || !mounted) return;
+    final metadata = _metadataMap[messageId];
+    if (metadata == null) return;
+
+    setState(() => _sendingPhase = SendingPhase.summarizing);
+    try {
+      if (!metadata.isPinned) {
+        await _db.updateChatMessageMetadata(metadata.copyWith(isPinned: true));
+      }
+      await _autoSummaryService.summarizeUpTo(
+        chatRoomId: widget.chatRoomId,
+        pinMessageId: messageId,
+      );
+      if (mounted) {
+        CommonDialog.showSnackBar(
+            context: context, message: l10n.chatRoomSummaryCreated);
+      }
+    } catch (e) {
+      debugPrint('Manual summary failed: $e');
+      if (mounted) {
+        CommonDialog.showSnackBar(
+          context: context,
+          message: l10n.chatRoomSummaryFailed(e.toString()),
+        );
+      }
+    } finally {
+      if (mounted) {
+        await _loadChatData(showLoading: false);
+        if (mounted) setState(() => _sendingPhase = SendingPhase.none);
+      }
+    }
+  }
+
   Future<void> _togglePin(int messageId) async {
     final metadata = _metadataMap[messageId];
     if (metadata == null || metadata.id == null) return;
@@ -1292,6 +1337,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
       searchQuery: _searchController.inputController.text,
       searchHighlightKey: _searchController.highlightKey,
       onTogglePin: () => _togglePin(message.id!),
+      onSummarizeUpTo: () => _summarizeUpTo(message.id!),
       onShowUsage: () => ChatUsageMetadataDialog.show(context, message),
       onCancelEdit: _editController.cancel,
       onSaveEdit: () => _saveEditMessage(message),

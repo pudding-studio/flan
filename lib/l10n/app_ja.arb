@@ -1572,5 +1572,9 @@
   "emotionModeClassifierHelp": "返答の後にサブモデルが感情を1つ選び、メッセージの上に表示します。返答ごとにサブモデルの呼び出しが1回増えます。",
   "emotionModeInlineHelp": "AIが返答に<Emotion=\"名前\">タグを書き、その位置に画像を表示します。追加の呼び出しはありませんが、AIがタグを省くことがあります。",
   "emotionInstructionsHelp": "感情を選ばせる指示文です。空欄の場合はRisuAIのデフォルトを使用します。",
-  "communityNicknameAiHint": "ニックネーム（空欄ならAIが決めます）"
+  "communityNicknameAiHint": "ニックネーム（空欄ならAIが決めます）",
+  "chatRoomSummarizeUpToTitle": "ここまで要約",
+  "chatRoomSummarizeUpToContent": "最初または直前のピンからこのメッセージまでを要約します。このメッセージがピン留めされていなければ、あわせてピン留めします。",
+  "chatRoomSummarizeUpToConfirm": "要約",
+  "chatRoomSummaryCreated": "要約を作成しました"
 }

@@ -79,6 +79,42 @@ void main() {
     });
   });
 
+  group('manual range', () {
+    test('runs from the previous pin to the tapped pin', () {
+      final range = agentSummaryRangeUpTo(
+        messageIds: messages,
+        pins: [_pin(4, done: true), _pin(8), _pin(12)],
+        pinMessageId: 8,
+      );
+      expect(range?.messageIds, [5, 6, 7, 8]);
+      expect(range?.pinMetadataId, 80);
+    });
+
+    test('runs from the start when there is no earlier pin', () {
+      final range = agentSummaryRangeUpTo(
+        messageIds: messages,
+        pins: [_pin(6), _pin(12)],
+        pinMessageId: 6,
+      );
+      expect(range?.messageIds, [1, 2, 3, 4, 5, 6]);
+    });
+
+    test('ignores later pins and needs the tapped message to be a pin', () {
+      expect(
+        agentSummaryRangeUpTo(
+          messageIds: messages,
+          pins: [_pin(10)],
+          pinMessageId: 10,
+        )?.messageIds.first,
+        1,
+      );
+      expect(
+        agentSummaryRangeUpTo(messageIds: messages, pins: [_pin(10)], pinMessageId: 5),
+        isNull,
+      );
+    });
+  });
+
   group('database', () {
     final db = DatabaseHelper.instance;
 

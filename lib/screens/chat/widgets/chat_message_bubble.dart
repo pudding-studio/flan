@@ -58,6 +58,9 @@ class ChatMessageBubble extends StatelessWidget {
   final GlobalKey? searchHighlightKey;
 
   final VoidCallback onTogglePin;
+
+  /// Summarizes from the start or the previous pin up to this message.
+  final VoidCallback onSummarizeUpTo;
   final VoidCallback onShowUsage;
   final VoidCallback onCancelEdit;
   final VoidCallback onSaveEdit;
@@ -89,6 +92,7 @@ class ChatMessageBubble extends StatelessWidget {
     required this.searchQuery,
     required this.searchHighlightKey,
     required this.onTogglePin,
+    required this.onSummarizeUpTo,
     required this.onShowUsage,
     required this.onCancelEdit,
     required this.onSaveEdit,
@@ -194,6 +198,13 @@ class ChatMessageBubble extends StatelessWidget {
                           : theme.colorScheme.onSurfaceVariant
                               .withValues(alpha: 0.4),
                       onPressed: onTogglePin,
+                    ),
+                  if (hasMetadata)
+                    _CompactIconButton(
+                      icon: Icons.summarize_outlined,
+                      color: theme.colorScheme.onSurfaceVariant
+                          .withValues(alpha: 0.4),
+                      onPressed: onSummarizeUpTo,
                     ),
                   if (!isUser && message.versionCount > 1 && !isEditing)
                     _VersionSelector(

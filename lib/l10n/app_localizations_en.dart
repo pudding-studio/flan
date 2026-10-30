@@ -988,6 +988,18 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get chatRoomSummarizeUpToTitle => 'Summarize up to here';
+
+  @override
+  String get chatRoomSummarizeUpToContent => 'Summarizes from the start or the previous pin up to this message. The message is pinned if it is not already.';
+
+  @override
+  String get chatRoomSummarizeUpToConfirm => 'Summarize';
+
+  @override
+  String get chatRoomSummaryCreated => 'Summary created';
+
+  @override
   String get chatRoomMessageItemName => 'This Message';
 
   @override

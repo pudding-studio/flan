@@ -972,6 +972,18 @@ class AppLocalizationsKo extends AppLocalizations {
   }
 
   @override
+  String get chatRoomSummarizeUpToTitle => '여기까지 요약';
+
+  @override
+  String get chatRoomSummarizeUpToContent => '처음 또는 직전 핀부터 이 메시지까지를 요약합니다. 이 메시지가 핀으로 고정되어 있지 않으면 함께 고정됩니다.';
+
+  @override
+  String get chatRoomSummarizeUpToConfirm => '요약';
+
+  @override
+  String get chatRoomSummaryCreated => '요약을 만들었습니다';
+
+  @override
   String get chatRoomMessageItemName => '이 메시지';
 
   @override

@@ -5,6 +5,7 @@ import '../database/database_helper.dart';
 import '../models/character/character_book_folder.dart';
 import '../models/character/persona.dart';
 import '../models/character/start_scenario.dart';
+import '../models/chat/auto_summary_settings.dart';
 import '../models/chat/chat_model.dart';
 import '../models/chat/chat_summary.dart';
 import '../models/chat/chat_message.dart';
@@ -131,18 +132,6 @@ class AutoSummaryService {
       _log('Latest eligible pin already summarized, skipping older gaps (user-deleted)');
     }
 
-    // Parse parameters
-    PromptParameters? promptParameters;
-    if (settings.parameters != null && settings.parameters!.isNotEmpty) {
-      promptParameters = PromptParameters.fromJson(jsonDecode(settings.parameters!));
-    }
-
-    // Parse prompt items
-    final promptItems = settings.summaryPromptItems != null &&
-            settings.summaryPromptItems!.isNotEmpty
-        ? SummaryPromptItem.listFromJson(settings.summaryPromptItems)
-        : <SummaryPromptItem>[];
-
     _log('Found ${eligiblePinIds.length} eligible pins (out of ${pinnedMessageIds.length}), '
         '${existingSummaries.length} existing summaries');
 
@@ -167,51 +156,20 @@ class AutoSummaryService {
       _log('Generating summary for range [$startPinId → $endPinId] (${messagesToSummarize.length} messages)');
 
       try {
-        // Reload keywords each iteration so {{chat_historys}} includes previously generated summaries
-        final keywords = await _loadKeywordMap(chatRoomId);
-        final conversationText = _buildConversationText(messagesToSummarize);
-
-        String systemPrompt = '';
-        List<Map<String, dynamic>> contents = [];
-
-        if (promptItems.isNotEmpty) {
-          final result = _buildPromptFromItems(promptItems, conversationText, keywords);
-          systemPrompt = result.systemPrompt;
-          contents = result.contents;
-        } else {
-          // Fallback: legacy single prompt
-          final replacedPrompt = PromptBuilder.replaceKeywords(settings.summaryPrompt, keywords);
-          final summaryPrompt = '$replacedPrompt\n\n$conversationText';
-          contents = [
-            {
-              'role': 'user',
-              'parts': [{'text': summaryPrompt}]
-            }
-          ];
-        }
-
-        final summaryModel = settings.useSubModel
-            ? await _resolveSubModel()
-            : await _resolveModel(settings.summaryModel);
-        final response = await _aiService.sendMessage(
-          systemPrompt: systemPrompt,
-          contents: contents,
-          model: summaryModel,
-          promptParameters: promptParameters,
-          chatRoomId: chatRoomId,
-          logType: 'auto_summary',
-        );
-
+        // Requested one range at a time so {{chat_historys}} includes the
+        // summaries generated just before.
+        final result =
+            await _requestSummary(chatRoomId, settings, messagesToSummarize);
         final summary = ChatSummary(
           chatRoomId: chatRoomId,
           startPinMessageId: startPinId,
           endPinMessageId: endPinId,
-          summaryContent: response.text,
-          tokenCount: response.usageMetadata?.totalTokenCount ?? 0,
+          summaryContent: result.text,
+          tokenCount: result.tokenCount,
         );
         await _db.createChatSummary(summary);
         generatedCount++;
-        _logSuccess('Summary generated for range [$startPinId → $endPinId], tokens: ${response.usageMetadata?.totalTokenCount ?? 0}');
+        _logSuccess('Summary generated for range [$startPinId → $endPinId], tokens: ${result.tokenCount}');
       } catch (e) {
         _logError('Failed to generate summary for pin $endPinId: $e');
       }
@@ -342,6 +300,122 @@ class AutoSummaryService {
     );
   }
 
+  /// Asks the summary model for a summary of [messages] with the user's
+  /// summary prompt, model and parameters.
+  Future<({String text, int tokenCount})> _requestSummary(
+    int chatRoomId,
+    AutoSummarySettings settings,
+    List<ChatMessage> messages,
+  ) async {
+    PromptParameters? promptParameters;
+    if (settings.parameters != null && settings.parameters!.isNotEmpty) {
+      promptParameters = PromptParameters.fromJson(jsonDecode(settings.parameters!));
+    }
+
+    final promptItems = settings.summaryPromptItems != null &&
+            settings.summaryPromptItems!.isNotEmpty
+        ? SummaryPromptItem.listFromJson(settings.summaryPromptItems)
+        : <SummaryPromptItem>[];
+
+    final keywords = await _loadKeywordMap(chatRoomId);
+    final conversationText = _buildConversationText(messages);
+
+    String systemPrompt = '';
+    List<Map<String, dynamic>> contents = [];
+
+    if (promptItems.isNotEmpty) {
+      final result = _buildPromptFromItems(promptItems, conversationText, keywords);
+      systemPrompt = result.systemPrompt;
+      contents = result.contents;
+    } else {
+      // Fallback: legacy single prompt
+      final replacedPrompt = PromptBuilder.replaceKeywords(settings.summaryPrompt, keywords);
+      final summaryPrompt = '$replacedPrompt\n\n$conversationText';
+      contents = [
+        {
+          'role': 'user',
+          'parts': [{'text': summaryPrompt}]
+        }
+      ];
+    }
+
+    final summaryModel = settings.useSubModel
+        ? await _resolveSubModel()
+        : await _resolveModel(settings.summaryModel);
+    final response = await _aiService.sendMessage(
+      systemPrompt: systemPrompt,
+      contents: contents,
+      model: summaryModel,
+      promptParameters: promptParameters,
+      chatRoomId: chatRoomId,
+      logType: 'auto_summary',
+    );
+    return (
+      text: response.text,
+      tokenCount: response.usageMetadata?.totalTokenCount ?? 0,
+    );
+  }
+
+  /// Summarizes, on request, the messages from the start or the previous
+  /// pin up to the pinned message [pinMessageId] — in agent mode as agent
+  /// entries, otherwise as that range's summary (replacing an existing one).
+  /// Throws when the range cannot be summarized.
+  Future<void> summarizeUpTo({
+    required int chatRoomId,
+    required int pinMessageId,
+  }) async {
+    final settings = await _db.getAutoSummarySettings(0);
+    if (settings == null) {
+      throw Exception('Auto summary settings not found');
+    }
+    if (settings.isAgentEnabled) {
+      await AgentSummaryService()
+          .summarizeUpTo(chatRoomId: chatRoomId, pinMessageId: pinMessageId);
+      return;
+    }
+
+    final allMessages = await _db.readChatMessagesByChatRoom(chatRoomId);
+    final position = {
+      for (var i = 0; i < allMessages.length; i++) allMessages[i].id: i,
+    };
+    final pinIndex = position[pinMessageId];
+    if (pinIndex == null) throw Exception('Message not found');
+    final earlierPins = (await _getPinnedMessageIds(chatRoomId))
+        .where((id) => (position[id] ?? pinIndex) < pinIndex)
+        .toList()
+      ..sort((a, b) => position[a]!.compareTo(position[b]!));
+    final startPinId = earlierPins.isEmpty ? 0 : earlierPins.last;
+
+    final messages = _getMessagesInRange(
+      allMessages: allMessages,
+      startPinMessageId: startPinId,
+      endPinMessageId: pinMessageId,
+    );
+    if (messages.isEmpty) throw Exception('No messages found in summary range');
+
+    final result = await _requestSummary(chatRoomId, settings, messages);
+    final existing = (await _db.getChatSummaries(chatRoomId))
+        .where((s) => s.endPinMessageId == pinMessageId)
+        .firstOrNull;
+    if (existing != null) {
+      await _db.updateChatSummary(existing.copyWith(
+        startPinMessageId: startPinId,
+        summaryContent: result.text,
+        tokenCount: result.tokenCount,
+        updatedAt: DateTime.now(),
+      ));
+    } else {
+      await _db.createChatSummary(ChatSummary(
+        chatRoomId: chatRoomId,
+        startPinMessageId: startPinId,
+        endPinMessageId: pinMessageId,
+        summaryContent: result.text,
+        tokenCount: result.tokenCount,
+      ));
+    }
+    _logSuccess('Manual summary for range [$startPinId → $pinMessageId]');
+  }
+
   /// Regenerate a single existing summary by re-fetching messages in its range
   Future<ChatSummary> regenerateSummary({
     required ChatSummary summary,
@@ -364,59 +438,18 @@ class AutoSummaryService {
       throw Exception('No messages found in summary range');
     }
 
-    PromptParameters? promptParameters;
-    if (settings.parameters != null && settings.parameters!.isNotEmpty) {
-      promptParameters = PromptParameters.fromJson(jsonDecode(settings.parameters!));
-    }
-
-    final promptItems = settings.summaryPromptItems != null &&
-            settings.summaryPromptItems!.isNotEmpty
-        ? SummaryPromptItem.listFromJson(settings.summaryPromptItems)
-        : <SummaryPromptItem>[];
-
-    final keywords = await _loadKeywordMap(chatRoomId);
-    final conversationText = _buildConversationText(messagesToSummarize);
-
-    String systemPrompt = '';
-    List<Map<String, dynamic>> contents = [];
-
-    if (promptItems.isNotEmpty) {
-      final result = _buildPromptFromItems(promptItems, conversationText, keywords);
-      systemPrompt = result.systemPrompt;
-      contents = result.contents;
-    } else {
-      final replacedPrompt = PromptBuilder.replaceKeywords(settings.summaryPrompt, keywords);
-      final summaryPrompt = '$replacedPrompt\n\n$conversationText';
-      contents = [
-        {
-          'role': 'user',
-          'parts': [{'text': summaryPrompt}]
-        }
-      ];
-    }
-
     _log('Regenerating summary #${summary.id} for range [${summary.startPinMessageId} → ${summary.endPinMessageId}]');
 
-    final summaryModel = settings.useSubModel
-        ? await _resolveSubModel()
-        : await _resolveModel(settings.summaryModel);
-    final response = await _aiService.sendMessage(
-      systemPrompt: systemPrompt,
-      contents: contents,
-      model: summaryModel,
-      promptParameters: promptParameters,
-      chatRoomId: chatRoomId,
-      logType: 'auto_summary',
-    );
-
+    final result =
+        await _requestSummary(chatRoomId, settings, messagesToSummarize);
     final updated = summary.copyWith(
-      summaryContent: response.text,
-      tokenCount: response.usageMetadata?.totalTokenCount ?? 0,
+      summaryContent: result.text,
+      tokenCount: result.tokenCount,
       updatedAt: DateTime.now(),
     );
     await _db.updateChatSummary(updated);
 
-    _logSuccess('Summary #${summary.id} regenerated, tokens: ${response.usageMetadata?.totalTokenCount ?? 0}');
+    _logSuccess('Summary #${summary.id} regenerated, tokens: ${result.tokenCount}');
     return updated;
   }
 

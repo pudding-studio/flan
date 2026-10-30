@@ -1876,6 +1876,30 @@ abstract class AppLocalizations {
   /// **'자동 요약 중 오류가 발생했습니다: {error}'**
   String chatRoomSummaryFailed(String error);
 
+  /// No description provided for @chatRoomSummarizeUpToTitle.
+  ///
+  /// In ko, this message translates to:
+  /// **'여기까지 요약'**
+  String get chatRoomSummarizeUpToTitle;
+
+  /// No description provided for @chatRoomSummarizeUpToContent.
+  ///
+  /// In ko, this message translates to:
+  /// **'처음 또는 직전 핀부터 이 메시지까지를 요약합니다. 이 메시지가 핀으로 고정되어 있지 않으면 함께 고정됩니다.'**
+  String get chatRoomSummarizeUpToContent;
+
+  /// No description provided for @chatRoomSummarizeUpToConfirm.
+  ///
+  /// In ko, this message translates to:
+  /// **'요약'**
+  String get chatRoomSummarizeUpToConfirm;
+
+  /// No description provided for @chatRoomSummaryCreated.
+  ///
+  /// In ko, this message translates to:
+  /// **'요약을 만들었습니다'**
+  String get chatRoomSummaryCreated;
+
   /// No description provided for @chatRoomMessageItemName.
   ///
   /// In ko, this message translates to:

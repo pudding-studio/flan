@@ -181,31 +181,18 @@ class AgentSummaryService {
         return;
       }
 
-      final settings = await _db.getAutoSummarySettings(0);
-      if (settings == null) return;
-
-      PromptParameters? promptParameters;
-      if (settings.parameters != null && settings.parameters!.isNotEmpty) {
-        promptParameters = PromptParameters.fromJson(jsonDecode(settings.parameters!));
-      }
-
-      final model = settings.useSubModel
-          ? await _resolveSubModel()
-          : await _resolveModel(settings.summaryModel);
+      final setup = await _loadExtractionSetup();
+      if (setup == null) return;
 
       final byId = {for (final m in allMessages) if (m.id != null) m.id!: m};
       var summarized = 0;
       for (final range in plan.ranges) {
         final messages = [for (final id in range.messageIds) byId[id]!];
-        final context = await _buildContext(chatRoomId, messages);
-        final extracted =
-            await _extractStructuredData(context, model, promptParameters, chatRoomId);
-        if (extracted == null) {
+        if (!await _summarizeRange(chatRoomId, messages, setup)) {
           // Keep the order: later ranges wait until this one succeeds.
           _logError('Extraction failed for pin ${range.pinMessageId}; will retry');
           break;
         }
-        await _mergeEntries(chatRoomId, extracted);
         await _db.markPinsAgentSummarized([range.pinMetadataId]);
         summarized++;
       }
@@ -216,6 +203,64 @@ class AgentSummaryService {
     } catch (e) {
       _logError('Agent summary failed: $e');
     }
+  }
+
+  /// Summarizes, on request, the messages from the start or the previous
+  /// pin up to the pin [pinMessageId], and marks that pin covered. Throws
+  /// when the range cannot be summarized.
+  Future<void> summarizeUpTo({
+    required int chatRoomId,
+    required int pinMessageId,
+  }) async {
+    final allMessages = await _db.readChatMessagesByChatRoom(chatRoomId);
+    final messageIds = [for (final m in allMessages) if (m.id != null) m.id!];
+    final pins = await _db.getAgentSummaryPins(chatRoomId);
+    final range = agentSummaryRangeUpTo(
+      messageIds: messageIds,
+      pins: pins,
+      pinMessageId: pinMessageId,
+    );
+    if (range == null) throw Exception('No messages found in summary range');
+
+    final setup = await _loadExtractionSetup();
+    if (setup == null) throw Exception('Auto summary settings not found');
+    final byId = {for (final m in allMessages) if (m.id != null) m.id!: m};
+    final messages = [for (final id in range.messageIds) byId[id]!];
+    if (!await _summarizeRange(chatRoomId, messages, setup)) {
+      throw Exception('Failed to extract structured data');
+    }
+    await _db.markPinsAgentSummarized([range.pinMetadataId]);
+    await _updateActivation(chatRoomId);
+    _logSuccess('Manual agent summary up to pin $pinMessageId');
+  }
+
+  Future<({UnifiedModel model, PromptParameters? parameters})?>
+      _loadExtractionSetup() async {
+    final settings = await _db.getAutoSummarySettings(0);
+    if (settings == null) return null;
+    PromptParameters? parameters;
+    if (settings.parameters != null && settings.parameters!.isNotEmpty) {
+      parameters = PromptParameters.fromJson(jsonDecode(settings.parameters!));
+    }
+    final model = settings.useSubModel
+        ? await _resolveSubModel()
+        : await _resolveModel(settings.summaryModel);
+    return (model: model, parameters: parameters);
+  }
+
+  /// Extracts entries from one range and merges them; false when the AI
+  /// answer could not be used.
+  Future<bool> _summarizeRange(
+    int chatRoomId,
+    List<ChatMessage> messages,
+    ({UnifiedModel model, PromptParameters? parameters}) setup,
+  ) async {
+    final context = await _buildContext(chatRoomId, messages);
+    final extracted = await _extractStructuredData(
+        context, setup.model, setup.parameters, chatRoomId);
+    if (extracted == null) return false;
+    await _mergeEntries(chatRoomId, extracted);
+    return true;
   }
 
   /// Context for AI extraction: one pin range + existing entries.
@@ -807,6 +852,29 @@ class AgentSummaryRange {
     required this.pinMessageId,
     required this.messageIds,
   });
+}
+
+/// The range ending at the pin [pinMessageId]: from the start or the
+/// previous pin. Null when that message is not a pin.
+AgentSummaryRange? agentSummaryRangeUpTo({
+  required List<int> messageIds,
+  required List<({int metadataId, int messageId, bool agentSummarized})> pins,
+  required int pinMessageId,
+}) {
+  final position = {for (var i = 0; i < messageIds.length; i++) messageIds[i]: i};
+  final end = position[pinMessageId];
+  final pin = pins.where((p) => p.messageId == pinMessageId).firstOrNull;
+  if (end == null || pin == null) return null;
+  var start = 0;
+  for (final other in pins) {
+    final at = position[other.messageId];
+    if (at != null && at < end && at + 1 > start) start = at + 1;
+  }
+  return AgentSummaryRange(
+    pinMetadataId: pin.metadataId,
+    pinMessageId: pinMessageId,
+    messageIds: messageIds.sublist(start, end + 1),
+  );
 }
 
 /// Decides which pin ranges to summarize. Pins before the newest covered

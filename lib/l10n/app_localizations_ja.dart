@@ -966,6 +966,18 @@ class AppLocalizationsJa extends AppLocalizations {
   }
 
   @override
+  String get chatRoomSummarizeUpToTitle => 'ここまで要約';
+
+  @override
+  String get chatRoomSummarizeUpToContent => '最初または直前のピンからこのメッセージまでを要約します。このメッセージがピン留めされていなければ、あわせてピン留めします。';
+
+  @override
+  String get chatRoomSummarizeUpToConfirm => '要約';
+
+  @override
+  String get chatRoomSummaryCreated => '要約を作成しました';
+
+  @override
   String get chatRoomMessageItemName => 'このメッセージ';
 
   @override
