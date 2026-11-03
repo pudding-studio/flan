@@ -1576,5 +1576,9 @@
   "chatRoomSummarizeUpToTitle": "Summarize up to here",
   "chatRoomSummarizeUpToContent": "Summarizes from the start or the previous pin up to this message. The message is pinned if it is not already.",
   "chatRoomSummarizeUpToConfirm": "Summarize",
-  "chatRoomSummaryCreated": "Summary created"
+  "chatRoomSummaryCreated": "Summary created",
+  "communityEditPost": "Edit post",
+  "communityEditComment": "Edit comment",
+  "diaryEdit": "Edit diary",
+  "newsEditArticle": "Edit article"
 }

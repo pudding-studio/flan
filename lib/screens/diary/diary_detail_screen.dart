@@ -1,11 +1,43 @@
 import 'package:flutter/material.dart';
+import '../../database/database_helper.dart';
 import '../../l10n/app_localizations.dart';
 import '../../models/diary/diary_entry.dart';
+import '../../widgets/common/edit_text_entry_sheet.dart';
 
-class DiaryDetailScreen extends StatelessWidget {
+/// Lets the user fix the title and text of [entry]; returns the saved
+/// entry, or null when the edit was cancelled.
+Future<DiaryEntry?> editDiaryEntry(BuildContext context, DiaryEntry entry) async {
+  final edited = await EditTextEntrySheet.show(
+    context,
+    heading: AppLocalizations.of(context).diaryEdit,
+    title: entry.title,
+    content: entry.content,
+  );
+  if (edited == null) return null;
+  await DatabaseHelper.instance.updateDiaryEntryText(
+    entry.id!,
+    title: edited.title!,
+    content: edited.content,
+  );
+  return entry.copyWith(title: edited.title, content: edited.content);
+}
+
+class DiaryDetailScreen extends StatefulWidget {
   final DiaryEntry entry;
 
   const DiaryDetailScreen({super.key, required this.entry});
+
+  @override
+  State<DiaryDetailScreen> createState() => _DiaryDetailScreenState();
+}
+
+class _DiaryDetailScreenState extends State<DiaryDetailScreen> {
+  late DiaryEntry entry = widget.entry;
+
+  Future<void> _edit() async {
+    final edited = await editDiaryEntry(context, entry);
+    if (edited != null && mounted) setState(() => entry = edited);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -20,6 +52,13 @@ class DiaryDetailScreen extends StatelessWidget {
         foregroundColor: onSecondary,
         iconTheme: IconThemeData(color: onSecondary),
         title: Text(AppLocalizations.of(context).diaryTitle(entry.author), style: TextStyle(color: onSecondary)),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: AppLocalizations.of(context).commonEdit,
+            onPressed: _edit,
+          ),
+        ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),

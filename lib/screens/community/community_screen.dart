@@ -3,6 +3,7 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../l10n/app_localizations.dart';
+import '../../widgets/common/edit_text_entry_sheet.dart';
 import '../../database/database_helper.dart';
 import '../../models/prompt/auxiliary_prompt.dart';
 import '../../services/auxiliary_prompt_service.dart';
@@ -552,6 +553,40 @@ class _CommunityScreenState extends State<CommunityScreen> {
     );
   }
 
+  Future<void> _editPost(CommunityPost post) async {
+    final edited = await EditTextEntrySheet.show(
+      context,
+      heading: AppLocalizations.of(context).communityEditPost,
+      author: post.author,
+      title: post.title,
+      content: post.content,
+    );
+    if (edited == null) return;
+    await _db.updateCommunityPostText(
+      post.id!,
+      author: edited.author!,
+      title: edited.title!,
+      content: edited.content,
+    );
+    await _load(showLoading: false);
+  }
+
+  Future<void> _editComment(CommunityComment comment) async {
+    final edited = await EditTextEntrySheet.show(
+      context,
+      heading: AppLocalizations.of(context).communityEditComment,
+      author: comment.author,
+      content: comment.content,
+    );
+    if (edited == null) return;
+    await _db.updateCommunityCommentText(
+      comment.id!,
+      author: edited.author!,
+      content: edited.content,
+    );
+    await _load(showLoading: false);
+  }
+
   Future<void> _deleteComment(CommunityComment comment) async {
     final l10n = AppLocalizations.of(context);
     final confirmed = await showDialog<bool>(
@@ -684,8 +719,10 @@ class _CommunityScreenState extends State<CommunityScreen> {
                                   isNew: post.id != null && _newPostIds.contains(post.id),
                                   newCommentIds: _newCommentIds,
                                   onToggleFavorite: () => _toggleFavorite(post),
+                                  onEdit: () => _editPost(post),
                                   onDelete: () => _deletePost(post),
                                   onWriteComment: () => _showWriteComment(post),
+                                  onEditComment: _editComment,
                                   onDeleteComment: _deleteComment,
                                 );
                               },

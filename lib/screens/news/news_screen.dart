@@ -21,6 +21,7 @@ import '../../providers/localization_provider.dart';
 import '../../services/ai_service.dart';
 import '../../utils/date_formatter.dart';
 import '../../utils/news_parser.dart';
+import '../../widgets/common/edit_text_entry_sheet.dart';
 
 class NewsScreen extends StatefulWidget {
   final int characterId;
@@ -399,6 +400,30 @@ class _NewsScreenState extends State<NewsScreen> {
     );
   }
 
+  Future<void> _editArticle(NewsArticle article) async {
+    final edited = await EditTextEntrySheet.show(
+      context,
+      heading: AppLocalizations.of(context).newsEditArticle,
+      title: article.title,
+      content: article.content,
+    );
+    if (edited == null) return;
+    await _db.updateNewsArticleText(
+      article.id!,
+      title: edited.title!,
+      content: edited.content,
+    );
+    if (!mounted) return;
+    setState(() {
+      _articles = [
+        for (final a in _articles)
+          a.id == article.id
+              ? a.copyWith(title: edited.title, content: edited.content)
+              : a,
+      ];
+    });
+  }
+
   Widget _buildArticleCard(NewsArticle article) {
     final l10n = AppLocalizations.of(context);
     final isNew = article.id != null && _newArticleIds.contains(article.id);
@@ -446,6 +471,16 @@ class _NewsScreenState extends State<NewsScreen> {
                     style: Theme.of(context).textTheme.labelSmall?.copyWith(
                           color: Theme.of(context).colorScheme.outline,
                         ),
+                  ),
+                  const SizedBox(width: 8),
+                  InkWell(
+                    onTap: () => _editArticle(article),
+                    borderRadius: BorderRadius.circular(4),
+                    child: Icon(
+                      Icons.edit_outlined,
+                      size: 18,
+                      color: Theme.of(context).colorScheme.outline,
+                    ),
                   ),
                   const SizedBox(width: 8),
                   InkWell(
