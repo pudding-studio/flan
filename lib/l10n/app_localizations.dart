@@ -3586,6 +3586,30 @@ abstract class AppLocalizations {
   /// **'닉네임'**
   String get communityNickname;
 
+  /// No description provided for @communityEditPost.
+  ///
+  /// In ko, this message translates to:
+  /// **'게시글 수정'**
+  String get communityEditPost;
+
+  /// No description provided for @communityEditComment.
+  ///
+  /// In ko, this message translates to:
+  /// **'댓글 수정'**
+  String get communityEditComment;
+
+  /// No description provided for @diaryEdit.
+  ///
+  /// In ko, this message translates to:
+  /// **'일기 수정'**
+  String get diaryEdit;
+
+  /// No description provided for @newsEditArticle.
+  ///
+  /// In ko, this message translates to:
+  /// **'기사 수정'**
+  String get newsEditArticle;
+
   /// No description provided for @communityNicknameAiHint.
   ///
   /// In ko, this message translates to:

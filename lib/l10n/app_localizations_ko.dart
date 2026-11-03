@@ -1912,6 +1912,18 @@ class AppLocalizationsKo extends AppLocalizations {
   String get communityNickname => '닉네임';
 
   @override
+  String get communityEditPost => '게시글 수정';
+
+  @override
+  String get communityEditComment => '댓글 수정';
+
+  @override
+  String get diaryEdit => '일기 수정';
+
+  @override
+  String get newsEditArticle => '기사 수정';
+
+  @override
   String get communityNicknameAiHint => '닉네임 (비워두면 AI가 정해요)';
 
   @override

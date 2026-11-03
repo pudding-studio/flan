@@ -1947,6 +1947,18 @@ class AppLocalizationsEn extends AppLocalizations {
   String get communityNickname => 'Nickname';
 
   @override
+  String get communityEditPost => 'Edit post';
+
+  @override
+  String get communityEditComment => 'Edit comment';
+
+  @override
+  String get diaryEdit => 'Edit diary';
+
+  @override
+  String get newsEditArticle => 'Edit article';
+
+  @override
   String get communityNicknameAiHint => 'Nickname (leave empty to let the AI choose)';
 
   @override

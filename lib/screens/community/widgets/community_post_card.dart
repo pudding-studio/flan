@@ -9,8 +9,10 @@ class CommunityPostCard extends StatelessWidget {
   final bool isNew;
   final Set<int> newCommentIds;
   final VoidCallback onToggleFavorite;
+  final VoidCallback onEdit;
   final VoidCallback onDelete;
   final VoidCallback onWriteComment;
+  final void Function(CommunityComment) onEditComment;
   final void Function(CommunityComment) onDeleteComment;
 
   const CommunityPostCard({
@@ -19,8 +21,10 @@ class CommunityPostCard extends StatelessWidget {
     required this.isNew,
     required this.newCommentIds,
     required this.onToggleFavorite,
+    required this.onEdit,
     required this.onDelete,
     required this.onWriteComment,
+    required this.onEditComment,
     required this.onDeleteComment,
   });
 
@@ -143,6 +147,16 @@ class CommunityPostCard extends StatelessWidget {
         ),
         const SizedBox(width: 8),
         InkWell(
+          onTap: onEdit,
+          borderRadius: BorderRadius.circular(4),
+          child: Icon(
+            Icons.edit_outlined,
+            size: 18,
+            color: Theme.of(context).colorScheme.outline,
+          ),
+        ),
+        const SizedBox(width: 8),
+        InkWell(
           onTap: onDelete,
           borderRadius: BorderRadius.circular(4),
           child: Icon(
@@ -197,6 +211,16 @@ class CommunityPostCard extends StatelessWidget {
                           ),
                     ),
                     const Spacer(),
+                    InkWell(
+                      onTap: () => onEditComment(comment),
+                      borderRadius: BorderRadius.circular(4),
+                      child: Icon(
+                        Icons.edit_outlined,
+                        size: 14,
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
                     InkWell(
                       onTap: () => onDeleteComment(comment),
                       borderRadius: BorderRadius.circular(4),

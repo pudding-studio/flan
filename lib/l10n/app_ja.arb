@@ -1576,5 +1576,9 @@
   "chatRoomSummarizeUpToTitle": "ここまで要約",
   "chatRoomSummarizeUpToContent": "最初または直前のピンからこのメッセージまでを要約します。このメッセージがピン留めされていなければ、あわせてピン留めします。",
   "chatRoomSummarizeUpToConfirm": "要約",
-  "chatRoomSummaryCreated": "要約を作成しました"
+  "chatRoomSummaryCreated": "要約を作成しました",
+  "communityEditPost": "投稿を編集",
+  "communityEditComment": "コメントを編集",
+  "diaryEdit": "日記を編集",
+  "newsEditArticle": "記事を編集"
 }

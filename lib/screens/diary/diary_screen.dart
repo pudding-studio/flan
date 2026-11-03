@@ -293,13 +293,26 @@ class _DiaryScreenState extends State<DiaryScreen> {
     }
   }
 
-  void _viewDiary(DiaryEntry entry) {
-    Navigator.push(
+  Future<void> _viewDiary(DiaryEntry entry) async {
+    await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => DiaryDetailScreen(entry: entry),
       ),
     );
+    // The entry may have been edited there.
+    await _reloadDayEntries(entry.date);
+  }
+
+  Future<void> _editDiaryEntry(DiaryEntry entry) async {
+    final edited = await editDiaryEntry(context, entry);
+    if (edited != null) await _reloadDayEntries(entry.date);
+  }
+
+  Future<void> _reloadDayEntries(String date) async {
+    final updated = await _db.readDiaryEntriesByDate(widget.chatRoomId, date);
+    if (!mounted || _selectedDate != date) return;
+    setState(() => _selectedDayEntries = updated);
   }
 
   Future<void> _deleteDiaryEntry(DiaryEntry entry) async {
@@ -680,6 +693,12 @@ class _DiaryScreenState extends State<DiaryScreen> {
                       ),
                     ],
                   ),
+                ),
+                const SizedBox(width: 8),
+                InkWell(
+                  onTap: () => _editDiaryEntry(entry),
+                  borderRadius: BorderRadius.circular(4),
+                  child: Icon(Icons.edit_outlined, size: 18, color: colorScheme.outline),
                 ),
                 const SizedBox(width: 8),
                 InkWell(

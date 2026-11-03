@@ -3534,6 +3534,47 @@ class DatabaseHelper {
     return posts;
   }
 
+  /// Rewrites only the given text columns of one row, e.g. after the user
+  /// fixes a typo in a generated post, comment, diary entry or article.
+  Future<void> _updateText(
+    String table,
+    int id,
+    Map<String, String> values,
+  ) async {
+    final db = await database;
+    await db.update(table, values, where: 'id = ?', whereArgs: [id]);
+  }
+
+  Future<void> updateCommunityPostText(
+    int id, {
+    required String author,
+    required String title,
+    required String content,
+  }) =>
+      _updateText('community_posts', id,
+          {'author': author, 'title': title, 'content': content});
+
+  Future<void> updateCommunityCommentText(
+    int id, {
+    required String author,
+    required String content,
+  }) =>
+      _updateText('community_comments', id, {'author': author, 'content': content});
+
+  Future<void> updateDiaryEntryText(
+    int id, {
+    required String title,
+    required String content,
+  }) =>
+      _updateText('diary_entries', id, {'title': title, 'content': content});
+
+  Future<void> updateNewsArticleText(
+    int id, {
+    required String title,
+    required String content,
+  }) =>
+      _updateText('news_articles', id, {'title': title, 'content': content});
+
   Future<void> deleteCommunityComment(int commentId) async {
     final db = await database;
     await db.delete('community_comments', where: 'id = ?', whereArgs: [commentId]);
