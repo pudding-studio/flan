@@ -20,8 +20,12 @@ import 'agent_summary_service.dart';
 import 'ai_service.dart';
 
 class AutoSummaryService {
-  final DatabaseHelper _db = DatabaseHelper.instance;
-  final AiService _aiService = AiService();
+  final DatabaseHelper _db;
+  final AiService _aiService;
+
+  AutoSummaryService({DatabaseHelper? db, AiService? aiService})
+      : _db = db ?? DatabaseHelper.instance,
+        _aiService = aiService ?? AiService();
 
   static const String _logTag = 'AutoSummary';
 
@@ -66,12 +70,60 @@ class AutoSummaryService {
       return pending;
     }
 
-    if (!pinCreated) return false;
-    final shouldTrigger = currentTokenCount >= settings.tokenThreshold;
-    if (shouldTrigger) {
-      _log('Trigger condition met: $currentTokenCount >= ${settings.tokenThreshold} tokens');
+    // A pin range becomes due when it leaves the token window, which
+    // usually happens between pins, so this is checked after every reply.
+    if (currentTokenCount < settings.tokenThreshold) return false;
+    final plan = await _planClassicSummaries(chatRoomId, settings);
+    final due = plan != null && plan.due.isNotEmpty;
+    if (due) _log('Pin ranges left the token window: ${plan.due}');
+    return due;
+  }
+
+  /// The pin ranges outside the token window that still need a summary, in
+  /// order. Null when there is nothing to plan from.
+  Future<
+      ({
+        List<ChatMessage> allMessages,
+        List<int> pinnedMessageIds,
+        List<int> due,
+      })?> _planClassicSummaries(
+    int chatRoomId,
+    AutoSummarySettings settings,
+  ) async {
+    final allMessages = await _db.readChatMessagesByChatRoom(chatRoomId);
+    if (allMessages.isEmpty) return null;
+    final pinnedMessageIds = await _getPinnedMessageIds(chatRoomId);
+    if (pinnedMessageIds.isEmpty) return null;
+
+    final cutoffMessageId =
+        _findCutoffMessageId(allMessages, settings.tokenThreshold);
+    final eligiblePinIds = _filterPinsBeforeCutoff(
+      allMessages: allMessages,
+      pinnedMessageIds: pinnedMessageIds,
+      cutoffMessageId: cutoffMessageId,
+    );
+    if (eligiblePinIds.isEmpty) return null;
+
+    final summarizedEndIds = (await _db.getChatSummaries(chatRoomId))
+        .map((s) => s.endPinMessageId)
+        .toSet();
+    // If the latest eligible pin is already summarized, older unsummarized
+    // pins were deleted by the user on purpose — leave them alone.
+    if (summarizedEndIds.contains(eligiblePinIds.last)) {
+      return (
+        allMessages: allMessages,
+        pinnedMessageIds: pinnedMessageIds,
+        due: const <int>[],
+      );
     }
-    return shouldTrigger;
+    return (
+      allMessages: allMessages,
+      pinnedMessageIds: pinnedMessageIds,
+      due: [
+        for (final id in eligiblePinIds)
+          if (!summarizedEndIds.contains(id)) id,
+      ],
+    );
   }
 
   /// Generate pending summaries only for pin ranges outside the token window.
@@ -92,57 +144,18 @@ class AutoSummaryService {
 
     _log('Starting summary generation for chatRoom=$chatRoomId');
 
-    final allMessages = await _db.readChatMessagesByChatRoom(chatRoomId);
-    if (allMessages.isEmpty) {
-      _log('No messages found, skipping');
+    final plan = await _planClassicSummaries(chatRoomId, settings);
+    if (plan == null || plan.due.isEmpty) {
+      _log('No pin ranges outside the token window left to summarize');
       return;
     }
-
-    final pinnedMessageIds = await _getPinnedMessageIds(chatRoomId);
-    if (pinnedMessageIds.isEmpty) {
-      _log('No pinned messages found, skipping');
-      return;
-    }
-
-    // Find the token-window cutoff
-    final cutoffMessageId = _findCutoffMessageId(allMessages, settings.tokenThreshold);
-    _log('Token cutoff messageId=$cutoffMessageId (threshold=${settings.tokenThreshold})');
-
-    // Only pins outside the token window (at or before the cutoff)
-    final eligiblePinIds = _filterPinsBeforeCutoff(
-      allMessages: allMessages,
-      pinnedMessageIds: pinnedMessageIds,
-      cutoffMessageId: cutoffMessageId,
-    );
-
-    if (eligiblePinIds.isEmpty) {
-      _log('No pin ranges outside token window, skipping');
-      return;
-    }
-
-    final existingSummaries = await _db.getChatSummaries(chatRoomId);
-    final summarizedEndIds = existingSummaries.map((s) => s.endPinMessageId).toSet();
-
-    // Detect user-deleted summaries: if the latest eligible pin is already
-    // summarized, any older unsummarized pin was intentionally deleted by the
-    // user — skip them all.
-    final latestEligiblePin = eligiblePinIds.last;
-    final hasLatestSummary = summarizedEndIds.contains(latestEligiblePin);
-    if (hasLatestSummary) {
-      _log('Latest eligible pin already summarized, skipping older gaps (user-deleted)');
-    }
-
-    _log('Found ${eligiblePinIds.length} eligible pins (out of ${pinnedMessageIds.length}), '
-        '${existingSummaries.length} existing summaries');
+    final allMessages = plan.allMessages;
+    final pinnedMessageIds = plan.pinnedMessageIds;
 
     // Build ranges: [beginning→pin1], [pin1→pin2], ...
     // Process sequentially so earlier summaries feed into {{chat_historys}} for later ones
     int generatedCount = 0;
-    for (final endPinId in eligiblePinIds) {
-      if (summarizedEndIds.contains(endPinId)) continue;
-      // If the latest eligible pin is summarized, older gaps are user-deleted
-      if (hasLatestSummary) continue;
-
+    for (final endPinId in plan.due) {
       final pinIndex = pinnedMessageIds.indexOf(endPinId);
       final startPinId = pinIndex == 0 ? 0 : pinnedMessageIds[pinIndex - 1];
 
@@ -172,6 +185,8 @@ class AutoSummaryService {
         _logSuccess('Summary generated for range [$startPinId → $endPinId], tokens: ${result.tokenCount}');
       } catch (e) {
         _logError('Failed to generate summary for pin $endPinId: $e');
+        // Stop here: a later summary would make this gap look user-deleted.
+        break;
       }
     }
 
