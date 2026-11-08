@@ -70,65 +70,70 @@ class AutoSummaryService {
       return pending;
     }
 
-    // A pin range becomes due when it leaves the token window, which
-    // usually happens between pins, so this is checked after every reply.
-    if (currentTokenCount < settings.tokenThreshold) return false;
-    final plan = await _planClassicSummaries(chatRoomId, settings);
+    // Every finished pin range is summarized right away; it only takes
+    // effect once it leaves the token window (see getAppliedSummaries).
+    final plan = await _planClassicSummaries(chatRoomId);
     final due = plan != null && plan.due.isNotEmpty;
-    if (due) _log('Pin ranges left the token window: ${plan.due}');
+    if (due) _log('Pin ranges to summarize: ${plan.due}');
     return due;
   }
 
-  /// The pin ranges outside the token window that still need a summary, in
-  /// order. Null when there is nothing to plan from.
+  /// The pin ranges that still need a summary, in order. Null when there
+  /// is nothing to plan from.
   Future<
       ({
         List<ChatMessage> allMessages,
         List<int> pinnedMessageIds,
         List<int> due,
-      })?> _planClassicSummaries(
-    int chatRoomId,
-    AutoSummarySettings settings,
-  ) async {
+      })?> _planClassicSummaries(int chatRoomId) async {
     final allMessages = await _db.readChatMessagesByChatRoom(chatRoomId);
     if (allMessages.isEmpty) return null;
     final pinnedMessageIds = await _getPinnedMessageIds(chatRoomId);
     if (pinnedMessageIds.isEmpty) return null;
 
-    final cutoffMessageId =
-        _findCutoffMessageId(allMessages, settings.tokenThreshold);
-    final eligiblePinIds = _filterPinsBeforeCutoff(
-      allMessages: allMessages,
-      pinnedMessageIds: pinnedMessageIds,
-      cutoffMessageId: cutoffMessageId,
-    );
-    if (eligiblePinIds.isEmpty) return null;
-
     final summarizedEndIds = (await _db.getChatSummaries(chatRoomId))
         .map((s) => s.endPinMessageId)
         .toSet();
-    // If the latest eligible pin is already summarized, older unsummarized
-    // pins were deleted by the user on purpose — leave them alone.
-    if (summarizedEndIds.contains(eligiblePinIds.last)) {
-      return (
-        allMessages: allMessages,
-        pinnedMessageIds: pinnedMessageIds,
-        due: const <int>[],
-      );
-    }
+    // If the latest pin is already summarized, older unsummarized pins were
+    // deleted by the user on purpose — leave them alone.
+    final due = summarizedEndIds.contains(pinnedMessageIds.last)
+        ? const <int>[]
+        : [
+            for (final id in pinnedMessageIds)
+              if (!summarizedEndIds.contains(id)) id,
+          ];
     return (
       allMessages: allMessages,
       pinnedMessageIds: pinnedMessageIds,
-      due: [
-        for (final id in eligiblePinIds)
-          if (!summarizedEndIds.contains(id)) id,
-      ],
+      due: due,
     );
   }
 
-  /// Generate pending summaries only for pin ranges outside the token window.
-  /// Counts tokens from the most recent message backwards; only pin ranges
-  /// whose endPinId falls before the threshold cutoff are summarized.
+  /// The summaries that take effect in the prompt: those whose range has
+  /// left the token window (counted back from the newest message). Newer
+  /// ones exist already but wait, so the recent turns stay verbatim.
+  Future<List<ChatSummary>> getAppliedSummaries(int chatRoomId) async {
+    final summaries = await _db.getChatSummaries(chatRoomId);
+    if (summaries.isEmpty) return summaries;
+    final settings = await _db.getAutoSummarySettings(0);
+    if (settings == null) return summaries;
+
+    final allMessages = await _db.readChatMessagesByChatRoom(chatRoomId);
+    final cutoffMessageId =
+        _findCutoffMessageId(allMessages, settings.tokenThreshold);
+    final cutoffIndex = cutoffMessageId == 0
+        ? -1
+        : allMessages.indexWhere((m) => m.id == cutoffMessageId);
+    return [
+      for (final summary in summaries)
+        if (allMessages.indexWhere((m) => m.id == summary.endPinMessageId)
+            case final endIndex when endIndex != -1 && endIndex <= cutoffIndex)
+          summary,
+    ];
+  }
+
+  /// Generate summaries for every finished pin range not summarized yet.
+  /// They take effect later, once their range leaves the token window.
   Future<void> generateAllPendingSummaries({
     required int chatRoomId,
   }) async {
@@ -144,9 +149,9 @@ class AutoSummaryService {
 
     _log('Starting summary generation for chatRoom=$chatRoomId');
 
-    final plan = await _planClassicSummaries(chatRoomId, settings);
+    final plan = await _planClassicSummaries(chatRoomId);
     if (plan == null || plan.due.isEmpty) {
-      _log('No pin ranges outside the token window left to summarize');
+      _log('No pin ranges left to summarize');
       return;
     }
     final allMessages = plan.allMessages;
@@ -205,27 +210,6 @@ class AutoSummaryService {
       }
     }
     return 0;
-  }
-
-  /// Return only pinned message IDs whose position is at or before the cutoff.
-  List<int> _filterPinsBeforeCutoff({
-    required List<ChatMessage> allMessages,
-    required List<int> pinnedMessageIds,
-    required int cutoffMessageId,
-  }) {
-    if (cutoffMessageId == 0) return [];
-
-    final cutoffIdx = allMessages.indexWhere((m) => m.id == cutoffMessageId);
-    if (cutoffIdx == -1) return [];
-
-    final result = <int>[];
-    for (final pinId in pinnedMessageIds) {
-      final pinIdx = allMessages.indexWhere((m) => m.id == pinId);
-      if (pinIdx != -1 && pinIdx <= cutoffIdx) {
-        result.add(pinId);
-      }
-    }
-    return result;
   }
 
   /// Load keyword map for keyword substitution in summary prompts
@@ -496,8 +480,9 @@ class AutoSummaryService {
   }
 
   /// Get all message IDs covered by existing summaries
+  /// Messages replaced in the prompt by an applied summary.
   Future<Set<int>> getSummarizedMessageIds(int chatRoomId) async {
-    final summaries = await _db.getChatSummaries(chatRoomId);
+    final summaries = await getAppliedSummaries(chatRoomId);
     if (summaries.isEmpty) return {};
 
     final allMessages = await _db.readChatMessagesByChatRoom(chatRoomId);

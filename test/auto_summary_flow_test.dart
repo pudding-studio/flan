@@ -50,7 +50,8 @@ void main() {
     await deleteDatabase(p.join(await getDatabasesPath(), 'flan.db'));
   });
 
-  test('every pin range leaving the token window gets summarized', () async {
+  test('each pin range is summarized at once and applied once it leaves '
+      'the token window', () async {
     await db.createAutoSummarySettings(AutoSummarySettings(
       chatRoomId: 0,
       isAgentEnabled: false,
@@ -63,7 +64,8 @@ void main() {
     final service = AutoSummaryService(aiService: ai);
 
     final pins = <int>[];
-    int? firstSummarizedAt;
+    // Applied summaries (by end pin) right after each pin was created.
+    final appliedAtPin = <int, List<int>>{};
     var time = DateTime(2026, 1, 1);
     for (var i = 1; i <= 60; i++) {
       time = time.add(const Duration(minutes: 1));
@@ -94,18 +96,33 @@ void main() {
         pinCreated: pinCreated,
       )) {
         await service.generateAllPendingSummaries(chatRoomId: roomId);
-        firstSummarizedAt ??= id;
+      }
+      if (pinCreated) {
+        appliedAtPin[id] = [
+          for (final s in await service.getAppliedSummaries(roomId))
+            s.endPinMessageId,
+        ];
       }
     }
 
     final summaries = await db.getChatSummaries(roomId);
     expect(pins, hasLength(2));
+    // Summarized as soon as each pin closed its range.
     expect(summaries.map((s) => s.endPinMessageId), pins);
     expect(summaries.first.startPinMessageId, 0);
     expect(summaries.last.startPinMessageId, pins.first);
     expect(ai.calls, 2);
-    // The first range was summarized once it left the 5000-token window,
-    // long before the second pin.
-    expect(firstSummarizedAt, lessThan(pins.last));
+    // A fresh range is still inside the 5000-token window: not applied yet.
+    expect(appliedAtPin[pins.first], isEmpty);
+    expect(appliedAtPin[pins.last], [pins.first]);
+    // By the end both ranges have left the window.
+    expect(
+      [for (final s in await service.getAppliedSummaries(roomId)) s.endPinMessageId],
+      pins,
+    );
+    final excluded = await service.getSummarizedMessageIds(roomId);
+    final messages = await db.readChatMessagesByChatRoom(roomId);
+    expect(excluded, contains(messages.first.id));
+    expect(excluded, isNot(contains(messages.last.id)));
   });
 }

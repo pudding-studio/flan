@@ -151,7 +151,8 @@ class ChatApiDataBuilder {
         .where((b) => b.enabled == CharacterBookActivationCondition.enabled)
         .toList();
 
-    final summaries = await db.getChatSummaries(chatRoomId);
+    // Summaries apply once their range leaves the token window.
+    final summaries = await autoSummaryService.getAppliedSummaries(chatRoomId);
 
     final summaryMetadataMap = <int, ChatMessageMetadata>{};
     for (final summary in summaries) {
