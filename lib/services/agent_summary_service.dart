@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database_helper.dart';
 import '../models/character/character_book_folder.dart';
 import '../models/chat/agent_entry.dart';
+import '../utils/character_book_lore.dart';
 import '../models/chat/chat_model.dart';
 import '../models/chat/chat_message.dart';
 import '../models/chat/custom_model.dart';
@@ -74,11 +75,11 @@ class AgentSummaryService {
 
       int created = 0;
       for (final book in seedable) {
-        final type = _agentTypeForCategory(book.category);
+        final type = characterBookAgentType(book.category);
         final existing = await _db.getAgentEntryByName(chatRoomId, book.name, type);
         if (existing != null) continue;
 
-        final data = _seedDataForBook(book);
+        final data = characterBookAgentData(book);
         final entry = AgentEntry(
           chatRoomId: chatRoomId,
           entryType: type,
@@ -93,66 +94,6 @@ class AgentSummaryService {
     } catch (e) {
       _logError('seedFromCharacterBooks failed: $e');
     }
-  }
-
-  AgentEntryType _agentTypeForCategory(CharacterBookCategory category) {
-    switch (category) {
-      case CharacterBookCategory.character:
-        return AgentEntryType.character;
-      case CharacterBookCategory.location:
-        return AgentEntryType.location;
-      case CharacterBookCategory.event:
-        return AgentEntryType.event;
-      case CharacterBookCategory.other:
-        return AgentEntryType.item;
-    }
-  }
-
-  /// Maps CharacterBook structured fields onto the AgentEntry.data schema
-  /// that [AgentEntry.toReadableText] already knows how to render. Fields that
-  /// are empty on the source book are omitted so they don't appear as blank
-  /// headers in the rendered prompt body.
-  Map<String, dynamic> _seedDataForBook(CharacterBook book) {
-    final data = <String, dynamic>{};
-    void putIfNotEmpty(String key, String value) {
-      if (value.trim().isNotEmpty) data[key] = value;
-    }
-
-    switch (book.category) {
-      case CharacterBookCategory.character:
-        putIfNotEmpty('appearance', book.appearance);
-        putIfNotEmpty('personality', book.personality);
-        putIfNotEmpty('past', book.past);
-        putIfNotEmpty('abilities', book.abilities);
-        putIfNotEmpty('dialogue_style', book.dialogueStyle);
-        // Gender / age aren't first-class AgentEntry.character fields today,
-        // but surface them via 'appearance' as a fallback if set — keeps the
-        // info visible in the prompt without requiring a schema change.
-        final age = book.age.trim();
-        final gender = book.gender;
-        if (gender != null || age.isNotEmpty) {
-          final parts = <String>[];
-          if (age.isNotEmpty) parts.add(age);
-          if (gender != null) {
-            parts.add(gender == CharacterBookGender.other
-                ? (book.genderOther.isNotEmpty ? book.genderOther : gender.displayName)
-                : gender.displayName);
-          }
-          final appearance = book.appearance.trim();
-          final prefix = parts.join(', ');
-          data['appearance'] =
-              appearance.isEmpty ? prefix : '$prefix\n$appearance';
-        }
-      case CharacterBookCategory.location:
-        putIfNotEmpty('features', book.setting);
-      case CharacterBookCategory.event:
-        putIfNotEmpty('datetime', book.eventDatetime);
-        putIfNotEmpty('overview', book.eventContent);
-        putIfNotEmpty('result', book.eventResult);
-      case CharacterBookCategory.other:
-        putIfNotEmpty('features', book.setting);
-    }
-    return data;
   }
 
   /// Main entry point: process agent summary for a chat room

@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database_helper.dart';
-import '../models/character/character_book_folder.dart';
 import '../models/character/persona.dart';
 import '../models/character/start_scenario.dart';
 import '../models/chat/auto_summary_settings.dart';
@@ -15,6 +14,7 @@ import '../models/chat/custom_model.dart';
 import '../models/chat/custom_provider.dart';
 import '../models/chat/unified_model.dart';
 import '../models/prompt/prompt_parameters.dart';
+import '../utils/character_book_lore.dart';
 import '../utils/prompt_builder.dart';
 import 'agent_summary_service.dart';
 import 'ai_service.dart';
@@ -230,10 +230,17 @@ class AutoSummaryService {
       startScenario = await _db.readStartScenario(chatRoom.selectedStartScenarioId!);
     }
 
+    // Same lorebook selection as a chat turn: enabled entries plus key-based
+    // ones mentioned in the latest messages, with their details.
     final allCharacterBooks = await _db.readCharacterBooks(character.id!);
-    final activeCharacterBooks = allCharacterBooks
-        .where((b) => b.enabled == CharacterBookActivationCondition.enabled)
-        .toList();
+    final messages = await _db.readChatMessagesByChatRoom(chatRoomId);
+    final scanned = messages.length > characterBookScanDepth
+        ? messages.sublist(messages.length - characterBookScanDepth)
+        : messages;
+    final activeCharacterBooks = selectActiveCharacterBooks(
+      allCharacterBooks,
+      [for (final m in scanned) m.content],
+    );
 
     final summaries = await _db.getChatSummaries(chatRoomId);
     final summaryMetadataMap = <int, ChatMessageMetadata>{};
@@ -247,16 +254,22 @@ class AutoSummaryService {
     final latestMetadata =
         await _db.readLatestChatMessageMetadata(chatRoomId);
 
-    return PromptBuilder.buildKeywordMap(
-      character: character,
-      persona: persona,
-      startScenario: startScenario,
-      activeCharacterBooks: activeCharacterBooks,
-      chatRoom: chatRoom,
-      summaries: summaries,
-      summaryMetadataMap: summaryMetadataMap,
-      latestMetadata: latestMetadata,
-    );
+    return {
+      ...PromptBuilder.buildKeywordMap(
+        character: character,
+        persona: persona,
+        startScenario: startScenario,
+        activeCharacterBooks: activeCharacterBooks,
+        chatRoom: chatRoom,
+        summaries: summaries,
+        summaryMetadataMap: summaryMetadataMap,
+        latestMetadata: latestMetadata,
+      ),
+      'character_book': PromptBuilder.buildCharacterBookText(
+        activeCharacterBooks,
+        withDetails: (_) => true,
+      ),
+    };
   }
 
   /// Build prompt from SummaryPromptItem list

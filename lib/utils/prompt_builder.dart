@@ -12,6 +12,7 @@ import '../models/prompt/prompt_item.dart';
 import '../providers/tokenizer_provider.dart';
 import 'cbs/cbs_context.dart';
 import 'cbs/cbs_parser.dart';
+import 'character_book_lore.dart';
 import 'context_pdf.dart';
 import 'date_formatter.dart';
 import 'metadata_parser.dart';
@@ -406,7 +407,7 @@ class PromptBuilder {
       ...baseKeywords,
       'char_description': resolve(character.description ?? ''),
       'user_description': resolve(persona?.content ?? ''),
-      'character_book': resolve(_buildCharacterBookText(activeCharacterBooks)),
+      'character_book': resolve(buildCharacterBookText(activeCharacterBooks)),
       'start_setting': _prefixStartDate(
         resolve(startScenario?.startSetting ?? ''),
         character.worldStartDate,
@@ -487,7 +488,13 @@ class PromptBuilder {
   ///
   /// Categories are emitted in a fixed order: 등장인물 → 지역/장소 → 역사/사건 → 기타,
   /// matching the redesigned 설정집 UI.
-  static String _buildCharacterBookText(List<CharacterBook>? books) {
+  /// `{{character_book}}`: the entries as a `name|one-line description`
+  /// index per category, followed by the details of the entries for which
+  /// [withDetails] holds (those whose details nothing else supplies).
+  static String buildCharacterBookText(
+    List<CharacterBook>? books, {
+    bool Function(CharacterBook book)? withDetails,
+  }) {
     if (books == null || books.isEmpty) return '';
 
     final grouped = <CharacterBookCategory, List<CharacterBook>>{
@@ -511,6 +518,16 @@ class PromptBuilder {
           buffer.writeln(book.name);
         } else {
           buffer.writeln('${book.name}|$desc');
+        }
+      }
+      if (withDetails != null) {
+        for (final book in entries.where(withDetails)) {
+          final details = characterBookDetails(book);
+          if (details.isNotEmpty) {
+            buffer
+              ..writeln()
+              ..writeln(details);
+          }
         }
       }
       buffer.writeln();

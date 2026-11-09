@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 
 import '../database/database_helper.dart';
 import '../models/character/character.dart';
-import '../models/character/character_book_folder.dart';
 import '../models/character/emotion_mode.dart';
 import '../models/character/persona.dart';
 import '../models/character/start_scenario.dart';
@@ -20,6 +19,7 @@ import '../providers/tokenizer_provider.dart';
 import '../screens/chat/chat_send_errors.dart';
 import '../utils/cbs/cbs_app_bridge.dart';
 import '../utils/cbs/cbs_context.dart';
+import '../utils/character_book_lore.dart';
 import '../utils/context_pdf.dart';
 import '../utils/emotion_picker.dart';
 import '../utils/prompt_builder.dart';
@@ -145,11 +145,16 @@ class ChatApiDataBuilder {
       startScenario = await db.readStartScenario(chatRoom.selectedStartScenarioId!);
     }
 
-    // Stage 2.1: Filter character books (enabled only, ordered by insertionOrder in PromptBuilder)
+    // Stage 2.1: The lorebook entries for this turn: enabled ones, plus
+    // key-based ones whose keyword shows up in the latest messages.
     final allCharacterBooks = await db.readCharacterBooks(character.id!);
-    final activeCharacterBooks = allCharacterBooks
-        .where((b) => b.enabled == CharacterBookActivationCondition.enabled)
-        .toList();
+    final scannedMessages = messages.length > characterBookScanDepth
+        ? messages.sublist(messages.length - characterBookScanDepth)
+        : messages;
+    final activeCharacterBooks = selectActiveCharacterBooks(
+      allCharacterBooks,
+      [for (final m in scannedMessages) m.content, userMessage],
+    );
 
     // Summaries apply once their range leaves the token window.
     final summaries = await autoSummaryService.getAppliedSummaries(chatRoomId);
@@ -228,7 +233,25 @@ class ChatApiDataBuilder {
     // Load agent context if agent mode is enabled
     String? agentContext;
     final summarySettings = await db.getAutoSummarySettings(0);
-    if (summarySettings != null && summarySettings.isAgentEnabled) {
+    final agentMode = summarySettings != null && summarySettings.isAgentEnabled;
+
+    // Lorebook details go into {{character_book}} unless an active agent
+    // entry of the same name already carries them into the prompt.
+    final agentEntryNames = agentMode
+        ? {
+            for (final entry
+                in await db.getAgentEntries(chatRoomId, isActive: true))
+              entry.name,
+          }
+        : const <String>{};
+    final characterBookKeywords = {
+      'character_book': PromptBuilder.buildCharacterBookText(
+        activeCharacterBooks,
+        withDetails: (book) => !agentEntryNames.contains(book.name),
+      ),
+    };
+
+    if (agentMode) {
       final maxInputTokens = chatPrompt?.parameters?.maxInputTokens;
 
       int? episodeBudget;
@@ -260,6 +283,7 @@ class ChatApiDataBuilder {
           conditions: conditions,
           conditionStates: conditionStates,
           agentContext: baselineAgentContext,
+          extraKeywords: characterBookKeywords,
           cbsContext: cbsContext,
         );
         // Mirror the auto-append logic used after the real system prompt build.
@@ -310,7 +334,10 @@ class ChatApiDataBuilder {
     }
 
     // Stage 1+2: Build frame and apply keyword substitution
-    final outputLanguageKeywords = {'output_language': outputLanguage};
+    final outputLanguageKeywords = {
+      'output_language': outputLanguage,
+      ...characterBookKeywords,
+    };
 
     // Derive the progressive world time from the most recent message that
     // has a resolved date tag, falling back to earlier messages so the
