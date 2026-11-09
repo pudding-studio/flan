@@ -129,6 +129,7 @@ flutter build windows --release
 ### 동작 규약
 
 - 상태: `_hiddenNewMessageCount` — 아직 렌더되지 않은 최신 메시지 개수. `ScrollablePositionedList`의 `itemCount = visibleCount + 1`에서 `visibleCount = _messages.length - _hiddenNewMessageCount`로 반영되어, 버퍼된 메시지는 리스트에 아예 나타나지 않는다.
+- "위로 스크롤된 상태" (`_showScrollButtons`)의 기준: 최신 메시지(index 0)가 화면 높이의 1/4 이상(`_scrolledUpThreshold`) 아래로 밀려났거나 화면에서 사라진 경우. 스크롤 버튼 표시와 새 메시지 버퍼링이 모두 이 상태를 따른다.
 - 새 메시지 도착 시 (`_finishSending`):
   - 사용자가 **위로 스크롤된 상태** (`_showScrollButtons == true`): `_hiddenNewMessageCount += delta`, 칩 표시. 뷰포트는 건드리지 않는다.
   - 사용자가 **하단에 있는 상태**: 숨기지 않고 즉시 렌더한 뒤 index 0으로 `scrollTo`. (숨기면 스크롤 transition이 발생하지 않아 칩이 해제되지 않고 stranded 상태가 되므로.)

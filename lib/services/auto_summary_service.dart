@@ -2,7 +2,6 @@ import 'dart:convert';
 import 'dart:developer' as developer;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../database/database_helper.dart';
-import '../models/character/character_book_folder.dart';
 import '../models/character/persona.dart';
 import '../models/character/start_scenario.dart';
 import '../models/chat/auto_summary_settings.dart';
@@ -15,13 +14,18 @@ import '../models/chat/custom_model.dart';
 import '../models/chat/custom_provider.dart';
 import '../models/chat/unified_model.dart';
 import '../models/prompt/prompt_parameters.dart';
+import '../utils/character_book_lore.dart';
 import '../utils/prompt_builder.dart';
 import 'agent_summary_service.dart';
 import 'ai_service.dart';
 
 class AutoSummaryService {
-  final DatabaseHelper _db = DatabaseHelper.instance;
-  final AiService _aiService = AiService();
+  final DatabaseHelper _db;
+  final AiService _aiService;
+
+  AutoSummaryService({DatabaseHelper? db, AiService? aiService})
+      : _db = db ?? DatabaseHelper.instance,
+        _aiService = aiService ?? AiService();
 
   static const String _logTag = 'AutoSummary';
 
@@ -66,17 +70,70 @@ class AutoSummaryService {
       return pending;
     }
 
-    if (!pinCreated) return false;
-    final shouldTrigger = currentTokenCount >= settings.tokenThreshold;
-    if (shouldTrigger) {
-      _log('Trigger condition met: $currentTokenCount >= ${settings.tokenThreshold} tokens');
-    }
-    return shouldTrigger;
+    // Every finished pin range is summarized right away; it only takes
+    // effect once it leaves the token window (see getAppliedSummaries).
+    final plan = await _planClassicSummaries(chatRoomId);
+    final due = plan != null && plan.due.isNotEmpty;
+    if (due) _log('Pin ranges to summarize: ${plan.due}');
+    return due;
   }
 
-  /// Generate pending summaries only for pin ranges outside the token window.
-  /// Counts tokens from the most recent message backwards; only pin ranges
-  /// whose endPinId falls before the threshold cutoff are summarized.
+  /// The pin ranges that still need a summary, in order. Null when there
+  /// is nothing to plan from.
+  Future<
+      ({
+        List<ChatMessage> allMessages,
+        List<int> pinnedMessageIds,
+        List<int> due,
+      })?> _planClassicSummaries(int chatRoomId) async {
+    final allMessages = await _db.readChatMessagesByChatRoom(chatRoomId);
+    if (allMessages.isEmpty) return null;
+    final pinnedMessageIds = await _getPinnedMessageIds(chatRoomId);
+    if (pinnedMessageIds.isEmpty) return null;
+
+    final summarizedEndIds = (await _db.getChatSummaries(chatRoomId))
+        .map((s) => s.endPinMessageId)
+        .toSet();
+    // If the latest pin is already summarized, older unsummarized pins were
+    // deleted by the user on purpose — leave them alone.
+    final due = summarizedEndIds.contains(pinnedMessageIds.last)
+        ? const <int>[]
+        : [
+            for (final id in pinnedMessageIds)
+              if (!summarizedEndIds.contains(id)) id,
+          ];
+    return (
+      allMessages: allMessages,
+      pinnedMessageIds: pinnedMessageIds,
+      due: due,
+    );
+  }
+
+  /// The summaries that take effect in the prompt: those whose range has
+  /// left the token window (counted back from the newest message). Newer
+  /// ones exist already but wait, so the recent turns stay verbatim.
+  Future<List<ChatSummary>> getAppliedSummaries(int chatRoomId) async {
+    final summaries = await _db.getChatSummaries(chatRoomId);
+    if (summaries.isEmpty) return summaries;
+    final settings = await _db.getAutoSummarySettings(0);
+    if (settings == null) return summaries;
+
+    final allMessages = await _db.readChatMessagesByChatRoom(chatRoomId);
+    final cutoffMessageId =
+        _findCutoffMessageId(allMessages, settings.tokenThreshold);
+    final cutoffIndex = cutoffMessageId == 0
+        ? -1
+        : allMessages.indexWhere((m) => m.id == cutoffMessageId);
+    return [
+      for (final summary in summaries)
+        if (allMessages.indexWhere((m) => m.id == summary.endPinMessageId)
+            case final endIndex when endIndex != -1 && endIndex <= cutoffIndex)
+          summary,
+    ];
+  }
+
+  /// Generate summaries for every finished pin range not summarized yet.
+  /// They take effect later, once their range leaves the token window.
   Future<void> generateAllPendingSummaries({
     required int chatRoomId,
   }) async {
@@ -92,57 +149,18 @@ class AutoSummaryService {
 
     _log('Starting summary generation for chatRoom=$chatRoomId');
 
-    final allMessages = await _db.readChatMessagesByChatRoom(chatRoomId);
-    if (allMessages.isEmpty) {
-      _log('No messages found, skipping');
+    final plan = await _planClassicSummaries(chatRoomId);
+    if (plan == null || plan.due.isEmpty) {
+      _log('No pin ranges left to summarize');
       return;
     }
-
-    final pinnedMessageIds = await _getPinnedMessageIds(chatRoomId);
-    if (pinnedMessageIds.isEmpty) {
-      _log('No pinned messages found, skipping');
-      return;
-    }
-
-    // Find the token-window cutoff
-    final cutoffMessageId = _findCutoffMessageId(allMessages, settings.tokenThreshold);
-    _log('Token cutoff messageId=$cutoffMessageId (threshold=${settings.tokenThreshold})');
-
-    // Only pins outside the token window (at or before the cutoff)
-    final eligiblePinIds = _filterPinsBeforeCutoff(
-      allMessages: allMessages,
-      pinnedMessageIds: pinnedMessageIds,
-      cutoffMessageId: cutoffMessageId,
-    );
-
-    if (eligiblePinIds.isEmpty) {
-      _log('No pin ranges outside token window, skipping');
-      return;
-    }
-
-    final existingSummaries = await _db.getChatSummaries(chatRoomId);
-    final summarizedEndIds = existingSummaries.map((s) => s.endPinMessageId).toSet();
-
-    // Detect user-deleted summaries: if the latest eligible pin is already
-    // summarized, any older unsummarized pin was intentionally deleted by the
-    // user — skip them all.
-    final latestEligiblePin = eligiblePinIds.last;
-    final hasLatestSummary = summarizedEndIds.contains(latestEligiblePin);
-    if (hasLatestSummary) {
-      _log('Latest eligible pin already summarized, skipping older gaps (user-deleted)');
-    }
-
-    _log('Found ${eligiblePinIds.length} eligible pins (out of ${pinnedMessageIds.length}), '
-        '${existingSummaries.length} existing summaries');
+    final allMessages = plan.allMessages;
+    final pinnedMessageIds = plan.pinnedMessageIds;
 
     // Build ranges: [beginning→pin1], [pin1→pin2], ...
     // Process sequentially so earlier summaries feed into {{chat_historys}} for later ones
     int generatedCount = 0;
-    for (final endPinId in eligiblePinIds) {
-      if (summarizedEndIds.contains(endPinId)) continue;
-      // If the latest eligible pin is summarized, older gaps are user-deleted
-      if (hasLatestSummary) continue;
-
+    for (final endPinId in plan.due) {
       final pinIndex = pinnedMessageIds.indexOf(endPinId);
       final startPinId = pinIndex == 0 ? 0 : pinnedMessageIds[pinIndex - 1];
 
@@ -172,6 +190,8 @@ class AutoSummaryService {
         _logSuccess('Summary generated for range [$startPinId → $endPinId], tokens: ${result.tokenCount}');
       } catch (e) {
         _logError('Failed to generate summary for pin $endPinId: $e');
+        // Stop here: a later summary would make this gap look user-deleted.
+        break;
       }
     }
 
@@ -192,27 +212,6 @@ class AutoSummaryService {
     return 0;
   }
 
-  /// Return only pinned message IDs whose position is at or before the cutoff.
-  List<int> _filterPinsBeforeCutoff({
-    required List<ChatMessage> allMessages,
-    required List<int> pinnedMessageIds,
-    required int cutoffMessageId,
-  }) {
-    if (cutoffMessageId == 0) return [];
-
-    final cutoffIdx = allMessages.indexWhere((m) => m.id == cutoffMessageId);
-    if (cutoffIdx == -1) return [];
-
-    final result = <int>[];
-    for (final pinId in pinnedMessageIds) {
-      final pinIdx = allMessages.indexWhere((m) => m.id == pinId);
-      if (pinIdx != -1 && pinIdx <= cutoffIdx) {
-        result.add(pinId);
-      }
-    }
-    return result;
-  }
-
   /// Load keyword map for keyword substitution in summary prompts
   Future<Map<String, String>> _loadKeywordMap(int chatRoomId) async {
     final chatRoom = await _db.readChatRoom(chatRoomId);
@@ -231,10 +230,17 @@ class AutoSummaryService {
       startScenario = await _db.readStartScenario(chatRoom.selectedStartScenarioId!);
     }
 
+    // Same lorebook selection as a chat turn: enabled entries plus key-based
+    // ones mentioned in the latest messages, with their details.
     final allCharacterBooks = await _db.readCharacterBooks(character.id!);
-    final activeCharacterBooks = allCharacterBooks
-        .where((b) => b.enabled == CharacterBookActivationCondition.enabled)
-        .toList();
+    final messages = await _db.readChatMessagesByChatRoom(chatRoomId);
+    final scanned = messages.length > characterBookScanDepth
+        ? messages.sublist(messages.length - characterBookScanDepth)
+        : messages;
+    final activeCharacterBooks = selectActiveCharacterBooks(
+      allCharacterBooks,
+      [for (final m in scanned) m.content],
+    );
 
     final summaries = await _db.getChatSummaries(chatRoomId);
     final summaryMetadataMap = <int, ChatMessageMetadata>{};
@@ -248,16 +254,22 @@ class AutoSummaryService {
     final latestMetadata =
         await _db.readLatestChatMessageMetadata(chatRoomId);
 
-    return PromptBuilder.buildKeywordMap(
-      character: character,
-      persona: persona,
-      startScenario: startScenario,
-      activeCharacterBooks: activeCharacterBooks,
-      chatRoom: chatRoom,
-      summaries: summaries,
-      summaryMetadataMap: summaryMetadataMap,
-      latestMetadata: latestMetadata,
-    );
+    return {
+      ...PromptBuilder.buildKeywordMap(
+        character: character,
+        persona: persona,
+        startScenario: startScenario,
+        activeCharacterBooks: activeCharacterBooks,
+        chatRoom: chatRoom,
+        summaries: summaries,
+        summaryMetadataMap: summaryMetadataMap,
+        latestMetadata: latestMetadata,
+      ),
+      'character_book': PromptBuilder.buildCharacterBookText(
+        activeCharacterBooks,
+        withDetails: (_) => true,
+      ),
+    };
   }
 
   /// Build prompt from SummaryPromptItem list
@@ -481,8 +493,9 @@ class AutoSummaryService {
   }
 
   /// Get all message IDs covered by existing summaries
+  /// Messages replaced in the prompt by an applied summary.
   Future<Set<int>> getSummarizedMessageIds(int chatRoomId) async {
-    final summaries = await _db.getChatSummaries(chatRoomId);
+    final summaries = await getAppliedSummaries(chatRoomId);
     if (summaries.isEmpty) return {};
 
     final allMessages = await _db.readChatMessagesByChatRoom(chatRoomId);
