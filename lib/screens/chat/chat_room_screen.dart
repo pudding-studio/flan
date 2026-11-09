@@ -146,11 +146,19 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
     if (mounted) setState(() {});
   }
 
+  /// How far (as a share of the viewport height) the newest message must
+  /// move away from the bottom before the user counts as scrolled up and
+  /// the scroll buttons show.
+  static const double _scrolledUpThreshold = 0.25;
+
   void _onScrollChanged() {
     final positions = _itemPositionsListener.itemPositions.value;
     if (positions.isEmpty) return;
-    final minIndex = positions.map((p) => p.index).reduce((a, b) => a < b ? a : b);
-    final nowShowButtons = minIndex > 3;
+    // The list is reversed: index 0 is the newest message, and its leading
+    // edge sits at the bottom (0) until the user scrolls up.
+    final newest = positions.where((p) => p.index == 0).firstOrNull;
+    final nowShowButtons =
+        newest == null || newest.itemLeadingEdge < -_scrolledUpThreshold;
     final wasShowingButtons = _showScrollButtons;
     // Reveal buffered messages on the transition from "scrolled up" back to
     // the bottom. Without the transition guard, being already at the bottom
