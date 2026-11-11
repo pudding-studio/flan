@@ -72,6 +72,13 @@ class ModelPricing {
 
 enum ChatModel {
   // Gemini models
+  geminiCarbon4(
+    'Gemini 4 Carbon',
+    ChatModelProvider.googleAIStudio,
+    'gemini-4-carbon',
+    ApiFormat.gemini,
+    ModelPricing(inputPrice: 4.00, cachedInputPrice: 0.20, outputPrice: 20.00),
+  ),
   geminiArgon4(
     'Gemini 4 Argon',
     ChatModelProvider.googleAIStudio,
@@ -151,6 +158,13 @@ enum ChatModel {
   ),
 
   // Gemini Enterprise models (formerly Vertex AI; same Gemini models via the same endpoint)
+  vertexGeminiCarbon4(
+    'Gemini 4 Carbon',
+    ChatModelProvider.vertexAi,
+    'gemini-4-carbon',
+    ApiFormat.gemini,
+    ModelPricing(inputPrice: 4.00, cachedInputPrice: 0.20, outputPrice: 20.00),
+  ),
   vertexGeminiArgon4(
     'Gemini 4 Argon',
     ChatModelProvider.vertexAi,
@@ -358,6 +372,13 @@ enum ChatModel {
   ),
 
   // Claude models
+  claudeFable52(
+    'Claude Fable 5.2',
+    ChatModelProvider.anthropic,
+    'claude-fable-5-2',
+    ApiFormat.claude,
+    ModelPricing(inputPrice: 8.00, cachedInputPrice: 0.20, outputPrice: 40.00),
+  ),
   claudeFable51(
     'Claude Fable 5.1',
     ChatModelProvider.anthropic,
