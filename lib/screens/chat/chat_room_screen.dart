@@ -652,7 +652,7 @@ class _ChatRoomScreenState extends State<ChatRoomScreen> {
   Future<void> _processFuturePlan(String reply) async {
     try {
       final agentSettings = await _db.getAutoSummarySettings(0);
-      if (agentSettings != null && agentSettings.isAgentEnabled) {
+      if (agentSettings?.usesAgentMode ?? false) {
         await AgentSummaryService().processFuturePlan(widget.chatRoomId, reply);
       }
     } catch (e) {

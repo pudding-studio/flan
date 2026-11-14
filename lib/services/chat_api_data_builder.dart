@@ -233,7 +233,7 @@ class ChatApiDataBuilder {
     // Load agent context if agent mode is enabled
     String? agentContext;
     final summarySettings = await db.getAutoSummarySettings(0);
-    final agentMode = summarySettings != null && summarySettings.isAgentEnabled;
+    final agentMode = summarySettings?.usesAgentMode ?? false;
 
     // Lorebook details go into {{character_book}} unless an active agent
     // entry of the same name already carries them into the prompt.
@@ -389,7 +389,7 @@ class ChatApiDataBuilder {
 
     // Exclude old messages from chat history
     Set<int> contextExcludeIds;
-    if (summarySettings != null && summarySettings.isAgentEnabled) {
+    if (agentMode) {
       // Agent mode: keep messages from 2 summary periods ago onwards
       final period = chatRoom.autoPinByMessageCount ?? 10;
       contextExcludeIds = await autoSummaryService.getAgentModeExcludeIds(
