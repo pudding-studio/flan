@@ -9,7 +9,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../constants/ui_constants.dart';
 import '../../../models/character/character_book_folder.dart';
 import '../../../utils/common_dialog.dart';
-import '../../../widgets/character/character_book_images_section.dart';
+import '../../../widgets/character/character_book_category_fields.dart';
 import '../../../widgets/common/common_draggable_folder_list.dart';
 import '../../../widgets/common/common_editable_expandable_item.dart';
 import '../../../widgets/common/common_edit_text.dart';
@@ -536,7 +536,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
               getItemId: (item) => item.id,
               getItemOrder: (item) => item.order,
               itemContentBuilder: _buildCharacterBookCard,
-              getItemIcon: (item) => _iconForCategory(item.category),
+              getItemIcon: (item) => characterBookCategoryIcon(item.category),
               getItemName: (item) => item.name,
               onReorderItem: _reorderCharacterBook,
               onMoveItemToFolder: _moveCharacterBookToFolder,
@@ -606,19 +606,6 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
     );
   }
 
-  IconData _iconForCategory(CharacterBookCategory category) {
-    switch (category) {
-      case CharacterBookCategory.character:
-        return Icons.person_outline;
-      case CharacterBookCategory.location:
-        return Icons.place_outlined;
-      case CharacterBookCategory.event:
-        return Icons.event_note_outlined;
-      case CharacterBookCategory.other:
-        return Icons.description_outlined;
-    }
-  }
-
   Widget _buildSquareIconButton({
     required IconData icon,
     required VoidCallback onPressed,
@@ -643,7 +630,7 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
     return CommonEditableExpandableItem(
       key: ValueKey(book.id),
       icon: Icon(
-        _iconForCategory(book.category),
+        characterBookCategoryIcon(book.category),
         size: UIConstants.iconSizeMedium,
         color: Theme.of(context).colorScheme.secondary,
       ),
@@ -680,7 +667,13 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
             _buildDeploymentOrderField(book),
           _buildAutoSummaryInsertField(book),
           _buildOneLineDescriptionField(book),
-          ..._buildCategorySpecificFields(book),
+          CharacterBookCategoryFields(
+            book: book,
+            controllerFor: (fieldKey, initialValue) => _getFieldController(
+                'characterBook_${book.id}_$fieldKey', initialValue),
+            onChanged: _notifyUpdate,
+            characterName: widget.characterName,
+          ),
         ],
       ),
     );
@@ -856,195 +849,5 @@ class _CharacterBookTabState extends State<CharacterBookTab> {
       case CharacterBookCategory.other:
         return l10n.characterBookOneLineHintOther;
     }
-  }
-
-  // ==================== Category-specific fields ====================
-
-  List<Widget> _buildCategorySpecificFields(CharacterBook book) {
-    switch (book.category) {
-      case CharacterBookCategory.character:
-        return _buildCharacterFields(book);
-      case CharacterBookCategory.location:
-        return _buildLocationFields(book);
-      case CharacterBookCategory.event:
-        return _buildEventFields(book);
-      case CharacterBookCategory.other:
-        return _buildOtherFields(book);
-    }
-  }
-
-  List<Widget> _buildCharacterFields(CharacterBook book) {
-    final l10n = AppLocalizations.of(context);
-    return [
-      _buildStructuredTextField(
-        book: book,
-        fieldKey: 'appearance',
-        label: l10n.characterBookFieldAppearance,
-        minLines: 2,
-        multiline: true,
-      ),
-      _buildGenderField(book),
-      _buildStructuredTextField(
-        book: book,
-        fieldKey: 'age',
-        label: l10n.characterBookFieldAge,
-      ),
-      _buildStructuredTextField(
-        book: book,
-        fieldKey: 'personality',
-        label: l10n.characterBookFieldPersonality,
-        minLines: 2,
-        multiline: true,
-      ),
-      _buildStructuredTextField(
-        book: book,
-        fieldKey: 'past',
-        label: l10n.characterBookFieldPast,
-        minLines: 2,
-        multiline: true,
-      ),
-      _buildStructuredTextField(
-        book: book,
-        fieldKey: 'abilities',
-        label: l10n.characterBookFieldAbilities,
-        minLines: 2,
-        multiline: true,
-      ),
-      _buildStructuredTextField(
-        book: book,
-        fieldKey: 'dialogue_style',
-        label: l10n.characterBookFieldDialogueStyle,
-        minLines: 2,
-        multiline: true,
-      ),
-      CommonFieldSection(
-        label: l10n.characterBookFieldImages,
-        bottomSpacing: 0,
-        child: CharacterBookImagesSection(
-          // Per-book key so Flutter keeps per-book image state isolated.
-          key: ValueKey('bookImages_${book.id}'),
-          images: book.images,
-          characterName: widget.characterName,
-          onUpdate: () => _notifyUpdate(rebuildUI: false),
-        ),
-      ),
-    ];
-  }
-
-  List<Widget> _buildLocationFields(CharacterBook book) {
-    final l10n = AppLocalizations.of(context);
-    return [
-      _buildStructuredTextField(
-        book: book,
-        fieldKey: 'setting',
-        label: l10n.characterBookFieldSetting,
-        minLines: 5,
-        multiline: true,
-        bottomSpacing: 0,
-      ),
-    ];
-  }
-
-  List<Widget> _buildEventFields(CharacterBook book) {
-    final l10n = AppLocalizations.of(context);
-    return [
-      _buildStructuredTextField(
-        book: book,
-        fieldKey: 'datetime',
-        label: l10n.characterBookFieldDatetime,
-      ),
-      _buildStructuredTextField(
-        book: book,
-        fieldKey: 'event_content',
-        label: l10n.characterBookFieldEventContent,
-        minLines: 3,
-        multiline: true,
-      ),
-      _buildStructuredTextField(
-        book: book,
-        fieldKey: 'result',
-        label: l10n.characterBookFieldResult,
-        minLines: 2,
-        multiline: true,
-        bottomSpacing: 0,
-      ),
-    ];
-  }
-
-  List<Widget> _buildOtherFields(CharacterBook book) {
-    final l10n = AppLocalizations.of(context);
-    return [
-      _buildStructuredTextField(
-        book: book,
-        fieldKey: 'setting',
-        label: l10n.characterBookFieldSetting,
-        minLines: 5,
-        multiline: true,
-        bottomSpacing: 0,
-      ),
-    ];
-  }
-
-  /// Unified builder for a single structured-data text field. All edits flow
-  /// through [CharacterBook.setStructuredString] so the underlying JSON stays
-  /// consistent even for entries migrated from legacy plain-text content.
-  Widget _buildStructuredTextField({
-    required CharacterBook book,
-    required String fieldKey,
-    required String label,
-    int minLines = 1,
-    bool multiline = false,
-    double bottomSpacing = 12.0,
-  }) {
-    final key = 'characterBook_${book.id}_$fieldKey';
-    final initialValue = book.getStructuredString(fieldKey);
-    final controller = _getFieldController(key, initialValue);
-
-    return CommonFieldSection(
-      label: label,
-      bottomSpacing: bottomSpacing,
-      child: CommonEditText(
-        controller: controller,
-        size: CommonEditTextSize.small,
-        maxLines: multiline ? null : 1,
-        minLines: multiline ? minLines : null,
-        onFocusLost: (value) {
-          book.setStructuredString(fieldKey, value);
-          _notifyUpdate(rebuildUI: false);
-        },
-      ),
-    );
-  }
-
-  Widget _buildGenderField(CharacterBook book) {
-    final l10n = AppLocalizations.of(context);
-    final selectedGender = book.gender;
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        CommonFieldSection(
-          label: l10n.characterBookFieldGender,
-          bottomSpacing: selectedGender == CharacterBookGender.other ? 8 : 12,
-          child: CommonSegmentedButton<CharacterBookGender>(
-            values: CharacterBookGender.values,
-            selected: selectedGender ?? CharacterBookGender.male,
-            onSelectionChanged: (selected) {
-              setState(() {
-                book.gender = selected;
-              });
-              _notifyUpdate();
-            },
-            labelBuilder: (g) => g.displayName,
-          ),
-        ),
-        if (selectedGender == CharacterBookGender.other)
-          _buildStructuredTextField(
-            book: book,
-            fieldKey: 'gender_other',
-            label: l10n.characterBookFieldGenderOther,
-          ),
-      ],
-    );
   }
 }

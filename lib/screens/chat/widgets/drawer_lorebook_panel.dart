@@ -4,7 +4,7 @@ import '../../../l10n/app_localizations.dart';
 import '../../../database/database_helper.dart';
 import '../../../models/character/character_book_folder.dart';
 import '../../../utils/common_dialog.dart';
-import '../../../widgets/character/character_book_images_section.dart';
+import '../../../widgets/character/character_book_category_fields.dart';
 import '../../../widgets/common/common_edit_text.dart';
 import '../../../widgets/common/common_editable_expandable_item.dart';
 import '../../../widgets/common/common_field_section.dart';
@@ -66,6 +66,8 @@ class DrawerLorebookPanelState extends State<DrawerLorebookPanel> {
 
   // ==================== Helpers ====================
 
+  String _structuredKeyPrefix(CharacterBook book) => 'book_${book.id}_field_';
+
   TextEditingController _getBookFieldController(String key, String initialValue) {
     if (!_bookFieldControllers.containsKey(key)) {
       _bookFieldControllers[key] = TextEditingController(text: initialValue);
@@ -85,11 +87,16 @@ class DrawerLorebookPanelState extends State<DrawerLorebookPanel> {
   }
 
   void _syncBookFromController(CharacterBook book) {
-    final settingKey = 'book_${book.id}_content';
-    if (_bookFieldControllers.containsKey(settingKey)) {
-      // Drawer edits map to the 'setting' structured field so they don't
-      // overwrite JSON-encoded category-specific data stored in content.
-      book.setStructuredString('setting', _bookFieldControllers[settingKey]!.text);
+    final structuredPrefix = _structuredKeyPrefix(book);
+    for (final entry in _bookFieldControllers.entries) {
+      if (entry.key.startsWith(structuredPrefix)) {
+        book.setStructuredString(
+            entry.key.substring(structuredPrefix.length), entry.value.text);
+      }
+    }
+    final subNamesKey = 'book_${book.id}_subNames';
+    if (_bookFieldControllers.containsKey(subNamesKey)) {
+      book.subNames = _bookFieldControllers[subNamesKey]!.text;
     }
     final oneLineKey = 'book_${book.id}_oneLineDescription';
     if (_bookFieldControllers.containsKey(oneLineKey)) {
@@ -158,8 +165,15 @@ class DrawerLorebookPanelState extends State<DrawerLorebookPanel> {
       allItems.add(_buildFolderSection(folder));
     }
 
-    for (final book in widget.standaloneBooks) {
-      allItems.add(_buildBookCard(book, null));
+    for (final category in CharacterBookCategory.values) {
+      final books = widget.standaloneBooks
+          .where((b) => b.category == category)
+          .toList();
+      if (books.isEmpty) continue;
+      allItems.add(_buildCategoryHeader(category));
+      for (final book in books) {
+        allItems.add(_buildBookCard(book, null));
+      }
     }
 
     return Column(
@@ -180,6 +194,26 @@ class DrawerLorebookPanelState extends State<DrawerLorebookPanel> {
                 ),
         ),
       ],
+    );
+  }
+
+  Widget _buildCategoryHeader(CharacterBookCategory category) {
+    final colorScheme = Theme.of(context).colorScheme;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 8, 4, 6),
+      child: Row(
+        children: [
+          Icon(characterBookCategoryIcon(category),
+              size: 16, color: colorScheme.primary),
+          const SizedBox(width: 6),
+          Text(
+            category.displayName,
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: colorScheme.primary,
+                ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -210,7 +244,7 @@ class DrawerLorebookPanelState extends State<DrawerLorebookPanel> {
     return CommonEditableExpandableItem(
       key: ValueKey('book_${book.id}'),
       icon: Icon(
-        Icons.description_outlined,
+        characterBookCategoryIcon(book.category),
         size: 20,
         color: Theme.of(context).colorScheme.secondary,
       ),
@@ -225,6 +259,8 @@ class DrawerLorebookPanelState extends State<DrawerLorebookPanel> {
       content: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          if (book.category == CharacterBookCategory.character)
+            _buildBookSubNamesField(book),
           CommonFieldSection(
             label: l10n.drawerBookActivationCondition,
             child: CommonSegmentedButton<CharacterBookActivationCondition>(
@@ -255,27 +291,33 @@ class DrawerLorebookPanelState extends State<DrawerLorebookPanel> {
           if (book.category == CharacterBookCategory.other)
             _buildBookInsertionOrderField(book),
           _buildBookOneLineDescriptionField(book),
-          _buildBookContentField(book),
-          if (book.category == CharacterBookCategory.character &&
-              book.images.isNotEmpty)
-            _buildBookImagesField(book),
+          CharacterBookCategoryFields(
+            book: book,
+            controllerFor: (fieldKey, initialValue) => _getBookFieldController(
+                '${_structuredKeyPrefix(book)}$fieldKey', initialValue),
+            onChanged: ({required bool rebuildUI}) {
+              if (rebuildUI) setState(() {});
+            },
+            // Image editing needs the character's asset folder, so the
+            // drawer only shows existing images.
+            imagesReadOnly: true,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildBookImagesField(CharacterBook book) {
+  Widget _buildBookSubNamesField(CharacterBook book) {
     final l10n = AppLocalizations.of(context);
+    final controller =
+        _getBookFieldController('book_${book.id}_subNames', book.subNames);
     return CommonFieldSection(
-      label: l10n.characterBookFieldImages,
-      bottomSpacing: 0,
-      child: CharacterBookImagesSection(
-        key: ValueKey('drawerBookImages_${book.id}'),
-        images: book.images,
-        // Drawer is read-only so characterName is unused; the widget skips
-        // the image-picker code path when readOnly is true.
-        characterName: '',
-        readOnly: true,
+      label: l10n.characterBookFieldSubNames,
+      child: CommonEditText(
+        controller: controller,
+        hintText: l10n.characterBookFieldSubNamesHint,
+        size: CommonEditTextSize.small,
+        onFocusLost: (value) => book.subNames = value,
       ),
     );
   }
@@ -342,28 +384,6 @@ class DrawerLorebookPanelState extends State<DrawerLorebookPanel> {
           final intValue = int.tryParse(value);
           if (intValue != null) book.insertionOrder = intValue;
         },
-      ),
-    );
-  }
-
-  Widget _buildBookContentField(CharacterBook book) {
-    final l10n = AppLocalizations.of(context);
-    final key = 'book_${book.id}_content';
-    // Drawer always edits the 'setting' structured field — for 'other' and
-    // '지역/장소' this is the primary text, and for 등장인물/사건 it's an auxiliary
-    // scratch field that the prompt builder ignores. This keeps the drawer
-    // from wiping JSON-encoded category data.
-    final controller = _getBookFieldController(key, book.getStructuredString('setting'));
-    return CommonFieldSection(
-      label: l10n.drawerBookContent,
-      bottomSpacing: 0,
-      child: CommonEditText(
-        controller: controller,
-        hintText: l10n.drawerBookContentHint,
-        size: CommonEditTextSize.small,
-        maxLines: null,
-        minLines: 5,
-        onFocusLost: (value) => book.setStructuredString('setting', value),
       ),
     );
   }
