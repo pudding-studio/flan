@@ -12,6 +12,11 @@ class AutoSummarySettings {
   final DateTime createdAt;
   final DateTime updatedAt;
 
+  /// Agent summaries run only while auto summary itself is on. The agent
+  /// flag defaults to on and is hidden once auto summary is switched off,
+  /// so it must never decide the mode by itself.
+  bool get usesAgentMode => isEnabled && isAgentEnabled;
+
   AutoSummarySettings({
     this.id,
     required this.chatRoomId,

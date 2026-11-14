@@ -380,7 +380,7 @@ class AutoSummaryService {
     if (settings == null) {
       throw Exception('Auto summary settings not found');
     }
-    if (settings.isAgentEnabled) {
+    if (settings.usesAgentMode) {
       await AgentSummaryService()
           .summarizeUpTo(chatRoomId: chatRoomId, pinMessageId: pinMessageId);
       return;
