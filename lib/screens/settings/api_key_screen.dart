@@ -9,7 +9,9 @@ import '../../widgets/common/common_custom_text_field.dart';
 import '../../widgets/common/common_appbar.dart';
 import '../../widgets/common/common_filter_chip.dart';
 import '../../widgets/common/common_settings.dart';
+import '../../widgets/common/common_title_medium.dart';
 import '../../services/ai_service.dart';
+import '../../services/provider_retry_settings.dart';
 import '../../services/vertex_auth_service.dart';
 
 enum ApiKeyType {
@@ -43,6 +45,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
   List<String> _keys = [];
   int _activeIndex = 0;
   int? _editingIndex;
+  int _retryCount = 0;
   bool get _isVertexAi => _selectedApiKeyType == ApiKeyType.vertexAi;
 
   @override
@@ -114,6 +117,7 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
     _activeIndex = _keys.isEmpty ? 0 : activeIdx.clamp(0, _keys.length - 1);
     _editingIndex = null;
     _apiKeyController.clear();
+    _retryCount = await ProviderRetrySettings.read(type.prefsKey);
 
     if (mounted) setState(() {});
   }
@@ -392,6 +396,61 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
     );
   }
 
+  Future<void> _setRetryCount(int count) async {
+    setState(() => _retryCount = count);
+    await ProviderRetrySettings.write(_selectedApiKeyType.prefsKey, count);
+  }
+
+  Widget _buildRetrySetting() {
+    final l10n = AppLocalizations.of(context);
+    final theme = Theme.of(context);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        CommonTitleMedium(text: l10n.customModelRetrySection),
+        const SizedBox(height: 4),
+        Text(
+          l10n.apiKeyRetryDescription,
+          style: theme.textTheme.bodySmall?.copyWith(
+            color: theme.colorScheme.onSurfaceVariant,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Row(
+          children: [
+            Expanded(
+              child: Text(l10n.customModelRetryCount,
+                  style: theme.textTheme.bodyMedium),
+            ),
+            IconButton(
+              key: const ValueKey('retryCountDecrease'),
+              icon: const Icon(Icons.remove_circle_outline),
+              onPressed: _retryCount > 0
+                  ? () => _setRetryCount(_retryCount - 1)
+                  : null,
+            ),
+            SizedBox(
+              width: 32,
+              child: Text(
+                '$_retryCount',
+                key: const ValueKey('retryCountValue'),
+                textAlign: TextAlign.center,
+                style: theme.textTheme.titleMedium,
+              ),
+            ),
+            IconButton(
+              key: const ValueKey('retryCountIncrease'),
+              icon: const Icon(Icons.add_circle_outline),
+              onPressed: _retryCount < ProviderRetrySettings.maxRetries
+                  ? () => _setRetryCount(_retryCount + 1)
+                  : null,
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   Widget _buildKeyList() {
     if (_keys.isEmpty) {
       return Padding(
@@ -571,6 +630,10 @@ class _ApiKeyScreenState extends State<ApiKeyScreen> {
                         ],
                       ),
                     ],
+                    const SizedBox(height: 24),
+                    const Divider(),
+                    const SizedBox(height: 16),
+                    _buildRetrySetting(),
                   ],
                 ),
               ),
