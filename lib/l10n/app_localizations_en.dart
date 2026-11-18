@@ -1861,6 +1861,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'You can register multiple API keys per provider.';
 
   @override
+  String get apiKeyRetryDescription =>
+      'When a request fails with an error, every request to this provider (chat, summaries, SNS, ...) is sent again automatically up to this many times.';
+
+  @override
   String chatPromptListLoadFailed(String error) {
     return 'Failed to load prompts: $error';
   }

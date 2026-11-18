@@ -29,6 +29,7 @@ class _FakeAi extends AiService {
     int? chatRoomId,
     int? characterId,
     String logType = 'ai',
+    void Function(int attempt)? onRetry,
   }) async {
     calls++;
     return AiResponse(text: 'summary $calls');

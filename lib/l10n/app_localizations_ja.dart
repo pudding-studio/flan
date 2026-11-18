@@ -1820,6 +1820,10 @@ class AppLocalizationsJa extends AppLocalizations {
   String get apiKeyMultiInfo => 'プロバイダーごとに複数のAPIキーを登録できます。';
 
   @override
+  String get apiKeyRetryDescription =>
+      'リクエストがエラーで失敗した場合、このプロバイダーへのすべてのリクエスト(チャット・要約・SNSなど)を設定した回数まで自動で再送します。';
+
+  @override
   String chatPromptListLoadFailed(String error) {
     return 'プロンプト一覧の読み込みに失敗しました: $error';
   }

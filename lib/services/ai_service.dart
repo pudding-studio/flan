@@ -9,7 +9,9 @@ import '../models/chat/unified_model.dart';
 import '../models/prompt/prompt_parameters.dart';
 import '../database/database_helper.dart';
 import '../utils/context_pdf.dart';
+import '../utils/retry_runner.dart';
 import 'format_converter.dart';
+import 'provider_retry_settings.dart';
 import 'vertex_auth_service.dart';
 
 class AiResponse {
@@ -31,6 +33,22 @@ class AiService {
   static const String _claudeBaseUrl = 'https://api.anthropic.com/v1';
 
   final DatabaseHelper _db = DatabaseHelper.instance;
+
+  /// Wait before re-sending a failed request; [attempt] starts at 1.
+  final Duration Function(int attempt) retryDelay;
+
+  AiService({Duration Function(int attempt)? retryDelay})
+      : retryDelay = retryDelay ?? _defaultRetryDelay;
+
+  static Duration _defaultRetryDelay(int attempt) =>
+      Duration(seconds: attempt < 5 ? attempt : 5);
+
+  /// Retries for [model]: a custom provider's own count, otherwise the
+  /// count set for the built-in provider on the API key screen.
+  static Future<int> retryCountFor(UnifiedModel model) async =>
+      model.isCustom
+          ? model.retryCount
+          : await ProviderRetrySettings.read(model.apiKeyType);
 
   static const List<Map<String, String>> _geminiSafetySettings = [
     {'category': 'HARM_CATEGORY_HARASSMENT', 'threshold': 'BLOCK_NONE'},
@@ -200,11 +218,43 @@ class AiService {
     int? chatRoomId,
     int? characterId,
     String logType = 'ai',
+    void Function(int attempt)? onRetry,
   }) async {
+    // Resolved once: a missing key is not worth re-sending for.
     final apiKey = (model.apiKey != null && model.apiKey!.isNotEmpty)
         ? model.apiKey!
         : await getApiKey(model.apiKeyType);
 
+    return RetryRunner.run<AiResponse>(
+      maxRetries: await retryCountFor(model),
+      tag: 'ai request (${model.displayName})',
+      delayBeforeRetry: retryDelay,
+      onRetry: onRetry,
+      attempt: (_) => sendOnce(
+        systemPrompt: systemPrompt,
+        contents: contents,
+        model: model,
+        apiKey: apiKey,
+        promptParameters: promptParameters,
+        chatRoomId: chatRoomId,
+        characterId: characterId,
+        logType: logType,
+      ),
+    );
+  }
+
+  /// A single request to [model]'s API, without retries.
+  @protected
+  Future<AiResponse> sendOnce({
+    required String systemPrompt,
+    required List<Map<String, dynamic>> contents,
+    required UnifiedModel model,
+    required String apiKey,
+    PromptParameters? promptParameters,
+    int? chatRoomId,
+    int? characterId,
+    required String logType,
+  }) async {
     // Normalize base URL: strip trailing slash only
     String normalizeBaseUrl(String url) {
       var u = url.trimRight();

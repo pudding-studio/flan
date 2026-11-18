@@ -3454,6 +3454,12 @@ abstract class AppLocalizations {
   /// **'각 제공사별로 여러 개의 API 키를 등록할 수 있습니다.'**
   String get apiKeyMultiInfo;
 
+  /// No description provided for @apiKeyRetryDescription.
+  ///
+  /// In ko, this message translates to:
+  /// **'요청이 오류로 실패하면 이 제공사의 모든 요청(채팅·요약·SNS 등)을 설정한 횟수만큼 자동으로 다시 보냅니다.'**
+  String get apiKeyRetryDescription;
+
   /// No description provided for @chatPromptListLoadFailed.
   ///
   /// In ko, this message translates to:

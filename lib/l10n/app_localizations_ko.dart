@@ -1828,6 +1828,10 @@ class AppLocalizationsKo extends AppLocalizations {
   String get apiKeyMultiInfo => '각 제공사별로 여러 개의 API 키를 등록할 수 있습니다.';
 
   @override
+  String get apiKeyRetryDescription =>
+      '요청이 오류로 실패하면 이 제공사의 모든 요청(채팅·요약·SNS 등)을 설정한 횟수만큼 자동으로 다시 보냅니다.';
+
+  @override
   String chatPromptListLoadFailed(String error) {
     return '프롬프트 목록을 불러오는데 실패했습니다: $error';
   }
