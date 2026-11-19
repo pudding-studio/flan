@@ -72,6 +72,20 @@ class ModelPricing {
 
 enum ChatModel {
   // Gemini models
+  geminiNeon4(
+    'Gemini 4 Neon',
+    ChatModelProvider.googleAIStudio,
+    'gemini-4-neon',
+    ApiFormat.gemini,
+    ModelPricing(inputPrice: 3.00, cachedInputPrice: 0.15, outputPrice: 15.00),
+  ),
+  geminiHydrogen4(
+    'Gemini 4 Hydrogen',
+    ChatModelProvider.googleAIStudio,
+    'gemini-4-hydrogen',
+    ApiFormat.gemini,
+    ModelPricing(inputPrice: 1.50, cachedInputPrice: 0.075, outputPrice: 7.50),
+  ),
   geminiCarbon4(
     'Gemini 4 Carbon',
     ChatModelProvider.googleAIStudio,
@@ -158,6 +172,20 @@ enum ChatModel {
   ),
 
   // Gemini Enterprise models (formerly Vertex AI; same Gemini models via the same endpoint)
+  vertexGeminiNeon4(
+    'Gemini 4 Neon',
+    ChatModelProvider.vertexAi,
+    'gemini-4-neon',
+    ApiFormat.gemini,
+    ModelPricing(inputPrice: 3.00, cachedInputPrice: 0.15, outputPrice: 15.00),
+  ),
+  vertexGeminiHydrogen4(
+    'Gemini 4 Hydrogen',
+    ChatModelProvider.vertexAi,
+    'gemini-4-hydrogen',
+    ApiFormat.gemini,
+    ModelPricing(inputPrice: 1.50, cachedInputPrice: 0.075, outputPrice: 7.50),
+  ),
   vertexGeminiCarbon4(
     'Gemini 4 Carbon',
     ChatModelProvider.vertexAi,
@@ -251,6 +279,27 @@ enum ChatModel {
   ),
 
   // OpenAI models
+  gpt62Astra(
+    'GPT-6.2 Astra',
+    ChatModelProvider.openai,
+    'gpt-6.2-astra',
+    ApiFormat.openai,
+    ModelPricing(inputPrice: 8.00, cachedInputPrice: 0.40, outputPrice: 40.00),
+  ),
+  gpt62Sol(
+    'GPT-6.2 Sol',
+    ChatModelProvider.openai,
+    'gpt-6.2-sol',
+    ApiFormat.openai,
+    ModelPricing(inputPrice: 2.00, cachedInputPrice: 0.10, outputPrice: 10.00),
+  ),
+  gpt61Terra(
+    'GPT-6.1 Terra',
+    ChatModelProvider.openai,
+    'gpt-6.1-terra',
+    ApiFormat.openai,
+    ModelPricing(inputPrice: 1.00, cachedInputPrice: 0.05, outputPrice: 5.00),
+  ),
   gpt6Astra(
     'GPT-6 Astra',
     ChatModelProvider.openai,
