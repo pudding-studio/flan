@@ -98,7 +98,7 @@ enum ChatModel {
     ChatModelProvider.googleAIStudio,
     'gemini-4-argon',
     ApiFormat.gemini,
-    ModelPricing(inputPrice: 2.00, cachedInputPrice: 0.10, outputPrice: 10.00),
+    ModelPricing(inputPrice: 4.00, cachedInputPrice: 0.20, outputPrice: 20.00),
   ),
   geminiFlash38(
     'Gemini 3.8 Flash',
@@ -198,7 +198,7 @@ enum ChatModel {
     ChatModelProvider.vertexAi,
     'gemini-4-argon',
     ApiFormat.gemini,
-    ModelPricing(inputPrice: 2.00, cachedInputPrice: 0.10, outputPrice: 10.00),
+    ModelPricing(inputPrice: 4.00, cachedInputPrice: 0.20, outputPrice: 20.00),
   ),
   vertexGeminiFlash38(
     'Gemini 3.8 Flash',
